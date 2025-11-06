@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <title>Работа в Такси «Успех» — для водителей</title>
+    <!-- Подключение Tailwind CSS CDN (Современный) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключение иконок Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Настройка шрифта Inter */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f5f5f5; }
+        /* Градиентный фон шапки: Синий/Темно-синий */
+        .header-bg {
+            background: linear-gradient(135deg, #1d4ed8 0%, #0d2a70 100%);
+        }
+        /* Анимация кнопок */
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+        /* Стиль для карточек преимуществ */
+        .advantage-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-top: 4px solid #f59e0b; /* Желтый акцент */
+        }
+        .advantage-card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body class="text-gray-900 min-h-screen flex flex-col">
+
+    <!-- HEADER: Главный блок -->
+    <header class="header-bg text-white py-10 rounded-b-xl shadow-xl">
+        <div class="max-w-md mx-auto px-4 text-center">
+            <!-- Иконка водителя -->
+            <i class="fas fa-hand-holding-dollar text-4xl text-yellow-400 mb-2"></i>
+            <h1 class="text-4xl font-extrabold tracking-tight mb-1">Работа в Такси «Успех»</h1>
+            <p class="text-indigo-200 text-lg">Присоединяйся и зарабатывай с комфортом!</p>
+        </div>
+    </header>
+
+    <!-- MAIN: Заявка и преимущества -->
+    <main class="max-w-3xl mx-auto px-4 py-8 flex-grow">
+
+        <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">Начни зарабатывать уже сегодня!</h2>
+        
+        <p class="text-lg mb-8 text-gray-600">
+            Такси «Успех» приглашает водителей в Белоусовке, Глубоком и Усть-Каменогорске.
+            Работа на своих авто, ежедневные выплаты и удобные заказы через нашу систему.
+        </p>
+
+        <!-- Кнопки для действий -->
+        <div class="flex flex-col gap-4 mb-10">
+            <!-- Оставить заявку (Главное действие - WhatsApp) -->
+            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20работать%20в%20Такси%20«Успех»." target="_blank"
+               class="btn-hover bg-green-500 hover:bg-green-600 text-white px-6 py-4 rounded-xl text-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-3">
+                <i class="fab fa-whatsapp text-2xl"></i>
+                <span>Оставить заявку на работу</span>
+            </a>
+            <!-- Чат водителей WhatsApp -->
+            <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank"
+               class="btn-hover bg-yellow-400 hover:bg-yellow-500 text-blue-900 px-6 py-4 rounded-xl text-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-3">
+                <i class="fas fa-users text-2xl"></i>
+                <span>Чат водителей (Узнай подробности)</span>
+            </a>
+        </div>
+
+        <!-- Преимущества -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-10">
+            
+            <!-- 1. Ежедневные выплаты -->
+            <div class="advantage-card bg-white shadow-md p-6 rounded-2xl flex flex-col items-center text-center">
+                <i class="fas fa-wallet text-4xl mb-3 text-green-600"></i>
+                <p class="font-bold text-lg">Ежедневные выплаты</p>
+                <p class="text-sm text-gray-600 mt-1">Заработок сразу, без задержек и ожидания.</p>
+            </div>
+            
+            <!-- 2. Работа через WhatsApp -->
+            <div class="advantage-card bg-white shadow-md p-6 rounded-2xl flex flex-col items-center text-center">
+                <i class="fas fa-mobile-alt text-4xl mb-3 text-blue-600"></i>
+                <p class="font-bold text-lg">Удобная система заказов</p>
+                <p class="text-sm text-gray-600 mt-1">Получайте заказы прямо в мессенджер – без сложных приложений.</p>
+            </div>
+
+            <!-- 3. Простая регистрация -->
+            <div class="advantage-card bg-white shadow-md p-6 rounded-2xl flex flex-col items-center text-center">
+                <i class="fas fa-file-signature text-4xl mb-3 text-yellow-600"></i>
+                <p class="font-bold text-lg">Быстрый старт</p>
+                <p class="text-sm text-gray-600 mt-1">Простая регистрация и выход на линию в день обращения.</p>
+            </div>
+        </div>
+
+        <p class="text-lg mt-12 text-gray-700 font-semibold">
+            Подробности по телефону: <a href="tel:+77770649648" class="text-red-600 hover:text-red-700 underline font-extrabold">+7 777 064 96 48</a>
+        </p>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-blue-900 text-white text-center py-6 mt-10">
+        <p class="text-lg font-semibold">Такси «Успех» — Надежный партнер</p>
+        <a href="https://taxiuspeh.github.io/landing/" class="text-yellow-400 hover:text-yellow-300 underline mt-1 block">← Вернуться на главную страницу заказа</a>
+    </footer>
+</body>
+</html>

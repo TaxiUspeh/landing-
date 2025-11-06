@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Такси Успех: Быстрый Заказ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Стиль для чистого и быстрого мобильного дизайна */
+        .promo-card {
+            background: linear-gradient(180deg, #4f46e5 0%, #1e3a8a 100%); /* Глубокий синий градиент */
+            font-family: 'Inter', sans-serif;
+            min-height: 95vh;
+        }
+        .text-shadow {
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+        }
+        /* Стиль для WhatsApp кнопки */
+        .whatsapp-btn {
+            background-color: #25D366; /* WhatsApp Green */
+            color: white;
+        }
+        .whatsapp-btn:hover {
+            background-color: #1DA851;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Основной промо-контейнер (мобильный вид) -->
+    <div class="promo-card w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl p-6 text-white flex flex-col items-center text-center">
+        
+        <div class="mb-6 mt-4">
+            <h1 class="text-4xl font-extrabold text-shadow">Такси «Успех»</h1>
+            <p class="text-indigo-200 mt-2 text-xl">Ваш комфорт в посёлке.</p>
+        </div>
+
+        <!-- Иконка/Эмодзи для привлечения внимания -->
+        <div class="text-6xl mb-8">
+            🚕💨
+        </div>
+
+        <!-- Главное сообщение -->
+        <p class="text-xl font-semibold mb-6 border-b border-indigo-300 pb-3">
+            Быстрая подача. Любой адрес. Фиксированная цена.
+        </p>
+
+        <!-- Основные кнопки CTA (WhatsApp) -->
+        <div class="w-full space-y-4">
+            
+            <!-- 1. Заказать Такси через WhatsApp (Основной CTA) -->
+            <a href="https://wa.me/7770649648?text=Здравствуйте,%20хочу%20заказать%20такси!" 
+               class="block w-full whatsapp-btn font-bold py-3 rounded-xl shadow-lg transition duration-300 transform hover:scale-105 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="mr-2">
+                    <path d="M12.036 2.012a9.96 9.96 0 0 0-8.914 14.881l-1.077 3.948 4.015-1.05a9.972 9.972 0 0 0 4.883 1.22c5.514 0 9.98-4.466 9.98-9.98s-4.466-9.98-9.98-9.98zm5.27 15.688a.925.925 0 0 1-.65.253.882.882 0 0 1-.63-.26c-1.125-.97-2.73-1.638-3.486-1.92a.668.668 0 0 0-.25-.067c-.015.003-.016-.015-.078-.013-.25-.005-.595.008-.854.06-1.55.3-2.61.423-3.665.423-.004 0-.006-.002-.01-.002a3.8 3.8 0 0 1-2.62-1.076c-.95-1.082-1.42-2.5-1.42-3.896 0-1.396.5-2.81 1.42-3.896a3.8 3.8 0 0 1 2.62-1.077c1.047 0 2.1-.122 3.66-.42a.833.833 0 0 0 .825-.084c.732-.47 1.41-.95 1.76-1.328.324-.36 1.15-.36 1.474 0 .35.378 1.028.858 1.76 1.328a.83.83 0 0 0 .825.084c1.56.3 2.613.42 3.66.42.003 0 .004.002.008.002a3.8 3.8 0 0 1 2.62 1.076c.95 1.086 1.42 2.5 1.42 3.896 0 1.396-.5 2.81-1.42 3.896a3.8 3.8 0 0 1-2.62 1.077c-1.047 0-2.1-.122-3.66-.42zm-5.77-5.592c.002.002 0 0 0 0z"/>
+                </svg>
+                Заказать Такси через WhatsApp
+            </a>
+
+            <!-- 2. Дополнительная услуга (Доставка) через WhatsApp -->
+            <a href="https://wa.me/7770649648?text=Здравствуйте,%20нужна%20доставка!"
+               class="block w-full bg-indigo-300 hover:bg-indigo-400 text-indigo-900 font-semibold py-3 rounded-xl shadow-lg transition duration-300 transform hover:scale-105 text-sm">
+                📦 Заказать Доставку / Курьерскую службу
+            </a>
+            
+            <!-- 3. Запасной вариант - Прямой звонок -->
+            <a href="tel:+77770649648" class="block w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-3 rounded-xl shadow-lg transition duration-300 transform hover:scale-105">
+                📞 Позвонить для заказа
+            </a>
+        </div>
+
+        <div class="mt-8 text-sm text-indigo-200">
+            Наш телефон: **+7 (777) 064-96-48**
+            <br>
+            Мы работаем круглосуточно. Спасибо, что выбираете местное такси!
+        </div>
+
+    </div>
+
+    <script>
+        // Функция для вывода мягких сообщений (вместо alert())
+        function showMessage(message) {
+            const container = document.querySelector('.promo-card');
+            
+            let msgBox = document.getElementById('tempMsgBox');
+            if (!msgBox) {
+                msgBox = document.createElement('div');
+                msgBox.id = 'tempMsgBox';
+                msgBox.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-yellow-300 text-gray-800 p-3 rounded-lg shadow-xl z-50 transition-opacity duration-300 opacity-0';
+                container.appendChild(msgBox);
+            }
+            
+            msgBox.textContent = message;
+            msgBox.style.opacity = '1';
+            
+            setTimeout(() => {
+                msgBox.style.opacity = '0';
+            }, 3000);
+        }
+    </script>
+
+</body>
+</html>

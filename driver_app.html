@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рабочее Место Водителя | Такси Успех</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #e5e7eb; }
+        .driver-id { word-break: break-all; }
+        .order-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .order-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .status-new { border-left-color: #f59e0b; }
+        .status-accepted { border-left-color: #1d4ed8; }
+        .status-completed { border-left-color: #10b981; }
+        /* Стилизация для мобильных устройств */
+        @media (min-width: 640px) {
+            .app-container {
+                max-width: 800px;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8 min-h-screen">
+    
+    <div class="app-container mx-auto bg-white rounded-xl shadow-2xl p-4 sm:p-6 md:p-8">
+
+        <h1 class="text-3xl font-extrabold text-gray-800 border-b pb-3 mb-6 flex items-center space-x-3">
+            <i class="fas fa-steering-wheel text-yellow-600"></i>
+            <span>Рабочее место водителя</span>
+        </h1>
+
+        <!-- Блок аутентификации и баланса -->
+        <div class="bg-gray-100 p-4 rounded-lg shadow-inner mb-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 border-b pb-3">
+                <div id="authStatus" class="text-sm font-semibold text-red-500">Подключение к системе...</div>
+                <div class="mt-2 sm:mt-0">
+                    <span class="text-xs font-medium text-gray-500">Вы:</span>
+                    <span id="driverIdDisplay" class="driver-id text-sm font-bold text-blue-800 ml-1">Загрузка...</span>
+                </div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+                <div class="text-lg font-semibold text-gray-700">Ваш баланс:</div>
+                <div class="text-3xl font-extrabold text-green-600" id="driverBalanceDisplay">
+                    0.00 KZT
+                </div>
+            </div>
+            <button onclick="addDummyOrder()" class="mt-3 w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition">
+                <i class="fas fa-plus mr-2"></i> Создать тестовый заказ
+            </button>
+        </div>
+
+        <!-- Текущий заказ -->
+        <h2 class="text-2xl font-bold text-gray-700 mt-8 mb-4">Текущий заказ</h2>
+        <div id="currentOrderContainer" class="bg-blue-50 border-l-4 status-accepted p-4 rounded-lg shadow-md mb-8 hidden">
+            <!-- Здесь будет отображаться активный заказ -->
+        </div>
+        <div id="noCurrentOrder" class="text-center text-gray-500 italic p-6 border rounded-lg bg-gray-50">
+            Нет активного заказа. Ждём новых вызовов!
+        </div>
+
+
+        <!-- Список новых заказов -->
+        <h2 class="text-2xl font-bold text-gray-700 mt-8 mb-4">Новые заказы</h2>
+        <div id="newOrdersList" class="space-y-4">
+            <!-- Заказы будут загружены сюда -->
+            <div class="text-center text-gray-500 italic p-6 border rounded-lg bg-gray-50" id="ordersLoading">
+                Загрузка заказов в реальном времени...
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal for Confirmation (Simplified inline element, not a true modal) -->
+    <div id="confirmationModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-2xl w-80">
+            <h3 id="modalTitle" class="text-xl font-bold mb-4">Подтвердите действие</h3>
+            <p id="modalMessage" class="mb-6">Вы уверены?</p>
+            <div class="flex justify-end space-x-3">
+                <button id="modalCancel" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg">Отмена</button>
+                <button id="modalConfirm" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, updateDoc, where, serverTimestamp, addDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ CANVAS (ОБЯЗАТЕЛЬНО) ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Константы статусов
+        const STATUS_NEW = 'NEW';
+        const STATUS_ACCEPTED = 'ACCEPTED';
+        const STATUS_IN_PROGRESS = 'IN_PROGRESS';
+        const STATUS_COMPLETED = 'COMPLETED';
+        const STATUS_CANCELED = 'CANCELED';
+        
+        // --- СТАТИЧЕСКИЙ КАТАЛОГ ВОДИТЕЛЕЙ ---
+        // Используется для отображения полных данных, соответствующих driverId.
+        
+        const DRIVER_CATALOG = {
+            // Ключи - это последние 3 символа ID, которые мы используем для имитации уникального ключа
+            "606": { name: "Виталий", car: "Mitsubishi Montero - 606 (черный)", phone: "+7(771)086-38-85" },
+            "569": { name: "Александр", car: "ВАЗ 2106 - 569 (белый)", phone: "+7(705)752-24-98" },
+            "230": { name: "Виктория", car: "TOYOTA CALDINA - 230 (синий)", phone: "+7(771)086-05-30" },
+            "935": { name: "Хаким", car: "Volkswagen Golf - 935 (красный)", phone: "+7(777)331-10-58" },
+            "027": { name: "Владимир", car: "Honda CR-V - 027 (белый)", phone: "+7(777)856-80-41" },
+            "438": { name: "Даулет", car: "Toyota Cаmry - 438 (серый)", phone: "+7(777)155-50-60" },
+            "873": { name: "Александр", car: "Chevroiet Nexia - 873 (белый)", phone: "+7(777)347-78-27" },
+            "767": { name: "Андрей", car: "Mitsubishi Montero - 767 (серый)", phone: "+7(705)665-05-48" },
+            "186": { name: "Николай", car: "ВАЗ 2107 - 186 (чёрный)", phone: "+7(777)131-37-57" },
+            "524": { name: "Андрей", car: "Suzuki Grand Vitara - 524 (серый)", phone: "+7(705)500-00-81" },
+            "411": { name: "Егор", car: "ВАЗ 2107 - 411 (синий)", phone: "+7(705)172-40-39" },
+            "715": { name: "Ержан", car: "Lada Granta - 715 (белый)", phone: "+7(705)166-16-03" },
+            "367": { name: "Александр", car: "Honda Odyssey - 367 (черный)", phone: "+7(705)524-74-32" },
+            "337": { name: "Оксана", car: "TOYOTA VITZ - K337PC42 (розовый)", phone: "+7(700)240-53-80" }, // Уникальный ключ по госномеру
+            "829": { name: "Александр", car: "Nissan X Trail - 829 (красный)", phone: "+7(771)438-02-48" },
+            "980": { name: "Александра", car: "Opel Frontera - 980 (вишня)", phone: "+7(776)487-80-80" },
+            "029": { name: "Вечеслав", car: "ВАЗ 2109 - 029 (зеленый)", phone: "+7(776)459-34-78" },
+            "799": { name: "Ольга", car: "Toyota Camry - 799AJZ16 (серый)", phone: "+7(777)312-98-48" }, // Уникальный ключ по госномеру
+            "783": { name: "Василий", car: "Audi 80 - 783 (белый)", phone: "+7(705)301-06-09" },
+            "061": { name: "Сейткан", car: "Lada Granta - 061AKP16 (белый)", phone: "+7(777)850-76-54" }, // Уникальный ключ по госномеру
+            "932": { name: "Алексей", car: "Nissan Cefiro - 932ZIA16 (пурпур)", phone: "+7(705)831-43-72" }, // Уникальный ключ по госномеру
+            "111": { name: "Рустем", car: "Chevroiet Nexia - 111 (серый)", phone: "+7(777)791-92-92" },
+            "252": { name: "Расим", car: "Toyota Highlander - 252 (серый)", phone: "+7(705)167-93-03" },
+            "478": { name: "Алексей", car: "Mazda323 - 478AMI16 (красный)", phone: "+7(705)230-91-84" }, // Уникальный ключ по госномеру
+            "058": { name: "Медет", car: "2110 Ваз - 058AIT16 (серый)", phone: "+7(771)203-47-05" }, // Уникальный ключ по госномеру
+            "773": { name: "Кристина", car: "Subaru Forester - 773 (белый)", phone: "+7(777)148-86-21" },
+            "976": { name: "Алексей", car: "Chevrolet Cobalt - 976 (серый)", phone: "+7(705)527-03-89" },
+            "771": { name: "Игорь", car: "Toyota Exiv - 771 (серый)", phone: "+7(771)840-40-64" },
+            "390": { name: "Александр", car: "ВАЗ 2115 - 390 (серый)", phone: "+7(777)764-05-25" },
+            "346": { name: "Александр", car: "ВАЗ 2110 - 346 (черный)", phone: "+7(771)913-32-68" },
+            "558": { name: "Артём", car: "Chevrolet Tracker - 558 (стальной)", phone: "+7(777)796-41-65" },
+            "176": { name: "Денис", car: "LADA Калина - 176 (белый)", phone: "+7(705)318-44-76" },
+            "482": { name: "Екатерина", car: "Nissan Primera - 482 (чёрный)", phone: "+7(708)360-24-37" },
+            "120": { name: "Дамир", car: "Lada Priora - 120 (черный)", phone: "+7(708)251-59-57" },
+            "148": { name: "Талгат", car: "Lada Granta - 148 (белый)", phone: "+7(777)658-28-52" },
+            "223": { name: "Олег", car: "Toyota Curren - 223ALG16 (черный)", phone: "+7(771)331-51-77" }, // Уникальный ключ по госномеру
+            "755": { name: "Нурхан", car: "Opel Omega - 755ALN16 (синий)", phone: "+7(777)303-84-62" }, // Уникальный ключ по госномеру
+            "539": { name: "Алина", car: "ВАЗ 2107 - 539AKU16 (зелёный)", phone: "+7(776)720-71-76" }, // Уникальный ключ по госномеру
+            "667": { name: "Федор", car: "ВАЗ-2114 - 667 (серый)", phone: "+7(771)512-42-58" },
+            "087": { name: "Олжас", car: "ВАЗ 2110 - 087 (коричневый)", phone: "+7(707)782-73-87" },
+            "086": { name: "Александр", car: "Audi 80 B4 - 086 (красный)", phone: "+7(705)833-87-73" },
+            "678": { name: "Бахытжан", car: "SkodaOctavia - 678 (серый)", phone: "+7(777)413-94-57" },
+            "210": { name: "Тимур", car: "ВАЗ 2109 - 210 (белый)", phone: "+7(705)238-86-47" },
+            "258": { name: "Наталья", car: "Honda Orthia - 258ALQ16 (синий)", phone: "+7(771)353-78-36" }, // Уникальный ключ по госномеру
+            "299": { name: "Роман", car: "Subaru Impreza - 299ACT16 (белый)", phone: "+7(776)442-26-26" }, // Уникальный ключ по госномеру
+            "941": { name: "Александр", car: "ВАЗ 2106 - F941FTN (белый)", phone: "+7(776)459-34-83" }, // Уникальный ключ по госномеру
+            "847": { name: "Даулет", car: "Geely - 847 (серый)", phone: "+7(747)250-53-72" },
+            "271": { name: "Саят", car: "Lada Kalina - F271816 (белый)", phone: "+7(776)424-08-88" }, // Уникальный ключ по госномеру
+            "774": { name: "Игорь", car: "Toyota Cаrina E - 774 (красный)", phone: "+7(771)315-71-58" },
+            "288": { name: "Ахат", car: "Volkswagen Golf - 288ALW16 (Blue)", phone: "+7(708)160-97-83" }, // Уникальный ключ по госномеру
+            "924": { name: "Никита", car: "Renault Kaptur - 924 (серый)", phone: "+7(777)406-01-82" },
+            "439": { name: "Дмитрий", car: "Нива ВАЗ-21214 - 439 (белый)", phone: "+7(705)771-26-33" },
+            "490": { name: "Георгий", car: "TOYOTA STARLET - 490 (зеленый)", phone: "+7(705)549-56-16" },
+            "071": { name: "Станислав", car: "Volkswagen Passat - 071 (голубой)", phone: "+7(708)627-00-75" },
+            "897": { name: "Андрей", car: "ВАЗ 2105 - 897AKY16 (красный)", phone: "+7(747)818-80-67" }, // Уникальный ключ по госномеру
+            "415": { name: "Григорий", car: "ВАЗ-21099 - 415 (зеленый)", phone: "+7(776)404-44-06" },
+            "851": { name: "Андрей", car: "Lada Kalina - 851 (серый)", phone: "+7(777)981-61-64" },
+            "295": { name: "Александр", car: "Audi 80 - 295 (серый)", phone: "+7(747)037-60-80" },
+            "706": { name: "Александр", car: "Volkswagen Passat - 706ALR16 (серый)", phone: "+7(705)648-31-48" }, // Уникальный ключ по госномеру
+            "810": { name: "Станислав", car: "LADA LARGUS - 810 (красный)", phone: "+7(777)350-38-54" },
+            "251": { name: "Михаил", car: "Lada Vesta - 251 (серый)", phone: "+7(708)553-63-71" },
+            "750": { name: "Дмитрий", car: "Opel Astra - 750 (зелёный)", phone: "+7(777)633-74-10" },
+            "187": { name: "Артём", car: "ВАЗ 2107 - 187ALI16 (красный)", phone: "+7(705)702-32-19" }, // Уникальный ключ по госномеру
+            "270": { name: "Аманжол", car: "Toyota Carina - 270 (чёрный)", phone: "+7(705)419-99-00" },
+            "359": { name: "Артём", car: "ВАЗ 2107 - 359MOA16 (белый)", phone: "+7(777)858-44-28" }, // Уникальный ключ по госномеру
+            "617": { name: "Нурхат", car: "Subaru Legascy - 617 (серый)", phone: "+7(777)988-89-01" },
+            "454": { name: "Константин", car: "ВАЗ 2105 - 454 (красный)", phone: "+7(707)701-92-32" },
+            "659": { name: "Данияр", car: "Toyota Carina - 659AIP16 (красный)", phone: "+7(702)568-63-78" }, // Уникальный ключ по госномеру
+            "047": { name: "Сергей", car: "Audi80 - 047AMN16 (красный)", phone: "+7(705)219-74-99" }, // Уникальный ключ по госномеру
+            "127": { name: "Алмасхан", car: "ВАЗ 2107 - 127YEA16 (белый)", phone: "+7(705)289-36-50" }, // Уникальный ключ по госномеру
+            "990": { name: "Владимир", car: "Chevrolet Cobalt - 990 (белый)", phone: "+7(705)246-66-64" },
+            "361": { name: "Айдын", car: "Lada Granta - 361 (серый)", phone: "+7(747)507-68-23" },
+            "393": { name: "Вадим", car: "ВАЗ 2107 - 393YDA16 (белый)", phone: "+7(705)311-11-88" }, // Уникальный ключ по госномеру
+            "705": { name: "Олег", car: "Subaru Legascy - 705 (зеленый)", phone: "+7(776)476-76-26" },
+            "540": { name: "Владимир", car: "Volkswagen Passat - 540AKQ16 (белый)", phone: "+7(771)354-65-60" }, // Уникальный ключ по госномеру
+            "531": { name: "Дмитрий", car: "ВАЗ 2110 - 531AJE (серый)", phone: "+7(776)473-37-33" }, // Уникальный ключ по госномеру
+        };
+
+        // Функция для получения информации о водителе по его уникальному ID
+        function getDriverInfoByHash(userId) {
+            if (!userId) return null;
+            
+            // Используем последние 3 символа ID для имитации уникального ключа (для демо)
+            // Это сработает, если последние 3 символа ID соответствуют ключу в каталоге.
+            const hash = userId.slice(-3); 
+            
+            // Поиск в каталоге
+            const driverInfo = DRIVER_CATALOG[hash];
+
+            if (driverInfo) {
+                return driverInfo;
+            }
+
+            // Если не найдено, возвращаем общий ID
+            return { name: `Водитель #${userId.substring(0, 4)}`, car: "Неизвестно", phone: "Нет данных" };
+        }
+        
+        // --- HELPER FUNCTION FOR DISPLAY ---
+
+        /**
+         * Безопасно извлекает госномер/идентификатор из строки описания автомобиля.
+         * @param {string} carString Строка описания автомобиля из каталога.
+         * @returns {string} Госномер или пустая строка.
+         */
+        function getCarLicensePlate(carString) {
+            if (!carString || carString === "Неизвестно") {
+                return ''; 
+            }
+            try {
+                const parts = carString.split(' - ');
+                if (parts.length > 1) {
+                    // parts[1] is "606 (черный)". We want "606".
+                    return parts[1].split(' (')[0]; 
+                }
+            } catch (e) {
+                // Ошибка парсинга: возвращаем пустую строку.
+                return ''; 
+            }
+            return '';
+        }
+        // --- СТАТИЧЕСКИЙ КАТАЛОГ ВОДИТЕЛЕЙ (КОНЕЦ) ---
+
+
+        // Переменные состояния
+        let db, auth;
+        let userId = null;
+        let isAuthReady = false;
+        let currentOrders = [];
+        let driverBalance = 0;
+        let currentActiveOrder = null;
+
+        // Элементы DOM
+        const authStatusEl = document.getElementById('authStatus');
+        const driverIdDisplayEl = document.getElementById('driverIdDisplay');
+        const driverBalanceDisplayEl = document.getElementById('driverBalanceDisplay');
+        const newOrdersListEl = document.getElementById('newOrdersList');
+        const currentOrderContainerEl = document.getElementById('currentOrderContainer');
+        const noCurrentOrderEl = document.getElementById('noCurrentOrder');
+        const ordersLoadingEl = document.getElementById('ordersLoading');
+        const modalEl = document.getElementById('confirmationModal');
+        const modalTitleEl = document.getElementById('modalTitle');
+        const modalMessageEl = document.getElementById('modalMessage');
+        let modalConfirmEl = document.getElementById('modalConfirm'); 
+        let modalCancelEl = document.getElementById('modalCancel'); 
+
+
+        // --- FIREBASE ИНИЦИАЛИЗАЦИЯ И АУТЕНТИФИКАЦИЯ ---
+
+        function setupFirebase() {
+            try {
+                setLogLevel('debug'); // Включить логирование для отладки
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                authStatusEl.textContent = 'Аутентификация...';
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        const info = getDriverInfoByHash(userId);
+                        const licensePlate = getCarLicensePlate(info.car);
+                        // Показываем Имя и госномер (или короткий ID, если госномер не найден)
+                        driverIdDisplayEl.textContent = `${info.name} (${licensePlate || userId.substring(0, 4)})`; 
+                        authStatusEl.textContent = 'Подключено';
+                        authStatusEl.classList.remove('text-red-500');
+                        authStatusEl.classList.add('text-green-600');
+                        isAuthReady = true;
+
+                        await initializeDriverData();
+                        startRealtimeListeners();
+                    } else {
+                        // Если токен не предоставлен, входим анонимно
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            // Если и токена нет, и анонимный вход - генерируем ID
+                            await signInAnonymously(auth); 
+                        }
+                    }
+                });
+
+            } catch (error) {
+                authStatusEl.textContent = `Ошибка инициализации: ${error.message}`;
+                console.error("Firebase setup error:", error);
+            }
+        }
+
+
+        // --- FIREBASE PATHS ---
+
+        /**
+         * Путь к коллекции публичных заказов (видно всем водителям/диспетчерам).
+         * /artifacts/{appId}/public/data/orders
+         */
+        function getOrdersCollectionRef() {
+            return collection(db, `artifacts/${appId}/public/data/orders`);
+        }
+
+        /**
+         * Путь к документу баланса водителя (приватный).
+         * /artifacts/{appId}/users/{userId}/driver_data/balance_doc
+         */
+        function getBalanceDocRef(uid) {
+            return doc(db, `artifacts/${appId}/users/${uid}/driver_data/balance_doc`);
+        }
+
+
+        // --- ОБРАБОТКА БАЛАНСА ВОДИТЕЛЯ ---
+
+        async function initializeDriverData() {
+            if (!userId) return;
+
+            // 1. Инициализация/загрузка баланса
+            const balanceRef = getBalanceDocRef(userId);
+            const balanceSnap = await getDoc(balanceRef);
+
+            if (balanceSnap.exists()) {
+                driverBalance = balanceSnap.data().balance || 0;
+            } else {
+                // Если нет, создаем начальный баланс 0
+                await setDoc(balanceRef, { balance: 0, lastUpdate: serverTimestamp() });
+                driverBalance = 0;
+            }
+            updateBalanceDisplay();
+        }
+
+        function updateBalanceDisplay() {
+            driverBalanceDisplayEl.textContent = `${driverBalance.toFixed(2)} KZT`;
+        }
+        
+        /**
+         * Обновляет баланс после завершения поездки.
+         * @param {number} fare Стоимость поездки.
+         */
+        async function updateDriverBalance(fare) {
+            if (!userId) return;
+            
+            // В реальном мире тут будет сложная логика с комиссией.
+            // Для демо: просто добавляем всю стоимость к балансу.
+            const newBalance = driverBalance + fare;
+            
+            const balanceRef = getBalanceDocRef(userId);
+            try {
+                await updateDoc(balanceRef, {
+                    balance: newBalance,
+                    lastUpdate: serverTimestamp()
+                });
+                driverBalance = newBalance;
+                updateBalanceDisplay();
+                console.log(`Баланс обновлен. Добавлено: ${fare}`);
+            } catch (e) {
+                console.error("Ошибка при обновлении баланса:", e);
+            }
+        }
+
+        // --- РАБОТА С ЗАКАЗАМИ В РЕАЛЬНОМ ВРЕМЕНИ ---
+        
+        function startRealtimeListeners() {
+            if (!isAuthReady || !userId) return;
+
+            // Слушаем все заказы в реальном времени
+            const ordersQuery = query(getOrdersCollectionRef());
+
+            onSnapshot(ordersQuery, (snapshot) => {
+                ordersLoadingEl.classList.add('hidden');
+                currentOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Фильтруем заказы
+                const newOrders = currentOrders.filter(o => o.status === STATUS_NEW);
+                const activeOrder = currentOrders.find(o => o.status !== STATUS_NEW && o.driverId === userId && o.status !== STATUS_COMPLETED && o.status !== STATUS_CANCELED);
+                
+                renderNewOrders(newOrders);
+                renderCurrentOrder(activeOrder);
+            }, (error) => {
+                console.error("Ошибка при получении заказов:", error);
+                newOrdersListEl.innerHTML = `<div class="text-red-500 p-4">Ошибка загрузки заказов: ${error.message}</div>`;
+            });
+        }
+        
+        /**
+         * Обновляет статус заказа в Firestore.
+         * @param {string} orderId ID заказа.
+         * @param {string} newStatus Новый статус.
+         * @param {number} [fare] Стоимость (только для COMPLETED).
+         */
+        async function updateOrderStatus(orderId, newStatus, fare = null) {
+            const orderRef = doc(getOrdersCollectionRef(), orderId);
+            const updates = { status: newStatus, lastUpdate: serverTimestamp() };
+
+            if (newStatus === STATUS_ACCEPTED) {
+                updates.driverId = userId;
+                const info = getDriverInfoByHash(userId);
+                const licensePlate = getCarLicensePlate(info.car);
+                updates.driverName = `${info.name} (${licensePlate || userId.substring(0, 4)})`; // Имя и госномер
+            }
+            if (newStatus === STATUS_COMPLETED && fare !== null) {
+                updates.fare = fare;
+                await updateDriverBalance(fare);
+            }
+
+            try {
+                await updateDoc(orderRef, updates);
+                console.log(`Заказ ${orderId} обновлен до статуса: ${newStatus}`);
+            } catch (e) {
+                console.error(`Ошибка при обновлении заказа ${orderId}:`, e);
+            }
+            hideModal();
+        }
+
+
+        // --- РЕНДЕРИНГ UI ---
+
+        /**
+         * Рендерит список новых заказов.
+         * @param {Array} orders Список новых заказов.
+         */
+        function renderNewOrders(orders) {
+            newOrdersListEl.innerHTML = '';
+
+            if (orders.length === 0) {
+                newOrdersListEl.innerHTML = `
+                    <div class="text-center text-gray-500 italic p-6 border rounded-lg bg-gray-50">
+                        Пока нет новых заказов.
+                    </div>`;
+                return;
+            }
+
+            orders.forEach(order => {
+                const el = document.createElement('div');
+                el.className = 'order-card bg-white p-4 rounded-lg shadow-md border-l-4 status-new';
+                el.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-semibold text-gray-900">Заказ #${order.id.substring(0, 6)}</span>
+                        <span class="text-xs text-orange-600 font-bold bg-orange-100 px-2 py-1 rounded-full">НОВЫЙ</span>
+                    </div>
+                    <div class="text-lg font-bold text-gray-800">${order.from} <i class="fas fa-arrow-right text-sm mx-1"></i> ${order.to}</div>
+                    <div class="text-sm text-gray-600 mt-1">Клиент: ${order.clientName} | Тел: ${order.clientPhone}</div>
+                    <div class="text-xl font-extrabold text-red-600 mt-3">Цена: ~${order.fareEstimate} KZT</div>
+                    <button data-order-id="${order.id}" data-action="accept" class="action-btn mt-3 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-lg transition">
+                        Принять заказ
+                    </button>
+                `;
+                newOrdersListEl.appendChild(el);
+            });
+            
+            // Добавляем слушателей к новым кнопкам
+            document.querySelectorAll('.action-btn[data-action="accept"]').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const orderId = e.target.dataset.orderId;
+                    showModal('Принять заказ', `Вы уверены, что хотите принять заказ #${orderId.substring(0, 6)}?`, () => updateOrderStatus(orderId, STATUS_ACCEPTED));
+                });
+            });
+        }
+        
+        /**
+         * Рендерит активный заказ.
+         * @param {Object|null} order Активный заказ.
+         */
+        function renderCurrentOrder(order) {
+            currentActiveOrder = order;
+
+            if (!order) {
+                currentOrderContainerEl.classList.add('hidden');
+                noCurrentOrderEl.classList.remove('hidden');
+                return;
+            }
+
+            currentOrderContainerEl.classList.remove('hidden');
+            noCurrentOrderEl.classList.add('hidden');
+            
+            // Определяем класс для цветовой индикации статуса
+            let statusClass = '';
+            let statusText = '';
+            let btnStartDisabled = 'disabled opacity-50 cursor-not-allowed';
+            let btnCompleteDisabled = 'disabled opacity-50 cursor-not-allowed';
+
+            switch (order.status) {
+                case STATUS_ACCEPTED:
+                    statusClass = 'status-accepted border-blue-600 bg-blue-50';
+                    statusText = 'Принят';
+                    btnStartDisabled = '';
+                    break;
+                case STATUS_IN_PROGRESS:
+                    statusClass = 'status-accepted border-indigo-600 bg-indigo-50';
+                    statusText = 'В пути';
+                    btnCompleteDisabled = '';
+                    break;
+                default:
+                    statusClass = 'status-accepted border-gray-600 bg-gray-50';
+                    statusText = order.status;
+            }
+
+            currentOrderContainerEl.className = `p-4 rounded-lg shadow-md mb-8 border-l-4 ${statusClass}`;
+            currentOrderContainerEl.innerHTML = `
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <span class="text-xl font-bold text-gray-800">Активный заказ #${order.id.substring(0, 6)}</span>
+                    <span class="text-sm font-bold text-white px-3 py-1 rounded-full bg-blue-600">${statusText}</span>
+                </div>
+                <div class="text-base text-gray-700 font-semibold mb-2">
+                    <i class="fas fa-circle-dot text-green-500 mr-2"></i> Откуда: <span class="font-normal">${order.from}</span>
+                </div>
+                <div class="text-base text-gray-700 font-semibold">
+                    <i class="fas fa-location-dot text-red-500 mr-2"></i> Куда: <span class="font-normal">${order.to}</span>
+                </div>
+                <div class="text-sm text-gray-600 mt-2">Клиент: ${order.clientName} | <a href="tel:${order.clientPhone}" class="underline text-blue-500">${order.clientPhone}</a></div>
+                <div class="text-2xl font-extrabold text-green-700 mt-4">К оплате: ${order.fareEstimate} KZT</div>
+                
+                <!-- Кнопки действий -->
+                <div class="mt-4 flex flex-col sm:flex-row gap-2">
+                    <button data-order-id="${order.id}" data-action="start" class="action-btn w-full sm:w-1/2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 rounded-lg transition ${btnStartDisabled ? btnStartDisabled : ''}" ${btnStartDisabled ? 'disabled' : ''}>
+                        Начать поездку
+                    </button>
+                    <button data-order-id="${order.id}" data-action="complete" data-fare="${order.fareEstimate}" class="action-btn w-full sm:w-1/2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition ${btnCompleteDisabled ? btnCompleteDisabled : ''}" ${btnCompleteDisabled ? 'disabled' : ''}>
+                        Завершить (+${order.fareEstimate} KZT)
+                    </button>
+                </div>
+                <button data-order-id="${order.id}" data-action="cancel" class="action-btn mt-2 w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 rounded-lg transition">
+                    Отменить
+                </button>
+            `;
+            
+            // Добавляем слушателей к кнопкам активного заказа
+            if (!btnStartDisabled) {
+                document.querySelector('.action-btn[data-action="start"]').addEventListener('click', (e) => {
+                    const orderId = e.target.dataset.orderId;
+                    showModal('Начать поездку', `Клиент в машине? Начать выполнение заказа #${orderId.substring(0, 6)}?`, () => updateOrderStatus(orderId, STATUS_IN_PROGRESS));
+                });
+            }
+
+            if (!btnCompleteDisabled) {
+                document.querySelector('.action-btn[data-action="complete"]').addEventListener('click', (e) => {
+                    const orderId = e.target.dataset.orderId;
+                    const fare = parseFloat(e.target.dataset.fare);
+                    showModal('Завершить поездку', `Вы получили ${fare} KZT? Подтвердить завершение заказа #${orderId.substring(0, 6)}?`, () => updateOrderStatus(orderId, STATUS_COMPLETED, fare));
+                });
+            }
+
+            document.querySelector('.action-btn[data-action="cancel"]').addEventListener('click', (e) => {
+                const orderId = e.target.dataset.orderId;
+                showModal('Отмена заказа', `Вы уверены, что хотите отменить заказ #${orderId.substring(0, 6)}?`, () => updateOrderStatus(orderId, STATUS_CANCELED));
+            });
+        }
+        
+        // --- ДИАЛОГОВОЕ ОКНО ПОДТВЕРЖДЕНИЯ (CUSTOM MODAL) ---
+
+        function showModal(title, message, onConfirm) {
+            modalTitleEl.textContent = title;
+            modalMessageEl.textContent = message;
+            modalEl.classList.remove('hidden');
+
+            // Очищаем старые слушатели
+            const newConfirm = modalConfirmEl.cloneNode(true);
+            modalConfirmEl.parentNode.replaceChild(newConfirm, modalConfirmEl);
+            modalConfirmEl = newConfirm;
+            
+            const newCancel = modalCancelEl.cloneNode(true);
+            modalCancelEl.parentNode.replaceChild(newCancel, modalCancelEl);
+            modalCancelEl = newCancel;
+            
+            // Добавляем новые слушатели
+            modalConfirmEl.onclick = onConfirm;
+            modalCancelEl.onclick = hideModal;
+        }
+
+        function hideModal() {
+            modalEl.classList.add('hidden');
+        }
+
+
+        // --- ТЕСТОВЫЕ ФУНКЦИИ ---
+        
+        /**
+         * Создает тестовый заказ для проверки функционала.
+         */
+        window.addDummyOrder = async function() {
+            if (!isAuthReady) {
+                alert("Система не готова. Дождитесь аутентификации.");
+                return;
+            }
+
+            const dummyOrders = [
+                { from: "ул. Суворова, 4", to: "Магазин '1000 мелочей'", fareEstimate: 500, clientName: "Иван", comment: "Сдачи с 1000", clientPhone: "+77771234567" },
+                { from: "Церковь", to: "Рынок", fareEstimate: 800, clientName: "Марина", comment: "Ждать 5 минут", clientPhone: "+77059876543" },
+                { from: "Улица Ленина, 10", to: "Вокзал", fareEstimate: 1200, clientName: "Олег", comment: "Много багажа", clientPhone: "+77715550001" }
+            ];
+
+            const newOrder = dummyOrders[Math.floor(Math.random() * dummyOrders.length)];
+            
+            try {
+                await addDoc(getOrdersCollectionRef(), {
+                    ...newOrder,
+                    status: STATUS_NEW,
+                    timestamp: serverTimestamp(),
+                });
+                console.log("Тестовый заказ добавлен.");
+            } catch (e) {
+                console.error("Ошибка при добавлении тестового заказа:", e);
+            }
+        }
+
+
+        // --- ЗАПУСК ПРИЛОЖЕНИЯ ---
+
+        setupFirebase();
+
+    </script>
+</body>
+</html>

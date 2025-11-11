@@ -11,7 +11,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <!-- link rel="manifest" href="/site.webmanifest" -->
+    <link rel="manifest" href="/site.webmanifest">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -27,21 +27,6 @@
         .service-card:hover { transform: scale(1.03); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
         .auction-cta { background-color: #fff; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); border: 2px solid #f59e0b; transition: transform 0.2s; }
         .auction-cta:hover { transform: translateY(-4px); }
-
-        /* Стиль для кнопки Геолокации */
-        #locationBtn {
-            margin-top: 10px;
-            padding: 8px 12px;
-            font-size: 0.9rem;
-            background-color: #e5e7eb; /* gray-200 */
-            color: #374151; /* gray-700 */
-            font-weight: 600;
-            border-radius: 8px;
-            transition: background-color 0.2s;
-        }
-        #locationBtn:hover {
-            background-color: #d1d5db; /* gray-300 */
-        }
     </style>
 </head>
 
@@ -62,7 +47,7 @@
 
         <!-- Мессенджеры и звонок -->
         <div class="flex flex-col sm:flex-row justify-center gap-4 mb-8">
-            <a id="whatsappLink" href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20такси%20в%20Белоусовке." target="_blank"
+            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20такси%20в%20Белоусовке." target="_blank"
                class="btn-hover bg-green-500 hover:bg-green-600 text-white px-6 py-4 rounded-xl text-lg font-bold transition-all shadow-lg flex items-center justify-center space-x-3 w-full">
                 <i class="fab fa-whatsapp text-2xl"></i><span>WhatsApp</span>
             </a>
@@ -77,22 +62,9 @@
                 <i class="fas fa-phone-alt text-2xl"></i><span>Позвонить</span>
             </a>
         </div>
-        
-        <!-- НОВОЕ: Кнопка Геолокации -->
-        <div class="max-w-md mx-auto mb-8">
-            <button type="button" onclick="getCurrentLocation()" id="locationBtn"
-               class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-xl transition text-lg flex items-center justify-center space-x-3 shadow-md">
-                 <i class="fas fa-location-arrow"></i>
-                <span id="locationBtnText">Использовать мое местоположение</span>
-            </button>
-            <p id="locationResult" class="text-sm text-center text-gray-500 mt-2 hidden">
-                <span id="locationAddress"></span>
-            </p>
-        </div>
-
 
         <!-- Услуги -->
-        <h3 class="text-xl font-bold text-center mb-4 text-gray-700 mt-6 border-t pt-4">Наши услуги</h3>
+        <h3 class="text-xl font-bold text-center mb-4 text-gray-700 mt-6">Наши услуги</h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20доставку" target="_blank"
                class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500">
@@ -145,78 +117,5 @@
         </p>
     </footer>
 
-    <script>
-        const whatsappLinkEl = document.getElementById('whatsappLink');
-        const locationBtnTextEl = document.getElementById('locationBtnText');
-        const locationResultEl = document.getElementById('locationResult');
-        const locationAddressEl = document.getElementById('locationAddress');
-        const originalWhatsappText = whatsappLinkEl.href; 
-        
-        // --- ДЕМОНСТРАЦИОННАЯ МОДАЛЬНОЕ ОКНО ---
-        function displayMessageModal(title, message, isError = false) {
-            // Создаем простой модальный div
-            const modalHtml = `
-                <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-                    <div class="bg-white p-6 rounded-lg shadow-2xl w-80 text-center">
-                        <h3 class="text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}">${title}</h3>
-                        <p class="mb-6">${message}</p>
-                        <button onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
-                            OK
-                        </button>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-        }
-
-        // --- ЛОГИКА ГЕОЛОКАЦИИ ---
-
-        window.getCurrentLocation = function() {
-            if (!navigator.geolocation) {
-                displayMessageModal('Ошибка', 'Геолокация не поддерживается вашим браузером.', true);
-                return;
-            }
-
-            // 1. Изменяем UI на время определения
-            locationBtnTextEl.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Определяем...';
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    // 2. Успех: получаем координаты
-                    const lat = position.coords.latitude.toFixed(5);
-                    const lon = position.coords.longitude.toFixed(5);
-                    const locationText = `Мое местоположение (Коорд: ${lat}, ${lon})`;
-                    
-                    // 3. Обновляем UI с результатом
-                    locationBtnTextEl.innerHTML = '<i class="fas fa-check"></i> Адрес определен';
-                    locationResultEl.classList.remove('hidden');
-                    locationAddressEl.textContent = locationText;
-                    
-                    // 4. Обновляем ссылку WhatsApp
-                    const encodedText = encodeURIComponent(`Здравствуйте! Хочу заказать такси. Я нахожусь по адресу: ${locationText}. Куда поедем?`);
-                    const newWhatsappUrl = `https://wa.me/77770649648?text=${encodedText}`;
-                    whatsappLinkEl.href = newWhatsappUrl;
-
-                    // 5. Информируем пользователя о новом действии кнопки WhatsApp
-                    displayMessageModal('Готово!', 'Ваше местоположение (координаты) автоматически добавлено в кнопку **WhatsApp**! Нажмите на WhatsApp, чтобы отправить заказ.', false);
-                },
-                (error) => {
-                    // 6. Ошибка: обрабатываем разные типы ошибок
-                    let errorMessage = 'Ошибка определения местоположения.';
-                    if (error.code === error.PERMISSION_DENIED) {
-                        errorMessage = 'Доступ к геолокации запрещен. Пожалуйста, разрешите доступ в настройках браузера.';
-                    }
-                    
-                    locationBtnTextEl.innerHTML = '<i class="fas fa-times"></i> Ошибка определения';
-                    locationResultEl.classList.add('hidden');
-                    displayMessageModal('Ошибка', errorMessage, true);
-                    
-                    // Сбрасываем WhatsApp на оригинальный текст
-                    whatsappLinkEl.href = originalWhatsappText;
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        }
-    </script>
 </body>
 </html>

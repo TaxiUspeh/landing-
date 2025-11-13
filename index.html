@@ -18,15 +18,10 @@
     <!-- КОНЕЦ Google Analytics -->
 
     <!-- Favicon и иконки для Apple/Android (ПОЛНЫЙ КОМПЛЕКТ С ПРИНУДИТЕЛЬНЫМ СБРОСОМ КЭША v4) -->
-    
     <!-- УДАЛЕНА ССЫЛКА НА ПРОБЛЕМНЫЙ favicon.ico, используется только PNG -->
-    
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=4">
-    
     <link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png?v=4">
-    
     <link rel="apple-touch-icon" href="apple-touch-icon.png?v=4">
-    
     <!-- АКТИВИРОВАН МАНАФЕСТ ДЛЯ ПРАВИЛЬНОГО ОТОБРАЖЕНИЯ ЯРЛЫКА НА РАБОЧЕМ СТОЛЕ -->
     <link rel="manifest" href="site.webmanifest?v=4">
 
@@ -78,14 +73,16 @@
 
         <!-- Мессенджеры и звонок -->
         <div class="flex flex-col sm:flex-row justify-center gap-4 mb-8">
-            <a id="whatsappLink" href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20такси%20в%20Белоусовке." target="_blank"
+            <!-- WhatsApp (Заказ Такси) -->
+            <a id="whatsappLink" href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20такси%20в%20Белоусовке.%20Укажите%20Ваш%20маршрут%3A%20%5BАдрес%20ОТКУДА%5D%20до%20%5BАдрес%20КУДА%5D.%20Стоимость%20от%20700%20тенге%20%28зависит%20от%20расстояния%29." target="_blank"
                 class="btn-hover bg-green-500 hover:bg-green-600 text-white px-6 py-4 rounded-xl text-lg font-bold transition-all shadow-lg flex items-center justify-center space-x-3 w-full">
-                <i class="fab fa-whatsapp text-2xl"></i><span>WhatsApp</span>
+                <i class="fab fa-whatsapp text-2xl"></i><span>Заказать Такси</span>
             </a>
 
+            <!-- Telegram (Заказ Такси) -->
             <a href="https://t.me/TaxiUspehk" target="_blank"
                 class="btn-hover bg-blue-500 hover:bg-blue-600 text-white px-6 py-4 rounded-xl text-lg font-bold transition-all shadow-lg flex items-center justify-center space-x-3 w-full">
-                <i class="fab fa-telegram-plane text-2xl"></i><span>Telegram</span>
+                <i class="fab fa-telegram-plane text-2xl"></i><span>Заказать Такси</span>
             </a>
 
             <a href="tel:+77770649648"
@@ -95,10 +92,10 @@
         </div>
         
         <!-- НОВОЕ: Кнопка Геолокации -->
-        <div class="max-w-md mx-auto mb-8">
+        <div class="max-w-md mx-auto mb-4">
             <button type="button" onclick="getCurrentLocation()" id="locationBtn"
                 class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-xl transition text-lg flex items-center justify-center space-x-3 shadow-md">
-                   <i class="fas fa-location-arrow"></i>
+                    <i class="fas fa-location-arrow"></i>
                 <span id="locationBtnText">Использовать мое местоположение</span>
             </button>
             <p id="locationResult" class="text-sm text-center text-gray-500 mt-2 hidden">
@@ -107,7 +104,7 @@
         </div>
         
         <!-- НОВОЕ: Кнопка Оценить Сервис -->
-        <div class="max-w-md mx-auto mt-6">
+        <div class="max-w-md mx-auto mb-8">
             <a href="https://wa.me/77770649648?text=Оцените%20работу%20такси%20%C2%ABУспех%C2%BB%20по%20шкале%20от%201%20(Плохо)%20до%205%20(Отлично).%0A%0AМоя%20оценка%3A%20%5B1-5%5D%0A%0AКомментарий%3A%20%5BВаш%20отзыв%5D" target="_blank"
                 class="btn-hover w-full bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-xl text-lg font-bold transition-all shadow-lg flex items-center justify-center space-x-3">
                 <i class="fas fa-star text-2xl"></i><span>Оценить сервис</span>
@@ -118,29 +115,33 @@
         <!-- Услуги -->
         <h3 class="text-xl font-bold text-center mb-4 text-gray-700 mt-8 border-t pt-4">Наши услуги</h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20доставку" target="_blank"
+            <!-- Доставка (ссылка на WA) -->
+            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Мы%20можем%20оформить%20доставку.%20Стоимость%20услуги%20доставки%20составляет%20от%201200%20тенге.%20Напишите%2C%20пожалуйста%2C%20список%20товаров%20и%20адрес%20доставки." target="_blank"
                 class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500">
                 <i class="fas fa-box-open text-2xl mb-1 text-green-600"></i><span class="text-sm">Доставка</span>
             </a>
-            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20грузоперевозку" target="_blank"
+            <!-- Грузоперевозки (ссылка на WA) -->
+            <a href="https://wa.me/77770649648?text=Добрый%20день!%20Для%20заказа%20грузового%20такси%20нам%20нужно%20знать%3A%20Адрес%20погрузки%20и%20разгрузки%3A%20%5BАдрес%20ОТКУДА%5D%20%E2%86%92%20%5BАдрес%20КУДА%5D.%20Примерный%20объем%2Fвес%20груза.%20Стоимость%20грузоперевозки%20составит%20от%205000%20тенге%20%28оплата%20почасовая%29." target="_blank"
                 class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
-                <i class="fas fa-truck-loading text-2xl mb-1 text-yellow-600"></i><span class="text-sm">Грузоперевозки</span>
+                <i class="fas fa-truck-loading text-2xl mb-1 text-yellow-600"></i><span class="text-sm">Грузовой</span>
             </a>
-            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Нужен%20трезвый%20водитель" target="_blank"
+            <!-- Трезвый водитель (ссылка на WA) -->
+            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Услуга%20%C2%ABТрезвый%20водитель%C2%BB.%20Напишите%20Маршрут%3A%20%5BАдрес%20ОТКУДА%5D%20%E2%86%92%20%5BАдрес%20КУДА%5D.%20Стоимость%20услуги%20от%203500%20тенге%20%28зависит%20от%20расстояния%29.%20Укажите%2C%20пожалуйста%2C%20марку%20Вашего%20автомобиля%20и%20желаемое%20время%20подачи%20водителя." target="_blank"
                 class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-red-500">
                 <i class="fas fa-cocktail text-2xl mb-1 text-red-600"></i><span class="text-sm">Трезвый водитель</span>
             </a>
-            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Нужна%20помощь%20на%20дороге" target="_blank"
+            <!-- Помощь на дороге (ссылка на WA) - ОБНОВЛЕНО -->
+            <a href="https://wa.me/77770649648?text=Помощь%20на%20Дороге!%20Добрый%20день!%20Мы%20готовы%20отправить%20помощь.%0AУточните%2C%20пожалуйста%3A%0A%E2%80%A2%20Ваше%20точное%20местоположение%20(%5BАдрес%2FКоординаты%5D).%0A%E2%80%A2%20Что%20именно%20случилось%20с%20автомобилем%20(прокол%2C%20сел%20аккумулятор%20и%20т.д.).%0A%0AПредварительная%20стоимость%20вызова%20составит%20от%201500%20тенге." target="_blank"
                 class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-indigo-500">
                 <i class="fas fa-life-ring text-2xl mb-1 text-indigo-600"></i><span class="text-sm">Помощь</span>
             </a>
         </div>
 
-        <!-- Аукцион -->
+        <!-- Аукцион - ОБНОВЛЕНО -->
         <div class="mt-8">
             <h3 class="text-xl font-bold text-center mb-4 text-gray-700">Хотите предложить свою цену?</h3>
-            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20предложить%20свою%20цену" target="_blank"
-                class="auction-cta p-5 rounded-2xl flex items-center justify-center text-blue-900 font-extrabold transition-all duration-300">
+            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Наш%20сервис%20позволяет%20Вам%20предложить%20свою%20цену%20за%20поездку.%20%0AНапишите%20маршрут%3A%20%5BАдрес%20ОТКУДА%5D%20%E2%86%92%20%5BАдрес%20КУДА%5D.%0AИ%20Ваша%20цена%3A%20%5BЦена%20в%20тенге%5D.%0A%0AВы%20предлагаете%20цену%2C%20и%20водители%20принимают%20решение%2C%20взять%20ли%20Ваш%20заказ." target="_blank"
+               class="auction-cta p-5 rounded-2xl flex items-center justify-center text-blue-900 font-extrabold transition-all duration-300">
                 <i class="fas fa-gavel text-3xl mr-4 text-yellow-600"></i>
                 <div class="text-left">
                     <span class="text-xl block leading-tight">ТОРГИ ЗА ПОЕЗДКУ: АУКЦИОН</span>
@@ -148,6 +149,19 @@
                 </div>
             </a>
         </div>
+        
+        <!-- НОВЫЙ БЛОК: Вход для водителя -->
+        <div class="mt-10 border-t pt-6 text-center">
+            <h3 class="text-xl font-bold text-gray-700 mb-4">Для водителей Такси «Успех»</h3>
+            <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank"
+               class="inline-block bg-pink-600 hover:bg-pink-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-lg transition-all">
+                <i class="fas fa-user-shield mr-2"></i> Вход в режим Водителя
+            </a>
+            <p class="text-sm text-gray-500 mt-2">
+                Переход в закрытую группу для принятия заказов.
+            </p>
+        </div>
+        
     </main>
 
     <!-- Навигатор -->
@@ -216,8 +230,8 @@
                     locationResultEl.classList.remove('hidden');
                     locationAddressEl.textContent = locationText;
                     
-                    // 4. Обновляем ссылку WhatsApp
-                    const encodedText = encodeURIComponent(`Здравствуйте! Хочу заказать такси. Я нахожусь по адресу: ${locationText}. Куда поедем?`);
+                    // 4. Обновляем ссылку WhatsApp (Используем шаблон заказа такси)
+                    const encodedText = encodeURIComponent(`Здравствуйте! Хочу заказать такси в Белоусовке. Я нахожусь по адресу: ${locationText}. Укажите куда поедем. Стоимость от 700 тенге (зависит от расстояния).`);
                     const newWhatsappUrl = `https://wa.me/77770649648?text=${encodedText}`;
                     whatsappLinkEl.href = newWhatsappUrl;
 

@@ -90,7 +90,10 @@
             </a>
         </div>
         
-        <!-- НОВОЕ: Кнопка Геолокации -->
+        <!-- ВРЕМЕННЫЙ БЛОК ДЛЯ ПАРТНЕРА (УДАЛЕН) -->
+
+
+        <!-- Кнопка Геолокации -->
         <div class="max-w-md mx-auto mb-4">
             <button type="button" onclick="getCurrentLocation()" id="locationBtn"
                 class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-xl transition text-lg flex items-center justify-center space-x-3 shadow-md">
@@ -102,7 +105,7 @@
             </p>
         </div>
         
-        <!-- НОВОЕ: Кнопки Партнер и Оценить Сервис -->
+        <!-- Кнопки Партнер и Оценить Сервис -->
         <div class="max-w-md mx-auto mb-4 flex space-x-4">
             <!-- Кнопка Оценить Сервис -->
             <a href="https://wa.me/77770649648?text=Оцените%20работу%20такси%20%C2%ABУспех%C2%BB%20по%20шкале%20от%201%20(Плохо)%20до%205%20(Отлично).%0A%0AМоя%20оценка%3A%20%5B1-5%5D%0A%0AКомментарий%3A%20%5BВаш%20отзыв%5D" target="_blank"
@@ -110,7 +113,7 @@
                 <i class="fas fa-star text-2xl"></i><span>Оценка</span>
             </a>
             
-            <!-- НОВОЕ: Кнопка Партнера -->
+            <!-- Кнопка Партнера (уже есть модальное окно с деталями) -->
             <button onclick="showPartnerModal()" 
                 class="btn-hover w-1/2 bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-xl text-lg font-bold transition-all shadow-lg flex items-center justify-center space-x-3">
                 <i class="fas fa-handshake text-2xl"></i><span>Партнеры</span>
@@ -136,7 +139,7 @@
                 <i class="fas fa-box-open text-2xl mb-1 text-green-600"></i><span class="text-sm">Доставка</span>
             </a>
             <!-- Грузоперевозки (ссылка на WA с шаблоном) -->
-            <a href="https://wa.me/77770649648?text=Добрый%20день!%20Для%20заказа%20грузового%20такси%20нам%20нужно%20знать%3A%0A%E2%80%A2%20Адрес%20погрузки%20и%20разгрузки%3A%20%5BАдрес%20ОТКУДА%5D%20%E2%86%92%20%5BАдрес%20КУДА%5D%0A%E2%80%A2%20Примерный%20объем%2Fвес%20груза.%0A%0AСтоимость%20грузоперевозки%20составит%20от%205000%20тенге.%20Оплата%20почасовая." target="_blank"
+            <a href="https://wa.me/77770649648?text=Добрый%20день!%20Для%20заказа%20грузового%20такси%20нам%20нужно%20знать%3A%0A%E2%80%A2%20Адрес%20погрузки%20и%20разгрузки%3A%20%5BАдрес%20ОТКУДА%5D%20до%20%5BАдрес%20КУДА%5D%0A%E2%80%A2%20Примерный%20объем%2Fвес%20груза.%0A%0AСтоимость%20грузоперевозки%20составит%20от%205000%20тенге.%20Оплата%20почасовая." target="_blank"
                 class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
                 <i class="fas fa-truck-loading text-2xl mb-1 text-yellow-600"></i><span class="text-sm">Грузовой</span>
             </a>
@@ -165,7 +168,7 @@
                 </div>
                 
                 <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <!-- НОВАЯ CTA КНОПКА (WhatsApp) -->
+                    <!-- CTA КНОПКА (WhatsApp) -->
                     <a href="https://wa.me/77771383856?text=Здравствуйте!%20Хочу%20записаться%20на%20Технический%20Осмотр%20по%20адресу%20Молодежная%2037." target="_blank"
                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fab fa-whatsapp mr-2"></i> WhatsApp
@@ -176,7 +179,7 @@
                         <i class="fas fa-phone-alt mr-2"></i> +7 777 138 38 56
                     </a>
                     <!-- КНОПКА: Карта -->
-                    <a href="https://yandex.kz/maps/-/CLGFI2ly" target="_blank"
+                    <a href="https://yandex.kz/maps/-/CLGrBU4T" target="_blank"
                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fas fa-map-marker-alt mr-2"></i> Карта
                     </a>
@@ -324,7 +327,7 @@
         </div>
     </div>
 
-    <!-- НОВОЕ: Модальное окно для Партнеров -->
+    <!-- Модальное окно для Партнеров -->
     <div id="partnerModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center">
             <h3 class="text-2xl font-bold mb-4 text-pink-600 flex items-center justify-center">

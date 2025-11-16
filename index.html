@@ -40,9 +40,8 @@
 
         /* Стиль для кнопки Геолокации */
         #locationBtn {
-            margin-top: 10px;
-            padding: 8px 12px;
-            font-size: 0.9rem;
+            padding: 10px 12px;
+            font-size: 1rem;
             background-color: #e5e7eb; /* gray-200 */
             color: #374151; /* gray-700 */
             font-weight: 600;
@@ -51,6 +50,28 @@
         }
         #locationBtn:hover {
             background-color: #d1d5db; /* gray-300 */
+        }
+        /* Стиль для компактных кнопок */
+        .compact-util-btn {
+            padding: 12px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+        /* Стиль для кнопок быстрого заказа (Звонок/Телеграм/Аукцион) */
+        .quick-order-btn {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 700; /* font-bold */
         }
     </style>
 </head>
@@ -66,97 +87,138 @@
         </div>
     </header>
 
+    <!-- НОВЫЙ БАННЕР: ОБЪЯВЛЕНИЕ / НОВОСТИ (Dismissible) -->
+    <div id="announcementBar" class="bg-red-500 text-white p-3 shadow-lg hidden">
+        <div class="max-w-3xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-exclamation-triangle text-xl"></i>
+                <p id="announcementText" class="text-sm font-semibold">
+                    Внимание! Из-за повышенного спроса на такси или погодных условий время подачи от 15-20 минут.
+                </p>
+            </div>
+            <button onclick="dismissAnnouncement()" class="text-sm opacity-80 hover:opacity-100 transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    
     <!-- MAIN -->
     <main class="max-w-3xl mx-auto px-4 py-8 flex-grow">
-        <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">Выберите удобный способ связи</h2>
-
-        <!-- Мессенджеры и звонок -->
-        <div class="flex flex-col sm:flex-row justify-center gap-4 mb-8">
-            <!-- WhatsApp (Заказ Такси) -->
+        
+        <!-- БЛОК 1: ОСНОВНОЙ ЗАКАЗ (Супер CTA) -->
+        <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">Быстрый Заказ Такси</h2>
+        
+        <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6">
+            
+            <!-- 1. ГЛАВНАЯ КНОПКА ЗАКАЗА (WhatsApp - Полная ширина) -->
             <a id="whatsappLink" href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20такси%20в%20Белоусовке.%20Укажите%20Ваш%20маршрут%3A%20%5BАдрес%20ОТКУДА%5D%20до%20%5BАдрес%20КУДА%5D.%20Стоимость%20от%20700%20тенге%20%28зависит%20от%20расстояния%29." target="_blank"
-                class="btn-hover bg-green-500 hover:bg-green-600 text-white px-6 py-4 rounded-xl text-lg font-bold transition-all shadow-lg flex items-center justify-center space-x-3 w-full">
+                class="btn-hover bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-4 text-xl mb-3">
                 <i class="fab fa-whatsapp text-2xl"></i><span>Заказать Такси</span>
             </a>
 
-            <!-- Telegram (Заказ Такси) -->
-            <a href="https://t.me/TaxiUspehk" target="_blank"
-                class="btn-hover bg-blue-500 hover:bg-blue-600 text-white px-6 py-4 rounded-xl text-lg font-bold transition-all shadow-lg flex items-center justify-center space-x-3 w-full">
-                <i class="fab fa-telegram-plane text-2xl"></i><span>Заказать Такси</span>
-            </a>
-
-            <a href="tel:+77770649648"
-                class="btn-hover bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-xl text-lg font-bold transition-all shadow-lg flex items-center justify-center space-x-3 w-full">
-                <i class="fas fa-phone-alt text-2xl"></i><span>Позвонить</span>
-            </a>
-        </div>
-        
-        <!-- ВРЕМЕННЫЙ БЛОК ДЛЯ ПАРТНЕРА (УДАЛЕН) -->
-
-
-        <!-- Кнопка Геолокации -->
-        <div class="max-w-md mx-auto mb-4">
+            <!-- 2. БЛОК БЫСТРЫХ ДЕЙСТВИЙ (3 колонки - одинаковая ширина) -->
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <!-- Позвонить (Одинаковый размер) -->
+                <a href="tel:+77770649648"
+                    class="btn-hover bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all shadow-md quick-order-btn">
+                    <i class="fas fa-phone-alt mb-0.5"></i><span>Звонок</span>
+                </a>
+                <!-- Telegram (Одинаковый размер) -->
+                <a href="https://t.me/TaxiUspehk" target="_blank"
+                    class="btn-hover bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
+                    <i class="fab fa-telegram-plane mb-0.5"></i><span>Telegram</span>
+                </a>
+                <!-- Аукцион (Одинаковый размер) -->
+                <a href="https://wa.me/77770649648?text=АУКЦИОН!%20%0AМаршрут%3A%20%5BАдрес%20ОТКУДА%5D%20%E2%86%92%20%5BАдрес%20КУДА%5D%0AМоя%20цена%3A%20%5BЦена%20в%20тенге%5D" target="_blank"
+                    class="btn-hover bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
+                    <i class="fas fa-gavel mb-0.5"></i><span>Аукцион</span>
+                </a>
+            </div>
+            
+            <!-- БЛОК ГЕОЛОКАЦИИ (ВСТРОЕННЫЙ) -->
             <button type="button" onclick="getCurrentLocation()" id="locationBtn"
-                class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-xl transition text-lg flex items-center justify-center space-x-3 shadow-md">
+                class="w-full text-gray-700 font-semibold transition flex items-center justify-center space-x-3 shadow-inner">
                     <i class="fas fa-location-arrow"></i>
                 <span id="locationBtnText">Использовать мое местоположение</span>
             </button>
-            <p id="locationResult" class="text-sm text-center text-gray-500 mt-2 hidden">
+            <p id="locationResult" class="text-xs text-center text-gray-500 mt-2 hidden">
                 <span id="locationAddress"></span>
             </p>
+            
+            <!-- СПОСОБЫ ОПЛАТЫ (КОМПАКТНЫЙ ИНФОБЛОК) -->
+            <div class="mt-4 pt-3 border-t border-gray-100 flex justify-center space-x-6 text-gray-600">
+                <div class="flex items-center space-x-1">
+                    <i class="fas fa-money-bill-wave text-xl text-green-500"></i>
+                    <span class="font-semibold text-xs">Наличные</span>
+                </div>
+                <div class="flex items-center space-x-1">
+                    <i class="fas fa-exchange-alt text-xl text-blue-500"></i>
+                    <span class="font-semibold text-xs">Перевод (Kaspi)</span>
+                </div>
+            </div>
+            
         </div>
         
-        <!-- Кнопки Партнер и Оценить Сервис -->
-        <div class="max-w-md mx-auto mb-4 flex space-x-4">
-            <!-- Кнопка Оценить Сервис -->
-            <a href="https://wa.me/77770649648?text=Оцените%20работу%20такси%20%C2%ABУспех%C2%BB%20по%20шкале%20от%201%20(Плохо)%20до%205%20(Отлично).%0A%0AМоя%20оценка%3A%20%5B1-5%5D%0A%0AКомментарий%3A%20%5BВаш%20отзыв%5D" target="_blank"
-                class="btn-hover w-1/2 bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-xl text-lg font-bold transition-all shadow-lg flex items-center justify-center space-x-3">
-                <i class="fas fa-star text-2xl"></i><span>Оценка</span>
-            </a>
-            
-            <!-- Кнопка Партнера (уже есть модальное окно с деталями) -->
-            <button onclick="showPartnerModal()" 
-                class="btn-hover w-1/2 bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-xl text-lg font-bold transition-all shadow-lg flex items-center justify-center space-x-3">
-                <i class="fas fa-handshake text-2xl"></i><span>Партнеры</span>
-            </button>
-        </div>
         
-        <!-- Кнопка PWA (Сохранить на Главный Экран) -->
-        <div class="max-w-md mx-auto mb-8">
-            <button onclick="showPWAInstructions()" 
-                class="btn-hover w-full bg-gray-700 hover:bg-gray-800 text-white px-6 py-3 rounded-xl text-lg font-bold transition-all shadow-lg flex items-center justify-center space-x-3">
-                <i class="fas fa-mobile-alt text-2xl"></i><span>Добавить на Главный Экран</span>
-            </button>
-        </div>
-
-
-        <!-- Услуги -->
-        <h3 class="text-xl font-bold text-center mb-4 text-gray-700 mt-8 border-t pt-4">Наши услуги</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4"> 
-            
-            <!-- Доставка (ссылка на WA с шаблоном) -->
-            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Мы%20можем%20оформить%20доставку.%20Стоимость%20услуги%20доставки%20составляет%20от%201200%20тенге.%20Напишите%2C%20пожалуйста%2C%20список%20товаров%20и%20адрес%20доставки" target="_blank"
+        <!-- БЛОК 2 (БЫВШИЙ 3): НАШИ УСЛУГИ -->
+        <h3 class="text-2xl font-bold text-center mb-6 text-gray-700 border-t pt-4">Дополнительные Услуги</h3>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
+            <!-- Доставка -->
+            <a href="https://wa.me/77770649648?text=ДОСТАВКА!%20%0AЧто%20нужно%20купить%2Fзабрать%3F%20%5BСписок%20товаров%2FДокументов%5D%0AАдрес%20ОТКУДА%3A%20%5BАдрес%20магазина%2Fточки%20забора%5D%0AАдрес%20КУДА%3A%20%5BАдрес%20доставки%5D" target="_blank"
                 class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500">
                 <i class="fas fa-box-open text-2xl mb-1 text-green-600"></i><span class="text-sm">Доставка</span>
             </a>
-            <!-- Грузоперевозки (ссылка на WA с шаблоном) -->
-            <a href="https://wa.me/77770649648?text=Добрый%20день!%20Для%20заказа%20грузового%20такси%20нам%20нужно%20знать%3A%0A%E2%80%A2%20Адрес%20погрузки%20и%20разгрузки%3A%20%5BАдрес%20ОТКУДА%5D%20до%20%5BАдрес%20КУДА%5D%0A%E2%80%A2%20Примерный%20объем%2Fвес%20груза.%0A%0AСтоимость%20грузоперевозки%20составит%20от%205000%20тенге.%20Оплата%20почасовая." target="_blank"
+            <!-- Грузоперевозки -->
+            <a href="https://wa.me/77770649648?text=ГРУЗОПЕРЕВОЗКИ!%20%0AАдрес%20ОТКУДА%3A%20%5BАдрес%20погрузки%5D%0AАдрес%20КУДА%3A%20%5BАдрес%20разгрузки%5D%0AОписание%20груза%3A%20%5BОбъем%2FВес%2FНужны%20ли%20грузчики%5D" target="_blank"
                 class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
                 <i class="fas fa-truck-loading text-2xl mb-1 text-yellow-600"></i><span class="text-sm">Грузовой</span>
             </a>
-            <!-- Трезвый водитель (ссылка на WA с шаблоном) -->
-            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Услуга%20%C2%ABТрезвый%20водитель%C2%BB!%0AНапишите%20Маршрут%3A%20%5BАдрес%20ОТКУДА%5D%20%E2%86%92%20%5BАдрес%20КУДА%5D.%0A%0AСтоимость%20услуги%20от%203500%20%28от%20расстояния%29%20тенге.%20Укажите%2C%20пожалуйста%2C%20марку%20Вашего%20автомобиля%20и%20желаемое%20время%20подачи%20водителя." target="_blank"
+            <!-- Трезвый водитель -->
+            <a href="https://wa.me/77770649648?text=ТРЕЗВЫЙ%20ВОДИТЕЛЬ!%20%0AМаршрут%3A%20%5BАдрес%20ОТКУДА%5D%20%E2%86%92%20%5BАдрес%20КУДА%5D%0AМарка%20автомобиля%3A%20%5BМарка%20и%20модель%5D%0AЖелаемое%20время%3A%20%5BВремя%20подачи%5D" target="_blank"
                 class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-red-500">
                 <i class="fas fa-cocktail text-2xl mb-1 text-red-600"></i><span class="text-sm">Трезвый водитель</span>
             </a>
-            <!-- Помощь на дороге (ссылка на WA с шаблоном) -->
-            <a href="https://wa.me/77770649648?text=Помощь%20на%20Дороге!%20Добрый%20день!%20Мы%20готовы%20отправить%20помощь.%0AУточните%2C%20пожалуйста%3A%0A%E2%80%A2%20Ваше%20точное%20местоположение%20(%5BАдрес%2FКоординаты%5D).%0A%E2%80%A2%20Что%20именно%20случилось%20с%20автомобилем%20(прокол%2C%20сел%20аккумулятор%20и%20т.д.).%0A%0AПредварительная%20стоимость%20вызова%20составит%20от%201500%20тенге." target="_blank"
+            <!-- Помощь на дороге -->
+            <a href="https://wa.me/77770649648?text=ПОМОЩЬ%20НА%20ДОРОГЕ!%20%0AАдрес%2FМестоположение%3A%20%5BТочный%20адрес%2FКоординаты%5D%0AПроблема%3A%20%5BЧто%20случилось%3A%20прикурить%2C%20прокол%2C%20заглох%20и%20т.д.%5D" target="_blank"
                 class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-indigo-500">
                 <i class="fas fa-life-ring text-2xl mb-1 text-indigo-600"></i><span class="text-sm">Помощь</span>
             </a>
         </div>
 
-        <!-- НОВЫЙ ВЫДЕЛЕННЫЙ БЛОК: ТехОсмотр (ПАРТНЕРСКАЯ РЕКЛАМА) -->
-        <div class="mt-8">
+
+        <!-- БЛОК 3 (БЫВШИЙ 2): БЫСТРЫЕ ДЕЙСТВИЯ (КОМПАКТНАЯ СЕТКА) -->
+        <h3 class="text-xl font-bold text-center mb-4 text-gray-700 border-t pt-4">Быстрые Действия</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
+            
+            <!-- 1. Оценка Сервиса -->
+            <a href="https://wa.me/77770649648?text=Оцените%20работу%20такси%20%C2%ABУспех%C2%BB%20по%20шкале%20от%201%20(Плохо)%20до%205%20(Отлично)." target="_blank"
+                class="btn-hover bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-lg transition-all compact-util-btn">
+                <i class="fas fa-star text-xl mb-1"></i><span>Оценка</span>
+            </a>
+            
+            <!-- 2. Обратный Звонок -->
+            <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank"
+                class="btn-hover bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-lg transition-all compact-util-btn">
+                <i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span>
+            </a>
+            
+            <!-- 3. PWA (Сохранить на Главный Экран) -->
+            <button onclick="showPWAInstructions()" 
+                class="btn-hover bg-gray-700 hover:bg-gray-800 text-white rounded-xl shadow-lg transition-all compact-util-btn">
+                <i class="fas fa-mobile-alt text-xl mb-1"></i><span>На Главный Экран</span>
+            </button>
+            
+            <!-- 4. Партнеры (Реклама) -->
+            <button onclick="showPartnerModal()" 
+                class="btn-hover bg-pink-600 hover:bg-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn">
+                <i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span>
+            </button>
+        </div>
+
+
+        <!-- БЛОК 4: ТехОсмотр (ПАРТНЕРСКАЯ РЕКЛАМА) -->
+        <div class="mt-8 border-t pt-6">
             <h3 class="text-xl font-bold text-center mb-4 text-gray-700">Нашим Партнерам: ТехОсмотр</h3>
             <div class="auction-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300 border-indigo-500 border-2">
                 <div class="flex flex-col items-center sm:items-start text-center sm:text-left mb-3 sm:mb-0">
@@ -167,74 +229,147 @@
                     </span>
                 </div>
                 
-                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <!-- CTA КНОПКА (WhatsApp) -->
+                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                     <a href="https://wa.me/77771383856?text=Здравствуйте!%20Хочу%20записаться%20на%20Технический%20Осмотр%20по%20адресу%20Молодежная%2037." target="_blank"
                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fab fa-whatsapp mr-2"></i> WhatsApp
                     </a>
-                    <!-- CTA Кнопка (Звонок) -->
+                    <!-- НОВАЯ КНОПКА: НАВИГАТОР -->
+                    <a href="https://yandex.kz/navi/-/CLGK5Sli" target="_blank"
+                       class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
+                        <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
+                    </a>
+                    <!-- ОБНОВЛЕННАЯ КНОПКА: ЗВОНОК -->
                     <a href="tel:+77771383856"
                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
-                        <i class="fas fa-phone-alt mr-2"></i> +7 777 138 38 56
-                    </a>
-                    <!-- КНОПКА: Карта -->
-                    <a href="https://yandex.kz/maps/-/CLGrBU4T" target="_blank"
-                       class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
-                        <i class="fas fa-map-marker-alt mr-2"></i> Карта
+                        <i class="fas fa-phone-alt mr-2"></i> Звонок
                     </a>
                 </div>
             </div>
         </div>
-
-        <!-- Аукцион -->
-        <div class="mt-8">
-            <h3 class="text-xl font-bold text-center mb-4 text-gray-700">Хотите предложить свою цену?</h3>
-            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Наш%20сервис%20позволяет%20Вам%20предложить%20свою%20цену%20за%20поездку.%20%0AНапишите%20маршрут%3A%20%5BАдрес%20ОТКУДА%5D%20%E2%86%92%20%5BАдрес%20КУДА%5D.%0AИ%20Ваша%20цена%3A%20%5BЦена%20в%20тенге%5D.%0A%0AВы%20предлагаете%20цену%2C%20и%20водители%20принимают%20решение%2C%20взять%20ли%20Ваш%20заказ." target="_blank"
-               class="auction-cta p-5 rounded-2xl flex items-center justify-center text-blue-900 font-extrabold transition-all duration-300">
-                <i class="fas fa-gavel text-3xl mr-4 text-yellow-600"></i>
-                <div class="text-left">
-                    <span class="text-xl block leading-tight">ТОРГИ ЗА ПОЕЗДКУ: АУКЦИОН</span>
-                    <span class="text-sm text-gray-600 block">Предложите свою цену и маршрут!</span>
+        
+        <!-- БЛОК 5: FAQ и ПРАЙС-ЛИСТ (АККОРДЕОН) -->
+        <div class="mt-10 border-t pt-6 max-w-lg mx-auto">
+            <h3 class="text-2xl font-bold text-center text-gray-700 mb-6">Вопросы и Цены</h3>
+            
+            <div id="faq-accordion" class="space-y-4">
+                <!-- Вопрос 1: Минимальная стоимость -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-1')">
+                        <span>💰 Какая минимальная стоимость поездки?</span>
+                        <i id="icon-faq-1" class="fas fa-chevron-down transform transition-transform duration-300"></i>
+                    </button>
+                    <div id="faq-1" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100">
+                        <p>Минимальная стоимость поездки по Белоусовке составляет **700 тенге**. Окончательная цена зависит от расстояния и текущей дорожной ситуации.</p>
+                    </div>
                 </div>
-            </a>
+                
+                <!-- Вопрос 2: Стоимость доставки -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-4')">
+                        <span>📦 Сколько стоит услуга Доставки?</span>
+                        <i id="icon-faq-4" class="fas fa-chevron-down transform transition-transform duration-300"></i>
+                    </button>
+                    <div id="faq-4" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100">
+                        <p>Стоимость услуги доставки начинается **от 1200 KZT**.</p>
+                        <p class="mt-2 text-sm italic">Окончательная цена зависит от общего расстояния и объёма/веса ваших покупок.</p>
+                    </div>
+                </div>
+
+                <!-- Вопрос 3: Время работы -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-2')">
+                        <span>⏰ Какой у вас график работы?</span>
+                        <i id="icon-faq-2" class="fas fa-chevron-down transform transition-transform duration-300"></i>
+                    </button>
+                    <div id="faq-2" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100">
+                        <p>**Мы работаем круглосуточно (24/7)**, чтобы вы могли уехать в любое время дня и ночи.</p>
+                    </div>
+                </div>
+
+                <!-- Вопрос 4: Примерные цены на популярные маршруты (ОБНОВЛЕННЫЙ БЛОК) -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-3')">
+                        <span>📍 Примерные цены на Межгород и пригород</span>
+                        <i id="icon-faq-3" class="fas fa-chevron-down transform transition-transform duration-300"></i>
+                    </button>
+                    <div id="faq-3" class="hidden p-4 pt-0 вtext-gray-600 border-t border-gray-100">
+                        <p class="font-bold text-red-600 mb-2">
+                            ⚠️ ВНИМАНИЕ: Цены ориентировочные!
+                        </p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li>Белоусовка → Усть-Каменогорск: **от 5000 KZT**</li>
+                            <li>Белоусовка → Глубокое: **от 4300 KZT**</li>
+                            <li>Белоусовка → Секисовка: **от 6440 KZT**</li>
+                            <li>Белоусовка → Белокаменка: **от 3100 KZT**</li>
+                            <li>Белоусовка → Михайловка: **от 4000 KZT**</li>
+                            <li>Белоусовка → Прогресс: **от 2990 KZT**</li>
+                            <li>Белоусовка → Черногорка: **от 2500 KZT**</li>
+                        </ul>
+                        <p class="mt-4 font-bold text-gray-700">Итоговая стоимость может измениться из-за следующих факторов:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1 text-sm text-gray-500">
+                            <li>**⏰ Время суток:** Ночные смены (после 00:00) дороже.</li>
+                            <li>**🌧️ Погодные условия:** Гололед, метель или плохая видимость.</li>
+                            <li>**🛣️ Состояние дороги:** Длительные участки бездорожья или ремонта.</li>
+                            <li>**🅿️ Дополнительные услуги:** Простой в пути, ожидание или заезд в другой населенный пункт.</li>
+                        </ul>
+                        <p class="mt-2 вtext-sm italic text-gray-600">Точная стоимость зависит от расстояния и времени в пути.</p>
+                    </div>
+                </div>
+                
+            </div>
         </div>
         
-        <!-- БЛОК: РЕКЛАМА ДЛЯ ПАРТНЕРОВ (Ссылки ведут на /partners/) -->
+        <!-- БЛОК 6: РЕКЛАМА ДЛЯ ПАРТНЕРОВ -->
         <div class="mt-10 border-t pt-6">
-            <h3 class="text-xl font-bold text-center text-pink-600 mb-6">📢 Реклама для Вашего Бизнеса</h3>
+            <h3 class="text-xl font-bold text-pink-600 mb-6 вtext-center">📢 Реклама для Вашего Бизнеса</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 
-                <!-- Слот 1: Выгода - Внимание местной аудитории -->
-                <a href="/partners/"
+                <!-- Слот 1: МАГАЗИН/ТОЧКА ПРОДАЖ -->
+                <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20магазина%20(Продукты/Одежда)." target="_blank"
                     class="partner-card bg-white p-4 rounded-xl shadow-lg border-pink-500 flex flex-col items-center text-center">
-                    <i class="fas fa-users text-4xl text-pink-500 mb-2"></i>
-                    <p class="text-lg font-bold text-gray-800">100% Внимание Клиентов</p>
-                    <p class="text-sm text-gray-600">Ваше предложение увидят все жители поселка Белоусовка. **(Подробнее)**</p>
+                    <i class="fas fa-store text-4xl text-pink-500 mb-2"></i>
+                    <p class="text-lg font-bold text-gray-800">Магазин или Точка Продаж</p>
+                    <p class="text-sm text-gray-600">Привлекайте покупателей к вашему физическому объекту. **(WhatsApp)**</p>
                 </a>
                 
-                <!-- Слот 2: Удобство - Реклама под ключ -->
-                <a href="/partners/"
+                <!-- Слот 2: УСЛУГИ/СЕРВИС -->
+                <a href="https://wa.me/77770649648?text=Интересует%20реклама%20моих%20услуг%20(Сантехник/Ремонт).%20Пришлите%20условия." target="_blank"
                     class="partner-card bg-white p-4 rounded-xl shadow-lg border-red-500 flex flex-col items-center text-center">
-                    <i class="fas fa-magic text-4xl text-red-500 mb-2"></i>
-                    <p class="text-lg font-bold text-gray-800">Реклама «Под Ключ»</p>
-                    <p class="text-sm text-gray-600">Мы напишем продающий слоган и разместим его. **(Условия)**</p>
+                    <i class="fas fa-tools text-4xl text-red-500 mb-2"></i>
+                    <p class="text-lg font-bold text-gray-800">Услуги, Сервис или Мастер</p>
+                    <p class="text-sm text-gray-600">Найдите клиентов на ремонт, доставку или бытовые услуги. **(Узнать цену)**</p>
                 </a>
 
-                <!-- Слот 3: CTA - Связаться -->
-                <a href="/partners/"
+                <!-- Слот 3: СПЕЦИАЛЬНАЯ АКЦИЯ -->
+                <a href="https://wa.me/77770649648?text=Хочу%20забронировать%20место%20для%20рекламы%20горячих%20акций." target="_blank"
                     class="partner-card bg-white p-4 rounded-xl shadow-lg border-yellow-600 flex flex-col items-center text-center">
-                    <i class="fas fa-comments-dollar text-4xl text-yellow-600 mb-2"></i>
-                    <p class="text-lg font-bold text-gray-800">Узнать Прайс и Условия</p>
-                    <p class="text-sm text-gray-600">Нажмите, чтобы увидеть медиакит и цены. **(Заявка)**</p>
+                    <i class="fas fa-bullhorn text-4xl text-yellow-600 mb-2"></i>
+                    <p class="text-lg font-bold text-gray-800">Горячая Акция / Объявление</p>
+                    <p class="text-sm text-gray-600">Место для срочных или сезонных рекламных кампаний. **(Связаться)**</p>
                 </a>
 
             </div>
         </div>
         
-        <!-- БЛОК: Вход для водителя -->
-        <div class="mt-10 border-t pt-6 нацентре">
-            <h3 class="text-xl font-bold text-gray-700 mb-4">Для водителей Такси «Успех»</h3>
+        <!-- БЛОК 7: ПРИГЛАШЕНИЕ ВОДИТЕЛЕЙ -->
+        <div class="mt-10 border-t pt-6 text-center">
+            <h3 class="text-2xl font-bold text-gray-700 mb-4">Приглашаем Водителей в команду!</h3>
+            <p class="text-gray-600 mb-4 max-w-md mx-auto">
+                Хотите зарабатывать в удобное время и быть частью успешной команды в Белоусовке?
+            </p>
+            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20стать%20водителем%20такси%20%C2%ABУспех%C2%BB.%20Укажите%2C%20пожалуйста%2C%20условия%20и%20требования." target="_blank"
+               class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover">
+                <i class="fas fa-car-side mr-2"></i> Отправить Заявку Водителя
+            </a>
+            <p class="text-sm text-gray-500 mt-4">
+                Просто отправьте нам сообщение в WhatsApp, чтобы узнать все условия.
+            </p>
+        </div>
+        
+        <!-- БЛОК 8: Вход для водителя -->
+        <div class="mt-6 border-t pt-6 text-center">
+            <h3 class="text-xl font-bold text-gray-700 mb-4">Для действующих водителей</h3>
             <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank"
                class="inline-block bg-pink-600 hover:bg-pink-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-lg transition-all">
                 <i class="fas fa-user-shield mr-2"></i> Вход в режим Водителя
@@ -247,7 +382,7 @@
     </main>
 
     <!-- Навигатор -->
-    <section class="bg-blue-700 py-6 text-center mt-6 shadow-inner">
+    <section class="bg-blue-700 py-6 text-center mt-10 shadow-inner">
         <h3 class="text-xl font-bold text-white mb-3">🗺 Откройте Яндекс.Навигатор</h3>
         <a href="https://yandex.ru/navi" target="_blank"
             class="inline-block bg-yellow-400 hover:bg-yellow-500 text-blue-900 px-8 py-3 rounded-xl text-lg font-semibold shadow-lg transition-all">
@@ -327,28 +462,22 @@
         </div>
     </div>
 
-    <!-- Модальное окно для Партнеров -->
+    <!-- Модальное окно партнеров (заглушка) -->
     <div id="partnerModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center">
             <h3 class="text-2xl font-bold mb-4 text-pink-600 flex items-center justify-center">
                 <i class="fas fa-handshake mr-2"></i> Партнерские Услуги
             </h3>
-            
-            <p class="mb-4 text-gray-800 font-semibold">
+            <p class="mb-4 вtext-gray-800 font-semibold">
                 Здесь будет размещаться реклама и специальные предложения наших партнеров!
             </p>
-            
             <div class="border border-gray-200 p-4 rounded-lg mb-4 bg-gray-50">
                 <h4 class="text-lg font-bold text-gray-700 mb-2">Хотите стать нашим Партнером?</h4>
-                <p class="text-sm text-gray-600 mb-3">
-                    Рекламируйте свой магазин, салон или сервис, и клиенты увидят ваше предложение сразу после заказа такси! Это лучший способ привлечь местных клиентов.
-                </p>
                 <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20обсудить%20размещение%20рекламы%20на%20вашей%20промо-странице%20такси." 
-                   target="_blank" class="w-full inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition">
+                    target="_blank" class="w-full inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition">
                     Связаться по рекламе
                 </a>
             </div>
-            
             <button onclick="document.getElementById('partnerModal').classList.add('hidden')" 
                 class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
                 Закрыть
@@ -356,17 +485,55 @@
         </div>
     </div>
 
-
     <script>
         const whatsappLinkEl = document.getElementById('whatsappLink');
         const locationBtnTextEl = document.getElementById('locationBtnText');
         const locationResultEl = document.getElementById('locationResult');
         const locationAddressEl = document.getElementById('locationAddress');
+        const announcementBar = document.getElementById('announcementBar');
         const originalWhatsappText = whatsappLinkEl.href;
         
+        // --- ЛОГИКА ДЛЯ ДИНАМИЧЕСКОГО БАННЕРА-ОБЪЯВЛЕНИЯ ---
+        function checkAndShowAnnouncement() {
+            const dismissKey = 'announcement_dismissed_v1';
+            
+            if (localStorage.getItem(dismissKey) !== 'true') {
+                announcementBar.classList.remove('hidden');
+            }
+        }
+
+        function dismissAnnouncement() {
+            announcementBar.classList.add('hidden');
+            localStorage.setItem('announcement_dismissed_v1', 'true');
+        }
+
+        window.onload = checkAndShowAnnouncement;
+
+
+        // --- ФУНКЦИЯ АККОРДЕОНА (ИСПРАВЛЕНА) ---
+        window.toggleAccordion = function(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById(`icon-${id}`);
+            
+            if (content.classList.contains('hidden')) {
+                // Открываем
+                content.classList.remove('hidden');
+                icon.classList.add('rotate-180');
+                // Добавляем анимацию
+                content.style.maxHeight = content.scrollHeight + 'px';
+            } else {
+                // Закрываем
+                content.classList.add('hidden');
+                icon.classList.remove('rotate-180');
+                content.style.maxHeight = null;
+            }
+        }
+
         // --- ДЕМОНСТРАЦИОННАЯ МОДАЛЬНОЕ ОКНО ---
         function displayMessageModal(title, message, isError = false) {
-            // Создаем простой модальный div
+            const existingModal = document.getElementById('alertModal');
+            if (existingModal) existingModal.remove();
+
             const modalHtml = `
                 <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                     <div class="bg-white p-6 rounded-lg shadow-2xl w-80 text-center">
@@ -434,11 +601,12 @@
         window.showPWAInstructions = function() {
             document.getElementById('pwaModal').classList.remove('hidden');
         }
-
+        
         // --- ЛОГИКА МОДАЛЬНОГО ОКНА ПАРТНЕРОВ ---
         window.showPartnerModal = function() {
             document.getElementById('partnerModal').classList.remove('hidden');
         }
+
     </script>
 </body>
 </html>

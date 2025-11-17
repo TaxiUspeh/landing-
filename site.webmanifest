@@ -1,0 +1,31 @@
+{
+  "name": "Такси «Успех»",
+  "short_name": "Такси Успех",
+  "description": "Ваш комфорт в посёлке Белоусовка.",
+  "start_url": "/landing-/",
+  "display": "standalone",
+  "background_color": "#283593",
+  "theme_color": "#FFC107",
+  "icons": [
+    {
+      "src": "/landing-/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/landing-/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/landing-/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/landing-/favicon-192x192.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -10,10 +10,10 @@
     <!-- Google Analytics (КОД АКТИВИРОВАН: G-NMCTD2Q8R2) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NMCTD2Q8R2"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-NMCTD2Q8R2');
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-NMCTD2Q8R2');
     </script>
     <!-- КОНЕЦ Google Analytics -->
 
@@ -73,6 +73,84 @@
             font-size: 0.875rem; /* text-sm */
             font-weight: 700; /* font-bold */
         }
+        
+        /* === НОВЫЕ СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКОН === */
+        /* Modal Overlay - Full screen, centered */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Modal Content Box */
+        .modal {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        /* Responsive adjustments for mobile */
+        @media (max-width: 640px) {
+            .modal {
+                max-width: 95%;
+                margin: 10px;
+            }
+        }
+        
+        /* Custom scrollbar for modal content if it gets too long */
+        .modal-body {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .price-note {
+            font-size: 0.8rem;
+            color: #4a5568;
+            margin-top: 4px;
+        }
+
+        .price-estimate {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #008000; /* Green for price */
+        }
+        
+        /* Status message styling */
+        .status-message {
+            display: none;
+        }
+        .status-message.active {
+            display: block;
+        }
+        /* Используем цвета из предыдущего кода для модалов */
+        .bg-primary-blue { background-color: #007bff; }
+        .hover\:bg-primary-dark:hover { background-color: #0056b3; }
+        .text-primary-blue { color: #007bff; }
+        .focus\:ring-primary-blue:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5); }
+        /* === КОНЕЦ НОВЫХ СТИЛЕЙ === */
     </style>
 </head>
 
@@ -111,10 +189,17 @@
         <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6">
             
             <!-- 1. ГЛАВНАЯ КНОПКА ЗАКАЗА (WhatsApp - Полная ширина) -->
-            <a id="whatsappLink" href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20такси%20в%20Белоусовке.%20Укажите%20Ваш%20маршрут%3A%20%5BАдрес%20ОТКУДА%5D%20до%20%5BАдрес%20КУДА%5D.%20Стоимость%20от%20700%20тенге%20%28зависит%20от%20расстояния%29." target="_blank"
+            <!-- Надпись (WhatsApp) убрана по запросу пользователя -->
+            <a id="whatsappLink" href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20такси%20в%20Белоусовке.%20Укажите%20маршрут%3A%20%5BАдрес%20ОТКУДА%5D%20до%20%5BАдрес%20КУДА%5D." target="_blank"
                 class="btn-hover bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-4 text-xl mb-3">
                 <i class="fab fa-whatsapp text-2xl"></i><span>Заказать Такси</span>
             </a>
+            
+            <!-- НОВАЯ КНОПКА: ЗАКАЗ ЧЕРЕЗ ФОРМУ (ОТКРЫВАЕТ МОДАЛ TAXI) -->
+            <button data-service="taxi"
+                class="service-btn btn-hover bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3">
+                <i class="fas fa-car-side text-lg"></i><span>Заказ через форму (Taxi)</span>
+            </button>
 
             <!-- 2. БЛОК БЫСТРЫХ ДЕЙСТВИЙ (3 колонки - одинаковая ширина) -->
             <div class="grid grid-cols-3 gap-2 mb-4">
@@ -128,17 +213,17 @@
                     class="btn-hover bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
                     <i class="fab fa-telegram-plane mb-0.5"></i><span>Telegram</span>
                 </a>
-                <!-- Аукцион (Одинаковый размер) -->
-                <a href="https://wa.me/77770649648?text=АУКЦИОН!%20%0AМаршрут%3A%20%5BАдрес%20ОТКУДА%5D%20%E2%86%92%20%5BАдрес%20КУДА%5D%0AМоя%20цена%3A%20%5BЦена%20в%20тенге%5D" target="_blank"
-                    class="btn-hover bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
+                <!-- Аукцион (Одинаковый размер) - ОБНОВЛЕН ДЛЯ МОДАЛЬНОГО ОКНА -->
+                <button data-service="auction"
+                    class="service-btn btn-hover bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
                     <i class="fas fa-gavel mb-0.5"></i><span>Аукцион</span>
-                </a>
+                </button>
             </div>
             
             <!-- БЛОК ГЕОЛОКАЦИИ (ВСТРОЕННЫЙ) -->
             <button type="button" onclick="getCurrentLocation()" id="locationBtn"
                 class="w-full text-gray-700 font-semibold transition flex items-center justify-center space-x-3 shadow-inner">
-                    <i class="fas fa-location-arrow"></i>
+                <i class="fas fa-location-arrow"></i>
                 <span id="locationBtnText">Использовать мое местоположение</span>
             </button>
             <p id="locationResult" class="text-xs text-center text-gray-500 mt-2 hidden">
@@ -160,30 +245,30 @@
         </div>
         
         
-        <!-- БЛОК 2 (БЫВШИЙ 3): НАШИ УСЛУГИ -->
-        <h3 class="text-2xl font-bold text-center mb-6 text-gray-700 border-t pt-4">Дополнительные Услуги</h3>
+        <!-- БЛОК 2 (БЫВШИЙ 3): НАШИ УСЛУГИ - ОБНОВЛЕНО ДЛЯ МОДАЛОВ -->
+        <h3 class="text-2xl font-bold text-center mb-6 text-gray-700 border-t pt-4">Дополнительные Услуги (Форма)</h3>
         
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
-            <!-- Доставка -->
-            <a href="https://wa.me/77770649648?text=ДОСТАВКА!%20%0AЧто%20нужно%20купить%2Fзабрать%3F%20%5BСписок%20товаров%2FДокументов%5D%0AАдрес%20ОТКУДА%3A%20%5BАдрес%20магазина%2Fточки%20забора%5D%0AАдрес%20КУДА%3A%20%5BАдрес%20доставки%5D" target="_blank"
-                class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500">
+            <!-- Доставка (MODAL TRIGGER) -->
+            <button data-service="delivery"
+                class="service-btn service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500">
                 <i class="fas fa-box-open text-2xl mb-1 text-green-600"></i><span class="text-sm">Доставка</span>
-            </a>
-            <!-- Грузоперевозки -->
-            <a href="https://wa.me/77770649648?text=ГРУЗОПЕРЕВОЗКИ!%20%0AАдрес%20ОТКУДА%3A%20%5BАдрес%20погрузки%5D%0AАдрес%20КУДА%3A%20%5BАдрес%20разгрузки%5D%0AОписание%20груза%3A%20%5BОбъем%2FВес%2FНужны%20ли%20грузчики%5D" target="_blank"
-                class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
+            </button>
+            <!-- Грузоперевозки (MODAL TRIGGER) -->
+            <button data-service="cargo"
+                class="service-btn service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
                 <i class="fas fa-truck-loading text-2xl mb-1 text-yellow-600"></i><span class="text-sm">Грузовой</span>
-            </a>
-            <!-- Трезвый водитель -->
-            <a href="https://wa.me/77770649648?text=ТРЕЗВЫЙ%20ВОДИТЕЛЬ!%20%0AМаршрут%3A%20%5BАдрес%20ОТКУДА%5D%20%E2%86%92%20%5BАдрес%20КУДА%5D%0AМарка%20автомобиля%3A%20%5BМарка%20и%20модель%5D%0AЖелаемое%20время%3A%20%5BВремя%20подачи%5D" target="_blank"
-                class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-red-500">
+            </button>
+            <!-- Трезвый водитель (MODAL TRIGGER) -->
+            <button data-service="soberDriver"
+                class="service-btn service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-red-500">
                 <i class="fas fa-cocktail text-2xl mb-1 text-red-600"></i><span class="text-sm">Трезвый водитель</span>
-            </a>
-            <!-- Помощь на дороге -->
-            <a href="https://wa.me/77770649648?text=ПОМОЩЬ%20НА%20ДОРОГЕ!%20%0AАдрес%2FМестоположение%3A%20%5BТочный%20адрес%2FКоординаты%5D%0AПроблема%3A%20%5BЧто%20случилось%3A%20прикурить%2C%20прокол%2C%20заглох%20и%20т.д.%5D" target="_blank"
-                class="service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-indigo-500">
+            </button>
+            <!-- Помощь на дороге (MODAL TRIGGER) -->
+            <button data-service="assistance"
+                class="service-btn service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-indigo-500">
                 <i class="fas fa-life-ring text-2xl mb-1 text-indigo-600"></i><span class="text-sm">Помощь</span>
-            </a>
+            </button>
         </div>
 
 
@@ -272,7 +357,7 @@
                     </button>
                     <div id="faq-4" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100">
                         <p>Стоимость услуги доставки начинается **от 1200 KZT**.</p>
-                        <p class="mt-2 text-sm italic">Окончательная цена зависит от общего расстояния и объёма/веса ваших покупок.</p>
+                        <p class="mt-2 text-sm italic">Окончательная цена зависит от общего расстояния и объёма покупок.</p>
                     </div>
                 </div>
 
@@ -427,6 +512,277 @@
         </p>
     </footer>
 
+    <!-- ========================================================= -->
+    <!-- 1. МОДАЛЬНОЕ ОКНО: ТАКСИ (TAXI) -->
+    <!-- ========================================================= -->
+    <div id="taxiModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">🚕 Заказать Такси</h3>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="taxiModal">×</button>
+                </div>
+                <form id="taxiForm" class="space-y-4">
+                    <div class="flex flex-col">
+                        <label for="taxiFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес) *</label>
+                        <input id="taxiFrom" name="from" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Улица, дом (обязательно)" required>
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
+                        <input id="taxiTo" name="to" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Улица, дом/объект (обязательно)" required>
+                    </div>
+                     <div class="flex flex-col">
+                        <!-- ИЗМЕНЕНИЕ: Обновлен текст метки и убран required -->
+                        <label for="taxiPhone" class="text-sm font-medium text-gray-700 mb-1">Ваш номер телефона - указывать, только если заказ для другого человека</label>
+                        <input id="taxiPhone" name="phone" type="tel" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="+7...">
+                    </div>
+
+                    <div id="taxiStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
+
+                    <div class="pt-4 border-t mt-6 flex justify-between items-center">
+                        <div>
+                            <div class="price-note">Примерная стоимость:</div>
+                            <div class="price-estimate">от 700–900 тг</div>
+                            <div class="price-note text-red-600 font-semibold">Внимание: точная цена после подтверждения водителем.</div>
+                        </div>
+                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
+                            Заказать
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- 2. МОДАЛЬНОЕ ОКНО: ДОСТАВКА (DELIVERY) -->
+    <!-- ========================================================= -->
+    <div id="deliveryModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">🛍️ Доставка Товаров</h3>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="deliveryModal">×</button>
+                </div>
+                <form id="deliveryForm" class="space-y-4">
+                    <div class="flex flex-col">
+                        <label for="deliveryItems" class="text-sm font-medium text-gray-700 mb-1">Список товаров *</label>
+                        <textarea id="deliveryItems" name="items" rows="3" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Например: хлеб, пиво, огурцы 1 кг" required></textarea>
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="deliveryStore" class="text-sm font-medium text-gray-700 mb-1">Пожелания по магазину (необязательно)</label>
+                        <input id="deliveryStore" name="store" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Например: Магазин №1, Супермаркет" />
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="deliveryAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес доставки *</label>
+                        <input id="deliveryAddress" name="address" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Улица, дом, квартира (например: Ленина 12)" required />
+                    </div>
+
+                    <div id="deliveryStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
+
+                    <div class="pt-4 border-t mt-6 flex justify-between items-center">
+                        <div>
+                            <div class="price-note">Примерная стоимость:</div>
+                            <div class="price-estimate">от 1200 тг</div>
+                            <div class="price-note font-semibold">Стоимость зависит от расстояния и объёма покупок.</div>
+                        </div>
+                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
+                            Оформить заказ
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ========================================================= -->
+    <!-- 3. МОДАЛЬНОЕ ОКНО: ГРУЗОВОЙ (CARGO) -->
+    <!-- ========================================================= -->
+    <div id="cargoModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">🚚 Грузовые Перевозки</h3>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="cargoModal">×</button>
+                </div>
+                <form id="cargoForm" class="space-y-4">
+                    <div class="flex flex-col">
+                        <label for="cargoFrom" class="text-sm font-medium text-gray-700 mb-1">Адрес погрузки *</label>
+                        <input id="cargoFrom" name="from" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Откуда забрать груз" required>
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="cargoTo" class="text-sm font-medium text-gray-700 mb-1">Адрес выгрузки *</label>
+                        <input id="cargoTo" name="to" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Куда доставить груз" required>
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="cargoDescription" class="text-sm font-medium text-gray-700 mb-1">Описание груза *</label>
+                        <textarea id="cargoDescription" name="description" rows="2" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Например: 1 холодильник и 5 коробок" required></textarea>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3 p-3 bg-gray-100 rounded-lg">
+                        <input id="cargoMovers" name="movers" type="checkbox" class="h-4 w-4 text-primary-blue rounded border-gray-300 focus:ring-primary-blue">
+                        <label for="cargoMovers" class="text-sm font-medium text-gray-700">Требуются ли грузчики?</label>
+                        <span class="text-sm font-bold text-red-600">(+3000 тг/час почасовая)</span>
+                    </div>
+
+                    <div id="cargoStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
+
+                    <div class="pt-4 border-t mt-6 flex justify-between items-center">
+                        <div>
+                            <div class="price-note">Оплата за 1 час (почасовая):</div>
+                            <div class="price-estimate">5000 тг</div>
+                            <div class="price-note font-semibold">Минимальный заказ - 1 час.</div>
+                        </div>
+                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
+                            Заказать грузоперевозку
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- 4. МОДАЛЬНОЕ ОКНО: ТРЕЗВЫЙ ВОДИТЕЛЬ (SOBER DRIVER) -->
+    <!-- ========================================================= -->
+    <div id="soberDriverModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">🔑 Трезвый Водитель</h3>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="soberDriverModal">×</button>
+                </div>
+                <form id="soberDriverForm" class="space-y-4">
+                    <div class="flex flex-col">
+                        <label for="soberDriverFrom" class="text-sm font-medium text-gray-700 mb-1">Ваш текущий адрес *</label>
+                        <input id="soberDriverFrom" name="from" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Адрес, где находится авто" required>
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="soberDriverTo" class="text-sm font-medium text-gray-700 mb-1">Куда доставить автомобиль *</label>
+                        <input id="soberDriverTo" name="to" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Конечный адрес" required>
+                    </div>
+
+                    <div id="soberDriverStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
+
+                    <div class="pt-4 border-t mt-6 flex justify-between items-center">
+                        <div>
+                            <div class="price-note">Примерная стоимость:</div>
+                            <div class="price-estimate">от 3800 тг</div>
+                            <div class="price-note font-semibold">Цена зависит от расстояния.</div>
+                        </div>
+                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
+                            Вызвать водителя
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ========================================================= -->
+    <!-- 5. МОДАЛЬНОЕ ОКНО: ПОМОЩЬ / ПОРУЧЕНИЯ (ASSISTANCE) -->
+    <!-- ========================================================= -->
+    <div id="assistanceModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">🙋 Помощь / Помощь на дороге</h3>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="assistanceModal">×</button>
+                </div>
+                <form id="assistanceForm" class="space-y-4">
+                    <div class="flex flex-col">
+                        <label for="assistanceType" class="text-sm font-medium text-gray-700 mb-1">Тип требуемой помощи *</label>
+                        <select id="assistanceType" name="type" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" required>
+                            <option value="">Выберите тип помощи...</option>
+                            <option value="Подкачать колесо">Подкачать колесо</option>
+                            <option value="Прикурить автомобиль">Прикурить автомобиль</option>
+                            <option value="Прочее поручение/помощь">Прочее поручение/помощь</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Детали авто: отображаются только для помощи на дороге -->
+                    <div id="carDetails" class="space-y-4 p-3 bg-teal-50 rounded-lg border border-dashed border-teal-300 hidden">
+                        <p class="font-semibold text-sm text-teal-700">Данные для помощи на дороге</p>
+                        <div class="flex flex-col">
+                            <label for="carModel" class="text-sm font-medium text-gray-700 mb-1">Марка и модель авто</label>
+                            <input id="carModel" name="carModel" type="text" class="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Например: Toyota Camry">
+                        </div>
+                        <div class="flex flex-col">
+                            <label for="licencePlate" class="text-sm font-medium text-gray-700 mb-1">Гос. номер (часть номера)</label>
+                            <input id="licencePlate" name="licencePlate" type="text" class="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Например: 123ABC">
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col">
+                        <label for="assistanceTask" class="text-sm font-medium text-gray-700 mb-1">Детали и уточнения</label>
+                        <textarea id="assistanceTask" name="task" rows="3" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Например: Какое колесо спустило, или что именно нужно купить/передать"></textarea>
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="assistanceAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес (где нужна помощь) *</label>
+                        <input id="assistanceAddress" name="address" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Улица, дом или местоположение" required />
+                    </div>
+
+                    <div id="assistanceStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
+
+                    <div class="pt-4 border-t mt-6 flex justify-between items-center">
+                        <div>
+                            <div class="price-note">Примерная стоимость:</div>
+                            <div class="price-estimate">от 1500 тг</div>
+                            <div class="price-note font-semibold">Цена зависит от характера требуемой помощи.</div>
+                        </div>
+                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
+                            Оформить заявку
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ========================================================= -->
+    <!-- 6. МОДАЛЬНОЕ ОКНО: АУКЦИОН (AUCTION) - НОВЫЙ БЛОК -->
+    <!-- ========================================================= -->
+    <div id="auctionModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">🔨 Заказ-Аукцион</h3>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="auctionModal">×</button>
+                </div>
+                <form id="auctionForm" class="space-y-4">
+                    <div class="flex flex-col">
+                        <label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес)</label>
+                        <input id="auctionFrom" name="from" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Улица, дом (обязательно)" required>
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес)</label>
+                        <input id="auctionTo" name="to" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Улица, дом/объект (обязательно)" required>
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="auctionPrice" class="text-sm font-medium text-gray-700 mb-1">Ваша цена в тенге</label>
+                        <input id="auctionPrice" name="price" type="number" inputmode="numeric" pattern="[0-9]*" min="500" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Минимум 500 KZT (обязательно)" required>
+                        <p class="text-xs text-gray-500 mt-1">
+                            ⚠️ Аукцион: Вы предлагаете свою цену, а водитель решает, брать заказ или нет.
+                        </p>
+                    </div>
+
+                    <div id="auctionStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
+
+                    <div class="pt-4 border-t mt-6 flex justify-between items-center">
+                        <div>
+                            <div class="price-note text-yellow-600 font-bold">Оплата по Вашей ставке.</div>
+                            <div class="price-estimate text-yellow-600">Начните от 500 тг</div>
+                        </div>
+                        <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
+                            Предложить цену
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Модальное окно с инструкциями PWA -->
     <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -493,6 +849,21 @@
         const announcementBar = document.getElementById('announcementBar');
         const originalWhatsappText = whatsappLinkEl.href;
         
+        // --- КОНФИГУРАЦИЯ МОДАЛОВ ---
+        const MODALS = {
+            'taxi': { id: 'taxiModal', formId: 'taxiForm', title: 'ТАКСИ', prefix: '🚕 НОВЫЙ ЗАКАЗ: ТАКСИ' },
+            'delivery': { id: 'deliveryModal', formId: 'deliveryForm', title: 'ДОСТАВКА', prefix: '🛍️ НОВЫЙ ЗАКАЗ: ДОСТАВКА' },
+            'cargo': { id: 'cargoModal', formId: 'cargoForm', title: 'ГРУЗОВОЙ', prefix: '🚚 НОВЫЙ ЗАКАЗ: ГРУЗОВОЙ' },
+            'soberDriver': { id: 'soberDriverModal', formId: 'soberDriverForm', title: 'ТРЕЗВЫЙ ВОДИТЕЛЬ', prefix: '🔑 НОВЫЙ ЗАКАЗ: ТРЕЗВЫЙ ВОДИТЕЛЬ' },
+            'assistance': { id: 'assistanceModal', formId: 'assistanceForm', title: 'ПОМОЩЬ', prefix: '🙋 НОВЫЙ ЗАКАЗ: ПОМОЩЬ' },
+            // НОВАЯ КОНФИГУРАЦИЯ ДЛЯ АУКЦИОНА
+            'auction': { id: 'auctionModal', formId: 'auctionForm', title: 'АУКЦИОН', prefix: '🔨 ЗАКАЗ: АУКЦИОН (ЦЕНА КЛИЕНТА)' },
+        };
+    
+        const PHONE_NUMBER = '77770649648'; // Ваш номер для WhatsApp
+        // -----------------------------
+
+
         // --- ЛОГИКА ДЛЯ ДИНАМИЧЕСКОГО БАННЕРА-ОБЪЯВЛЕНИЯ ---
         function checkAndShowAnnouncement() {
             const dismissKey = 'announcement_dismissed_v1';
@@ -529,7 +900,7 @@
             }
         }
 
-        // --- ДЕМОНСТРАЦИОННАЯ МОДАЛЬНОЕ ОКНО ---
+        // --- ДЕМОНСТРАЦИОННАЯ МОДАЛЬНОЕ ОКНО (для оповещений) ---
         function displayMessageModal(title, message, isError = false) {
             const existingModal = document.getElementById('alertModal');
             if (existingModal) existingModal.remove();
@@ -549,7 +920,6 @@
         }
 
         // --- ЛОГИКА ГЕОЛОКАЦИИ ---
-
         window.getCurrentLocation = function() {
             if (!navigator.geolocation) {
                 displayMessageModal('Ошибка', 'Геолокация не поддерживается вашим браузером.', true);
@@ -572,12 +942,13 @@
                     locationAddressEl.textContent = locationText;
                     
                     // 4. Обновляем ссылку WhatsApp
-                    const encodedText = encodeURIComponent(`Здравствуйте! Хочу заказать такси в Белоусовке. Я нахожусь по адресу: ${locationText}. Укажите куда поедем. Стоимость от 700 тенге (зависит от расстояния).`);
+                    // Изменено: Используем более простое сообщение для Geolocation
+                    const encodedText = encodeURIComponent(`Здравствуйте! Хочу заказать такси. Я нахожусь по координатам: ${locationText}. Укажите куда поедем.`);
                     const newWhatsappUrl = `https://wa.me/77770649648?text=${encodedText}`;
                     whatsappLinkEl.href = newWhatsappUrl;
 
                     // 5. Информируем пользователя о новом действии кнопки WhatsApp
-                    displayMessageModal('Готово!', 'Ваше местоположение (координаты) автоматически добавлено в кнопку **WhatsApp**! Нажмите на WhatsApp, чтобы отправить заказ.', false);
+                    displayMessageModal('Готово!', 'Ваше местоположение (координаты) автоматически добавлено в кнопку **Заказать Такси**! Нажмите на кнопку, чтобы отправить заказ.', false);
                 },
                 (error) => {
                     // 6. Ошибка: обрабатываем разные типы ошибок
@@ -607,8 +978,226 @@
             document.getElementById('partnerModal').classList.remove('hidden');
         }
 
+        // =========================================================
+        // === ЛОГИКА МОДАЛЬНЫХ ОКОН И ФОРМ (UPDATED) ===
+        // =========================================================
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                // Hide all status messages before opening
+                document.querySelectorAll('.status-message').forEach(el => el.classList.remove('active'));
+                
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                
+                // Focus on the first input field
+                const firstInput = modal.querySelector('input, textarea, select');
+                if (firstInput) firstInput.focus();
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+        }
+
+        function showStatus(modalId, message) {
+            const statusEl = document.getElementById(modalId.replace('Modal', 'Status'));
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.classList.add('active');
+            }
+        }
+
+        // --- Event Listeners for Opening/Closing ---
+
+        // 1. Open buttons
+        document.querySelectorAll('.service-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const service = button.getAttribute('data-service');
+                if (MODALS[service]) {
+                    openModal(MODALS[service].id);
+                }
+            });
+        });
+
+        // 2. Close buttons
+        document.querySelectorAll('.close-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const modalId = e.target.getAttribute('data-modal');
+                closeModal(modalId);
+            });
+        });
+
+        // 3. Close on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    closeModal(overlay.id);
+                }
+            });
+        });
+
+        // 4. Close on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const openModal = document.querySelector('.modal-overlay.active');
+                if (openModal) {
+                    closeModal(openModal.id);
+                }
+            }
+        });
+        
+        // --- Specific Assistance Modal Logic (for Подкачать/Прикурить) ---
+        const assistanceTypeSelect = document.getElementById('assistanceType');
+        const carDetailsDiv = document.getElementById('carDetails');
+
+        if (assistanceTypeSelect && carDetailsDiv) {
+            assistanceTypeSelect.addEventListener('change', (e) => {
+                const selectedType = e.target.value;
+                // Показываем поля авто, если выбрана помощь на дороге
+                if (selectedType === 'Подкачать колесо' || selectedType === 'Прикурить автомобиль') {
+                    carDetailsDiv.classList.remove('hidden');
+                } else {
+                    carDetailsDiv.classList.add('hidden');
+                }
+            });
+        }
+
+
+        // --- Form Submission Handlers ---
+
+        // Get all forms
+        const forms = document.querySelectorAll('form');
+        
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formId = this.id;
+                const modalKey = Object.keys(MODALS).find(key => MODALS[key].formId === formId);
+                const modalConfig = MODALS[modalKey];
+                
+                if (!modalConfig) return;
+
+                const modalId = modalConfig.id;
+                const statusEl = document.getElementById(modalId.replace('Modal', 'Status'));
+                if (statusEl) statusEl.classList.remove('active');
+                
+                let message = `${modalConfig.prefix}\n\n`;
+                let requiredFieldsMissing = false;
+
+                // Helper to get value and check requirement
+                const getVal = (id, label, isRequired = false) => {
+                    const input = document.getElementById(id);
+                    let value = input ? input.value.trim() : '';
+
+                    if (isRequired && !value) {
+                        requiredFieldsMissing = true;
+                    }
+                    
+                    // Special handling for checkboxes
+                    if (input && input.type === 'checkbox') {
+                        value = input.checked ? 'Да' : 'Нет';
+                    }
+
+                    return `*${label}*:\n${value || '—'}\n\n`;
+                };
+
+                // Build message based on service type
+                switch (modalKey) {
+                    case 'taxi':
+                        message += getVal('taxiFrom', 'Откуда', true);
+                        message += getVal('taxiTo', 'Куда', true);
+                        // ИЗМЕНЕНИЕ: Телефон теперь не обязателен (false)
+                        message += getVal('taxiPhone', 'Телефон', false);
+                        message += '💰 Примерная цена: 700-900 тг (уточнит водитель)';
+                        break;
+
+                    case 'delivery':
+                        message += getVal('deliveryItems', 'Список товаров', true);
+                        message += getVal('deliveryAddress', 'Адрес доставки', true);
+                        message += getVal('deliveryStore', 'Пожелания по магазину');
+                        message += '💰 Примерная цена: от 1200 тг (зависит от расстояния/объема)';
+                        break;
+                    
+                    case 'cargo':
+                        const moversNeeded = document.getElementById('cargoMovers').checked;
+                        
+                        message += getVal('cargoFrom', 'Адрес погрузки', true);
+                        message += getVal('cargoTo', 'Адрес выгрузки', true);
+                        message += getVal('cargoDescription', 'Описание груза', true);
+                        message += getVal('cargoMovers', 'Нужны ли грузчики?');
+                        message += `💰 Цена: 5000 тг/час (грузчики: ${moversNeeded ? 'Да, +3000 тг/час' : 'Нет'})`;
+                        break;
+
+                    case 'soberDriver':
+                        message += getVal('soberDriverFrom', 'Текущий адрес (Авто)', true);
+                        message += getVal('soberDriverTo', 'Адрес доставки авто', true);
+                        message += '💰 Примерная цена: от 3800 тг (зависит от расстояния)';
+                        break;
+                        
+                    case 'assistance':
+                        const type = document.getElementById('assistanceType').value;
+                        if (!type) {
+                            requiredFieldsMissing = true;
+                            break;
+                        }
+
+                        message += getVal('assistanceType', 'Тип помощи');
+                        
+                        // Добавляем детали авто, если это помощь на дороге
+                        if (type === 'Подкачать колесо' || type === 'Прикурить автомобиль') {
+                            message += getVal('carModel', 'Марка и модель авто');
+                            message += getVal('licencePlate', 'Гос. номер');
+                        }
+                        
+                        message += getVal('assistanceTask', 'Детали и уточнения');
+                        message += getVal('assistanceAddress', 'Адрес (где нужна помощь)', true);
+                        message += '💰 Примерная цена: от 1500 тг (зависит от характера требуемой помощи)';
+                        break;
+                        
+                    case 'auction':
+                        message += getVal('auctionFrom', 'Откуда', true);
+                        message += getVal('auctionTo', 'Куда', true);
+                        const auctionPrice = document.getElementById('auctionPrice').value;
+                        if (!auctionPrice || parseInt(auctionPrice) < 500) {
+                            requiredFieldsMissing = true;
+                            showStatus(modalId, 'Пожалуйста, введите корректную цену (минимум 500 KZT).');
+                            return;
+                        }
+                        message += `*Предлагаемая цена*:\n${auctionPrice} KZT\n\n`;
+                        message += '⚠️ ПРИМЕЧАНИЕ: Это цена клиента. Примите решение по заказу самостоятельно.';
+                        break;
+                }
+
+                if (requiredFieldsMissing) {
+                    showStatus(modalId, 'Пожалуйста, заполните все обязательные поля.');
+                    return;
+                }
+
+                // Encode and open WhatsApp link
+                const waLink = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
+                window.open(waLink, '_blank');
+
+                // Success cleanup
+                closeModal(modalId);
+                this.reset();
+                // Скрываем детали авто после сброса
+                if (modalKey === 'assistance') {
+                    const carDetails = document.getElementById('carDetails');
+                    if (carDetails) carDetails.classList.add('hidden');
+                }
+            });
+        });
+
     </script>
 </body>
 </html>
+
 
 

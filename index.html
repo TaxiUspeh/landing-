@@ -150,6 +150,16 @@
         .hover\:bg-primary-dark:hover { background-color: #0056b3; }
         .text-primary-blue { color: #007bff; }
         .focus\:ring-primary-blue:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5); }
+        
+        /* НОВЫЙ СТИЛЬ: для кликабельных координат */
+        .coord-link {
+            color: #1d4ed8; /* Blue-700 for links */
+            text-decoration: underline;
+            font-weight: 600;
+        }
+        .coord-link:hover {
+            color: #f59e0b; /* Yellow-500 on hover */
+        }
         /* === КОНЕЦ НОВЫХ СТИЛЕЙ === */
     </style>
 </head>
@@ -227,7 +237,8 @@
                 <span id="locationBtnText">Использовать мое местоположение</span>
             </button>
             <p id="locationResult" class="text-xs text-center text-gray-500 mt-2 hidden">
-                <span id="locationAddress"></span>
+                <!-- Измененный элемент для кликабельных координат -->
+                <a id="locationAddress" href="#" target="_blank" class="coord-link"></a>
             </p>
             
             <!-- СПОСОБЫ ОПЛАТЫ (КОМПАКТНЫЙ ИНФОБЛОК) -->
@@ -319,7 +330,7 @@
                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fab fa-whatsapp mr-2"></i> WhatsApp
                     </a>
-                    <!-- НОВАЯ КНОПКА: НАВИГАТОР -->
+                    <!-- НОВАЯ КНОТКА: НАВИГАТОР -->
                     <a href="https://yandex.kz/navi/-/CLGK5Sli" target="_blank"
                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
@@ -438,7 +449,7 @@
         </div>
         
         <!-- БЛОК 7: ПРИГЛАШЕНИЕ ВОДИТЕЛЕЙ -->
-        <div class="mt-10 border-t pt-6 text-center">
+        <div class="mt-10 border-t pt-6 вtext-center">
             <h3 class="text-2xl font-bold text-gray-700 mb-4">Приглашаем Водителей в команду!</h3>
             <p class="text-gray-600 mb-4 max-w-md mx-auto">
                 Хотите зарабатывать в удобное время и быть частью успешной команды в Белоусовке?
@@ -542,7 +553,7 @@
                         </div>
                     </div>
                     <!-- КОНЕЦ ИЗМЕНЕНИЯ -->
-                     <div class="flex flex-col">
+                    <div class="flex flex-col">
                         <!-- ИЗМЕНЕНИЕ: Обновлен текст метки и убран required -->
                         <label for="taxiPhone" class="text-sm font-medium text-gray-700 mb-1">Ваш номер телефона - указывать, только если заказ для другого человека</label>
                         <input id="taxiPhone" name="phone" type="tel" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="+7...">
@@ -856,7 +867,7 @@
         const whatsappLinkEl = document.getElementById('whatsappLink');
         const locationBtnTextEl = document.getElementById('locationBtnText');
         const locationResultEl = document.getElementById('locationResult');
-        const locationAddressEl = document.getElementById('locationAddress');
+        const locationAddressEl = document.getElementById('locationAddress'); // Теперь это <a> элемент
         const announcementBar = document.getElementById('announcementBar');
         const originalWhatsappText = whatsappLinkEl.href;
         
@@ -870,7 +881,7 @@
             // НОВАЯ КОНФИГУРАЦИЯ ДЛЯ АУКЦИОНА
             'auction': { id: 'auctionModal', formId: 'auctionForm', title: 'АУКЦИОН', prefix: '🔨 ЗАКАЗ: АУКЦИОН (ЦЕНА КЛИЕНТА)' },
         };
-    
+        
         const PHONE_NUMBER = '77770649648'; // Ваш номер для WhatsApp
         // -----------------------------
 
@@ -879,6 +890,7 @@
         function checkAndShowAnnouncement() {
             const dismissKey = 'announcement_dismissed_v1';
             
+            // NOTE: Using localStorage for demo purposes.
             if (localStorage.getItem(dismissKey) !== 'true') {
                 announcementBar.classList.remove('hidden');
             }
@@ -886,6 +898,7 @@
 
         function dismissAnnouncement() {
             announcementBar.classList.add('hidden');
+            // NOTE: Using localStorage for demo purposes.
             localStorage.setItem('announcement_dismissed_v1', 'true');
         }
 
@@ -930,7 +943,7 @@
             document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
 
-        // --- ЛОГИКА ГЕОЛОКАЦИИ ---
+        // --- ЛОГИКА ГЕОЛОКАЦИИ (ОБНОВЛЕНА) ---
         window.getCurrentLocation = function() {
             if (!navigator.geolocation) {
                 displayMessageModal('Ошибка', 'Геолокация не поддерживается вашим браузером.', true);
@@ -947,19 +960,25 @@
                     const lon = position.coords.longitude.toFixed(5);
                     const locationText = `Мое местоположение (Коорд: ${lat}, ${lon})`;
                     
-                    // 3. Обновляем UI с результатом
+                    // Формируем ссылку для Яндекс.Карт. Формат: lat,lon
+                    const yandexMapUrl = `https://yandex.kz/maps/?pt=${lon},${lat}&z=16&l=map`;
+
+                    // 3. Обновляем UI с результатом (теперь это кликабельная ссылка)
                     locationBtnTextEl.innerHTML = '<i class="fas fa-check"></i> Адрес определен';
                     locationResultEl.classList.remove('hidden');
-                    locationAddressEl.textContent = locationText;
+                    locationAddressEl.textContent = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
+                    locationAddressEl.href = yandexMapUrl; // Устанавливаем кликабельную ссылку
+                    locationAddressEl.title = 'Открыть местоположение на карте';
                     
                     // 4. Обновляем ссылку WhatsApp
-                    // Изменено: Используем более простое сообщение для Geolocation
-                    const encodedText = encodeURIComponent(`Здравствуйте! Хочу заказать такси. Я нахожусь по координатам: ${locationText}. Укажите куда поедем.`);
+                    // Отправляем координаты в виде ссылки на карту для удобства водителя
+                    const whatsappMessage = `Здравствуйте! Хочу заказать такси. Я нахожусь по координатам (ссылка на карту):\n${yandexMapUrl}\n\nУкажите куда поедем.`;
+                    const encodedText = encodeURIComponent(whatsappMessage);
                     const newWhatsappUrl = `https://wa.me/77770649648?text=${encodedText}`;
                     whatsappLinkEl.href = newWhatsappUrl;
 
                     // 5. Информируем пользователя о новом действии кнопки WhatsApp
-                    displayMessageModal('Готово!', 'Ваше местоположение (координаты) автоматически добавлено в кнопку **Заказать Такси**! Нажмите на кнопку, чтобы отправить заказ.', false);
+                    displayMessageModal('Готово!', 'Ваше местоположение (координаты и ссылка на карту) автоматически добавлено в кнопку **Заказать Такси**! Нажмите на кнопку, чтобы отправить заказ.', false);
                 },
                 (error) => {
                     // 6. Ошибка: обрабатываем разные типы ошибок
@@ -970,6 +989,8 @@
                     
                     locationBtnTextEl.innerHTML = '<i class="fas fa-times"></i> Ошибка определения';
                     locationResultEl.classList.add('hidden');
+                    locationAddressEl.textContent = '';
+                    locationAddressEl.href = '#';
                     displayMessageModal('Ошибка', errorMessage, true);
                     
                     // Сбрасываем WhatsApp на оригинальный текст
@@ -1024,11 +1045,10 @@
         // Функция удаления дополнительного адреса
         window.removeStop = function(divId) {
             document.getElementById(divId).remove();
-            // Нам не нужно уменьшать stopCounter, так как мы используем querySelectorAll для сбора полей,
-            // но мы можем проверить, пуст ли контейнер
+            // Сброс счетчика, если все удалено, чтобы можно было добавлять снова (не строго обязательно, но помогает)
             const stopsContainer = document.getElementById('additionalStops');
             if (stopsContainer.children.length === 0) {
-                 stopCounter = 0; // Сброс счетчика, если все удалено
+                 stopCounter = 0; 
             }
         }
 
@@ -1223,7 +1243,7 @@
                         message += getVal('soberDriverTo', 'Адрес доставки авто', true);
                         message += '💰 Примерная цена: от 3800 тг (зависит от расстояния)';
                         break;
-                        
+                    
                     case 'assistance':
                         const type = document.getElementById('assistanceType').value;
                         if (!type) {
@@ -1243,7 +1263,7 @@
                         message += getVal('assistanceAddress', 'Адрес (где нужна помощь)', true);
                         message += '💰 Примерная цена: от 1500 тг (зависит от характера требуемой помощи)';
                         break;
-                        
+                    
                     case 'auction':
                         message += getVal('auctionFrom', 'Откуда', true);
                         message += getVal('auctionTo', 'Куда', true);

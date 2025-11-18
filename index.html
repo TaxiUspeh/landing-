@@ -527,10 +527,21 @@
                         <label for="taxiFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес) *</label>
                         <input id="taxiFrom" name="from" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Улица, дом (обязательно)" required>
                     </div>
+                    <!-- ИЗМЕНЕНИЕ: Добавлена кнопка "+" для дополнительных адресов -->
                     <div class="flex flex-col">
                         <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
-                        <input id="taxiTo" name="to" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Улица, дом/объект (обязательно)" required>
+                        <div class="flex space-x-2">
+                            <input id="taxiTo" name="to" type="text" class="flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Улица, дом/объект (обязательно)" required>
+                            <button type="button" onclick="addStop()" class="flex-shrink-0 w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <!-- Контейнер для дополнительных адресов -->
+                        <div id="additionalStops" class="mt-2 space-y-2">
+                            <!-- Здесь будут добавляться дополнительные поля -->
+                        </div>
                     </div>
+                    <!-- КОНЕЦ ИЗМЕНЕНИЯ -->
                      <div class="flex flex-col">
                         <!-- ИЗМЕНЕНИЕ: Обновлен текст метки и убран required -->
                         <label for="taxiPhone" class="text-sm font-medium text-gray-700 mb-1">Ваш номер телефона - указывать, только если заказ для другого человека</label>
@@ -982,6 +993,46 @@
         // === ЛОГИКА МОДАЛЬНЫХ ОКОН И ФОРМ (UPDATED) ===
         // =========================================================
 
+        let stopCounter = 0; // Счетчик для дополнительных адресов
+
+        // Функция добавления дополнительного адреса
+        window.addStop = function() {
+            if (stopCounter >= 3) {
+                 displayMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false);
+                 return;
+            }
+            
+            stopCounter++;
+            const stopsContainer = document.getElementById('additionalStops');
+            const stopId = `taxiStop${stopCounter}`;
+            const stopLabel = `Дополнительный адрес ${stopCounter}`;
+            
+            const stopDiv = document.createElement('div');
+            stopDiv.className = "flex space-x-2 additional-stop-item";
+            stopDiv.id = `stopDiv${stopCounter}`;
+
+            stopDiv.innerHTML = `
+                <input id="${stopId}" name="${stopId}" type="text" class="flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="${stopLabel} (обязательно)" required>
+                <button type="button" onclick="removeStop('${stopDiv.id}')" class="flex-shrink-0 w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Удалить адрес">
+                    <i class="fas fa-minus"></i>
+                </button>
+            `;
+            
+            stopsContainer.appendChild(stopDiv);
+        }
+        
+        // Функция удаления дополнительного адреса
+        window.removeStop = function(divId) {
+            document.getElementById(divId).remove();
+            // Нам не нужно уменьшать stopCounter, так как мы используем querySelectorAll для сбора полей,
+            // но мы можем проверить, пуст ли контейнер
+            const stopsContainer = document.getElementById('additionalStops');
+            if (stopsContainer.children.length === 0) {
+                 stopCounter = 0; // Сброс счетчика, если все удалено
+            }
+        }
+
+
         function openModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) {
@@ -1002,6 +1053,19 @@
             if (modal) {
                 modal.classList.remove('active');
                 modal.setAttribute('aria-hidden', 'true');
+                
+                // --- CUSTOM RESET FOR TAXI MODAL ---
+                if (modalId === 'taxiModal') {
+                    const stopsContainer = document.getElementById('additionalStops');
+                    if (stopsContainer) {
+                        stopsContainer.innerHTML = ''; // Очистка динамически добавленных полей
+                        stopCounter = 0; // Сброс счетчика
+                    }
+                    // Сброс формы (поля)
+                    const taxiForm = document.getElementById('taxiForm');
+                    if (taxiForm) taxiForm.reset();
+                }
+                // -------------------------------------
             }
         }
 
@@ -1112,8 +1176,27 @@
                 switch (modalKey) {
                     case 'taxi':
                         message += getVal('taxiFrom', 'Откуда', true);
+                        
+                        // Collect main destination
                         message += getVal('taxiTo', 'Куда', true);
-                        // ИЗМЕНЕНИЕ: Телефон теперь не обязателен (false)
+                        
+                        // Collect additional stops
+                        let stopMessage = '';
+                        document.querySelectorAll('#additionalStops input').forEach((input, index) => {
+                            // Пропускаем пустые поля (хотя они required, лучше перестраховаться)
+                            if (input.value.trim()) {
+                                const stopLabel = `Доп. адрес ${index + 1}`;
+                                stopMessage += `*${stopLabel}*:\n${input.value.trim()}\n\n`;
+                            }
+                        });
+
+                        if (stopMessage) {
+                            message += '\n--- ДОП. АДРЕСА ПО ПУТИ ---\n\n';
+                            message += stopMessage;
+                            message += '---------------------------\n\n';
+                        }
+                        
+                        // Телефон теперь не обязателен
                         message += getVal('taxiPhone', 'Телефон', false);
                         message += '💰 Примерная цена: 700-900 тг (уточнит водитель)';
                         break;
@@ -1198,6 +1281,7 @@
     </script>
 </body>
 </html>
+
 
 
 

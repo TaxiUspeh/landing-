@@ -198,8 +198,7 @@
         
         <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6">
             
-            <!-- 1. ГЛАВНАЯ КНОПКА ЗАКАЗА (WhatsApp - Полная ширина) -->
-            <!-- Надпись (WhatsApp) убрана по запросу пользователя -->
+            <!-- 1. ГЛАВНАЯ КНОТКА ЗАКАЗА (WhatsApp - Полная ширина) -->
             <a id="whatsappLink" href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20такси%20в%20Белоусовке.%20Укажите%20маршрут%3A%20%5BАдрес%20ОТКУДА%5D%20до%20%5BАдрес%20КУДА%5D." target="_blank"
                 class="btn-hover bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-4 text-xl mb-3">
                 <i class="fab fa-whatsapp text-2xl"></i><span>Заказать Такси</span>
@@ -335,7 +334,7 @@
                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
                     </a>
-                    <!-- ОБНОВЛЕННАЯ КНОПКА: ЗВОНОК -->
+                    <!-- ОБНОВЛЕННАЯ КНОТКА: ЗВОНОК -->
                     <a href="tel:+77771383856"
                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fas fa-phone-alt mr-2"></i> Звонок
@@ -449,7 +448,7 @@
         </div>
         
         <!-- БЛОК 7: ПРИГЛАШЕНИЕ ВОДИТЕЛЕЙ -->
-        <div class="mt-10 border-t pt-6 вtext-center">
+        <div class="mt-10 border-t pt-6 text-center">
             <h3 class="text-2xl font-bold text-gray-700 mb-4">Приглашаем Водителей в команду!</h3>
             <p class="text-gray-600 mb-4 max-w-md mx-auto">
                 Хотите зарабатывать в удобное время и быть частью успешной команды в Белоусовке?
@@ -867,18 +866,19 @@
         const whatsappLinkEl = document.getElementById('whatsappLink');
         const locationBtnTextEl = document.getElementById('locationBtnText');
         const locationResultEl = document.getElementById('locationResult');
-        const locationAddressEl = document.getElementById('locationAddress'); // Теперь это <a> элемент
+        const locationAddressEl = document.getElementById('locationAddress');
         const announcementBar = document.getElementById('announcementBar');
         const originalWhatsappText = whatsappLinkEl.href;
         
-        // --- КОНФИГУРАЦИЯ МОДАЛОВ ---
+        // --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ДЛЯ КООРДИНАТ ---
+        let lastKnownMapUrl = '';
+        
         const MODALS = {
             'taxi': { id: 'taxiModal', formId: 'taxiForm', title: 'ТАКСИ', prefix: '🚕 НОВЫЙ ЗАКАЗ: ТАКСИ' },
             'delivery': { id: 'deliveryModal', formId: 'deliveryForm', title: 'ДОСТАВКА', prefix: '🛍️ НОВЫЙ ЗАКАЗ: ДОСТАВКА' },
             'cargo': { id: 'cargoModal', formId: 'cargoForm', title: 'ГРУЗОВОЙ', prefix: '🚚 НОВЫЙ ЗАКАЗ: ГРУЗОВОЙ' },
             'soberDriver': { id: 'soberDriverModal', formId: 'soberDriverForm', title: 'ТРЕЗВЫЙ ВОДИТЕЛЬ', prefix: '🔑 НОВЫЙ ЗАКАЗ: ТРЕЗВЫЙ ВОДИТЕЛЬ' },
             'assistance': { id: 'assistanceModal', formId: 'assistanceForm', title: 'ПОМОЩЬ', prefix: '🙋 НОВЫЙ ЗАКАЗ: ПОМОЩЬ' },
-            // НОВАЯ КОНФИГУРАЦИЯ ДЛЯ АУКЦИОНА
             'auction': { id: 'auctionModal', formId: 'auctionForm', title: 'АУКЦИОН', prefix: '🔨 ЗАКАЗ: АУКЦИОН (ЦЕНА КЛИЕНТА)' },
         };
         
@@ -905,19 +905,16 @@
         window.onload = checkAndShowAnnouncement;
 
 
-        // --- ФУНКЦИЯ АККОРДЕОНА (ИСПРАВЛЕНА) ---
+        // --- ФУНКЦИЯ АККОРДЕОНА ---
         window.toggleAccordion = function(id) {
             const content = document.getElementById(id);
             const icon = document.getElementById(`icon-${id}`);
             
             if (content.classList.contains('hidden')) {
-                // Открываем
                 content.classList.remove('hidden');
                 icon.classList.add('rotate-180');
-                // Добавляем анимацию
                 content.style.maxHeight = content.scrollHeight + 'px';
             } else {
-                // Закрываем
                 content.classList.add('hidden');
                 icon.classList.remove('rotate-180');
                 content.style.maxHeight = null;
@@ -952,33 +949,35 @@
 
             // 1. Изменяем UI на время определения
             locationBtnTextEl.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Определяем...';
+            lastKnownMapUrl = ''; // Сброс глобальной переменной перед попыткой
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     // 2. Успех: получаем координаты
                     const lat = position.coords.latitude.toFixed(5);
                     const lon = position.coords.longitude.toFixed(5);
-                    const locationText = `Мое местоположение (Коорд: ${lat}, ${lon})`;
-                    
-                    // Формируем ссылку для Яндекс.Карт. Формат: lat,lon
+                    const locationDisplay = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
+                    // Ссылка на Яндекс.Карты (lon,lat)
                     const yandexMapUrl = `https://yandex.kz/maps/?pt=${lon},${lat}&z=16&l=map`;
+
+                    // **СОХРАНЯЕМ ГЛОБАЛЬНО**
+                    lastKnownMapUrl = yandexMapUrl;
 
                     // 3. Обновляем UI с результатом (теперь это кликабельная ссылка)
                     locationBtnTextEl.innerHTML = '<i class="fas fa-check"></i> Адрес определен';
                     locationResultEl.classList.remove('hidden');
-                    locationAddressEl.textContent = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
+                    locationAddressEl.textContent = locationDisplay;
                     locationAddressEl.href = yandexMapUrl; // Устанавливаем кликабельную ссылку
                     locationAddressEl.title = 'Открыть местоположение на карте';
                     
-                    // 4. Обновляем ссылку WhatsApp
-                    // Отправляем координаты в виде ссылки на карту для удобства водителя
+                    // 4. Обновляем ссылку WhatsApp для ГЛАВНОЙ КНОПКИ
                     const whatsappMessage = `Здравствуйте! Хочу заказать такси. Я нахожусь по координатам (ссылка на карту):\n${yandexMapUrl}\n\nУкажите куда поедем.`;
                     const encodedText = encodeURIComponent(whatsappMessage);
                     const newWhatsappUrl = `https://wa.me/77770649648?text=${encodedText}`;
                     whatsappLinkEl.href = newWhatsappUrl;
 
-                    // 5. Информируем пользователя о новом действии кнопки WhatsApp
-                    displayMessageModal('Готово!', 'Ваше местоположение (координаты и ссылка на карту) автоматически добавлено в кнопку **Заказать Такси**! Нажмите на кнопку, чтобы отправить заказ.', false);
+                    // 5. Информируем пользователя
+                    displayMessageModal('Готово!', 'Ваше местоположение (координаты и ссылка на карту) успешно определено и **будет добавлено в любой заказ через форму**.', false);
                 },
                 (error) => {
                     // 6. Ошибка: обрабатываем разные типы ошибок
@@ -987,6 +986,7 @@
                         errorMessage = 'Доступ к геолокации запрещен. Пожалуйста, разрешите доступ в настройках браузера.';
                     }
                     
+                    lastKnownMapUrl = ''; // Сброс глобальной переменной
                     locationBtnTextEl.innerHTML = '<i class="fas fa-times"></i> Ошибка определения';
                     locationResultEl.classList.add('hidden');
                     locationAddressEl.textContent = '';
@@ -1045,7 +1045,6 @@
         // Функция удаления дополнительного адреса
         window.removeStop = function(divId) {
             document.getElementById(divId).remove();
-            // Сброс счетчика, если все удалено, чтобы можно было добавлять снова (не строго обязательно, но помогает)
             const stopsContainer = document.getElementById('additionalStops');
             if (stopsContainer.children.length === 0) {
                  stopCounter = 0; 
@@ -1056,13 +1055,11 @@
         function openModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) {
-                // Hide all status messages before opening
                 document.querySelectorAll('.status-message').forEach(el => el.classList.remove('active'));
                 
                 modal.classList.add('active');
                 modal.setAttribute('aria-hidden', 'false');
                 
-                // Focus on the first input field
                 const firstInput = modal.querySelector('input, textarea, select');
                 if (firstInput) firstInput.focus();
             }
@@ -1074,18 +1071,15 @@
                 modal.classList.remove('active');
                 modal.setAttribute('aria-hidden', 'true');
                 
-                // --- CUSTOM RESET FOR TAXI MODAL ---
                 if (modalId === 'taxiModal') {
                     const stopsContainer = document.getElementById('additionalStops');
                     if (stopsContainer) {
-                        stopsContainer.innerHTML = ''; // Очистка динамически добавленных полей
-                        stopCounter = 0; // Сброс счетчика
+                        stopsContainer.innerHTML = ''; 
+                        stopCounter = 0; 
                     }
-                    // Сброс формы (поля)
                     const taxiForm = document.getElementById('taxiForm');
                     if (taxiForm) taxiForm.reset();
                 }
-                // -------------------------------------
             }
         }
 
@@ -1099,7 +1093,6 @@
 
         // --- Event Listeners for Opening/Closing ---
 
-        // 1. Open buttons
         document.querySelectorAll('.service-btn').forEach(button => {
             button.addEventListener('click', () => {
                 const service = button.getAttribute('data-service');
@@ -1109,7 +1102,6 @@
             });
         });
 
-        // 2. Close buttons
         document.querySelectorAll('.close-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 const modalId = e.target.getAttribute('data-modal');
@@ -1117,7 +1109,6 @@
             });
         });
 
-        // 3. Close on overlay click
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) {
@@ -1126,7 +1117,6 @@
             });
         });
 
-        // 4. Close on ESC key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const openModal = document.querySelector('.modal-overlay.active');
@@ -1143,7 +1133,6 @@
         if (assistanceTypeSelect && carDetailsDiv) {
             assistanceTypeSelect.addEventListener('change', (e) => {
                 const selectedType = e.target.value;
-                // Показываем поля авто, если выбрана помощь на дороге
                 if (selectedType === 'Подкачать колесо' || selectedType === 'Прикурить автомобиль') {
                     carDetailsDiv.classList.remove('hidden');
                 } else {
@@ -1154,8 +1143,6 @@
 
 
         // --- Form Submission Handlers ---
-
-        // Get all forms
         const forms = document.querySelectorAll('form');
         
         forms.forEach(form => {
@@ -1184,7 +1171,6 @@
                         requiredFieldsMissing = true;
                     }
                     
-                    // Special handling for checkboxes
                     if (input && input.type === 'checkbox') {
                         value = input.checked ? 'Да' : 'Нет';
                     }
@@ -1196,14 +1182,11 @@
                 switch (modalKey) {
                     case 'taxi':
                         message += getVal('taxiFrom', 'Откуда', true);
-                        
-                        // Collect main destination
                         message += getVal('taxiTo', 'Куда', true);
                         
                         // Collect additional stops
                         let stopMessage = '';
                         document.querySelectorAll('#additionalStops input').forEach((input, index) => {
-                            // Пропускаем пустые поля (хотя они required, лучше перестраховаться)
                             if (input.value.trim()) {
                                 const stopLabel = `Доп. адрес ${index + 1}`;
                                 stopMessage += `*${stopLabel}*:\n${input.value.trim()}\n\n`;
@@ -1216,7 +1199,6 @@
                             message += '---------------------------\n\n';
                         }
                         
-                        // Телефон теперь не обязателен
                         message += getVal('taxiPhone', 'Телефон', false);
                         message += '💰 Примерная цена: 700-900 тг (уточнит водитель)';
                         break;
@@ -1253,7 +1235,6 @@
 
                         message += getVal('assistanceType', 'Тип помощи');
                         
-                        // Добавляем детали авто, если это помощь на дороге
                         if (type === 'Подкачать колесо' || type === 'Прикурить автомобиль') {
                             message += getVal('carModel', 'Марка и модель авто');
                             message += getVal('licencePlate', 'Гос. номер');
@@ -1283,6 +1264,13 @@
                     return;
                 }
 
+                // --- НОВОЕ: ДОБАВЛЕНИЕ ГЕОПОЗИЦИИ КО ВСЕМ ЗАКАЗАМ ---
+                if (lastKnownMapUrl) {
+                    const geoBlock = `\n\n--- ГЕОПОЗИЦИЯ КЛИЕНТА (на момент нажатия Геолокации) ---\n${lastKnownMapUrl}`;
+                    message = message + geoBlock;
+                }
+                // ---------------------------------------------------
+
                 // Encode and open WhatsApp link
                 const waLink = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
                 window.open(waLink, '_blank');
@@ -1290,7 +1278,6 @@
                 // Success cleanup
                 closeModal(modalId);
                 this.reset();
-                // Скрываем детали авто после сброса
                 if (modalKey === 'assistance') {
                     const carDetails = document.getElementById('carDetails');
                     if (carDetails) carDetails.classList.add('hidden');

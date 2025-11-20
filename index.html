@@ -543,7 +543,7 @@
                         <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
                         <div class="flex space-x-2">
                             <input id="taxiTo" name="to" type="text" class="flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Улица, дом/объект (обязательно)" required>
-                            <button type="button" onclick="addStop()" class="flex-shrink-0 w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
+                            <button type="button" onclick="addStop('additionalStops')" class="flex-shrink-0 w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
@@ -776,10 +776,21 @@
                         <label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес)</label>
                         <input id="auctionFrom" name="from" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Улица, дом (обязательно)" required>
                     </div>
+                    <!-- ИЗМЕНЕНИЕ: Добавлена кнопка "+" для дополнительных адресов -->
                     <div class="flex flex-col">
-                        <label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес)</label>
-                        <input id="auctionTo" name="to" type="text" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Улица, дом/объект (обязательно)" required>
+                        <label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
+                        <div class="flex space-x-2">
+                            <input id="auctionTo" name="to" type="text" class="flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Улица, дом/объект (обязательно)" required>
+                            <button type="button" onclick="addStop('additionalStopsAuction')" class="flex-shrink-0 w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <!-- Контейнер для дополнительных адресов -->
+                        <div id="additionalStopsAuction" class="mt-2 space-y-2">
+                            <!-- Здесь будут добавляться дополнительные поля -->
+                        </div>
                     </div>
+                    <!-- КОНЕЦ ИЗМЕНЕНИЯ -->
                     <div class="flex flex-col">
                         <label for="auctionPrice" class="text-sm font-medium text-gray-700 mb-1">Ваша цена в тенге</label>
                         <input id="auctionPrice" name="price" type="number" inputmode="numeric" pattern="[0-9]*" min="500" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="Минимум 500 KZT (обязательно)" required>
@@ -1044,27 +1055,29 @@
         // === ЛОГИКА МОДАЛЬНЫХ ОКОН И ФОРМ (UPDATED) ===
         // =========================================================
 
-        let stopCounter = 0; // Счетчик для дополнительных адресов
+        let stopCounter = 0; // Единый счетчик для всех дополнительных адресов
 
         // Функция добавления дополнительного адреса
-        window.addStop = function() {
+        // Принимает ID контейнера для добавления полей (additionalStops или additionalStopsAuction)
+        window.addStop = function(containerId) {
             if (stopCounter >= 3) {
                  displayMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false);
                  return;
             }
             
             stopCounter++;
-            const stopsContainer = document.getElementById('additionalStops');
-            const stopId = `taxiStop${stopCounter}`;
+            const stopsContainer = document.getElementById(containerId);
+            const stopId = `${containerId}Input${stopCounter}`;
             const stopLabel = `Дополнительный адрес ${stopCounter}`;
             
             const stopDiv = document.createElement('div');
             stopDiv.className = "flex space-x-2 additional-stop-item";
-            stopDiv.id = `stopDiv${stopCounter}`;
+            const divId = `stopDiv${containerId}${stopCounter}`;
+            stopDiv.id = divId;
 
             stopDiv.innerHTML = `
                 <input id="${stopId}" name="${stopId}" type="text" class="flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-blue focus:border-primary-blue" placeholder="${stopLabel} (обязательно)" required>
-                <button type="button" onclick="removeStop('${stopDiv.id}')" class="flex-shrink-0 w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Удалить адрес">
+                <button type="button" onclick="removeStop('${divId}')" class="flex-shrink-0 w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Удалить адрес">
                     <i class="fas fa-minus"></i>
                 </button>
             `;
@@ -1074,11 +1087,12 @@
         
         // Функция удаления дополнительного адреса
         window.removeStop = function(divId) {
-            document.getElementById(divId).remove();
-            // Сброс счетчика, если все удалено, чтобы можно было добавлять снова (не строго обязательно, но помогает)
-            const stopsContainer = document.getElementById('additionalStops');
-            if (stopsContainer.children.length === 0) {
-                 stopCounter = 0; 
+            const elementToRemove = document.getElementById(divId);
+            if (elementToRemove) {
+                elementToRemove.remove();
+                // Декрементируем счетчик, чтобы можно было добавить новый адрес
+                stopCounter--;
+                if (stopCounter < 0) stopCounter = 0;
             }
         }
 
@@ -1104,16 +1118,25 @@
                 modal.classList.remove('active');
                 modal.setAttribute('aria-hidden', 'true');
                 
-                // --- CUSTOM RESET FOR TAXI MODAL ---
-                if (modalId === 'taxiModal') {
-                    const stopsContainer = document.getElementById('additionalStops');
-                    if (stopsContainer) {
-                        stopsContainer.innerHTML = ''; // Очистка динамически добавленных полей
-                        stopCounter = 0; // Сброс счетчика
-                    }
+                // --- CUSTOM RESET FOR TAXI/AUCTION MODALS ---
+                if (modalId === 'taxiModal' || modalId === 'auctionModal') {
+                    const stopsContainerTaxi = document.getElementById('additionalStops');
+                    const stopsContainerAuction = document.getElementById('additionalStopsAuction');
+                    
+                    if (stopsContainerTaxi) stopsContainerTaxi.innerHTML = '';
+                    if (stopsContainerAuction) stopsContainerAuction.innerHTML = '';
+                    
+                    stopCounter = 0; // Сброс общего счетчика
+                    
                     // Сброс формы (поля)
-                    const taxiForm = document.getElementById('taxiForm');
-                    if (taxiForm) taxiForm.reset();
+                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
+                    if (form) form.reset();
+                }
+                
+                // Сброс формы для остальных модалов
+                if (modalId !== 'taxiModal' && modalId !== 'auctionModal') {
+                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
+                    if (form) form.reset();
                 }
                 // -------------------------------------
             }
@@ -1222,23 +1245,35 @@
                     return `*${label}*:\n${value || '—'}\n\n`;
                 };
 
+                // Helper to collect dynamic stops
+                const collectStops = (containerId) => {
+                    let stops = '';
+                    const container = document.getElementById(containerId);
+                    if (container) {
+                        container.querySelectorAll('input').forEach((input, index) => {
+                            if (input.value.trim()) {
+                                const stopLabel = `Доп. адрес ${index + 1}`;
+                                stops += `*${stopLabel}*:\n${input.value.trim()}\n\n`;
+                            }
+                        });
+                    }
+                    return stops;
+                };
+
                 // Build message based on service type
                 switch (modalKey) {
                     case 'taxi':
-                        message += getVal('taxiFrom', 'Откуда', true);
+                    case 'auction':
+                        // Main fields
+                        const fromId = modalKey === 'taxi' ? 'taxiFrom' : 'auctionFrom';
+                        const toId = modalKey === 'taxi' ? 'taxiTo' : 'auctionTo';
+                        const stopsContainerId = modalKey === 'taxi' ? 'additionalStops' : 'additionalStopsAuction';
                         
-                        // Collect main destination
-                        message += getVal('taxiTo', 'Куда', true);
+                        message += getVal(fromId, 'Откуда', true);
+                        message += getVal(toId, 'Куда', true);
                         
                         // Collect additional stops
-                        let stopMessage = '';
-                        document.querySelectorAll('#additionalStops input').forEach((input, index) => {
-                            // Пропускаем пустые поля (хотя они required, лучше перестраховаться)
-                            if (input.value.trim()) {
-                                const stopLabel = `Доп. адрес ${index + 1}`;
-                                stopMessage += `*${stopLabel}*:\n${input.value.trim()}\n\n`;
-                            }
-                        });
+                        let stopMessage = collectStops(stopsContainerId);
 
                         if (stopMessage) {
                             message += '\n--- ДОП. АДРЕСА ПО ПУТИ ---\n\n';
@@ -1246,11 +1281,21 @@
                             message += '---------------------------\n\n';
                         }
                         
-                        // Телефон теперь не обязателен
-                        message += getVal('taxiPhone', 'Телефон', false);
-                        message += '💰 Примерная цена: 700-900 тг (уточнит водитель)';
+                        if (modalKey === 'taxi') {
+                            message += getVal('taxiPhone', 'Телефон', false);
+                            message += '💰 Примерная цена: 700-900 тг (уточнит водитель)';
+                        } else { // auction
+                            const auctionPrice = document.getElementById('auctionPrice').value;
+                            if (!auctionPrice || parseInt(auctionPrice) < 500) {
+                                requiredFieldsMissing = true;
+                                showStatus(modalId, 'Пожалуйста, введите корректную цену (минимум 500 KZT).');
+                                return;
+                            }
+                            message += `*Предлагаемая цена*:\n${auctionPrice} KZT\n\n`;
+                            message += '⚠️ ПРИМЕЧАНИЕ: Это цена клиента. Примите решение по заказу самостоятельно.';
+                        }
                         break;
-
+                        
                     case 'delivery':
                         message += getVal('deliveryItems', 'Список товаров', true);
                         message += getVal('deliveryAddress', 'Адрес доставки', true);
@@ -1293,19 +1338,6 @@
                         message += getVal('assistanceAddress', 'Адрес (где нужна помощь)', true);
                         message += '💰 Примерная цена: от 1500 тг (зависит от характера требуемой помощи)';
                         break;
-                    
-                    case 'auction':
-                        message += getVal('auctionFrom', 'Откуда', true);
-                        message += getVal('auctionTo', 'Куда', true);
-                        const auctionPrice = document.getElementById('auctionPrice').value;
-                        if (!auctionPrice || parseInt(auctionPrice) < 500) {
-                            requiredFieldsMissing = true;
-                            showStatus(modalId, 'Пожалуйста, введите корректную цену (минимум 500 KZT).');
-                            return;
-                        }
-                        message += `*Предлагаемая цена*:\n${auctionPrice} KZT\n\n`;
-                        message += '⚠️ ПРИМЕЧАНИЕ: Это цена клиента. Примите решение по заказу самостоятельно.';
-                        break;
                 }
 
                 if (requiredFieldsMissing) {
@@ -1331,6 +1363,7 @@
     </script>
 </body>
 </html>
+
 
 
 

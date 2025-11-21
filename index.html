@@ -167,6 +167,12 @@
             box-shadow: none;
         }
         
+        /* Стиль для панели управления */
+        #managementPanel {
+            border: 2px dashed #f59e0b;
+            background-color: #fffbeb; /* yellow-50 */
+        }
+        
     </style>
 </head>
 
@@ -176,12 +182,15 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // ИСПРАВЛЕНИЕ: Добавлен setDoc в импорты Firestore
-        import { getFirestore, doc, onSnapshot, runTransaction, setLogLevel, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, runTransaction, setLogLevel, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Глобальные переменные для Firebase
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        
+        // Настройки купона
+        const COUPON_ID = "coupon100_kz";
+        const COUPON_VALUE_TEXT = "100 TГ";
 
         // Глобальные переменные для использования в основном JS
         window.firebaseApp = null;
@@ -204,7 +213,7 @@
                     if (user) {
                         window.currentUserId = user.uid;
                         // 2. Инициализация ссылки на документ купона
-                        window.couponDocRef = doc(window.db, "artifacts", appId, "public", "data", "coupon_status", "coupon100_kz");
+                        window.couponDocRef = doc(window.db, "artifacts", appId, "public", "data", "coupon_status", COUPON_ID);
                         // 3. Запуск прослушивания статуса купона
                         startCouponListener();
                     } else {
@@ -236,17 +245,26 @@
         function startCouponListener() {
             if (!window.couponDocRef) return;
 
-            onSnapshot(window.couponDocRef, (doc) => {
+            onSnapshot(window.couponDocRef, (docSnapshot) => {
                 const couponBtn = document.getElementById('couponBtn');
+                const adminStatus = document.getElementById('adminCouponStatus');
+                const claimedByInfo = document.getElementById('claimedByInfo');
+                const resetBtn = document.getElementById('resetCouponBtn'); // Получаем ссылку на кнопку сброса
+                
                 if (!couponBtn) return;
                 
-                if (doc.exists()) {
-                    const data = doc.data();
-                    window.isCouponClaimed = !data.is_available;
+                let isAvailable = false;
+                let claimedBy = '—';
+                
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data();
+                    isAvailable = data.is_available;
+                    claimedBy = data.claimed_by ? data.claimed_by : '—';
+                    window.isCouponClaimed = !isAvailable;
                     
-                    if (data.is_available) {
+                    if (isAvailable) {
                         couponBtn.disabled = false;
-                        couponBtn.textContent = '🎁 Купон 100 TГ (Первому)';
+                        couponBtn.textContent = `🎁 Купон ${COUPON_VALUE_TEXT} (Первому)`;
                         couponBtn.classList.remove('bg-gray-600', 'hover:bg-gray-700');
                     } else {
                         couponBtn.disabled = true;
@@ -254,18 +272,29 @@
                         couponBtn.classList.add('bg-gray-600', 'hover:bg-gray-700');
                         
                         // Если купон использован, но текущий пользователь его не активировал
-                        if (data.claimed_by !== window.currentUserId) {
-                             displayMessageModal('Внимание!', 'К сожалению, купон на 100 TГ уже активирован другим клиентом. Акция завершена.', true);
+                        if (data.claimed_by !== window.currentUserId && window.currentUserId) {
+                             // Модальное окно не показываем при каждой загрузке страницы, только при попытке активации
                         }
                     }
                 } else {
                     // Если документа нет, создаем его как активный
-                    // setDoc теперь определен благодаря импорту
                     setDoc(window.couponDocRef, { is_available: true, claimed_by: null, claimed_time: null })
                         .catch(err => console.error("Error setting initial coupon doc:", err));
                     couponBtn.disabled = false;
-                    couponBtn.textContent = '🎁 Купон 100 TГ (Первому)';
+                    couponBtn.textContent = `🎁 Купон ${COUPON_VALUE_TEXT} (Первому)`;
+                    isAvailable = true;
                 }
+                
+                // Обновление панели управления для Оператора (если она видна)
+                if (adminStatus) {
+                    adminStatus.textContent = isAvailable ? 'ДОСТУПЕН' : 'ИСПОЛЬЗОВАН';
+                    adminStatus.className = isAvailable ? 'text-green-600 font-bold' : 'text-red-600 font-bold';
+                    claimedByInfo.textContent = claimedBy;
+                }
+                if (resetBtn) {
+                     resetBtn.disabled = false;
+                }
+                
             }, (error) => {
                 console.error("Firestore Listener Error:", error);
                 couponBtn.disabled = true;
@@ -300,10 +329,10 @@
                     });
                 });
 
-                // Транзакция успешна
+                // Транзакция успешна: показываем клиенту модальное окно с поздравлением
                 window.isCouponClaimed = true;
                 couponBtn.textContent = '✅ Купон Активирован!';
-                displayMessageModal('Поздравляем!', 'Вы активировали купон на 100 TГ! Скидка будет автоматически учтена при оформлении следующего заказа такси.', false);
+                displayMessageModal('Поздравляем!', `Вы активировали купон на ${COUPON_VALUE_TEXT}! Скидка будет автоматически учтена при оформлении следующего заказа такси.`, false);
 
             } catch (error) {
                 if (error.message.includes("Coupon already claimed")) {
@@ -315,9 +344,37 @@
                     // Сброс состояния кнопки, если она должна быть доступна
                     if (!window.isCouponClaimed) {
                         couponBtn.disabled = false;
-                        couponBtn.textContent = '🎁 Купон 100 TГ (Первому)';
+                        couponBtn.textContent = `🎁 Купон ${COUPON_VALUE_TEXT} (Первому)`;
                     }
                 }
+            }
+        };
+        
+        // Глобальная функция для сброса купона (Только для Оператора)
+        window.resetCouponStatus = async function() {
+            if (!window.db || !window.couponDocRef) {
+                displayMessageModal('Ошибка', 'Сервис базы данных недоступен.', true);
+                return;
+            }
+            
+            const resetButton = document.getElementById('resetCouponBtn');
+            resetButton.disabled = true;
+            resetButton.textContent = '⏳ Сброс...';
+            
+            try {
+                await updateDoc(window.couponDocRef, {
+                    is_available: true,
+                    claimed_by: null,
+                    claimed_time: null
+                });
+                displayMessageModal('Успех', 'Статус купона успешно сброшен. Купон снова ДОСТУПЕН для первого клиента!', false);
+            } catch (error) {
+                console.error("Coupon Reset Failed:", error);
+                displayMessageModal('Ошибка', 'Не удалось сбросить статус купона. Проверьте соединение с Firebase.', true);
+            } finally {
+                // onSnapshot обновит UI автоматически, но на всякий случай включаем кнопку
+                resetButton.disabled = false;
+                resetButton.textContent = '🔁 Сбросить Купон (Сделать доступным)';
             }
         };
 
@@ -364,7 +421,7 @@
         
         <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6">
             
-            <!-- НОВАЯ КНОПКА: КУПОН 100 TГ -->
+            <!-- КНОПКА: КУПОН 100 TГ -->
             <button id="couponBtn" onclick="claimCoupon()" disabled
                 class="w-full text-white rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2 py-3 text-lg mb-3">
                 <i class="fas fa-ticket-alt text-xl"></i><span>Загрузка статуса купона...</span>
@@ -484,6 +541,25 @@
         </div>
 
 
+        <!-- НОВЫЙ БЛОК: УПРАВЛЕНИЕ КУПОНОМ (ТОЛЬКО ДЛЯ ОПЕРАТОРА - СКРЫТ ПО УМОЛЧАНИЮ) -->
+        <div id="managementPanel" class="mt-8 p-5 rounded-2xl max-w-md mx-auto shadow-lg hidden">
+            <h3 class="text-xl font-bold text-center mb-4 text-orange-600 flex items-center justify-center">
+                <i class="fas fa-user-shield mr-2"></i> Панель Управления Купоном (ОПЕРАТОР)
+            </h3>
+            <div class="text-center text-sm mb-3">
+                <p class="mb-1">Текущий купон: **Скидка 100 TГ**</p>
+                <p>Статус: <span id="adminCouponStatus" class="font-bold">Загрузка...</span></p>
+                <p class="text-xs text-gray-500 mt-1">Использован пользователем ID: <span id="claimedByInfo">—</span></p>
+            </div>
+            <!-- Кнопка будет включаться после инициализации Firebase -->
+            <button id="resetCouponBtn" onclick="resetCouponStatus()" 
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all disabled:opacity-50" disabled>
+                🔁 Сбросить Купон (Сделать доступным)
+            </button>
+        </div>
+        <!-- КОНЕЦ БЛОКА ОПЕРАТОРА -->
+
+
         <!-- БЛОК 4: ТехОсмотр (ПАРТНЕРСКАЯ РЕКЛАМА) -->
         <div class="mt-8 border-t pt-6">
             <h3 class="text-xl font-bold text-center mb-4 text-gray-700">Нашим Партнерам: ТехОсмотр</h3>
@@ -506,7 +582,7 @@
                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
                     </a>
-                    <!-- ОБНОВЛЕННАЯ КНОПКА: ЗВОНОК -->
+                    <!-- ОБНОВЛЕННАЯ КНОТКА: ЗВОНОК -->
                     <a href="tel:+77771383856"
                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fas fa-phone-alt mr-2"></i> Звонок
@@ -1053,6 +1129,14 @@
         const locationAddressEl = document.getElementById('locationAddress');
         const announcementBar = document.getElementById('announcementBar');
         const originalWhatsappText = whatsappLinkEl.href;
+        const managementPanel = document.getElementById('managementPanel'); // Панель оператора
+
+        // Проверка режима админа по URL-параметру
+        const urlParams = new URLSearchParams(window.location.search);
+        const isAdmin = urlParams.get('admin') === 'true';
+        
+        // Переменные из Firebase/Coupon Setup (для доступа в основном JS)
+        const COUPON_VALUE_TEXT = "100 TГ";
         
         let currentGeolocatedAddress = '';
         
@@ -1086,7 +1170,13 @@
             localStorage.setItem('announcement_dismissed_v1', 'true');
         }
 
-        document.addEventListener('DOMContentLoaded', checkAndShowAnnouncement);
+        document.addEventListener('DOMContentLoaded', () => {
+             checkAndShowAnnouncement();
+             // Показать панель оператора, если в URL есть ?admin=true
+             if (isAdmin && managementPanel) {
+                managementPanel.classList.remove('hidden');
+             }
+        });
 
 
         // --- ФУНКЦИЯ АККОРДЕОНА ---
@@ -1180,7 +1270,7 @@
                     
                     // Добавляем пометку о купоне, если он активирован
                     if (window.isCouponClaimed) {
-                        whatsappMessage += "\n\n!!! КУПОН АКТИВИРОВАН: СКИДКА 100 TГ !!!";
+                        whatsappMessage += `\n\n!!! КУПОН АКТИВИРОВАН: СКИДКА ${COUPON_VALUE_TEXT} !!!`;
                     }
 
                     const encodedText = encodeURIComponent(whatsappMessage);
@@ -1427,9 +1517,9 @@
                         if (modalKey === 'taxi') {
                             message += getVal('taxiPhone', 'Телефон', false);
                             
-                            // Добавляем пометку о купоне, если он активирован
+                            // !!! КЛЮЧЕВАЯ ЛОГИКА: Добавление пометки о купоне !!!
                             if (window.isCouponClaimed) {
-                                message += "\n!!! СКИДКА 100 TГ (КУПОН АКТИВИРОВАН) !!!\n";
+                                message += `\n!!! СКИДКА ${COUPON_VALUE_TEXT} (КУПОН АКТИВИРОВАН) !!!\n\n`;
                             }
                             
                             message += '💰 Примерная цена: 700-900 тг (уточнит водитель)';

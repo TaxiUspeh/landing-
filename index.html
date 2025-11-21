@@ -74,7 +74,8 @@
             font-weight: 700; /* font-bold */
         }
         
-        /* === СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКОН === */
+        /* === НОВЫЕ СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКОН === */
+        /* Modal Overlay - Full screen, centered */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -96,6 +97,7 @@
             visibility: visible;
         }
 
+        /* Modal Content Box */
         .modal {
             background: white;
             border-radius: 12px;
@@ -110,11 +112,18 @@
             transform: scale(1);
         }
 
+        /* Responsive adjustments for mobile */
         @media (max-width: 640px) {
             .modal {
                 max-width: 95%;
                 margin: 10px;
             }
+        }
+        
+        /* Custom scrollbar for modal content if it gets too long */
+        .modal-body {
+            max-height: 80vh;
+            overflow-y: auto;
         }
         
         .price-note {
@@ -129,317 +138,33 @@
             color: #008000; /* Green for price */
         }
         
+        /* Status message styling */
         .status-message {
             display: none;
         }
         .status-message.active {
             display: block;
         }
+        /* Используем цвета из предыдущего кода для модалов */
         .bg-primary-blue { background-color: #007bff; }
         .hover\:bg-primary-dark:hover { background-color: #0056b3; }
         .text-primary-blue { color: #007bff; }
         .focus\:ring-primary-blue:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5); }
         
+        /* НОВЫЙ СТИЛЬ: для кликабельных координат */
         .coord-link {
-            color: #1d4ed8; 
+            color: #1d4ed8; /* Blue-700 for links */
             text-decoration: underline;
             font-weight: 600;
         }
         .coord-link:hover {
-            color: #f59e0b; 
+            color: #f59e0b; /* Yellow-500 on hover */
         }
-
-        /* Стиль для кнопки Купона */
-        #couponBtn {
-            font-weight: 700;
-            transition: all 0.2s;
-            background-image: linear-gradient(45deg, #ef4444 0%, #f97316 100%); /* Red-500 to Orange-500 */
-            border: 2px solid #fff;
-            box-shadow: 0 4px 10px rgba(249, 115, 22, 0.5);
-        }
-        #couponBtn:hover:not(:disabled) {
-            transform: scale(1.05) translateY(-1px);
-            box-shadow: 0 6px 15px rgba(249, 115, 22, 0.7);
-        }
-        #couponBtn:disabled {
-            background-image: linear-gradient(45deg, #6b7280 0%, #4b5563 100%); /* Gray scale when disabled */
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        
-        /* Стиль для панели управления */
-        #managementPanel {
-            border: 2px dashed #f59e0b;
-            background-color: #fffbeb; /* yellow-50 */
-        }
-        .admin-list-item {
-            border-bottom: 1px solid #ddd;
-            padding: 4px 0;
-        }
+        /* === КОНЕЦ НОВЫХ СТИЛЕЙ === */
     </style>
 </head>
 
 <body class="text-gray-900 min-h-screen flex flex-col">
-
-    <!-- Firebase Imports and Configuration (ОБНОВЛЕНО ДЛЯ АТОМАРНЫХ ОПЕРАЦИЙ) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // Импортируем FieldValue, arrayUnion, increment для атомарных операций
-        import { getFirestore, doc, onSnapshot, runTransaction, setLogLevel, setDoc, updateDoc, arrayUnion, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Глобальные переменные для Firebase
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        
-        // Настройки купона
-        const COUPON_ID = "coupon_limit_3"; 
-        const COUPON_VALUE_TEXT = "100 TГ";
-        const COUPON_LIMIT = 3; // Лимит купонов
-        
-        // Глобальные переменные для использования в основном JS
-        window.firebaseApp = null;
-        window.db = null;
-        window.auth = null;
-        window.currentUserId = null;
-        window.couponDocRef = null;
-        window.isCouponClaimed = false; // Глобальный статус купона
-
-        // Инициализация Firebase
-        if (Object.keys(firebaseConfig).length > 0) {
-            try {
-                window.firebaseApp = initializeApp(firebaseConfig);
-                window.db = getFirestore(window.firebaseApp);
-                window.auth = getAuth(window.firebaseApp);
-                setLogLevel('error');
-                
-                // 1. Аутентификация
-                onAuthStateChanged(window.auth, async (user) => {
-                    if (user) {
-                        window.currentUserId = user.uid;
-                    } else {
-                        // Попытка анонимного входа или входа по токену
-                        try {
-                            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                            if (initialAuthToken) {
-                                const userCredential = await signInWithCustomToken(window.auth, initialAuthToken);
-                                window.currentUserId = userCredential.user.uid;
-                            } else {
-                                const userCredential = await signInAnonymously(window.auth);
-                                window.currentUserId = userCredential.user.uid;
-                            }
-                        } catch (error) {
-                            console.error("Firebase Auth Error: Fallback to anonymous failed:", error);
-                            window.currentUserId = 'anonymous-' + crypto.randomUUID();
-                        }
-                    }
-                    // 2. Инициализация ссылки на документ купона
-                    window.couponDocRef = doc(window.db, "artifacts", appId, "public", "data", "coupon_status", COUPON_ID);
-                    // 3. Запуск прослушивания статуса купона
-                    startCouponListener();
-                });
-
-            } catch (e) {
-                console.error("Firebase Initialization Error:", e);
-                const couponBtn = document.getElementById('couponBtn');
-                if (couponBtn) {
-                    couponBtn.disabled = true;
-                    couponBtn.textContent = "Купон (Сервис недоступен)";
-                }
-            }
-        } else {
-            const couponBtn = document.getElementById('couponBtn');
-            if (couponBtn) {
-                couponBtn.disabled = true;
-                couponBtn.textContent = "Купон (Конфигурация отсутствует)";
-            }
-        }
-        
-        // Инициализация данных при первом запуске (если документа нет)
-        async function initializeCouponData() {
-            if (!window.couponDocRef) return;
-            try {
-                // Создаем документ с начальными значениями, если он не существует
-                await setDoc(window.couponDocRef, {
-                    remainingCoupons: COUPON_LIMIT,
-                    usedBy: [],
-                    lastReset: new Date().toISOString()
-                }, { merge: true });
-                console.log("Coupon data initialized successfully.");
-            } catch (error) {
-                console.error("Error initializing coupon data:", error);
-            }
-        }
-
-        // Функция прослушивания статуса купона
-        function startCouponListener() {
-            if (!window.couponDocRef || !window.currentUserId) return;
-
-            onSnapshot(window.couponDocRef, async (docSnapshot) => {
-                const couponBtn = document.getElementById('couponBtn');
-                const adminStatus = document.getElementById('adminCouponStatus');
-                const claimedByList = document.getElementById('claimedByList');
-                const resetBtn = document.getElementById('resetCouponBtn');
-                
-                if (!couponBtn) return;
-                
-                let remaining = COUPON_LIMIT;
-                let usedClients = [];
-                let docExists = docSnapshot.exists();
-                
-                if (docExists) {
-                    const data = docSnapshot.data();
-                    remaining = data.remainingCoupons !== undefined ? data.remainingCoupons : COUPON_LIMIT;
-                    usedClients = data.usedBy || [];
-                } else {
-                    // Если документа нет, инициализируем его
-                    await initializeCouponData();
-                    docExists = true; 
-                }
-
-                if (!docExists) return; // Выход, если не удалось создать/получить документ
-
-                const isUsedByCurrentUser = usedClients.includes(window.currentUserId);
-                window.isCouponClaimed = isUsedByCurrentUser; // Обновляем глобальный статус
-                
-                // --- ЛОГИКА ДЛЯ КЛИЕНТА ---
-                if (remaining <= 0) {
-                    couponBtn.classList.add('hidden'); // Полностью скрыть
-                } else {
-                    couponBtn.classList.remove('hidden'); // Показать, если доступен
-                    
-                    if (isUsedByCurrentUser) {
-                        couponBtn.disabled = true;
-                        couponBtn.textContent = `✅ Ваша скидка ${COUPON_VALUE_TEXT} активирована!`;
-                        couponBtn.classList.add('bg-gray-600');
-                        couponBtn.classList.remove('bg-red-500', 'bg-orange-500');
-                    } else {
-                        couponBtn.disabled = false;
-                        couponBtn.textContent = `🎁 Получить Купон ${COUPON_VALUE_TEXT}`;
-                        couponBtn.classList.remove('bg-gray-600');
-                        // Цвета берутся из CSS
-                    }
-                }
-                
-                // --- ЛОГИКА ДЛЯ ОПЕРАТОРА (Админ-панель) ---
-                if (isAdmin) {
-                    adminStatus.textContent = remaining > 0 ? `ДОСТУПНО (${remaining} из ${COUPON_LIMIT})` : 'ИСЧЕРПАН';
-                    adminStatus.className = remaining > 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold';
-                    
-                    if (claimedByList) {
-                        claimedByList.innerHTML = usedClients.length > 0 
-                            ? usedClients.map(id => `<li class="admin-list-item">${id}</li>`).join('')
-                            : '<li class="text-gray-500">Пока не использован.</li>';
-                    }
-                }
-                
-                if (resetBtn) resetBtn.disabled = false;
-
-            }, (error) => {
-                console.error("Firestore Listener Error:", error);
-                const couponBtn = document.getElementById('couponBtn');
-                if (couponBtn) {
-                    couponBtn.disabled = true;
-                    couponBtn.textContent = 'Купон (Ошибка связи)';
-                }
-            });
-        }
-
-        // Глобальная функция для активации купона (вызывается из HTML)
-        window.claimCoupon = async function() {
-            if (!window.db || !window.couponDocRef || !window.currentUserId) {
-                displayMessageModal('Ошибка', 'Сервис временно недоступен. Попробуйте позже.', true);
-                return;
-            }
-
-            const couponBtn = document.getElementById('couponBtn');
-            couponBtn.disabled = true;
-            couponBtn.textContent = '⏳ Проверка...';
-
-            try {
-                let successMessage = `✅ Поздравляем! Вы активировали скидку ${COUPON_VALUE_TEXT}. Она будет автоматически добавлена к вашему следующему заказу такси.`;
-
-                await runTransaction(window.db, async (transaction) => {
-                    const docSnapshot = await transaction.get(window.couponDocRef);
-                    const data = docSnapshot.exists() ? docSnapshot.data() : { remainingCoupons: 0, usedBy: [] };
-
-                    let remaining = data.remainingCoupons !== undefined ? data.remainingCoupons : 0;
-                    const usedBy = data.usedBy || [];
-                    const isAlreadyUsed = usedBy.includes(window.currentUserId);
-
-                    if (remaining > 0 && !isAlreadyUsed) {
-                        // Атомарное уменьшение счетчика и добавление ID в список
-                        transaction.update(window.couponDocRef, {
-                            remainingCoupons: increment(-1),
-                            usedBy: arrayUnion(window.currentUserId),
-                            claimed_time: new Date().toISOString()
-                        });
-                        // Успех, но сообщение показываем ниже
-                    } else if (isAlreadyUsed) {
-                        // Если уже использовал
-                        successMessage = `❌ Вы уже получили скидку ${COUPON_VALUE_TEXT}. Купон можно получить только один раз.`;
-                        throw new Error("Already claimed.");
-                    } else {
-                        // Лимит исчерпан
-                        successMessage = "❌ Извините, лимит купонов исчерпан. Акция завершена.";
-                        throw new Error("Limit reached.");
-                    }
-                });
-
-                // Транзакция успешна
-                window.isCouponClaimed = true;
-                couponBtn.textContent = '✅ Ваша скидка активирована!';
-                displayMessageModal('Поздравляем!', successMessage, false);
-
-            } catch (error) {
-                if (error.message.includes("Already claimed") || error.message.includes("Limit reached")) {
-                    displayMessageModal(error.message.includes("Limit reached") ? 'Опоздали' : 'Уже активировано', successMessage, true);
-                } else {
-                    console.error("Coupon Transaction Failed:", error);
-                    displayMessageModal('Ошибка', 'Не удалось активировать купон из-за технической ошибки. Попробуйте еще раз.', true);
-                }
-                // onSnapshot обновит UI, включая отключение кнопки, если лимит исчерпан.
-            }
-        };
-        
-        // Глобальная функция для сброса купона (Только для Оператора)
-        window.resetCouponStatus = async function() {
-            if (!window.db || !window.couponDocRef) {
-                displayMessageModal('Ошибка', 'Сервис базы данных недоступен.', true);
-                return;
-            }
-            
-            const resetButton = document.getElementById('resetCouponBtn');
-            resetButton.disabled = true;
-            resetButton.textContent = '⏳ Сброс...';
-            
-            try {
-                // Полный сброс счетчика и списка использованных
-                await setDoc(window.couponDocRef, {
-                    remainingCoupons: COUPON_LIMIT,
-                    usedBy: [],
-                    claimed_time: null,
-                    lastReset: new Date().toISOString()
-                });
-                displayMessageModal('Успех', `Лимит купонов сброшен! Доступно ${COUPON_LIMIT} новых купона.`, false);
-            } catch (error) {
-                console.error("Coupon Reset Failed:", error);
-                displayMessageModal('Ошибка', 'Не удалось сбросить статус купона. Проверьте соединение с Firebase.', true);
-            } finally {
-                // onSnapshot обновит UI автоматически
-            }
-        };
-        
-        // ВАЖНО: Функции showPWAInstructions и showPartnerModal также должны быть доступны
-        window.showPWAInstructions = function() {
-            document.getElementById('pwaModal').classList.remove('hidden');
-        }
-        window.showPartnerModal = function() {
-            document.getElementById('partnerModal').classList.remove('hidden');
-        }
-
-    </script>
-    <!-- Конец Firebase/JS setup -->
 
     <!-- HEADER -->
     <header class="header-bg text-white py-10 rounded-b-xl shadow-xl">
@@ -473,13 +198,8 @@
         
         <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6">
             
-            <!-- КНОПКА: КУПОН 100 TГ (Скрывается, когда лимит исчерпан) -->
-            <button id="couponBtn" onclick="claimCoupon()" disabled
-                class="w-full text-white rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2 py-3 text-lg mb-3">
-                <i class="fas fa-ticket-alt text-xl"></i><span>Загрузка статуса купона...</span>
-            </button>
-            
             <!-- 1. ГЛАВНАЯ КНОПКА ЗАКАЗА (WhatsApp - Полная ширина) -->
+            <!-- Надпись (WhatsApp) убрана по запросу пользователя -->
             <a id="whatsappLink" href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20такси%20в%20Белоусовке.%20Укажите%20маршрут%3A%20%5BАдрес%20ОТКУДА%5D%20до%20%5BАдрес%20КУДА%5D." target="_blank"
                 class="btn-hover bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-4 text-xl mb-3">
                 <i class="fab fa-whatsapp text-2xl"></i><span>Заказать Такси</span>
@@ -593,30 +313,6 @@
         </div>
 
 
-        <!-- НОВЫЙ БЛОК: УПРАВЛЕНИЕ КУПОНОМ (ТОЛЬКО ДЛЯ ОПЕРАТОРА - СКРЫТ ПО УМОЛЧАНИЮ) -->
-        <div id="managementPanel" class="mt-8 p-5 rounded-2xl max-w-md mx-auto shadow-lg hidden">
-            <h3 class="text-xl font-bold text-center mb-4 text-orange-600 flex items-center justify-center">
-                <i class="fas fa-user-shield mr-2"></i> Панель Управления Купоном (ОПЕРАТОР)
-            </h3>
-            <div class="text-center text-sm mb-3">
-                <p class="mb-1">Купон: **Скидка 100 TГ** (Лимит: 3)</p>
-                <p>Статус: <span id="adminCouponStatus" class="font-bold">Загрузка...</span></p>
-                <div class="mt-2 text-left text-xs bg-white p-3 rounded-lg shadow-inner max-h-40 overflow-y-auto">
-                    <p class="font-bold text-gray-700 mb-1">ID использовавших:</p>
-                    <ul id="claimedByList" class="text-gray-600 space-y-0.5">
-                        <li class="text-gray-500">Загрузка...</li>
-                    </ul>
-                </div>
-            </div>
-            <!-- Кнопка будет включаться после инициализации Firebase -->
-            <button id="resetCouponBtn" onclick="resetCouponStatus()" 
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all disabled:opacity-50" disabled>
-                🔁 Сбросить Купон (Установить 3)
-            </button>
-        </div>
-        <!-- КОНЕЦ БЛОКА ОПЕРАТОРА -->
-
-
         <!-- БЛОК 4: ТехОсмотр (ПАРТНЕРСКАЯ РЕКЛАМА) -->
         <div class="mt-8 border-t pt-6">
             <h3 class="text-xl font-bold text-center mb-4 text-gray-700">Нашим Партнерам: ТехОсмотр</h3>
@@ -639,7 +335,7 @@
                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
                     </a>
-                    <!-- ОБНОВЛЕННАЯ КНОТКА: ЗВОНОК -->
+                    <!-- ОБНОВЛЕННАЯ КНОПКА: ЗВОНОК -->
                     <a href="tel:+77771383856"
                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fas fa-phone-alt mr-2"></i> Звонок
@@ -1179,22 +875,14 @@
     </div>
 
     <script>
-        // Глобальные переменные из HTML/DOM
         const whatsappLinkEl = document.getElementById('whatsappLink');
         const locationBtnTextEl = document.getElementById('locationBtnText');
         const locationResultEl = document.getElementById('locationResult');
-        const locationAddressEl = document.getElementById('locationAddress');
+        const locationAddressEl = document.getElementById('locationAddress'); // Теперь это <a> элемент
         const announcementBar = document.getElementById('announcementBar');
         const originalWhatsappText = whatsappLinkEl.href;
-        const managementPanel = document.getElementById('managementPanel'); // Панель оператора
-
-        // Проверка режима админа по URL-параметру
-        const urlParams = new URLSearchParams(window.location.search);
-        const isAdmin = urlParams.get('admin') === 'true';
         
-        // Переменные из Firebase/Coupon Setup (для доступа в основном JS)
-        const COUPON_VALUE_TEXT = "100 TГ";
-        
+        // Глобальная переменная для хранения строки координат (с кликабельной ссылкой)
         let currentGeolocatedAddress = '';
         
         // --- КОНФИГУРАЦИЯ МОДАЛОВ ---
@@ -1204,10 +892,11 @@
             'cargo': { id: 'cargoModal', formId: 'cargoForm', title: 'ГРУЗОВОЙ', prefix: '🚚 НОВЫЙ ЗАКАЗ: ГРУЗОВОЙ' },
             'soberDriver': { id: 'soberDriverModal', formId: 'soberDriverForm', title: 'ТРЕЗВЫЙ ВОДИТЕЛЬ', prefix: '🔑 НОВЫЙ ЗАКАЗ: ТРЕЗВЫЙ ВОДИТЕЛЬ' },
             'assistance': { id: 'assistanceModal', formId: 'assistanceForm', title: 'ПОМОЩЬ', prefix: '🙋 НОВЫЙ ЗАКАЗ: ПОМОЩЬ' },
+            // НОВАЯ КОНФИГУРАЦИЯ ДЛЯ АУКЦИОНА
             'auction': { id: 'auctionModal', formId: 'auctionForm', title: 'АУКЦИОН', prefix: '🔨 ЗАКАЗ: АУКЦИОН (ЦЕНА КЛИЕНТА)' },
         };
         
-        const PHONE_NUMBER = '77770649648'; 
+        const PHONE_NUMBER = '77770649648'; // Ваш номер для WhatsApp
         // -----------------------------
 
 
@@ -1227,16 +916,10 @@
             localStorage.setItem('announcement_dismissed_v1', 'true');
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-             checkAndShowAnnouncement();
-             // Показать панель оператора, если в URL есть ?admin=true
-             if (isAdmin && managementPanel) {
-                managementPanel.classList.remove('hidden');
-             }
-        });
+        window.onload = checkAndShowAnnouncement;
 
 
-        // --- ФУНКЦИЯ АККОРДЕОНА ---
+        // --- ФУНКЦИЯ АККОРДЕОНА (ИСПРАВЛЕНА) ---
         window.toggleAccordion = function(id) {
             const content = document.getElementById(id);
             const icon = document.getElementById(`icon-${id}`);
@@ -1245,10 +928,13 @@
                 // Открываем
                 content.classList.remove('hidden');
                 icon.classList.add('rotate-180');
+                // Добавляем анимацию
+                content.style.maxHeight = content.scrollHeight + 'px';
             } else {
                 // Закрываем
                 content.classList.add('hidden');
                 icon.classList.remove('rotate-180');
+                content.style.maxHeight = null;
             }
         }
 
@@ -1271,7 +957,7 @@
             document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
         
-        // --- Заполнение полей форм координатами ---
+        // --- НОВАЯ ФУНКЦИЯ: Заполнение полей форм координатами ---
         function setAllLocationFields(locationText) {
             const fieldsToFill = [
                 { id: 'taxiFrom', placeholder: 'Откуда (Адрес определен)' }, 
@@ -1292,7 +978,7 @@
         }
 
 
-        // --- ЛОГИКА ГЕОЛОКАЦИИ ---
+        // --- ЛОГИКА ГЕОЛОКАЦИИ (ОБНОВЛЕНА) ---
         window.getCurrentLocation = function() {
             if (!navigator.geolocation) {
                 displayMessageModal('Ошибка', 'Геолокация не поддерживается вашим браузером.', true);
@@ -1308,36 +994,35 @@
                     const lat = position.coords.latitude.toFixed(5);
                     const lon = position.coords.longitude.toFixed(5);
                     
+                    // Формируем ссылку для Яндекс.Карт. Формат: lon,lat
                     const yandexMapUrl = `https://yandex.kz/maps/?pt=${lon},${lat}&z=16&l=map`;
 
+                    // Форматированная строка для вставки в поля форм (чтобы водитель видел и мог кликнуть)
+                    // Используем квадратные скобки для лучшей читаемости в WhatsApp
                     currentGeolocatedAddress = `[КООРДИНАТЫ] ${lat}, ${lon}. Ссылка: ${yandexMapUrl}`; 
 
-                    // 3. Обновляем UI с результатом
+                    // 3. Обновляем UI с результатом (теперь это кликабельная ссылка)
                     locationBtnTextEl.innerHTML = '<i class="fas fa-check"></i> Адрес определен';
                     locationResultEl.classList.remove('hidden');
                     locationAddressEl.textContent = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
-                    locationAddressEl.href = yandexMapUrl; 
+                    locationAddressEl.href = yandexMapUrl; // Устанавливаем кликабельную ссылку
                     locationAddressEl.title = 'Открыть местоположение на карте';
                     
-                    // Вставляем координаты во все соответствующие поля форм
+                    // НОВОЕ: Вставляем координаты во все соответствующие поля форм
                     setAllLocationFields(currentGeolocatedAddress);
 
                     // 4. Обновляем ссылку WhatsApp (главная кнопка)
-                    let whatsappMessage = `Здравствуйте! Хочу заказать такси. Я нахожусь по адресу (координатам) отправленным ниже. Укажите куда поедем.\n\n${currentGeolocatedAddress}`;
-                    
-                    // Добавляем пометку о купоне, если он активирован
-                    if (window.isCouponClaimed) {
-                        whatsappMessage += `\n\n!!! СКИДКА ${COUPON_VALUE_TEXT} (КУПОН АКТИВИРОВАН) !!!`;
-                    }
-
+                    // Отправляем координаты в виде ссылки на карту для удобства водителя
+                    const whatsappMessage = `Здравствуйте! Хочу заказать такси. Я нахожусь по адресу (координатам) отправленным ниже. Укажите куда поедем.\n\n${currentGeolocatedAddress}`;
                     const encodedText = encodeURIComponent(whatsappMessage);
-                    whatsappLinkEl.href = `https://wa.me/77770649648?text=${encodedText}`;
+                    const newWhatsappUrl = `https://wa.me/77770649648?text=${encodedText}`;
+                    whatsappLinkEl.href = newWhatsappUrl;
 
-                    // 5. Информируем пользователя
+                    // 5. Информируем пользователя о новом действии кнопки WhatsApp
                     displayMessageModal('Готово!', 'Ваше местоположение (координаты и ссылка на карту) автоматически добавлено во все формы заказа (Откуда/Адрес)! Нажмите кнопку "Заказать" в любой форме.', false);
                 },
                 (error) => {
-                    // 6. Ошибка
+                    // 6. Ошибка: обрабатываем разные типы ошибок
                     let errorMessage = 'Ошибка определения местоположения.';
                     if (error.code === error.PERMISSION_DENIED) {
                         errorMessage = 'Доступ к геолокации запрещен. Пожалуйста, разрешите доступ в настройках браузера.';
@@ -1356,20 +1041,28 @@
             );
         }
         
-        // --- ЛОГИКА PWA и Партнеров ---
-        // (Функции showPWAInstructions и showPartnerModal определены в <script type="module">)
+        // --- ЛОГИКА PWA (Сохранить на главный экран) ---
+        window.showPWAInstructions = function() {
+            document.getElementById('pwaModal').classList.remove('hidden');
+        }
+        
+        // --- ЛОГИКА МОДАЛЬНОГО ОКНА ПАРТНЕРОВ ---
+        window.showPartnerModal = function() {
+            document.getElementById('partnerModal').classList.remove('hidden');
+        }
 
         // =========================================================
-        // === ЛОГИКА МОДАЛЬНЫХ ОКОН И ФОРМ ===
+        // === ЛОГИКА МОДАЛЬНЫХ ОКОН И ФОРМ (UPDATED) ===
         // =========================================================
 
         let stopCounter = 0; // Единый счетчик для всех дополнительных адресов
 
         // Функция добавления дополнительного адреса
+        // Принимает ID контейнера для добавления полей (additionalStops или additionalStopsAuction)
         window.addStop = function(containerId) {
             if (stopCounter >= 3) {
-                displayMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false);
-                return;
+                 displayMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false);
+                 return;
             }
             
             stopCounter++;
@@ -1397,6 +1090,7 @@
             const elementToRemove = document.getElementById(divId);
             if (elementToRemove) {
                 elementToRemove.remove();
+                // Декрементируем счетчик, чтобы можно было добавить новый адрес
                 stopCounter--;
                 if (stopCounter < 0) stopCounter = 0;
             }
@@ -1406,11 +1100,13 @@
         function openModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) {
+                // Hide all status messages before opening
                 document.querySelectorAll('.status-message').forEach(el => el.classList.remove('active'));
                 
                 modal.classList.add('active');
                 modal.setAttribute('aria-hidden', 'false');
                 
+                // Focus on the first input field
                 const firstInput = modal.querySelector('input, textarea, select');
                 if (firstInput) firstInput.focus();
             }
@@ -1422,7 +1118,7 @@
                 modal.classList.remove('active');
                 modal.setAttribute('aria-hidden', 'true');
                 
-                // Сброс полей и счетчика доп. адресов
+                // --- CUSTOM RESET FOR TAXI/AUCTION MODALS ---
                 if (modalId === 'taxiModal' || modalId === 'auctionModal') {
                     const stopsContainerTaxi = document.getElementById('additionalStops');
                     const stopsContainerAuction = document.getElementById('additionalStopsAuction');
@@ -1430,20 +1126,19 @@
                     if (stopsContainerTaxi) stopsContainerTaxi.innerHTML = '';
                     if (stopsContainerAuction) stopsContainerAuction.innerHTML = '';
                     
-                    stopCounter = 0; 
+                    stopCounter = 0; // Сброс общего счетчика
                     
-                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
-                    if (form) form.reset();
-                } else {
+                    // Сброс формы (поля)
                     const form = document.getElementById(modalId.replace('Modal', 'Form'));
                     if (form) form.reset();
                 }
                 
-                // Скрываем детали авто
-                if (modalId === 'assistanceModal') {
-                    document.getElementById('carDetails').classList.add('hidden');
-                    document.getElementById('assistanceType').value = '';
+                // Сброс формы для остальных модалов
+                if (modalId !== 'taxiModal' && modalId !== 'auctionModal') {
+                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
+                    if (form) form.reset();
                 }
+                // -------------------------------------
             }
         }
 
@@ -1456,6 +1151,8 @@
         }
 
         // --- Event Listeners for Opening/Closing ---
+
+        // 1. Open buttons
         document.querySelectorAll('.service-btn').forEach(button => {
             button.addEventListener('click', () => {
                 const service = button.getAttribute('data-service');
@@ -1465,12 +1162,15 @@
             });
         });
 
+        // 2. Close buttons
         document.querySelectorAll('.close-btn').forEach(button => {
             button.addEventListener('click', (e) => {
-                closeModal(e.target.getAttribute('data-modal'));
+                const modalId = e.target.getAttribute('data-modal');
+                closeModal(modalId);
             });
         });
 
+        // 3. Close on overlay click
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) {
@@ -1479,6 +1179,7 @@
             });
         });
 
+        // 4. Close on ESC key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const openModal = document.querySelector('.modal-overlay.active');
@@ -1495,6 +1196,7 @@
         if (assistanceTypeSelect && carDetailsDiv) {
             assistanceTypeSelect.addEventListener('change', (e) => {
                 const selectedType = e.target.value;
+                // Показываем поля авто, если выбрана помощь на дороге
                 if (selectedType === 'Подкачать колесо' || selectedType === 'Прикурить автомобиль') {
                     carDetailsDiv.classList.remove('hidden');
                 } else {
@@ -1505,6 +1207,8 @@
 
 
         // --- Form Submission Handlers ---
+
+        // Get all forms
         const forms = document.querySelectorAll('form');
         
         forms.forEach(form => {
@@ -1524,6 +1228,7 @@
                 let message = `${modalConfig.prefix}\n\n`;
                 let requiredFieldsMissing = false;
 
+                // Helper to get value and check requirement
                 const getVal = (id, label, isRequired = false) => {
                     const input = document.getElementById(id);
                     let value = input ? input.value.trim() : '';
@@ -1532,6 +1237,7 @@
                         requiredFieldsMissing = true;
                     }
                     
+                    // Special handling for checkboxes
                     if (input && input.type === 'checkbox') {
                         value = input.checked ? 'Да' : 'Нет';
                     }
@@ -1539,6 +1245,7 @@
                     return `*${label}*:\n${value || '—'}\n\n`;
                 };
 
+                // Helper to collect dynamic stops
                 const collectStops = (containerId) => {
                     let stops = '';
                     const container = document.getElementById(containerId);
@@ -1553,9 +1260,11 @@
                     return stops;
                 };
 
+                // Build message based on service type
                 switch (modalKey) {
                     case 'taxi':
                     case 'auction':
+                        // Main fields
                         const fromId = modalKey === 'taxi' ? 'taxiFrom' : 'auctionFrom';
                         const toId = modalKey === 'taxi' ? 'taxiTo' : 'auctionTo';
                         const stopsContainerId = modalKey === 'taxi' ? 'additionalStops' : 'additionalStopsAuction';
@@ -1563,6 +1272,7 @@
                         message += getVal(fromId, 'Откуда', true);
                         message += getVal(toId, 'Куда', true);
                         
+                        // Collect additional stops
                         let stopMessage = collectStops(stopsContainerId);
 
                         if (stopMessage) {
@@ -1573,12 +1283,6 @@
                         
                         if (modalKey === 'taxi') {
                             message += getVal('taxiPhone', 'Телефон', false);
-                            
-                            // !!! КЛЮЧЕВАЯ ЛОГИКА: Добавление пометки о купоне !!!
-                            if (window.isCouponClaimed) {
-                                message += `\n!!! СКИДКА ${COUPON_VALUE_TEXT} (КУПОН АКТИВИРОВАН) !!!\n\n`;
-                            }
-                            
                             message += '💰 Примерная цена: 700-900 тг (уточнит водитель)';
                         } else { // auction
                             const auctionPrice = document.getElementById('auctionPrice').value;
@@ -1624,6 +1328,7 @@
 
                         message += getVal('assistanceType', 'Тип помощи');
                         
+                        // Добавляем детали авто, если это помощь на дороге
                         if (type === 'Подкачать колесо' || type === 'Прикурить автомобиль') {
                             message += getVal('carModel', 'Марка и модель авто');
                             message += getVal('licencePlate', 'Гос. номер');
@@ -1647,12 +1352,22 @@
                 // Success cleanup
                 closeModal(modalId);
                 this.reset();
+                // Скрываем детали авто после сброса
+                if (modalKey === 'assistance') {
+                    const carDetails = document.getElementById('carDetails');
+                    if (carDetails) carDetails.classList.add('hidden');
+                }
             });
         });
 
     </script>
 </body>
 </html>
+
+
+
+
+
 
 
 

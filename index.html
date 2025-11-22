@@ -17,12 +17,12 @@
     </script>
     <!-- КОНЕЦ Google Analytics -->
 
-    <!-- Favicon и иконки для Apple/Android (ПОЛНЫЙ КОМПЛЕКТ С ПРИНУДИТЕЛЬНЫМ СБРОСОМ КЭША v7) -->
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=7">
-    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png?v=7">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=7">
+    <!-- Favicon и иконки для Apple/Android (ПОЛНЫЙ КОМПЛЕКТ С ПРИНУДИТЕЛЬНЫМ СБРОСОМ КЭША v12) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=12">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png?v=12">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=12">
     <!-- АКТИВИРОВАН МАНАФЕСТ ДЛЯ ПРАВИЛЬНОГО ОТОБРАЖЕНИЯ ЯРЛЫКА НА РАБОЧЕМ СТОЛЕ -->
-    <link rel="manifest" href="site.webmanifest?v=7">
+    <link rel="manifest" href="site.webmanifest?v=12">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -212,7 +212,8 @@
         <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6">
             
             <!-- 1. ГЛАВНАЯ КНОТКА ЗАКАЗА (WhatsApp - Полная ширина) -->
-            <a id="whatsappLink" href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20такси%20в%20Белоусовке.%20Укажите%20маршрут%3A%20%5BАдрес%20ОТКУДА%5D%20до%20%5BАдрес%20КУДА%5D." target="_blank"
+            <!-- ИЗМЕНЕНИЕ: Сокращение текста до [Адрес ОТКУДА] - [Адрес КУДА]. -->
+            <a id="whatsappLink" href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." target="_blank"
                 class="btn-hover bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-4 text-xl mb-3">
                 <i class="fab fa-whatsapp text-2xl"></i><span>Заказать Такси</span>
             </a>
@@ -503,7 +504,8 @@
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-40 sm:hidden">
         <div class="flex justify-around items-center h-16">
             <!-- 1. Заказ (WhatsApp) -->
-            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20заказать%20такси%20в%20Белоусовке." class="flex flex-col items-center text-green-600 hover:text-green-700">
+            <!-- ИЗМЕНЕНИЕ: Сокращение текста до [Адрес ОТКУДА] - [Адрес КУДА]. -->
+            <a href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." class="flex flex-col items-center text-green-600 hover:text-green-700">
                 <i class="fab fa-whatsapp text-2xl"></i>
                 <span class="text-xs mt-0.5">Заказ</span>
             </a>
@@ -685,19 +687,33 @@
                     </div>
                     <!-- КОНЕЦ БЛОКА ПРЕДЗАКАЗА -->
                     
-                    <div class="flex items-center space-x-3 p-3 bg-gray-100 rounded-lg">
-                        <input id="cargoMovers" name="movers" type="checkbox" class="h-4 w-4 text-primary-blue rounded border-gray-300 focus:ring-primary-blue">
-                        <label for="cargoMovers" class="text-sm font-medium text-gray-700">Требуются ли грузчики?</label>
-                        <span class="text-sm font-bold text-red-600">(+3000 тг/час почасовая)</span>
+                    <!-- ОБНОВЛЕННЫЙ БЛОК: КОЛИЧЕСТВО ГРУЗЧИКОВ (Select) -->
+                    <div class="flex flex-col">
+                        <label for="cargoMovers" class="text-sm font-medium text-gray-700 mb-1">Грузчики</label>
+                        <div class="input-with-plus-btn">
+                            <!-- Добавлено onchange для обновления суммы -->
+                            <select id="cargoMovers" name="movers" class="form-input-control" required onchange="updateCargoPrice()">
+                                <option value="0">Не требуются (0 человек)</option>
+                                <option value="1">1 человек</option>
+                                <option value="2">2 человека</option>
+                                <option value="3">3 человека</option>
+                                <option value="4">4 человека (Максимум)</option>
+                            </select>
+                            <span class="text-sm font-bold text-red-600">(Доплата: +3000 тг/час за каждого)</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Выберите необходимое количество.</p>
                     </div>
+                    <!-- КОНЕЦ ОБНОВЛЕННОГО БЛОКА -->
 
                     <div id="cargoStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
 
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
-                            <div class="price-note">Оплата за 1 час (почасовая):</div>
-                            <div class="price-estimate">5000 тг</div>
-                            <div class="price-note font-semibold">Минимальный заказ - 1 час.</div>
+                            <div class="price-note">Общая стоимость (за 1 час):</div>
+                            <!-- Итоговая сумма будет отображаться здесь -->
+                            <div id="cargoTotalPrice" class="price-estimate">5000 тг</div>
+                            <!-- Здесь будет обновляться подсказка -->
+                            <div id="cargoPriceNote" class="price-note font-semibold">Минимальный заказ - 1 час.</div>
                         </div>
                         <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
                             Заказать грузоперевозку
@@ -927,11 +943,16 @@
         const locationResultEl = document.getElementById('locationResult');
         const locationAddressEl = document.getElementById('locationAddress');
         const announcementBar = document.getElementById('announcementBar');
-        const originalWhatsappText = whatsappLinkEl.href;
-
+        
+        // ОБНОВЛЕННЫЙ ОРИГИНАЛЬНЫЙ ТЕКСТ: только маршрут в формате [ОТКУДА] - [КУДА].
+        const originalWhatsappText = 'https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D.';
+        
         let currentGeolocatedAddress = '';
         
-        // --- КОНФИГУРАЦИЯ МОДАЛОВ ---
+        // --- КОНФИГУРАЦИЯ ЦЕН И МОДАЛОВ ---
+        const CARGO_BASE_PRICE = 5000; // Базовая цена за 1 час
+        const MOVER_PRICE_PER_HOUR = 3000; // Доплата за 1 грузчика в час
+        
         const MODALS = {
             'taxi': { id: 'taxiModal', formId: 'taxiForm', title: 'ТАКСИ', prefix: '🚕 НОВЫЙ ЗАКАЗ: ТАКСИ' },
             'delivery': { id: 'deliveryModal', formId: 'deliveryForm', title: 'ДОСТАВКА', prefix: '🛍️ НОВЫЙ ЗАКАЗ: ДОСТАВКА' },
@@ -1043,6 +1064,9 @@
              if (cargoDateTimeInput) {
                  cargoDateTimeInput.value = formattedNow;
              }
+             
+             // Инициализация цены грузоперевозки
+             updateCargoPrice(); 
         });
 
 
@@ -1134,7 +1158,8 @@
                     setAllLocationFields(currentGeolocatedAddress);
 
                     // 4. Обновляем ссылку WhatsApp (главная кнопка)
-                    let whatsappMessage = `Здравствуйте! Хочу заказать такси. Я нахожусь по адресу (координатам) отправленным ниже. Укажите куда поедем.\n\n${currentGeolocatedAddress}`;
+                    // Используем только координаты для ОТКУДА, а КУДА оставляем пустым
+                    let whatsappMessage = `${currentGeolocatedAddress} - [Адрес КУДА]`;
                     
                     const encodedText = encodeURIComponent(whatsappMessage);
                     whatsappLinkEl.href = `https://wa.me/77770649648?text=${encodedText}`;
@@ -1227,6 +1252,8 @@
                  }
                  if (modalId === 'cargoModal') {
                      document.getElementById('cargoDateTime').value = formattedNow;
+                     document.getElementById('cargoMovers').value = '0'; // Сброс количества грузчиков
+                     updateCargoPrice(); // Обновляем цену
                  }
                 
                 const firstInput = modal.querySelector('input, textarea, select');
@@ -1270,6 +1297,8 @@
                  }
                  if (modalId === 'cargoModal') {
                      document.getElementById('cargoDateTime').value = formattedNow;
+                     document.getElementById('cargoMovers').value = '0'; // Сброс количества грузчиков
+                     updateCargoPrice(); // Обновляем цену
                  }
             }
         }
@@ -1281,6 +1310,36 @@
                 statusEl.classList.add('active');
             }
         }
+        
+        // =========================================================
+        // === ЛОГИКА КАЛЬКУЛЯЦИИ ДЛЯ ГРУЗОВОГО ===
+        // =========================================================
+        window.updateCargoPrice = function() {
+            const cargoMoversSelect = document.getElementById('cargoMovers');
+            const cargoTotalPriceEl = document.getElementById('cargoTotalPrice');
+            const cargoPriceNoteEl = document.getElementById('cargoPriceNote');
+            
+            if (!cargoMoversSelect || !cargoTotalPriceEl || !cargoPriceNoteEl) return;
+            
+            const moversCount = parseInt(cargoMoversSelect.value) || 0;
+            
+            // Расчет: База (5000) + (Кол-во грузчиков * 3000)
+            const totalPrice = CARGO_BASE_PRICE + (moversCount * MOVER_PRICE_PER_HOUR);
+            
+            // Форматирование числа с разделителями для тысяч
+            const formattedPrice = totalPrice.toLocaleString('ru-RU');
+
+            cargoTotalPriceEl.textContent = `${formattedPrice} тг`;
+            
+            // Обновляем подсказку под общей ценой
+            if (moversCount > 0) {
+                cargoPriceNoteEl.innerHTML = `Базовая стоимость ${CARGO_BASE_PRICE.toLocaleString('ru-RU')} тг + доплата за ${moversCount} чел.`;
+            } else {
+                cargoPriceNoteEl.textContent = 'Минимальный заказ - 1 час.';
+            }
+        }
+        // =========================================================
+
 
         // --- Event Listeners for Opening/Closing ---
         document.querySelectorAll('.service-btn').forEach(button => {
@@ -1363,6 +1422,7 @@
                         value = input.checked ? 'Да' : 'Нет';
                     }
 
+                    // ИСПРАВЛЕНИЕ: Добавлен перевод строки после заголовка (label) для лучшей читаемости
                     return `*${label}*:\n${value || '—'}\n\n`;
                 };
 
@@ -1472,16 +1532,29 @@
                         break;
                     
                     case 'cargo':
-                        const moversNeeded = document.getElementById('cargoMovers').checked;
+                        // === ОБНОВЛЕННАЯ ЛОГИКА ДЛЯ ГРУЗОВОГО ===
+                        const cargoMoversSelect = document.getElementById('cargoMovers');
+                        const moversCount = parseInt(cargoMoversSelect.value);
+                        const totalPrice = CARGO_BASE_PRICE + (moversCount * MOVER_PRICE_PER_HOUR);
+                        const formattedPrice = totalPrice.toLocaleString('ru-RU');
+                        
+                        const moversText = (moversCount > 0) 
+                            ? `${moversCount} чел. (Доплата: ${moversCount * MOVER_PRICE_PER_HOUR} тг/час)` 
+                            : 'Не требуются';
                         
                         // ЛОГИКА ПРЕДЗАКАЗА для ГРУЗОВОГО
                         message = handlePreorder('cargoDateTime', modalConfig.prefix);
                         
+                        // Теперь гарантированно будут разделители
                         message += getVal('cargoFrom', 'Адрес погрузки', true);
                         message += getVal('cargoTo', 'Адрес выгрузки', true);
                         message += getVal('cargoDescription', 'Описание груза', true);
-                        message += getVal('cargoMovers', 'Нужны ли грузчики?');
-                        message += `💰 Цена: 5000 тг/час (грузчики: ${moversNeeded ? 'Да, +3000 тг/час' : 'Нет'})`;
+                        
+                        // Вставляем поле с грузчиками и итоговой суммой
+                        message += `*Количество грузчиков*:\n${moversText}\n\n`;
+                        message += `*ИТОГОВАЯ СУММА (за 1 час)*:\n${formattedPrice} тг\n\n`;
+
+                        message += `💰 Базовая цена: ${CARGO_BASE_PRICE.toLocaleString('ru-RU')} тг/час`;
                         break;
 
                     case 'soberDriver':
@@ -1536,6 +1609,7 @@
     </script>
 </body>
 </html>
+
 
 
 

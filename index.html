@@ -17,12 +17,12 @@
     </script>
     <!-- КОНЕЦ Google Analytics -->
 
-    <!-- Favicon и иконки для Apple/Android (ПОЛНЫЙ КОМПЛЕКТ С ПРИНУДИТЕЛЬНЫМ СБРОСОМ КЭША v4) -->
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=4">
-    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png?v=4">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=4">
+    <!-- Favicon и иконки для Apple/Android (ПОЛНЫЙ КОМПЛЕКТ С ПРИНУДИТЕЛЬНЫМ СБРОСОМ КЭША v7) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=7">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png?v=7">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=7">
     <!-- АКТИВИРОВАН МАНАФЕСТ ДЛЯ ПРАВИЛЬНОГО ОТОБРАЖЕНИЯ ЯРЛЫКА НА РАБОЧЕМ СТОЛЕ -->
-    <link rel="manifest" href="site.webmanifest?v=4">
+    <link rel="manifest" href="site.webmanifest?v=7">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -493,7 +493,7 @@
     <!-- Навигатор -->
     <section class="bg-blue-700 py-6 text-center mt-10 shadow-inner">
         <h3 class="text-xl font-bold text-white mb-3">🗺 Откройте Яндекс.Навигатор</h3>
-        <a href="https://yandex.ru/navi" target="_blank"
+        <a href="https://yandex.kz/navi" target="_blank"
             class="inline-block bg-yellow-400 hover:bg-yellow-500 text-blue-900 px-8 py-3 rounded-xl text-lg font-semibold shadow-lg transition-all">
             <i class="fas fa-location-arrow mr-2"></i> Открыть Навигатор
         </a>
@@ -948,6 +948,7 @@
         // --- ЛОГИКА ИСТОРИИ АДРЕСОВ (localStorage) ---
         function loadAddresses() {
             try {
+                // ПРИМЕЧАНИЕ: В реальном приложении это должно быть заменено на Firestore
                 const history = localStorage.getItem(ADDRESS_HISTORY_KEY);
                 return history ? JSON.parse(history) : [];
             } catch (e) {
@@ -957,6 +958,7 @@
         }
 
         function saveAddress(address) {
+            // ПРИМЕЧАНИЕ: В реальном приложении это должно быть заменено на Firestore
             // Не сохраняем координаты
             if (!address || address.includes('[КООРДИНАТЫ]') || address.length < 5) return; 
 
@@ -1004,12 +1006,14 @@
         function checkAndShowAnnouncement() {
             const dismissKey = 'announcement_dismissed_v1';
             
+            // ПРИМЕЧАНИЕ: В реальном приложении это должно быть заменено на Firestore
             if (localStorage.getItem(dismissKey) !== 'true') {
                 announcementBar.classList.remove('hidden');
             }
         }
 
         function dismissAnnouncement() {
+            // ПРИМЕЧАНИЕ: В реальном приложении это должно быть заменено на Firestore
             announcementBar.classList.add('hidden');
             localStorage.setItem('announcement_dismissed_v1', 'true');
         }
@@ -1017,6 +1021,7 @@
         // Общая функция для установки текущего времени + 5 минут
         function getFormattedCurrentTime() {
              const now = new Date();
+             // Установка времени с учетом локального часового пояса и добавление 5 минут
              now.setMinutes(now.getMinutes() - now.getTimezoneOffset() + 5); 
              return now.toISOString().slice(0, 16);
         }
@@ -1113,6 +1118,7 @@
                     const lat = position.coords.latitude.toFixed(5);
                     const lon = position.coords.longitude.toFixed(5);
                     
+                    // Обновляем ссылку на Яндекс.Карты для Казахстана
                     const yandexMapUrl = `https://yandex.kz/maps/?pt=${lon},${lat}&z=16&l=map`;
 
                     currentGeolocatedAddress = `[КООРДИНАТЫ] ${lat}, ${lon}. Ссылка: ${yandexMapUrl}`; 

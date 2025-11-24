@@ -12,7 +12,6 @@
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
         gtag('config', 'G-NMCTD2Q8R2');
     </script>
     <!-- КОНЕЦ Google Analytics -->
@@ -212,7 +211,7 @@
         <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6">
             
             <!-- 1. ГЛАВНАЯ КНОТКА ЗАКАЗА (WhatsApp - Полная ширина) -->
-            <!-- ИЗМЕНЕНИЕ: Сокращение текста до [Адрес ОТКУДА] - [Адрес КУДА]. -->
+            <!-- СООБЩЕНИЕ: Сокращение текста до [Адрес ОТКУДА] - [Адрес КУДА]. -->
             <a id="whatsappLink" href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." target="_blank"
                 class="btn-hover bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-4 text-xl mb-3">
                 <i class="fab fa-whatsapp text-2xl"></i><span>Заказать Такси</span>
@@ -504,7 +503,7 @@
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-40 sm:hidden">
         <div class="flex justify-around items-center h-16">
             <!-- 1. Заказ (WhatsApp) -->
-            <!-- ИЗМЕНЕНИЕ: Сокращение текста до [Адрес ОТКУДА] - [Адрес КУДА]. -->
+            <!-- СООБЩЕНИЕ: Сокращение текста до [Адрес ОТКУДА] - [Адрес КУДА]. -->
             <a href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." class="flex flex-col items-center text-green-600 hover:text-green-700">
                 <i class="fab fa-whatsapp text-2xl"></i>
                 <span class="text-xs mt-0.5">Заказ</span>
@@ -739,6 +738,14 @@
                         <label for="soberDriverFrom" class="text-sm font-medium text-gray-700 mb-1">Ваш текущий адрес *</label>
                         <input id="soberDriverFrom" name="from" type="text" class="form-input-control" placeholder="Адрес, где находится авто" required>
                     </div>
+                    
+                    <!-- НОВОЕ ПОЛЕ: Марка и Модель Авто -->
+                    <div class="flex flex-col">
+                        <label for="soberDriverCarModel" class="text-sm font-medium text-gray-700 mb-1">Марка и модель авто *</label>
+                        <input id="soberDriverCarModel" name="carModel" type="text" class="form-input-control" placeholder="Например: Toyota Camry, Lexus 570" required>
+                    </div>
+                    <!-- КОНЕЦ НОВОГО ПОЛЯ -->
+                    
                     <div class="flex flex-col">
                         <label for="soberDriverTo" class="text-sm font-medium text-gray-700 mb-1">Куда доставить автомобиль *</label>
                         <input id="soberDriverTo" name="to" type="text" class="form-input-control" placeholder="Конечный адрес" required>
@@ -1558,7 +1565,11 @@
                         break;
 
                     case 'soberDriver':
+                        // === ОБНОВЛЕННАЯ ЛОГИКА ДЛЯ ТРЕЗВОГО ВОДИТЕЛЯ ===
                         message += getVal('soberDriverFrom', 'Текущий адрес (Авто)', true);
+                        // ДОБАВЛЕНО НОВОЕ ПОЛЕ
+                        message += getVal('soberDriverCarModel', 'Марка и модель авто', true); 
+                        // КОНЕЦ ДОБАВЛЕНИЯ
                         message += getVal('soberDriverTo', 'Адрес доставки авто', true);
                         message += '💰 Примерная цена: от 3800 тг (зависит от расстояния)';
                         break;
@@ -1609,6 +1620,7 @@
     </script>
 </body>
 </html>
+
 
 
 

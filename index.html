@@ -27,12 +27,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Yandex Maps API был удален, так как больше не используется в модальных окнах -->
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: #f5f5f5; 
-            /* Добавляем отступ для нижнего фиксированного бара на мобильных */
             padding-bottom: 72px; 
         }
         .header-bg { background: linear-gradient(135deg, #f59e0b 0%, #1d4ed8 100%); }
@@ -42,7 +44,6 @@
         .auction-cta { background-color: #fff; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); border: 2px solid #f59e0b; transition: transform 0.2s; }
         .auction-cta:hover { transform: translateY(-4px); }
         
-        /* Стиль для кнопки Геолокации */
         #locationBtn {
             padding: 10px 12px;
             font-size: 1rem;
@@ -55,7 +56,6 @@
         #locationBtn:hover {
             background-color: #d1d5db; 
         }
-        /* Стиль для компактных кнопок */
         .compact-util-btn {
             padding: 12px 0;
             display: flex;
@@ -66,7 +66,6 @@
             font-weight: 600;
             line-height: 1.2;
         }
-        /* Стиль для кнопок быстрого заказа (Звонок/Телеграм/Аукцион) */
         .quick-order-btn {
             padding-top: 12px;
             padding-bottom: 12px;
@@ -105,10 +104,8 @@
             border-radius: 12px;
             width: 90%;
             max-width: 500px;
-            /* КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ ДЛЯ ПРОКРУТКИ */
             max-height: 90vh; 
             overflow-y: auto; 
-            /* КОНЕЦ ИСПРАВЛЕНИЯ */
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
             transform: scale(0.95);
             transition: transform 0.3s ease;
@@ -123,7 +120,6 @@
                 max-width: 95%;
                 margin: 10px;
             }
-            /* На мобильных скрываем отступ, который мы добавили, чтобы избежать двойного отступа от фиксированного меню */
             body { padding-bottom: 64px; }
         }
         
@@ -140,14 +136,13 @@
         .coord-link { color: #1d4ed8; text-decoration: underline; font-weight: 600; }
         .coord-link:hover { color: #f59e0b; }
 
-        /* ЕДИНЫЙ СТИЛЬ ДЛЯ ВСЕХ ИНПУТОВ В ФОРМАХ */
         .form-input-control {
              padding: 8px 12px;
              border: 1px solid #d1d5db;
              border-radius: 8px;
              width: 100%;
              transition: border-color 0.2s, box-shadow 0.2s;
-             box-sizing: border-box; /* Важно для мобильной адаптации */
+             box-sizing: border-box; 
         }
         .form-input-control:focus {
             border-color: #3b82f6;
@@ -155,24 +150,37 @@
             outline: none;
         }
         
-        /* Улучшенное управление FLEX для полей с кнопкой "+" */
-        /* .input-with-plus-btn используется для контейнеров, содержащих поле ввода и кнопку "+" */
         .input-with-plus-btn {
             display: flex;
             align-items: center;
-            gap: 8px; /* Расстояние между полем и кнопкой */
+            gap: 8px; 
         }
         .input-with-plus-btn .form-input-control {
-            flex-grow: 1; /* Поле ввода занимает все доступное место */
-            min-width: 0; /* Разрешает сжиматься */
+            flex-grow: 1; 
+            min-width: 0; 
         }
-        /* Размер кнопки "+" должен быть фиксированным */
         .input-with-plus-btn button {
             flex-shrink: 0;
             width: 40px;
             height: 40px;
         }
-
+        
+        /* Стиль для кнопки геолокации в модальном окне */
+        .modal-location-btn {
+            background-color: #f59e0b; /* amber-500 */
+            color: white;
+            transition: background-color 0.2s, transform 0.2s;
+            font-size: 1.1rem;
+            width: 40px; 
+            height: 40px;
+            padding: 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(245, 158, 11, 0.5);
+        }
+        .modal-location-btn:hover {
+            background-color: #d97706; /* amber-700 */
+            transform: scale(1.05);
+        }
     </style>
 </head>
 
@@ -210,19 +218,20 @@
         
         <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6">
             
-            <!-- 1. ГЛАВНАЯ КНОТКА ЗАКАЗА (WhatsApp - Полная ширина) -->
-            <!-- СООБЩЕНИЕ: Сокращение текста до [Адрес ОТКУДА] - [Адрес КУДА]. -->
-            <a id="whatsappLink" href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." target="_blank"
-                class="btn-hover bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-4 text-xl mb-3">
-                <i class="fab fa-whatsapp text-2xl"></i><span>Заказать Такси</span>
-            </a>
+            <!-- СМЕНА ПОРЯДКА: Сначала кнопка формы, потом WhatsApp -->
             
             <!-- НОВАЯ КНОТКА: ЗАКАЗ ЧЕРЕЗ ФОРМУ (ОТКРЫВАЕТ МОДАЛ TAXI) -->
             <button data-service="taxi"
                 class="service-btn btn-hover bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3">
                 <i class="fas fa-car-side text-lg"></i><span>Заказ через форму (Taxi)</span>
             </button>
-
+            
+            <!-- 1. ГЛАВНАЯ КНОТКА ЗАКАЗА (WhatsApp - Полная ширина) -->
+            <a id="whatsappLink" href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." target="_blank"
+                class="btn-hover bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-4 text-xl mb-3">
+                <i class="fab fa-whatsapp text-2xl"></i><span>Заказать Такси</span>
+            </a>
+            
             <!-- 2. БЛОК БЫСТРЫХ ДЕЙСТВИЙ (3 колонки - одинаковая ширина) -->
             <div class="grid grid-cols-3 gap-2 mb-4">
                 <!-- Позвонить (Одинаковый размер) -->
@@ -243,7 +252,7 @@
             </div>
             
             <!-- БЛОК ГЕОЛОКАЦИИ (ВСТРОЕННЫЙ) -->
-            <button type="button" onclick="getCurrentLocation()" id="locationBtn"
+            <button type="button" onclick="getCurrentLocation('main')" id="locationBtn"
                 class="w-full text-gray-700 font-semibold transition flex items-center justify-center space-x-3 shadow-inner">
                 <i class="fas fa-location-arrow"></i>
                 <span id="locationBtnText">Использовать мое местоположение</span>
@@ -512,7 +521,6 @@
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-40 sm:hidden">
         <div class="flex justify-around items-center h-16">
             <!-- 1. Заказ (WhatsApp) -->
-            <!-- СООБЩЕНИЕ: Сокращение текста до [Адрес ОТКУДА] - [Адрес КУДА]. -->
             <a href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." class="flex flex-col items-center text-green-600 hover:text-green-700">
                 <i class="fab fa-whatsapp text-2xl"></i>
                 <span class="text-xs mt-0.5">Заказ</span>
@@ -556,26 +564,36 @@
                     <h3 class="text-xl font-bold text-gray-800">🚕 Заказать Такси</h3>
                     <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="taxiModal">×</button>
                 </div>
+                
                 <form id="taxiForm" class="space-y-4">
-                    <!-- АДРЕС ОТКУДА (с историей) -->
-                    <div class="flex flex-col">
-                        <label for="taxiFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес) *</label>
-                        <!-- Добавлен datalist -->
-                        <input id="taxiFrom" name="from" type="text" list="fromHistory" class="form-input-control" placeholder="Улица, дом (обязательно)" required>
-                        <datalist id="fromHistory"></datalist>
-                    </div>
-                    <!-- АДРЕС КУДА (с историей) -->
-                    <div class="flex flex-col">
-                        <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
-                        <div class="input-with-plus-btn">
-                            <!-- Добавлен datalist -->
-                            <input id="taxiTo" name="to" type="text" list="toHistory" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required>
-                            <datalist id="toHistory"></datalist>
-                            <button type="button" onclick="addStop('additionalStops')" class="bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
-                                <i class="fas fa-plus"></i>
-                            </button>
+                    
+                    <div id="addressInputsTaxi">
+                        <!-- АДРЕС ОТКУДА (с кнопкой геолокации) -->
+                        <div class="flex flex-col">
+                            <label for="taxiFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес) *</label>
+                            <div class="input-with-plus-btn">
+                                <input id="taxiFrom" name="from" type="text" list="fromHistory" class="form-input-control" placeholder="Улица, дом (обязательно)" required>
+                                <datalist id="fromHistory"></datalist>
+                                <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                                <button type="button" onclick="getCurrentLocation('taxi')" 
+                                    class="modal-location-btn flex items-center justify-center" 
+                                    title="Использовать мое местоположение">
+                                    <i id="taxiGeoIcon" class="fas fa-compass"></i>
+                                </button>
+                            </div>
                         </div>
-                        <div id="additionalStops" class="mt-2 space-y-2"></div>
+                        <!-- АДРЕС КУДА (с историей) -->
+                        <div class="flex flex-col">
+                            <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
+                            <div class="input-with-plus-btn">
+                                <input id="taxiTo" name="to" type="text" list="toHistory" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required>
+                                <datalist id="toHistory"></datalist>
+                                <button type="button" onclick="addStop('additionalStops')" class="bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div id="additionalStops" class="mt-2 space-y-2"></div>
+                        </div>
                     </div>
                     
                     <!-- БЛОК ПРЕДЗАКАЗА -->
@@ -596,7 +614,6 @@
 
                     <!-- НОВОЕ ПОЛЕ: Номер Пассажира (единое поле) -->
                     <div class="flex flex-col">
-                        <!-- ИЗМЕНЕНИЕ ПОДПИСИ -->
                         <label for="passengerPhone" class="text-sm font-medium text-gray-700 mb-1">Телефон для связи (пассажира, если заказываете другому)</label>
                         <input id="passengerPhone" name="passengerPhone" type="tel" class="form-input-control" placeholder="+7...">
                     </div>
@@ -621,6 +638,7 @@
 
     <!-- ========================================================= -->
     <!-- 2. МОДАЛЬНОЕ ОКНО: ДОСТАВКА (DELIVERY) -->
+    <!-- ... (без изменений) ... -->
     <!-- ========================================================= -->
     <div id="deliveryModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
@@ -662,6 +680,7 @@
     
     <!-- ========================================================= -->
     <!-- 3. МОДАЛЬНОЕ ОКНО: ГРУЗОВОЙ (CARGO) -->
+    <!-- ... (без изменений) ... -->
     <!-- ========================================================= -->
     <div id="cargoModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
@@ -734,6 +753,7 @@
 
     <!-- ========================================================= -->
     <!-- 4. МОДАЛЬНОЕ ОКНО: ТРЕЗВЫЙ ВОДИТЕЛЬ (SOBER DRIVER) -->
+    <!-- ... (без изменений) ... -->
     <!-- ========================================================= -->
     <div id="soberDriverModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
@@ -779,6 +799,7 @@
     
     <!-- ========================================================= -->
     <!-- 5. МОДАЛЬНОЕ ОКНО: ПОМОЩЬ / ПОРУЧЕНИЯ (ASSISTANCE) -->
+    <!-- ... (без изменений) ... -->
     <!-- ========================================================= -->
     <div id="assistanceModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
@@ -847,26 +868,39 @@
                     <h3 class="text-xl font-bold text-gray-800">🔨 Заказ-Аукцион</h3>
                     <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="auctionModal">×</button>
                 </div>
+                
                 <form id="auctionForm" class="space-y-4">
-                    <div class="flex flex-col">
-                        <label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес)</label>
-                        <input id="auctionFrom" name="from" type="text" class="form-input-control" placeholder="Улица, дом (обязательно)" required>
-                    </div>
-                    <!-- ИЗМЕНЕНИЕ: Добавлена кнопка "+" для дополнительных адресов -->
-                    <div class="flex flex-col">
-                        <label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
-                        <div class="input-with-plus-btn">
-                            <input id="auctionTo" name="to" type="text" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required>
-                            <button type="button" onclick="addStop('additionalStopsAuction')" class="bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
-                                <i class="fas fa-plus"></i>
-                            </button>
+                    
+                    <div id="addressInputsAuction">
+                        <div class="flex flex-col">
+                            <label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес)</label>
+                            <div class="input-with-plus-btn">
+                                <input id="auctionFrom" name="from" type="text" class="form-input-control" placeholder="Улица, дом (обязательно)" required>
+                                <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                                <button type="button" onclick="getCurrentLocation('auction')" 
+                                    class="modal-location-btn flex items-center justify-center" 
+                                    title="Использовать мое местоположение">
+                                    <i id="auctionGeoIcon" class="fas fa-compass"></i>
+                                </button>
+                            </div>
                         </div>
-                        <!-- Контейнер для дополнительных адресов -->
-                        <div id="additionalStopsAuction" class="mt-2 space-y-2">
-                            <!-- Здесь будут добавляться дополнительные поля -->
+                        <!-- ИЗМЕНЕНИЕ: Добавлена кнопка "+" для дополнительных адресов -->
+                        <div class="flex flex-col">
+                            <label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
+                            <div class="input-with-plus-btn">
+                                <input id="auctionTo" name="to" type="text" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required>
+                                <button type="button" onclick="addStop('additionalStopsAuction')" class="bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <!-- Контейнер для дополнительных адресов -->
+                            <div id="additionalStopsAuction" class="mt-2 space-y-2">
+                                <!-- Здесь будут добавляться дополнительные поля -->
+                            </div>
                         </div>
                     </div>
-                    <!-- КОНЕЦ ИЗМЕНЕНИЯ -->
+                    
+                    
                     <div class="flex flex-col">
                         <label for="auctionPrice" class="text-sm font-medium text-gray-700 mb-1">Ваша цена в тенге</label>
                         <input id="auctionPrice" name="price" type="number" inputmode="numeric" pattern="[0-9]*" min="500" class="form-input-control" placeholder="Минимум 500 KZT (обязательно)" required>
@@ -892,7 +926,7 @@
     </div>
 
 
-    <!-- Модальное окно с инструкциями PWA -->
+    <!-- Модальные окна PWA и Партнеры остаются без изменений -->
     <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните «Такси Успех» как приложение!</h3>
@@ -952,7 +986,155 @@
         </div>
     </div>
 
-    <script>
+    <!-- ========================================================= -->
+    <!-- FIREBASE и JAVASCRIPT ЛОГИКА -->
+    <!-- ========================================================= -->
+    <script type="module">
+        // --- FIREBASE ИМПОРТЫ ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // setLogLevel('Debug'); // Активировать для отладки Firestore
+
+        // Глобальные переменные для Firebase
+        let app = null;
+        let db = null;
+        let auth = null;
+        let userId = null;
+        
+        // Переменные окружения, предоставляемые Canvas
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        /**
+         * Инициализирует Firebase и выполняет аутентификацию.
+         */
+        async function initFirebaseAndAuth() {
+            if (!firebaseConfig) {
+                console.error("Firebase configuration is missing.");
+                return;
+            }
+
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Ожидание аутентификации
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    console.log("Firebase signed in with custom token.");
+                } else {
+                    await signInAnonymously(auth);
+                    console.log("Firebase signed in anonymously.");
+                }
+
+                // Установка слушателя изменений состояния аутентификации
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("User authenticated. UID:", userId);
+                        // После успешной аутентификации загружаем историю
+                        setAddressHistory();
+                    } else {
+                        // Используем анонимный UUID, если аутентификация не прошла
+                        userId = crypto.randomUUID(); 
+                        console.log("User not authenticated, using random UUID:", userId);
+                        setAddressHistory();
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization or authentication failed:", error);
+            }
+        }
+        
+        // --- ЛОГИКА ИСТОРИИ АДРЕСОВ (Firestore) ---
+        const ADDRESS_HISTORY_DOC_PATH = "settings";
+        const ADDRESS_HISTORY_FIELD = "addressHistory";
+
+        /**
+         * Загружает историю адресов пользователя из Firestore.
+         */
+        async function loadAddresses() {
+            if (!db || !userId) {
+                 return [];
+            }
+            try {
+                const docRef = doc(db, "artifacts", appId, "users", userId, "data", ADDRESS_HISTORY_DOC_PATH);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    return data[ADDRESS_HISTORY_FIELD] || [];
+                } else {
+                    return [];
+                }
+            } catch (e) {
+                console.error("Error loading address history from Firestore:", e);
+                return [];
+            }
+        }
+
+        /**
+         * Сохраняет новый адрес в историю пользователя в Firestore.
+         */
+        async function saveAddress(address) {
+            if (!db || !userId) {
+                console.warn("Firestore not ready. Cannot save address.");
+                return;
+            }
+            // Не сохраняем координаты или слишком короткие строки
+            if (!address || address.includes('[КООРДИНАТЫ]') || address.length < 5) return; 
+
+            try {
+                let history = await loadAddresses();
+                history = history.filter(item => item.toLowerCase() !== address.toLowerCase());
+                history.unshift(address);
+                history = history.slice(0, 10);
+                
+                const docRef = doc(db, "artifacts", appId, "users", userId, "data", ADDRESS_HISTORY_DOC_PATH);
+                await setDoc(docRef, { [ADDRESS_HISTORY_FIELD]: history }, { merge: true });
+            } catch (e) {
+                console.error("Error saving address history to Firestore:", e);
+            }
+        }
+
+        /**
+         * Заполняет datalist'ы актуальной историей адресов.
+         */
+        async function populateDatalist(datalistId) {
+            const historyArray = await loadAddresses();
+            const datalist = document.getElementById(datalistId);
+            if (!datalist) return;
+            
+            datalist.innerHTML = ''; 
+            
+            historyArray.forEach(address => {
+                const option = document.createElement('option');
+                option.value = address;
+                datalist.appendChild(option);
+            });
+        }
+        
+        /**
+         * Общая функция для установки истории адресов для всех datalist.
+         */
+        window.setAddressHistory = async function() {
+            if (db) { // Выполняем только если Firebase инициализирован
+                 await populateDatalist('fromHistory');
+                 await populateDatalist('toHistory');
+            }
+        }
+
+        // Инициализация Firebase при загрузке скрипта
+        initFirebaseAndAuth();
+
+        // КОНЕЦ БЛОКА FIREBASE
+        // =========================================================
+
+        
         // Глобальные переменные из HTML/DOM
         const whatsappLinkEl = document.getElementById('whatsappLink');
         const locationBtnTextEl = document.getElementById('locationBtnText');
@@ -960,14 +1142,13 @@
         const locationAddressEl = document.getElementById('locationAddress');
         const announcementBar = document.getElementById('announcementBar');
         
-        // ОБНОВЛЕННЫЙ ОРИГИНАЛЬНЫЙ ТЕКСТ: только маршрут в формате [ОТКУДА] - [КУДА].
         const originalWhatsappText = 'https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D.';
         
         let currentGeolocatedAddress = '';
         
         // --- КОНФИГУРАЦИЯ ЦЕН И МОДАЛОВ ---
-        const CARGO_BASE_PRICE = 5000; // Базовая цена за 1 час
-        const MOVER_PRICE_PER_HOUR = 3000; // Доплата за 1 грузчика в час
+        const CARGO_BASE_PRICE = 5000; 
+        const MOVER_PRICE_PER_HOUR = 3000; 
         
         const MODALS = {
             'taxi': { id: 'taxiModal', formId: 'taxiForm', title: 'ТАКСИ', prefix: '🚕 НОВЫЙ ЗАКАЗ: ТАКСИ' },
@@ -979,78 +1160,18 @@
         };
         
         const PHONE_NUMBER = '77770649648'; 
-        const ADDRESS_HISTORY_KEY = 'taxiAddressHistory_v1';
         // -----------------------------
-
-        // --- ЛОГИКА ИСТОРИИ АДРЕСОВ (localStorage) ---
-        function loadAddresses() {
-            try {
-                // ПРИМЕЧАНИЕ: В реальном приложении это должно быть заменено на Firestore
-                const history = localStorage.getItem(ADDRESS_HISTORY_KEY);
-                return history ? JSON.parse(history) : [];
-            } catch (e) {
-                console.error("Error loading address history:", e);
-                return [];
-            }
-        }
-
-        function saveAddress(address) {
-            // ПРИМЕЧАНИЕ: В реальном приложении это должно быть заменено на Firestore
-            // Не сохраняем координаты
-            if (!address || address.includes('[КООРДИНАТЫ]') || address.length < 5) return; 
-
-            let history = loadAddresses();
-            
-            // Удаляем, если уже есть, чтобы поднять наверх
-            history = history.filter(item => item.toLowerCase() !== address.toLowerCase());
-            
-            // Добавляем новый адрес в начало
-            history.unshift(address);
-            
-            // Ограничиваем до 10 последних адресов
-            history = history.slice(0, 10);
-            
-            try {
-                localStorage.setItem(ADDRESS_HISTORY_KEY, JSON.stringify(history));
-            } catch (e) {
-                console.error("Error saving address history:", e);
-            }
-        }
-
-        function populateDatalist(datalistId, historyArray) {
-            const datalist = document.getElementById(datalistId);
-            if (!datalist) return;
-            
-            // Очищаем старые записи
-            datalist.innerHTML = ''; 
-            
-            historyArray.forEach(address => {
-                const option = document.createElement('option');
-                option.value = address;
-                datalist.appendChild(option);
-            });
-        }
-        
-        function setAddressHistory() {
-            const history = loadAddresses();
-            populateDatalist('fromHistory', history);
-            populateDatalist('toHistory', history);
-        }
-        // ----------------------------------------------
 
 
         // --- ЛОГИКА ДЛЯ ДИНАМИЧЕСКОГО БАННЕРА-ОБЪЯВЛЕНИЯ ---
         function checkAndShowAnnouncement() {
             const dismissKey = 'announcement_dismissed_v1';
-            
-            // ПРИМЕЧАНИЕ: В реальном приложении это должно быть заменено на Firestore
             if (localStorage.getItem(dismissKey) !== 'true') {
                 announcementBar.classList.remove('hidden');
             }
         }
 
         function dismissAnnouncement() {
-            // ПРИМЕЧАНИЕ: В реальном приложении это должно быть заменено на Firestore
             announcementBar.classList.add('hidden');
             localStorage.setItem('announcement_dismissed_v1', 'true');
         }
@@ -1058,50 +1179,264 @@
         // Общая функция для установки текущего времени + 5 минут
         function getFormattedCurrentTime() {
              const now = new Date();
-             // Установка времени с учетом локального часового пояса и добавление 5 минут
              now.setMinutes(now.getMinutes() - now.getTimezoneOffset() + 5); 
              return now.toISOString().slice(0, 16);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
              checkAndShowAnnouncement();
-             setAddressHistory(); // Загружаем историю при старте
              
              const formattedNow = getFormattedCurrentTime();
              
-             // 1. Для Такси
              const taxiDateTimeInput = document.getElementById('taxiDateTime');
              if (taxiDateTimeInput) {
                  taxiDateTimeInput.value = formattedNow;
              }
              
-             // 2. Для Грузового
              const cargoDateTimeInput = document.getElementById('cargoDateTime');
              if (cargoDateTimeInput) {
                  cargoDateTimeInput.value = formattedNow;
              }
              
-             // Инициализация цены грузоперевозки
              updateCargoPrice(); 
         });
+        
+        // =========================================================
+        // === ЛОГИКА ГЕОЛОКАЦИИ ===
+        // =========================================================
 
+        /**
+         * Устанавливает статус загрузки для кнопки.
+         * @param {string} mode - 'main' или 'taxi' или 'auction'
+         * @param {boolean} isLoading - Флаг загрузки
+         */
+        function setGeoButtonLoading(mode, isLoading, isError = false) {
+            let buttonEl, iconEl, textEl;
 
-        // --- ФУНКЦИЯ АККОРДЕОНА ---
-        window.toggleAccordion = function(id) {
-            const content = document.getElementById(id);
-            const icon = document.getElementById(`icon-${id}`);
-            
-            if (content.classList.contains('hidden')) {
-                // Открываем
-                content.classList.remove('hidden');
-                icon.classList.add('rotate-180');
-            } else {
-                // Закрываем
-                content.classList.add('hidden');
-                icon.classList.remove('rotate-180');
+            if (mode === 'main') {
+                buttonEl = document.getElementById('locationBtn');
+                textEl = document.getElementById('locationBtnText');
+                if (isLoading) {
+                    textEl.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Определяем...';
+                    buttonEl.disabled = true;
+                } else {
+                    buttonEl.disabled = false;
+                    textEl.innerHTML = isError ? '<i class="fas fa-times"></i> Ошибка определения' : '<i class="fas fa-check"></i> Адрес определен';
+                }
+            } else if (mode === 'taxi') {
+                iconEl = document.getElementById('taxiGeoIcon');
+                buttonEl = iconEl ? iconEl.closest('button') : null;
+                if (buttonEl) {
+                    buttonEl.disabled = isLoading;
+                    iconEl.className = isLoading ? 'fas fa-spinner animate-spin' : isError ? 'fas fa-exclamation-triangle' : 'fas fa-compass';
+                    buttonEl.title = isLoading ? 'Определяем местоположение...' : 'Использовать мое местоположение';
+                }
+            } else if (mode === 'auction') {
+                iconEl = document.getElementById('auctionGeoIcon');
+                buttonEl = iconEl ? iconEl.closest('button') : null;
+                if (buttonEl) {
+                    buttonEl.disabled = isLoading;
+                    iconEl.className = isLoading ? 'fas fa-spinner animate-spin' : isError ? 'fas fa-exclamation-triangle' : 'fas fa-compass';
+                    buttonEl.title = isLoading ? 'Определяем местоположение...' : 'Использовать мое местоположение';
+                }
             }
         }
 
+
+        /**
+         * Основная функция для определения местоположения.
+         * @param {string} trigger - откуда была вызвана функция ('main', 'taxi', 'auction').
+         */
+        window.getCurrentLocation = function(trigger) {
+            if (!navigator.geolocation) {
+                displayMessageModal('Ошибка', 'Геолокация не поддерживается вашим браузером.', true);
+                setGeoButtonLoading(trigger, false, true);
+                return;
+            }
+
+            setGeoButtonLoading(trigger, true);
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setGeoButtonLoading(trigger, false, false);
+                    const lat = position.coords.latitude.toFixed(5);
+                    const lon = position.coords.longitude.toFixed(5);
+                    
+                    const yandexMapUrl = `https://yandex.kz/maps/?pt=${lon},${lat}&z=16&l=map`;
+
+                    currentGeolocatedAddress = `[КООРДИНАТЫ] ${lat}, ${lon}. Ссылка: ${yandexMapUrl}`; 
+                    
+                    if (trigger === 'main') {
+                        // Обновление главного блока
+                        locationResultEl.classList.remove('hidden');
+                        locationAddressEl.textContent = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
+                        locationAddressEl.href = yandexMapUrl; 
+                        locationAddressEl.title = 'Открыть местоположение на карте';
+
+                        setAllLocationFields(currentGeolocatedAddress);
+                        
+                        let whatsappMessage = `${currentGeolocatedAddress} - [Адрес КУДА]`;
+                        const encodedText = encodeURIComponent(whatsappMessage);
+                        whatsappLinkEl.href = `https://wa.me/${PHONE_NUMBER}?text=${encodedText}`;
+
+                        displayMessageModal('Готово!', 'Ваше местоположение (координаты и ссылка на карту) автоматически добавлено во все формы заказа (Откуда/Адрес)! Нажмите кнопку "Заказать" в любой форме.', false);
+                    } else if (trigger === 'taxi') {
+                        // Обновление поля "Откуда" в модале Taxi
+                        const input = document.getElementById('taxiFrom');
+                        if (input) {
+                            input.value = currentGeolocatedAddress;
+                            input.placeholder = 'Откуда (Адрес определен)';
+                        }
+                        displayMessageModal('Адрес определен', 'Ваше местоположение добавлено в поле "Откуда".', false);
+                    } else if (trigger === 'auction') {
+                        // Обновление поля "Откуда" в модале Auction
+                        const input = document.getElementById('auctionFrom');
+                        if (input) {
+                            input.value = currentGeolocatedAddress;
+                            input.placeholder = 'Откуда (Адрес определен)';
+                        }
+                        displayMessageModal('Адрес определен', 'Ваше местоположение добавлено в поле "Откуда".', false);
+                    }
+
+                },
+                (error) => {
+                    setGeoButtonLoading(trigger, false, true);
+                    let errorMessage = 'Ошибка определения местоположения.';
+                    if (error.code === error.PERMISSION_DENIED) {
+                        errorMessage = 'Доступ к геолокации запрещен. Пожалуйста, разрешите доступ в настройках браузера.';
+                    }
+                    
+                    if (trigger === 'main') {
+                         locationResultEl.classList.add('hidden');
+                         whatsappLinkEl.href = originalWhatsappText;
+                    }
+                    
+                    displayMessageModal('Ошибка', errorMessage, true);
+                    
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+        
+        // =========================================================
+        // === ЛОГИКА МОДАЛЬНЫХ ОКОН ===
+        // =========================================================
+
+        let stopCounter = 0; 
+
+        window.addStop = function(containerId) {
+            if (stopCounter >= 3) {
+                displayMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false);
+                return;
+            }
+            
+            stopCounter++;
+            const stopsContainer = document.getElementById(containerId);
+            const stopId = `${containerId}Input${stopCounter}`;
+            const stopLabel = `Дополнительный адрес ${stopCounter}`;
+            
+            const stopDiv = document.createElement('div');
+            stopDiv.className = "flex space-x-2 additional-stop-item input-with-plus-btn"; 
+            const divId = `stopDiv${containerId}${stopCounter}`;
+            stopDiv.id = divId;
+
+            stopDiv.innerHTML = `
+                <input id="${stopId}" name="${stopId}" type="text" list="toHistory" class="form-input-control" placeholder="${stopLabel} (обязательно)" required>
+                <button type="button" onclick="removeStop('${divId}')" class="bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Удалить адрес">
+                    <i class="fas fa-minus"></i>
+                </button>
+            `;
+            
+            stopsContainer.appendChild(stopDiv);
+            setAddressHistory(); 
+        }
+        
+        window.removeStop = function(divId) {
+            const elementToRemove = document.getElementById(divId);
+            if (elementToRemove) {
+                elementToRemove.remove();
+                stopCounter--;
+                if (stopCounter < 0) stopCounter = 0;
+            }
+        }
+        
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                document.querySelectorAll('.status-message').forEach(el => el.classList.remove('active'));
+                
+                if (modalId === 'taxiModal' || modalId === 'auctionModal') {
+                    setAddressHistory();
+                }
+                
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                
+                const formattedNow = getFormattedCurrentTime();
+                 if (modalId === 'taxiModal') {
+                     document.getElementById('taxiDateTime').value = formattedNow;
+                 }
+                 if (modalId === 'cargoModal') {
+                     document.getElementById('cargoDateTime').value = formattedNow;
+                 }
+                 if (modalId === 'cargoModal') {
+                     document.getElementById('cargoMovers').value = '0'; 
+                     updateCargoPrice(); 
+                 }
+                
+                const firstInput = modal.querySelector('input, textarea, select');
+                if (firstInput) firstInput.focus();
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+                
+                if (modalId === 'taxiModal' || modalId === 'auctionModal') {
+                    const stopsContainerTaxi = document.getElementById('additionalStops');
+                    const stopsContainerAuction = document.getElementById('additionalStopsAuction');
+                    
+                    if (stopsContainerTaxi) stopsContainerTaxi.innerHTML = '';
+                    if (stopsContainerAuction) stopsContainerAuction.innerHTML = '';
+                    
+                    stopCounter = 0; 
+                    
+                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
+                    if (form) form.reset();
+                } else {
+                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
+                    if (form) form.reset();
+                }
+                
+                if (modalId === 'assistanceModal') {
+                    document.getElementById('carDetails').classList.add('hidden');
+                    document.getElementById('assistanceType').value = '';
+                }
+                
+                 const formattedNow = getFormattedCurrentTime();
+                 if (modalId === 'taxiModal') {
+                     document.getElementById('taxiDateTime').value = formattedNow;
+                 }
+                 if (modalId === 'cargoModal') {
+                     document.getElementById('cargoDateTime').value = formattedNow;
+                     document.getElementById('cargoMovers').value = '0'; 
+                     updateCargoPrice(); 
+                 }
+            }
+        }
+
+        function showStatus(modalId, message) {
+            const statusEl = document.getElementById(modalId.replace('Modal', 'Status'));
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.classList.add('active');
+            }
+        }
+        
         // --- ДЕМОНСТРАЦИОННАЯ МОДАЛЬНОЕ ОКНО (для оповещений) ---
         function displayMessageModal(title, message, isError = false) {
             const existingModal = document.getElementById('alertModal');
@@ -1109,7 +1444,7 @@
 
             const modalHtml = `
                 <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                    <div class="bg-white p-6 rounded-lg shadow-2xl w-80 text-center">
+                    <div class="bg-white p-6 rounded-lg shadow-2xl w-full max-w-sm text-center">
                         <h3 class="text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}">${title}</h3>
                         <p class="mb-6">${message}</p>
                         <button onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
@@ -1120,7 +1455,7 @@
             `;
             document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
-        
+
         // --- Заполнение полей форм координатами ---
         function setAllLocationFields(locationText) {
             const fieldsToFill = [
@@ -1140,192 +1475,6 @@
                 }
             });
         }
-
-
-        // --- ЛОГИКА ГЕОЛОКАЦИИ ---
-        window.getCurrentLocation = function() {
-            if (!navigator.geolocation) {
-                displayMessageModal('Ошибка', 'Геолокация не поддерживается вашим браузером.', true);
-                return;
-            }
-
-            // 1. Изменяем UI на время определения
-            locationBtnTextEl.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Определяем...';
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    // 2. Успех: получаем координаты
-                    const lat = position.coords.latitude.toFixed(5);
-                    const lon = position.coords.longitude.toFixed(5);
-                    
-                    // Обновляем ссылку на Яндекс.Карты для Казахстана
-                    const yandexMapUrl = `https://yandex.kz/maps/?pt=${lon},${lat}&z=16&l=map`;
-
-                    currentGeolocatedAddress = `[КООРДИНАТЫ] ${lat}, ${lon}. Ссылка: ${yandexMapUrl}`; 
-
-                    // 3. Обновляем UI с результатом
-                    locationBtnTextEl.innerHTML = '<i class="fas fa-check"></i> Адрес определен';
-                    locationResultEl.classList.remove('hidden');
-                    locationAddressEl.textContent = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
-                    locationAddressEl.href = yandexMapUrl; 
-                    locationAddressEl.title = 'Открыть местоположение на карте';
-                    
-                    // Вставляем координаты во все соответствующие поля форм
-                    setAllLocationFields(currentGeolocatedAddress);
-
-                    // 4. Обновляем ссылку WhatsApp (главная кнопка)
-                    // Используем только координаты для ОТКУДА, а КУДА оставляем пустым
-                    let whatsappMessage = `${currentGeolocatedAddress} - [Адрес КУДА]`;
-                    
-                    const encodedText = encodeURIComponent(whatsappMessage);
-                    whatsappLinkEl.href = `https://wa.me/77770649648?text=${encodedText}`;
-
-                    // 5. Информируем пользователя
-                    displayMessageModal('Готово!', 'Ваше местоположение (координаты и ссылка на карту) автоматически добавлено во все формы заказа (Откуда/Адрес)! Нажмите кнопку "Заказать" в любой форме.', false);
-                },
-                (error) => {
-                    // 6. Ошибка
-                    let errorMessage = 'Ошибка определения местоположения.';
-                    if (error.code === error.PERMISSION_DENIED) {
-                        errorMessage = 'Доступ к геолокации запрещен. Пожалуйста, разрешите доступ в настройках браузера.';
-                    }
-                    
-                    locationBtnTextEl.innerHTML = '<i class="fas fa-times"></i> Ошибка определения';
-                    locationResultEl.classList.add('hidden');
-                    locationAddressEl.textContent = '';
-                    locationAddressEl.href = '#';
-                    displayMessageModal('Ошибка', errorMessage, true);
-                    
-                    // Сбрасываем WhatsApp на оригинальный текст
-                    whatsappLinkEl.href = originalWhatsappText;
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        }
-        
-        // =========================================================
-        // === ЛОГИКА МОДАЛЬНЫХ ОКОН И ФОРМ ===
-        // =========================================================
-
-        let stopCounter = 0; // Единый счетчик для всех дополнительных адресов
-
-        // Функция добавления дополнительного адреса
-        window.addStop = function(containerId) {
-            if (stopCounter >= 3) {
-                displayMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false);
-                return;
-            }
-            
-            stopCounter++;
-            const stopsContainer = document.getElementById(containerId);
-            const stopId = `${containerId}Input${stopCounter}`;
-            const stopLabel = `Дополнительный адрес ${stopCounter}`;
-            
-            const stopDiv = document.createElement('div');
-            stopDiv.className = "flex space-x-2 additional-stop-item input-with-plus-btn"; // Добавлен класс для адаптации
-            const divId = `stopDiv${containerId}${stopCounter}`;
-            stopDiv.id = divId;
-
-            stopDiv.innerHTML = `
-                <input id="${stopId}" name="${stopId}" type="text" list="toHistory" class="form-input-control" placeholder="${stopLabel} (обязательно)" required>
-                <button type="button" onclick="removeStop('${divId}')" class="bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Удалить адрес">
-                    <i class="fas fa-minus"></i>
-                </button>
-            `;
-            
-            stopsContainer.appendChild(stopDiv);
-            setAddressHistory(); // Обновляем datalist для новых полей
-        }
-        
-        // Функция удаления дополнительного адреса
-        window.removeStop = function(divId) {
-            const elementToRemove = document.getElementById(divId);
-            if (elementToRemove) {
-                elementToRemove.remove();
-                stopCounter--;
-                if (stopCounter < 0) stopCounter = 0;
-            }
-        }
-
-
-        function openModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                document.querySelectorAll('.status-message').forEach(el => el.classList.remove('active'));
-                
-                // Для модала Такси: Загружаем историю перед открытием
-                if (modalId === 'taxiModal') {
-                    setAddressHistory();
-                }
-                
-                modal.classList.add('active');
-                modal.setAttribute('aria-hidden', 'false');
-                
-                // Обновление времени на текущее при открытии
-                const formattedNow = getFormattedCurrentTime();
-                 if (modalId === 'taxiModal') {
-                     document.getElementById('taxiDateTime').value = formattedNow;
-                 }
-                 if (modalId === 'cargoModal') {
-                     document.getElementById('cargoDateTime').value = formattedNow;
-                     document.getElementById('cargoMovers').value = '0'; // Сброс количества грузчиков
-                     updateCargoPrice(); // Обновляем цену
-                 }
-                
-                const firstInput = modal.querySelector('input, textarea, select');
-                if (firstInput) firstInput.focus();
-            }
-        }
-
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.remove('active');
-                modal.setAttribute('aria-hidden', 'true');
-                
-                // Сброс полей и счетчика доп. адресов
-                if (modalId === 'taxiModal' || modalId === 'auctionModal') {
-                    const stopsContainerTaxi = document.getElementById('additionalStops');
-                    const stopsContainerAuction = document.getElementById('additionalStopsAuction');
-                    
-                    if (stopsContainerTaxi) stopsContainerTaxi.innerHTML = '';
-                    if (stopsContainerAuction) stopsContainerAuction.innerHTML = '';
-                    
-                    stopCounter = 0; 
-                    
-                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
-                    if (form) form.reset();
-                } else {
-                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
-                    if (form) form.reset();
-                }
-                
-                // Скрываем детали авто
-                if (modalId === 'assistanceModal') {
-                    document.getElementById('carDetails').classList.add('hidden');
-                    document.getElementById('assistanceType').value = '';
-                }
-                
-                // Сброс времени предзаказа на текущее
-                 const formattedNow = getFormattedCurrentTime();
-                 if (modalId === 'taxiModal') {
-                     document.getElementById('taxiDateTime').value = formattedNow;
-                 }
-                 if (modalId === 'cargoModal') {
-                     document.getElementById('cargoDateTime').value = formattedNow;
-                     document.getElementById('cargoMovers').value = '0'; // Сброс количества грузчиков
-                     updateCargoPrice(); // Обновляем цену
-                 }
-            }
-        }
-
-        function showStatus(modalId, message) {
-            const statusEl = document.getElementById(modalId.replace('Modal', 'Status'));
-            if (statusEl) {
-                statusEl.textContent = message;
-                statusEl.classList.add('active');
-            }
-        }
         
         // =========================================================
         // === ЛОГИКА КАЛЬКУЛЯЦИИ ДЛЯ ГРУЗОВОГО ===
@@ -1338,16 +1487,11 @@
             if (!cargoMoversSelect || !cargoTotalPriceEl || !cargoPriceNoteEl) return;
             
             const moversCount = parseInt(cargoMoversSelect.value) || 0;
-            
-            // Расчет: База (5000) + (Кол-во грузчиков * 3000)
             const totalPrice = CARGO_BASE_PRICE + (moversCount * MOVER_PRICE_PER_HOUR);
-            
-            // Форматирование числа с разделителями для тысяч
             const formattedPrice = totalPrice.toLocaleString('ru-RU');
 
             cargoTotalPriceEl.textContent = `${formattedPrice} тг`;
             
-            // Обновляем подсказку под общей ценой
             if (moversCount > 0) {
                 cargoPriceNoteEl.innerHTML = `Базовая стоимость ${CARGO_BASE_PRICE.toLocaleString('ru-RU')} тг + доплата за ${moversCount} чел.`;
             } else {
@@ -1410,7 +1554,7 @@
         const forms = document.querySelectorAll('form');
         
         forms.forEach(form => {
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 const formId = this.id;
@@ -1438,7 +1582,6 @@
                         value = input.checked ? 'Да' : 'Нет';
                     }
 
-                    // ИСПРАВЛЕНИЕ: Добавлен перевод строки после заголовка (label) для лучшей читаемости
                     return `*${label}*:\n${value || '—'}\n\n`;
                 };
 
@@ -1456,7 +1599,6 @@
                     return stops;
                 };
                 
-                // Общая функция для обработки предзаказа и установки заголовка
                 const handlePreorder = (dateTimeId, basePrefix) => {
                     const dateTimeInput = document.getElementById(dateTimeId).value;
                     let prefixMessage = basePrefix;
@@ -1465,7 +1607,6 @@
                         const selectedTime = new Date(dateTimeInput);
                         const currentTime = new Date();
                         
-                        // Сравниваем только если поле не пустое
                         if (selectedTime > currentTime) {
                             const formattedDate = selectedTime.toLocaleString('ru-RU', { 
                                 year: 'numeric', month: '2-digit', day: '2-digit', 
@@ -1479,6 +1620,8 @@
                     return prefixMessage;
                 };
 
+                let addressesToSave = [];
+
 
                 switch (modalKey) {
                     case 'taxi':
@@ -1487,7 +1630,6 @@
                         const wishes = document.getElementById('taxiWishes').value.trim();
                         const passengerPhone = document.getElementById('passengerPhone').value.trim(); 
                         
-                        // ЛОГИКА ПРЕДЗАКАЗА для ТАКСИ
                         message = handlePreorder('taxiDateTime', modalConfig.prefix);
                         
                         message += getVal('taxiFrom', 'Откуда', true);
@@ -1505,7 +1647,6 @@
                             message += '---------------------------\n\n';
                         }
                         
-                        // ОБНОВЛЕННАЯ ЛОГИКА ТЕЛЕФОНОВ
                         if (passengerPhone) {
                             message += '📞 КОНТАКТЫ:\n';
                             message += `*Телефон для связи*:\n${passengerPhone}\n\n`;
@@ -1513,14 +1654,12 @@
                         
                         message += '💰 Примерная цена: 700-900 тг (уточнит водитель)';
                         
-                        // Сохраняем адреса в историю, если заказ успешный
-                        if (fromAddress) saveAddress(fromAddress);
-                        if (toAddress) saveAddress(toAddress);
+                        if (fromAddress) addressesToSave.push(fromAddress);
+                        if (toAddress) addressesToSave.push(toAddress);
 
                         break;
                         
                     case 'auction':
-                        // Auction logic (without pre-order logic)
                         const auctionPrice = document.getElementById('auctionPrice').value;
                         if (!auctionPrice || parseInt(auctionPrice) < 500) {
                             requiredFieldsMissing = true;
@@ -1535,8 +1674,8 @@
                         
                         const auctionFromAddress = document.getElementById('auctionFrom').value.trim();
                         const auctionToAddress = document.getElementById('auctionTo').value.trim();
-                        if (auctionFromAddress) saveAddress(auctionFromAddress);
-                        if (auctionToAddress) saveAddress(auctionToAddress);
+                        if (auctionFromAddress) addressesToSave.push(auctionFromAddress);
+                        if (auctionToAddress) addressesToSave.push(auctionToAddress);
 
                         break;
                         
@@ -1545,10 +1684,12 @@
                         message += getVal('deliveryAddress', 'Адрес доставки', true);
                         message += getVal('deliveryStore', 'Пожелания по магазину');
                         message += '💰 Примерная цена: от 1200 тг (зависит от расстояния/объема)';
+                        
+                        const deliveryAddress = document.getElementById('deliveryAddress').value.trim();
+                        if (deliveryAddress) addressesToSave.push(deliveryAddress);
                         break;
                     
                     case 'cargo':
-                        // === ОБНОВЛЕННАЯ ЛОГИКА ДЛЯ ГРУЗОВОГО ===
                         const cargoMoversSelect = document.getElementById('cargoMovers');
                         const moversCount = parseInt(cargoMoversSelect.value);
                         const totalPrice = CARGO_BASE_PRICE + (moversCount * MOVER_PRICE_PER_HOUR);
@@ -1558,27 +1699,31 @@
                             ? `${moversCount} чел. (Доплата: ${moversCount * MOVER_PRICE_PER_HOUR} тг/час)` 
                             : 'Не требуются';
                         
-                        // ЛОГИКА ПРЕДЗАКАЗА для ГРУЗОВОГО
                         message = handlePreorder('cargoDateTime', modalConfig.prefix);
                         
-                        // Теперь гарантированно будут разделители
                         message += getVal('cargoFrom', 'Адрес погрузки', true);
                         message += getVal('cargoTo', 'Адрес выгрузки', true);
                         message += getVal('cargoDescription', 'Описание груза', true);
                         
-                        // Вставляем поле с грузчиками и итоговой суммой
                         message += `*Количество грузчиков*:\n${moversText}\n\n`;
                         message += `*ИТОГОВАЯ СУММА (за 1 час)*:\n${formattedPrice} тг\n\n`;
 
                         message += `💰 Базовая цена: ${CARGO_BASE_PRICE.toLocaleString('ru-RU')} тг/час`;
+                        
+                        const cargoFromAddress = document.getElementById('cargoFrom').value.trim();
+                        const cargoToAddress = document.getElementById('cargoTo').value.trim();
+                        if (cargoFromAddress) addressesToSave.push(cargoFromAddress);
+                        if (cargoToAddress) addressesToSave.push(cargoToAddress);
                         break;
 
                     case 'soberDriver':
-                        // === ОБНОВЛЕННАЯ ЛОГИКА ДЛЯ ТРЕЗВОГО ВОДИТЕЛЯ ===
                         message += getVal('soberDriverFrom', 'Текущий адрес (Авто)', true);
                         message += getVal('soberDriverCarModel', 'Марка и модель авто', true); 
                         message += getVal('soberDriverTo', 'Адрес доставки авто', true);
                         message += '💰 Примерная цена: от 3800 тг (зависит от расстояния)';
+                        
+                        const soberDriverFromAddress = document.getElementById('soberDriverFrom').value.trim();
+                        if (soberDriverFromAddress) addressesToSave.push(soberDriverFromAddress);
                         break;
                     
                     case 'assistance':
@@ -1598,6 +1743,9 @@
                         message += getVal('assistanceTask', 'Детали и уточнения');
                         message += getVal('assistanceAddress', 'Адрес (где нужна помощь)', true);
                         message += '💰 Примерная цена: от 1500 тг (зависит от характера требуемой помощи)';
+                        
+                        const assistanceAddress = document.getElementById('assistanceAddress').value.trim();
+                        if (assistanceAddress) addressesToSave.push(assistanceAddress);
                         break;
                 }
 
@@ -1605,18 +1753,19 @@
                     showStatus(modalId, 'Пожалуйста, заполните все обязательные поля.');
                     return;
                 }
+                
+                for (const address of addressesToSave) {
+                    await saveAddress(address);
+                }
 
-                // Encode and open WhatsApp link
                 const waLink = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
                 window.open(waLink, '_blank');
 
-                // Success cleanup
                 closeModal(modalId);
                 this.reset();
             });
         });
 
-        // --- PWA и Партнеры (вспомогательные функции) ---
         window.showPWAInstructions = function() {
             document.getElementById('pwaModal').classList.remove('hidden');
         }
@@ -1627,6 +1776,7 @@
     </script>
 </body>
 </html>
+
 
 
 

@@ -1167,6 +1167,26 @@
         // =========================================================
 
         
+        // --- ЛОГИКА АККОРДЕОНА (FAQ) ---
+        window.toggleAccordion = function(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById(`icon-${id}`);
+
+            if (!content) return;
+
+            if (content.classList.contains('hidden')) {
+                // Show content
+                content.classList.remove('hidden');
+                if (icon) icon.classList.add('rotate-180');
+            } else {
+                // Hide content
+                content.classList.add('hidden');
+                if (icon) icon.classList.remove('rotate-180');
+            }
+        }
+        // --- КОНЕЦ ЛОГИКИ АККОРДЕОНА ---
+
+        
         // Глобальные переменные из HTML/DOM
         const whatsappLinkEl = document.getElementById('whatsappLink');
         const locationBtnTextEl = document.getElementById('locationBtnText');

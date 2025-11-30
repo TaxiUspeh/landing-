@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Доставка Еды | Заказ Праздник</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header>
+        <h1>Меню Доставки Праздник 🍣</h1>
+        <p>Выберите ваши любимые роллы и сеты и оформите заказ.</p>
+    </header>
+
+    <main id="menu-items">
+        </main>
+
+    <section id="order-form-section">
+        <h2>Ваш заказ</h2>
+        <div id="cart">Ваша корзина пуста.</div>
+        <button id="checkout-button" onclick="showOrderForm()" disabled>Перейти к оформлению</button>
+    </section>
+
+    <section id="customer-info" style="display:none;">
+        <h2>Контактная информация</h2>
+        <form id="order-form">
+            <input type="text" id="customer-name" placeholder="Ваше имя" required>
+            <input type="text" id="customer-address" placeholder="Адрес доставки (улица, дом, квартира)" required>
+            <input type="tel" id="customer-phone" placeholder="Ваш телефон (для связи)" required>
+            <textarea id="customer-notes" placeholder="Комментарии к заказу (если есть)" rows="3"></textarea>
+
+            <button type="submit">Отправить заказ в WhatsApp</button>
+        </form>
+    </section>
+
+    <script src="script.js"></script>
+</body>
+</html>

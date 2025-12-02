@@ -574,7 +574,7 @@
                         <div class="flex flex-col">
                             <label for="taxiFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес) *</label>
                             <div class="input-with-plus-btn">
-                                <input id="taxiFrom" name="from" type="text" list="fromHistory" class="form-input-control" placeholder="Улица, дом (обязательно)" required>
+                                <input id="taxiFrom" name="from" type="text" list="fromHistory" class="form-input-control" placeholder="Улица, дом (обязательно)" required oninput="updateTaxiPrice()">
                                 <datalist id="fromHistory"></datalist>
                                 <!-- КНОПКА ГЕОЛОКАЦИИ -->
                                 <button type="button" onclick="getCurrentLocation('taxi')" 
@@ -588,13 +588,14 @@
                         <div class="flex flex-col">
                             <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
                             <div class="input-with-plus-btn">
-                                <input id="taxiTo" name="to" type="text" list="toHistory" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required>
+                                <input id="taxiTo" name="to" type="text" list="toHistory" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required oninput="updateTaxiPrice()">
                                 <datalist id="toHistory"></datalist>
-                                <button type="button" onclick="addStop('additionalStops')" class="bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
+                                <button type="button" onclick="addStop('additionalStops', 'taxi')" class="bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
-                            <div id="additionalStops" class="mt-2 space-y-2"></div>
+                            <!-- Контейнер для дополнительных адресов. oninput добавлен для отслеживания изменения цены -->
+                            <div id="additionalStops" class="mt-2 space-y-2" oninput="updateTaxiPrice()"></div>
                         </div>
                     </div>
                     
@@ -626,7 +627,8 @@
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
                             <div class="price-note">Примерная стоимость:</div>
-                            <div class="price-estimate">от 700–900 тг</div>
+                            <!-- Элемент для динамического обновления цены -->
+                            <div id="taxiPriceEstimate" class="price-estimate">от 700–900 тг</div>
                             <div class="price-note text-red-600 font-semibold">Внимание: точная цена после подтверждения водителем.</div>
                         </div>
                         <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
@@ -923,7 +925,7 @@
                             <label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
                             <div class="input-with-plus-btn">
                                 <input id="auctionTo" name="to" type="text" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required>
-                                <button type="button" onclick="addStop('additionalStopsAuction')" class="bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
+                                <button type="button" onclick="addStop('additionalStopsAuction', 'auction')" class="bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
@@ -1201,9 +1203,30 @@
         let currentGeolocatedAddress = '';
         
         // --- КОНФИГУРАЦИЯ ЦЕН И МОДАЛОВ ---
-        const CARGO_BASE_PRICE = 6000; // ЦЕНА ИЗМЕНЕНА НА 6000
+        const CARGO_BASE_PRICE = 6000; 
         const MOVER_PRICE_PER_HOUR = 3000; 
         
+        // СЛОВАРЬ ЦЕН ДЛЯ МЕЖГОРОДА / ПРИГОРОДА
+        const INTERCITY_PRICES = {
+            "усть-каменогорск": "от 4800–6210 тг",
+            "глубокое": "от 4200 тг",
+            "новая бухтарма": "от 24150 тг",
+            "риддер": "от 25300 тг",
+            "шемонаиха": "от 20700 тг",
+            "алтай": "от 45540 тг", // Алтай (Зыряновск)
+            "усть-таловка": "от 19780 тг",
+            "секисовка": "от 6440 тг",
+            "белокаменка": "от 3500 тг",
+            "михайловка": "от 4000 тг",
+            "прогресс": "от 2990–3500 тг",
+            "черногорка": "от 2100–3000 тг",
+            "красный партизан": "от 1800–2500 тг",
+            "планидовка": "от 2100–2500 тг",
+            "тарханка": "от 11270–12200 тг",
+            "предгорное": "от 8500–10000 тг",
+            "алтайский": "от 6000–8000 тг" // посёлок Алтайский
+        };
+
         const MODALS = {
             'taxi': { id: 'taxiModal', formId: 'taxiForm', title: 'ТАКСИ', prefix: '🚕 НОВЫЙ ЗАКАЗ: ТАКСИ' },
             'delivery': { id: 'deliveryModal', formId: 'deliveryForm', title: 'ДОСТАВКА', prefix: '🛍️ НОВЫЙ ЗАКАЗ: ДОСТАВКА' },
@@ -1258,6 +1281,9 @@
              }
              
              updateCargoPrice(); 
+             
+             // Инициализируем цену при загрузке страницы/открытии модального окна
+             updateTaxiPrice(); 
         });
         
         // =========================================================
@@ -1405,6 +1431,10 @@
                         input.placeholder = placeholder;
                     }
                     displayMessageModal('Адрес определен', successMessage, false);
+                    
+                    if (trigger === 'taxi') {
+                        updateTaxiPrice();
+                    }
 
                 },
                 (error) => {
@@ -1432,7 +1462,12 @@
 
         let stopCounter = 0; 
 
-        window.addStop = function(containerId) {
+        /**
+         * Добавляет дополнительное поле адреса
+         * @param {string} containerId - ID контейнера ('additionalStops' или 'additionalStopsAuction')
+         * @param {string} mode - 'taxi' или 'auction'
+         */
+        window.addStop = function(containerId, mode) {
             if (stopCounter >= 3) {
                 displayMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false);
                 return;
@@ -1447,27 +1482,116 @@
             stopDiv.className = "flex space-x-2 additional-stop-item input-with-plus-btn"; 
             const divId = `stopDiv${containerId}${stopCounter}`;
             stopDiv.id = divId;
+            
+            // Если это окно такси, добавляем oninput для обновления цены
+            const inputEvents = (mode === 'taxi') ? 'oninput="updateTaxiPrice()"' : '';
 
             stopDiv.innerHTML = `
-                <input id="${stopId}" name="${stopId}" type="text" list="toHistory" class="form-input-control" placeholder="${stopLabel} (обязательно)" required>
-                <button type="button" onclick="removeStop('${divId}')" class="bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Удалить адрес">
+                <input id="${stopId}" name="${stopId}" type="text" list="toHistory" class="form-input-control" placeholder="${stopLabel} (обязательно)" required ${inputEvents}>
+                <button type="button" onclick="removeStop('${divId}', '${mode}')" class="bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Удалить адрес">
                     <i class="fas fa-minus"></i>
                 </button>
             `;
             
             stopsContainer.appendChild(stopDiv);
             setAddressHistory(); 
+            if (mode === 'taxi') updateTaxiPrice();
         }
         
-        window.removeStop = function(divId) {
+        /**
+         * Удаляет дополнительное поле адреса
+         * @param {string} divId - ID элемента <div> для удаления
+         * @param {string} mode - 'taxi' или 'auction'
+         */
+        window.removeStop = function(divId, mode) {
             const elementToRemove = document.getElementById(divId);
             if (elementToRemove) {
                 elementToRemove.remove();
                 stopCounter--;
                 if (stopCounter < 0) stopCounter = 0;
             }
+            if (mode === 'taxi') updateTaxiPrice();
         }
         
+        /**
+         * Подсчитывает количество заполненных полей адресов в модальном окне Такси
+         * (Откуда, Куда, и все Дополнительные)
+         */
+        function countFilledAddresses() {
+            let count = 0;
+            
+            const fromInput = document.getElementById('taxiFrom');
+            const toInput = document.getElementById('taxiTo');
+            const stopsContainer = document.getElementById('additionalStops');
+
+            // Считаем только, если поле заполнено (длина больше 0)
+            if (fromInput && fromInput.value.trim().length > 0) {
+                count++; // Адрес "Откуда"
+            }
+            if (toInput && toInput.value.trim().length > 0) {
+                count++; // Адрес "Куда"
+            }
+
+            if (stopsContainer) {
+                stopsContainer.querySelectorAll('input.form-input-control').forEach(input => {
+                    if (input.value.trim().length > 0) {
+                        count++; // Дополнительные адреса
+                    }
+                });
+            }
+            return count;
+        }
+        
+        /**
+         * Обновляет примерную цену в модальном окне Такси.
+         * Сначала проверяет на межгород, затем на количество остановок.
+         */
+        window.updateTaxiPrice = function() {
+            const priceEl = document.getElementById('taxiPriceEstimate');
+            if (!priceEl) return;
+
+            const toInput = document.getElementById('taxiTo');
+            // Приводим введенное значение к нижнему регистру для сравнения
+            const destination = toInput ? toInput.value.trim().toLowerCase() : '';
+            let priceText;
+
+            // 1. ПРИОРИТЕТ: Проверяем на Межгород / Пригород
+            let isIntercity = false;
+            for (const location in INTERCITY_PRICES) {
+                // Проверяем, начинается ли введенный текст с названия населенного пункта
+                // Это позволяет вводить "Усть-Каменогорск, ул. Бажова 10"
+                if (destination.startsWith(location)) {
+                    priceText = INTERCITY_PRICES[location];
+                    isIntercity = true;
+                    break;
+                }
+            }
+
+            if (isIntercity) {
+                // Если это межгород, используем цену из словаря
+                priceEl.textContent = priceText;
+                return; 
+            }
+
+            // 2. ВТОРИЧНЫЙ ПРИОРИТЕТ: Локальный маршрут по количеству остановок
+            const addressCount = countFilledAddresses();
+            
+            // 2 адреса (Откуда + Куда)
+            if (addressCount <= 2) { 
+                priceText = 'от 700–900 тг';
+            } 
+            // 3 или более адресов (3 или 4 поля)
+            else if (addressCount >= 3) { 
+                priceText = 'от 1500–2000 тг';
+            } 
+            // Если адресов 0 или 1 (должно быть 2 полей, но на всякий случай)
+            else {
+                 priceText = 'от 700–900 тг';
+            }
+            
+            priceEl.textContent = priceText;
+        }
+
 
         function openModal(modalId) {
             const modal = document.getElementById(modalId);
@@ -1484,6 +1608,8 @@
                 const formattedNow = getFormattedCurrentTime();
                  if (modalId === 'taxiModal') {
                      document.getElementById('taxiDateTime').value = formattedNow;
+                     // При открытии модального окна всегда обновляем цену
+                     updateTaxiPrice(); 
                  }
                  if (modalId === 'cargoModal') {
                      document.getElementById('cargoDateTime').value = formattedNow;
@@ -1528,6 +1654,7 @@
                  const formattedNow = getFormattedCurrentTime();
                  if (modalId === 'taxiModal') {
                      document.getElementById('taxiDateTime').value = formattedNow;
+                     updateTaxiPrice(); // Сброс цены на базовую
                  }
                  if (modalId === 'cargoModal') {
                      document.getElementById('cargoDateTime').value = formattedNow;
@@ -1582,6 +1709,7 @@
                     input.placeholder = field.placeholder; 
                 }
             });
+            updateTaxiPrice();
         }
         
         // =========================================================
@@ -1760,7 +1888,9 @@
                             message += `*Телефон для связи*:\n${passengerPhone}\n\n`;
                         }
                         
-                        message += '💰 Примерная цена: 700-900 тг (уточнит водитель)';
+                        // Определяем цену для отправки в WhatsApp
+                        const currentPriceText = document.getElementById('taxiPriceEstimate').textContent;
+                        message += `💰 Примерная цена: ${currentPriceText} (уточнит водитель)`;
                         
                         if (fromAddress) addressesToSave.push(fromAddress);
                         if (toAddress) addressesToSave.push(toAddress);

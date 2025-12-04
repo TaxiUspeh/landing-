@@ -34,15 +34,30 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #f5f5f5; 
+            background-color: #f5f5f5; /* light mode bg */
             padding-bottom: 72px; 
+            transition: background-color 0.3s, color 0.3s;
+            color: #1f2937; /* Default text color */
         }
-        .header-bg { background: linear-gradient(135deg, #f59e0b 0%, #1d4ed8 100%); }
+        .header-bg { 
+            background: linear-gradient(135deg, #f59e0b 0%, #1d4ed8 100%); 
+            transition: background 0.3s;
+        }
         .btn-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
-        .service-card { min-height: 100px; transition: transform 0.2s, box-shadow 0.2s; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .service-card, .main-card, .auction-cta, .stroy-dom-cta, .faq-item { 
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, border-color 0.3s, color 0.3s;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
         .service-card:hover { transform: scale(1.03); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
-        .auction-cta { background-color: #fff; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); border: 2px solid #f59e0b; transition: transform 0.2s; }
-        .auction-cta:hover { transform: translateY(-4px); }
+        .auction-cta { background-color: #fff; border: 2px solid #f59e0b; }
+        .stroy-dom-cta { background-color: #ecfdf5; border: 3px solid #059669; animation: pulse-green 4s infinite; }
+        
+        /* Ключевые кадры для анимации Light Mode */
+        @keyframes pulse-green {
+            0%, 100% { border-color: #059669; } /* emerald-600 */
+            50% { border-color: #34d399; } /* emerald-400 */
+        }
         
         #locationBtn {
             padding: 10px 12px;
@@ -77,7 +92,7 @@
             font-weight: 700; 
         }
         
-        /* === СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКОН (С ИСПРАВЛЕНИЕМ ПРОКРУТКИ) === */
+        /* === СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКОН === */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -108,34 +123,10 @@
             overflow-y: auto; 
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
             transform: scale(0.95);
-            transition: transform 0.3s ease;
-        }
-
-        .modal-overlay.active .modal {
-            transform: scale(1);
-        }
-
-        @media (max-width: 640px) {
-            .modal {
-                max-width: 95%;
-                margin: 10px;
-            }
-            body { padding-bottom: 64px; }
+            transition: transform 0.3s ease, background-color 0.3s;
         }
         
-        .price-note { font-size: 0.8rem; color: #4a5568; margin-top: 4px; }
-        .price-estimate { font-size: 1.4rem; font-weight: 700; color: #008000; }
-        
-        .status-message { display: none; }
-        .status-message.active { display: block; }
-        .bg-primary-blue { background-color: #007bff; }
-        .hover\:bg-primary-dark:hover { background-color: #0056b3; }
-        .text-primary-blue { color: #007bff; }
-        .focus\:ring-primary-blue:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5); }
-        
-        .coord-link { color: #1d4ed8; text-decoration: underline; font-weight: 600; }
-        .coord-link:hover { color: #f59e0b; }
-
+        /* === СТИЛИ ДЛЯ ФОРМ И КНОПОК ВВОДА В МОДАЛЬНЫХ ОКНАХ (обновлено) === */
         .form-input-control {
              padding: 8px 12px;
              border: 1px solid #d1d5db;
@@ -159,52 +150,148 @@
             flex-grow: 1; 
             min-width: 0; 
         }
-        .input-with-plus-btn button {
+        
+        /* Стили для кнопки "Компас" (Геолокация) */
+        .geo-btn {
             flex-shrink: 0;
             width: 40px;
             height: 40px;
-        }
-        
-        /* Стиль для кнопки геолокации в модальном окне */
-        .modal-location-btn {
             background-color: #f59e0b; /* amber-500 */
             color: white;
-            transition: background-color 0.2s, transform 0.2s;
-            font-size: 1.1rem;
-            width: 40px; 
-            height: 40px;
-            padding: 0;
             border-radius: 8px;
+            transition: background-color 0.2s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
             box-shadow: 0 2px 5px rgba(245, 158, 11, 0.5);
         }
-        .modal-location-btn:hover {
+        .geo-btn:hover {
             background-color: #d97706; /* amber-700 */
             transform: scale(1.05);
         }
-        /* Стиль для нового партнерского блока (ПРОДВИНУТЫЙ СТИЛЬ) */
-        .stroy-dom-cta {
-            background-color: #ecfdf5; /* light emerald-50 */
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            border: 3px solid #059669; /* emerald-600 */
-            transition: transform 0.3s, box-shadow 0.3s;
-            animation: pulse-green 4s infinite;
+
+        /* Стили для кнопки "Плюс" (Добавить адрес) */
+        .add-stop-btn {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            background-color: #10b981; /* emerald-500 */
+            color: white;
+            border-radius: 8px;
+            transition: background-color 0.2s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 5px rgba(16, 185, 129, 0.5);
         }
-        .stroy-dom-cta:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+        .add-stop-btn:hover {
+            background-color: #059669; /* emerald-600 */
+            transform: scale(1.05);
         }
-        /* Ключевые кадры для анимации */
-        @keyframes pulse-green {
-            0%, 100% { border-color: #059669; } /* emerald-600 */
-            50% { border-color: #34d399; } /* emerald-400 */
+        
+        /* Стили для кнопки "Минус" (Удалить адрес) */
+        .remove-stop-btn {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            background-color: #ef4444; /* red-500 */
+            color: white;
+            border-radius: 8px;
+            transition: background-color 0.2s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.5);
         }
+        .remove-stop-btn:hover {
+            background-color: #dc2626; /* red-600 */
+            transform: scale(1.05);
+        }
+
+        /* Dark Mode Overrides */
+        .dark { 
+            background-color: #111827; /* gray-900 */
+            color: #f3f4f6; /* gray-100 */
+        }
+        .dark .header-bg { 
+            background: linear-gradient(135deg, #4c1d95 0%, #10b981 100%); /* New darker header gradient */
+        }
+        .dark .main-card, 
+        .dark .service-card, 
+        .dark .auction-cta, 
+        .dark .stroy-dom-cta, 
+        .dark .modal, 
+        .dark #faq-accordion > div,
+        .dark .faq-item-content {
+            background-color: #1f2937 !important; /* gray-800 */
+            color: #e5e7eb !important; /* gray-200 */
+        }
+        
+        /* Text color overrides for dark mode */
+        .dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700 { color: #d1d5db !important; }
+        .dark .text-gray-600 { color: #9ca3af !important; } /* gray-400 */
+        .dark .text-gray-500 { color: #6b7280 !important; } /* gray-500 */
+        .dark .text-blue-900 { color: #93c5fd !important; } /* blue-300 */
+        .dark .text-emerald-800 { color: #a7f3d0 !important; }
+        .dark .text-blue-600 { color: #60a5fa !important; }
+
+        /* Border adjustments for dark mode */
+        .dark .border-t { border-color: #374151 !important; } /* gray-700 */
+        .dark .border { border-color: #374151 !important; }
+        .dark .border-b { border-color: #374151 !important; }
+        
+        /* Specific Card adjustments for dark mode */
+        .dark .main-card { border-color: #059669 !important; } /* green-600 */
+        .dark .stroy-dom-cta { 
+            border-color: #34d399 !important; /* emerald-400 */
+            background-color: #064e3b !important; /* emerald-900 */
+            color: #d1fae5 !important; /* emerald-100 */
+            animation: pulse-dark-green 4s infinite;
+        }
+        .dark .auction-cta { border-color: #fbbf24 !important; } /* amber-400 */
+
+        /* Ключевые кадры для анимации Dark Mode */
+        @keyframes pulse-dark-green {
+            0%, 100% { border-color: #34d399; } /* emerald-400 */
+            50% { border-color: #059669; } /* emerald-600 */
+        }
+
+        /* Dark Mode Form Inputs */
+        .dark .form-input-control {
+            background-color: #374151; /* gray-700 */
+            border-color: #4b5563; /* gray-600 */
+            color: #f3f4f6; /* gray-100 */
+        }
+        .dark .form-input-control:focus {
+            border-color: #60a5fa; /* blue-400 */
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5);
+        }
+        /* Dark Mode Geo/Plus/Minus buttons - сохраняют цвет для контраста, но делают темнее */
+        .dark .geo-btn { background-color: #b45309; } /* amber-800 dark */
+        .dark .geo-btn:hover { background-color: #92400e; } /* amber-900 dark */
+        .dark .add-stop-btn { background-color: #047857; } /* emerald-700 dark */
+        .dark .add-stop-btn:hover { background-color: #065f46; } /* emerald-800 dark */
+        .dark .remove-stop-btn { background-color: #b91c1c; } /* red-700 dark */
+        .dark .remove-stop-btn:hover { background-color: #991b1b; } /* red-800 dark */
     </style>
 </head>
 
 <body class="text-gray-900 min-h-screen flex flex-col">
 
     <!-- HEADER -->
-    <header class="header-bg text-white py-10 rounded-b-xl shadow-xl">
+    <header class="header-bg text-white py-10 rounded-b-xl shadow-xl relative">
+        
+        <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ТЕМЫ -->
+        <div class="absolute top-4 right-4">
+            <button id="themeToggle" onclick="toggleTheme()" class="text-white p-2 rounded-full bg-black bg-opacity-10 hover:bg-opacity-30 transition-all focus:outline-none z-50">
+                <!-- Иконка будет обновлена JavaScript'ом -->
+                <i id="themeIcon" class="fas fa-moon text-xl"></i>
+            </button>
+        </div>
+        
         <div class="max-w-md mx-auto px-4 text-center">
             <i class="fas fa-taxi text-4xl text-yellow-300 mb-2"></i>
             <h1 class="text-4xl font-extrabold tracking-tight mb-1">Такси «Успех»</h1>
@@ -234,7 +321,8 @@
         <!-- БЛОК 1: ОСНОВНОЙ ЗАКАЗ (Супер CTA) -->
         <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">Быстрый Заказ Такси</h2>
         
-        <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6">
+        <!-- Добавлен класс main-card для стилей темной темы -->
+        <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6 main-card">
             
             <!-- СМЕНА ПОРЯДКА: Сначала кнопка формы, потом WhatsApp -->
             
@@ -296,7 +384,6 @@
         
         <!-- НОВЫЙ БЛОК 2: МАГАЗИН "СТРОЙ ДОМ" (ПРОДВИНУТЫЙ ПАРТНЕР) -->
         <div class="mt-8 pt-4">
-            <!-- ИЗМЕНЕНИЕ: Убран текст "Продукты и" и "Наш Главный Партнер" заменен на "Белоусовка" -->
             <h3 class="text-2xl font-extrabold text-center mb-4 text-green-700">
                 🛠️ Стройматериалы Белоусовка
             </h3>
@@ -429,46 +516,46 @@
             
             <div id="faq-accordion" class="space-y-4">
                 <!-- Вопрос 1: Минимальная стоимость -->
-                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
                     <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-1')">
                         <span>💰 Какая минимальная стоимость поездки?</span>
                         <i id="icon-faq-1" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
-                    <div id="faq-1" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100">
+                    <div id="faq-1" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
                         <p>Минимальная стоимость поездки по Белоусовке составляет **700 тенге**. Окончательная цена зависит от расстояния и текущей дорожной ситуации.</p>
                     </div>
                 </div>
                 
                 <!-- Вопрос 2: Стоимость доставки -->
-                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
                     <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-4')">
                         <span>📦 Сколько стоит услуга Доставки?</span>
                         <i id="icon-faq-4" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
-                    <div id="faq-4" class="hidden p-4 pt-0 вtext-gray-600 border-t border-gray-100">
+                    <div id="faq-4" class="hidden p-4 pt-0 вtext-gray-600 border-t border-gray-100 faq-item-content">
                         <p>Стоимость услуги доставки начинается **от 1200 KZT**.</p>
                         <p class="mt-2 text-sm italic">Окончательная цена зависит от общего расстояния и объёма покупок.</p>
                     </div>
                 </div>
 
                 <!-- Вопрос 3: Время работы -->
-                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
                     <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-2')">
                         <span>⏰ Какой у вас график работы?</span>
                         <i id="icon-faq-2" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
-                    <div id="faq-2" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100">
+                    <div id="faq-2" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
                         <p>**Мы работаем круглосуточно (24/7)**, чтобы вы могли уехать в любое время дня и ночи.</p>
                     </div>
                 </div>
 
                 <!-- Вопрос 4: Примерные цены на популярные маршруты (ОБНОВЛЕННЫЙ БЛОК) -->
-                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
                     <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-3')">
                         <span>📍 Примерные цены на Межгород и пригород</span>
                         <i id="icon-faq-3" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
-                    <div id="faq-3" class="hidden p-4 pt-0 вtext-gray-600 border-t border-gray-100">
+                    <div id="faq-3" class="hidden p-4 pt-0 вtext-gray-600 border-t border-gray-100 faq-item-content">
                         <p class="font-bold text-red-600 mb-2">
                             ⚠️ ВНИМАНИЕ: Цены ориентировочные!
                         </p>
@@ -513,7 +600,7 @@
                 
                 <!-- Слот 1: МАГАЗИН/ТОЧКА ПРОДАЖ -->
                 <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20магазина%20(Продукты/Одежда)." target="_blank"
-                    class="partner-card bg-white p-4 rounded-xl shadow-lg border-pink-500 flex flex-col items-center text-center">
+                    class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-pink-500 flex flex-col items-center text-center">
                     <i class="fas fa-store text-4xl text-pink-500 mb-2"></i>
                     <p class="text-lg font-bold text-gray-800">Магазин или Точка Продаж</p>
                     <p class="text-sm text-gray-600">Привлекайте покупателей к вашему физическому объекту. **(WhatsApp)**</p>
@@ -521,7 +608,7 @@
                 
                 <!-- Слот 2: УСЛУГИ/СЕРВИС -->
                 <a href="https://wa.me/77770649648?text=Интересует%20реклама%20моих%20услуг%20(Сантехник/Ремонт).%20Пришлите%20условия." target="_blank"
-                    class="partner-card bg-white p-4 rounded-xl shadow-lg border-red-500 flex flex-col items-center text-center">
+                    class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-red-500 flex flex-col items-center text-center">
                     <i class="fas fa-tools text-4xl text-red-500 mb-2"></i>
                     <p class="text-lg font-bold text-gray-800">Услуги, Сервис или Мастер</p>
                     <p class="text-sm text-gray-600">Найдите клиентов на ремонт, доставку или бытовые услуги. **(Узнать цену)**</p>
@@ -529,7 +616,7 @@
 
                 <!-- Слот 3: СПЕЦИАЛЬНАЯ АКЦИЯ -->
                 <a href="https://wa.me/77770649648?text=Хочу%20забронировать%20место%20для%20рекламы%20горячих%20акций." target="_blank"
-                    class="partner-card bg-white p-4 rounded-xl shadow-lg border-yellow-600 flex flex-col items-center text-center">
+                    class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-yellow-600 flex flex-col items-center text-center">
                     <i class="fas fa-bullhorn text-4xl text-yellow-600 mb-2"></i>
                     <p class="text-lg font-bold text-gray-800">Горячая Акция / Объявление</p>
                     <p class="text-sm text-gray-600">Место для срочных или сезонных рекламных кампаний. **(Связаться)**</p>
@@ -633,21 +720,24 @@
                             <div class="input-with-plus-btn">
                                 <input id="taxiFrom" name="from" type="text" list="fromHistory" class="form-input-control" placeholder="Улица, дом (обязательно)" required oninput="updateTaxiPrice()">
                                 <datalist id="fromHistory"></datalist>
-                                <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                                <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                                 <button type="button" onclick="getCurrentLocation('taxi')" 
-                                    class="modal-location-btn flex items-center justify-center" 
+                                    class="geo-btn" 
                                     title="Использовать мое местоположение">
                                     <i id="taxiGeoIcon" class="fas fa-compass"></i>
                                 </button>
                             </div>
                         </div>
-                        <!-- АДРЕС КУДА (с историей) -->
+                        <!-- АДРЕС КУДА (с кнопкой добавления) -->
                         <div class="flex flex-col">
                             <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
                             <div class="input-with-plus-btn">
                                 <input id="taxiTo" name="to" type="text" list="toHistory" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required oninput="updateTaxiPrice()">
                                 <datalist id="toHistory"></datalist>
-                                <button type="button" onclick="addStop('additionalStops', 'taxi')" class="bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
+                                <!-- КНОПКА ДОБАВЛЕНИЯ АДРЕСА (обновлено) -->
+                                <button type="button" onclick="addStop('additionalStops', 'taxi')" 
+                                    class="add-stop-btn" 
+                                    title="Добавить дополнительный адрес по пути">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
@@ -721,9 +811,9 @@
                         <label for="deliveryAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес доставки *</label>
                         <div class="input-with-plus-btn">
                             <input id="deliveryAddress" name="address" type="text" class="form-input-control" placeholder="Улица, дом, квартира (например: Ленина 12)" required />
-                            <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                            <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                             <button type="button" onclick="getCurrentLocation('delivery')" 
-                                class="modal-location-btn flex items-center justify-center" 
+                                class="geo-btn" 
                                 title="Использовать мое местоположение">
                                 <i id="deliveryGeoIcon" class="fas fa-compass"></i>
                             </button>
@@ -763,9 +853,9 @@
                         <label for="cargoFrom" class="text-sm font-medium text-gray-700 mb-1">Адрес погрузки *</label>
                         <div class="input-with-plus-btn">
                             <input id="cargoFrom" name="from" type="text" class="form-input-control" placeholder="Откуда забрать груз" required>
-                            <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                            <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                             <button type="button" onclick="getCurrentLocation('cargo')" 
-                                class="modal-location-btn flex items-center justify-center" 
+                                class="geo-btn" 
                                 title="Использовать мое местоположение">
                                 <i id="cargoGeoIcon" class="fas fa-compass"></i>
                             </button>
@@ -844,9 +934,9 @@
                         <label for="soberDriverFrom" class="text-sm font-medium text-gray-700 mb-1">Ваш текущий адрес *</label>
                         <div class="input-with-plus-btn">
                             <input id="soberDriverFrom" name="from" type="text" class="form-input-control" placeholder="Адрес, где находится авто" required>
-                            <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                            <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                             <button type="button" onclick="getCurrentLocation('soberDriver')" 
-                                class="modal-location-btn flex items-center justify-center" 
+                                class="geo-btn" 
                                 title="Использовать мое местоположение">
                                 <i id="soberDriverGeoIcon" class="fas fa-compass"></i>
                             </button>
@@ -925,9 +1015,9 @@
                         <label for="assistanceAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес (где нужна помощь) *</label>
                         <div class="input-with-plus-btn">
                             <input id="assistanceAddress" name="address" type="text" class="form-input-control" placeholder="Улица, дом или местоположение" required />
-                            <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                            <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                             <button type="button" onclick="getCurrentLocation('assistance')" 
-                                class="modal-location-btn flex items-center justify-center" 
+                                class="geo-btn" 
                                 title="Использовать мое местоположение">
                                 <i id="assistanceGeoIcon" class="fas fa-compass"></i>
                             </button>
@@ -969,9 +1059,9 @@
                             <label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес)</label>
                             <div class="input-with-plus-btn">
                                 <input id="auctionFrom" name="from" type="text" class="form-input-control" placeholder="Улица, дом (обязательно)" required>
-                                <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                                <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                                 <button type="button" onclick="getCurrentLocation('auction')" 
-                                    class="modal-location-btn flex items-center justify-center" 
+                                    class="geo-btn" 
                                     title="Использовать мое местоположение">
                                     <i id="auctionGeoIcon" class="fas fa-compass"></i>
                                 </button>
@@ -982,7 +1072,10 @@
                             <label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
                             <div class="input-with-plus-btn">
                                 <input id="auctionTo" name="to" type="text" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required>
-                                <button type="button" onclick="addStop('additionalStopsAuction', 'auction')" class="bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Добавить дополнительный адрес по пути">
+                                <!-- КНОПКА ДОБАВЛЕНИЯ АДРЕСА (обновлено) -->
+                                <button type="button" onclick="addStop('additionalStopsAuction', 'auction')" 
+                                    class="add-stop-btn" 
+                                    title="Добавить дополнительный адрес по пути">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
@@ -1021,36 +1114,38 @@
 
     <!-- Модальные окна PWA и Партнеры остаются без изменений -->
     <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните «Такси Успех» как приложение!</h3>
-            
-            <p class="mb-4 text-gray-700">Чтобы вам не пришлось каждый раз искать ссылку, сохраните нашу промо-страницу прямо на главном экране телефона.</p>
-            
-            <!-- Инструкция для iPhone/iOS -->
-            <div class="border p-4 rounded-lg mb-4 bg-gray-50">
-                <h4 class="text-lg font-bold text-blue-600 mb-2 flex items-center"><i class="fab fa-apple mr-2"></i> Для iPhone (iOS)</h4>
-                <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                    <li>Откройте эту страницу в браузере **Safari**.</li>
-                    <li>Нажмите на иконку **«Поделиться»** (<i class="fas fa-share-square"></i>) в нижней части экрана.</li>
-                    <li>Прокрутите меню и выберите **«На экран "Домой"»**.</li>
-                    <li>Подтвердите добавление.</li>
-                </ol>
+        <div class="modal">
+            <div class="p-6">
+                <h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните «Такси Успех» как приложение!</h3>
+                
+                <p class="mb-4 text-gray-700">Чтобы вам не пришлось каждый раз искать ссылку, сохраните нашу промо-страницу прямо на главном экране телефона.</p>
+                
+                <!-- Инструкция для iPhone/iOS -->
+                <div class="border p-4 rounded-lg mb-4 bg-gray-50">
+                    <h4 class="text-lg font-bold text-blue-600 mb-2 flex items-center"><i class="fab fa-apple mr-2"></i> Для iPhone (iOS)</h4>
+                    <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                        <li>Откройте эту страницу в браузере **Safari**.</li>
+                        <li>Нажмите на иконку **«Поделиться»** (<i class="fas fa-share-square"></i>) в нижней части экрана.</li>
+                        <li>Прокрутите меню и выберите **«На экран "Домой"»**.</li>
+                        <li>Подтвердите добавление.</li>
+                    </ol>
+                </div>
+                
+                <!-- Инструкция для Android/Chrome -->
+                <div class="border p-4 rounded-lg bg-gray-50">
+                    <h4 class="text-lg font-bold text-green-600 mb-2 flex items-center"><i class="fab fa-android mr-2"></i> Для Android (Chrome)</h4>
+                    <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                        <li>Нажмите на **три точки** (<i class="fas fa-ellipsis-v"></i>) в правом верхнем углу.</li>
+                        <li>Выберите **«Добавить на главный экран»**.</li>
+                        <li>Подтвердите добавление.</li>
+                    </ol>
+                </div>
+                
+                <button onclick="document.getElementById('pwaModal').classList.add('hidden')" 
+                    class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
+                    Понятно
+                </button>
             </div>
-            
-            <!-- Инструкция для Android/Chrome -->
-            <div class="border p-4 rounded-lg bg-gray-50">
-                <h4 class="text-lg font-bold text-green-600 mb-2 flex items-center"><i class="fab fa-android mr-2"></i> Для Android (Chrome)</h4>
-                <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                    <li>Нажмите на **три точки** (<i class="fas fa-ellipsis-v"></i>) в правом верхнем углу.</li>
-                    <li>Выберите **«Добавить на главный экран»**.</li>
-                    <li>Подтвердите добавление.</li>
-                </ol>
-            </div>
-            
-            <button onclick="document.getElementById('pwaModal').classList.add('hidden')" 
-                class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
-                Понятно
-            </button>
         </div>
     </div>
 
@@ -1297,6 +1392,75 @@
         const PHONE_NUMBER = '77770649648'; 
         // -----------------------------
 
+        // =========================================================
+        // === ЛОГИКА ДЕНЬ/НОЧЬ (THEME TOGGLE) ===
+        // =========================================================
+        const THEME_KEY = 'taxi_theme_preference';
+        const body = document.body;
+        const themeIcon = document.getElementById('themeIcon');
+        
+        /**
+         * Устанавливает иконку в зависимости от текущей темы.
+         * @param {string} theme - 'light' или 'dark'
+         */
+        function updateThemeIcon(theme) {
+            if (themeIcon) {
+                if (theme === 'dark') {
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                    themeIcon.title = 'Переключить на светлую тему';
+                } else {
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                    themeIcon.title = 'Переключить на темную тему';
+                }
+            }
+        }
+
+        /**
+         * Применяет выбранную тему к элементу body.
+         * @param {string} theme - 'light' или 'dark'
+         */
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                body.classList.add('dark');
+            } else {
+                body.classList.remove('dark');
+            }
+            updateThemeIcon(theme);
+        }
+
+        /**
+         * Переключает тему между светлой и темной.
+         */
+        window.toggleTheme = function() {
+            const isDark = body.classList.contains('dark');
+            const newTheme = isDark ? 'light' : 'dark';
+            
+            applyTheme(newTheme);
+            localStorage.setItem(THEME_KEY, newTheme);
+        }
+        
+        /**
+         * Загружает сохраненную тему или использует системную/светлую по умолчанию.
+         */
+        function loadTheme() {
+            const savedTheme = localStorage.getItem(THEME_KEY);
+            
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            } else {
+                // Проверяем системные предпочтения (если поддерживается)
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const defaultTheme = prefersDark ? 'dark' : 'light';
+                applyTheme(defaultTheme);
+                // Не сохраняем в localStorage, чтобы дать возможность системным настройкам менять тему.
+            }
+        }
+        // =========================================================
+        // === КОНЕЦ ЛОГИКИ ДЕНЬ/НОЧЬ ===
+        // =========================================================
+
 
         // --- ЛОГИКА ДЛЯ ДИНАМИЧЕСКОГО БАННЕРА-ОБЪЯВЛЕНИЯ ---
         function checkAndShowAnnouncement() {
@@ -1324,6 +1488,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+             loadTheme(); // Загружаем тему при старте
              checkAndShowAnnouncement();
              
              const formattedNow = getFormattedCurrentTime();
@@ -1537,6 +1702,7 @@
             const stopLabel = `Дополнительный адрес ${stopCounter}`;
             
             const stopDiv = document.createElement('div');
+            // Используем класс input-with-plus-btn для выравнивания
             stopDiv.className = "flex space-x-2 additional-stop-item input-with-plus-btn"; 
             const divId = `stopDiv${containerId}${stopCounter}`;
             stopDiv.id = divId;
@@ -1544,9 +1710,10 @@
             // Если это окно такси, добавляем oninput для обновления цены
             const inputEvents = (mode === 'taxi') ? 'oninput="updateTaxiPrice()"' : '';
 
+            // Используем remove-stop-btn для кнопки удаления
             stopDiv.innerHTML = `
                 <input id="${stopId}" name="${stopId}" type="text" list="toHistory" class="form-input-control" placeholder="${stopLabel} (обязательно)" required ${inputEvents}>
-                <button type="button" onclick="removeStop('${divId}', '${mode}')" class="bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-md flex items-center justify-center text-xl font-bold" title="Удалить адрес">
+                <button type="button" onclick="removeStop('${divId}', '${mode}')" class="remove-stop-btn" title="Удалить адрес">
                     <i class="fas fa-minus"></i>
                 </button>
             `;
@@ -2072,5 +2239,6 @@
     </script>
 </body>
 </html>
+
 
 

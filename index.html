@@ -181,6 +181,23 @@
             background-color: #d97706; /* amber-700 */
             transform: scale(1.05);
         }
+        /* Стиль для нового партнерского блока (ПРОДВИНУТЫЙ СТИЛЬ) */
+        .stroy-dom-cta {
+            background-color: #ecfdf5; /* light emerald-50 */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border: 3px solid #059669; /* emerald-600 */
+            transition: transform 0.3s, box-shadow 0.3s;
+            animation: pulse-green 4s infinite;
+        }
+        .stroy-dom-cta:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+        }
+        /* Ключевые кадры для анимации */
+        @keyframes pulse-green {
+            0%, 100% { border-color: #059669; } /* emerald-600 */
+            50% { border-color: #34d399; } /* emerald-400 */
+        }
     </style>
 </head>
 
@@ -277,9 +294,48 @@
             
         </div>
         
+        <!-- НОВЫЙ БЛОК 2: МАГАЗИН "СТРОЙ ДОМ" (ПРОДВИНУТЫЙ ПАРТНЕР) -->
+        <div class="mt-8 pt-4">
+            <!-- ИЗМЕНЕНИЕ: Убран текст "Продукты и" и "Наш Главный Партнер" заменен на "Белоусовка" -->
+            <h3 class="text-2xl font-extrabold text-center mb-4 text-green-700">
+                🛠️ Стройматериалы Белоусовка
+            </h3>
+            <div class="stroy-dom-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300">
+                <div class="flex flex-col items-center sm:items-start text-center sm:text-left mb-3 sm:mb-0">
+                    <i class="fas fa-building text-4xl mb-1 text-emerald-600"></i>
+                    <span class="text-2xl block leading-tight font-black text-emerald-800">СТРОЙ ДОМ</span>
+                    <span class="text-base text-gray-700 block mt-1">
+                        Магазин стройматериалов: <span class="font-bold">ул. Юбилейная, 10</span>
+                    </span>
+                    <span class="text-sm text-gray-700 block mt-1">
+                        Телефон: <a href="tel:+77764764606" class="text-blue-600 hover:text-blue-800 font-bold">+7 776 476 4606</a>
+                    </span>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                    <!-- WhatsApp (Запрос на материалы) -->
+                    <a href="https://wa.me/77764764606?text=Здравствуйте!%20Интересуют%20стройматериалы%20в%20магазине%20%22Строй%20Дом%22%20по%20адресу%20Юбилейная%2010." target="_blank"
+                       class="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
+                        <i class="fab fa-whatsapp mr-2"></i> WhatsApp
+                    </a>
+                    <!-- Навигатор -->
+                    <a href="https://yandex.kz/maps/-/CLgm7KK9" target="_blank"
+                       class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
+                        <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
+                    </a>
+                    <!-- Instagram -->
+                    <a href="https://www.instagram.com/stroy_dom_bk" target="_blank"
+                       class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
+                        <i class="fab fa-instagram mr-2"></i> Instagram
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- КОНЕЦ НОВОГО БЛОКА "СТРОЙ ДОМ" -->
         
-        <!-- БЛОК 2 (БЫВШИЙ 3): НАШИ УСЛУГИ - ОБНОВЛЕНО ДЛЯ МОДАЛОВ -->
-        <h3 class="text-2xl font-bold text-center mb-6 text-gray-700 border-t pt-4">Дополнительные Услуги (Форма)</h3>
+        
+        <!-- БЛОК 3 (БЫВШИЙ 2): НАШИ УСЛУГИ - ОБНОВЛЕНО ДЛЯ МОДАЛОВ -->
+        <h3 class="text-2xl font-bold text-center mb-6 text-gray-700 border-t pt-8 mt-8">Дополнительные Услуги (Форма)</h3>
         
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
             <!-- Доставка (MODAL TRIGGER) -->
@@ -305,7 +361,7 @@
         </div>
 
 
-        <!-- БЛОК 3 (БЫВШИЙ 2): БЫСТРЫЕ ДЕЙСТВИЯ (КОМПАКТНАЯ СЕТКА) -->
+        <!-- БЛОК 4 (БЫВШИЙ 3): БЫСТРЫЕ ДЕЙСТВИЯ (КОМПАКТНАЯ СЕТКА) -->
         <h3 class="text-xl font-bold text-center mb-4 text-gray-700 border-t pt-4">Быстрые Действия</h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
             
@@ -335,7 +391,7 @@
         </div>
 
 
-        <!-- БЛОК 4: ТехОсмотр (ПАРТНЕРСКАЯ РЕКЛАМА) -->
+        <!-- БЛОК 5 (БЫВШИЙ 4): ТехОсмотр (ПАРТНЕРСКАЯ РЕКЛАМА) -->
         <div class="mt-8 border-t pt-6">
             <h3 class="text-xl font-bold text-center mb-4 text-gray-700">Нашим Партнерам: ТехОсмотр</h3>
             <div class="auction-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300 border-indigo-500 border-2">
@@ -365,8 +421,9 @@
                 </div>
             </div>
         </div>
+
         
-        <!-- БЛОК 5: FAQ и ПРАЙС-ЛИСТ (АККОРДЕОН) -->
+        <!-- БЛОК 6 (БЫВШИЙ 5): FAQ и ПРАЙС-ЛИСТ (АККОРДЕОН) -->
         <div class="mt-10 border-t pt-6 max-w-lg mx-auto">
             <h3 class="text-2xl font-bold text-center text-gray-700 mb-6">Вопросы и Цены</h3>
             
@@ -449,7 +506,7 @@
             </div>
         </div>
         
-        <!-- БЛОК 6: РЕКЛАМА ДЛЯ ПАРТНЕРОВ -->
+        <!-- БЛОК 7 (БЫВШИЙ 6): РЕКЛАМА ДЛЯ ПАРТНЕРОВ -->
         <div class="mt-10 border-t pt-6">
             <h3 class="text-xl font-bold text-pink-600 mb-6 вtext-center">📢 Реклама для Вашего Бизнеса</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -481,7 +538,7 @@
             </div>
         </div>
         
-        <!-- БЛОК 7: ПРИГЛАШЕНИЕ ВОДИТЕЛЕЙ -->
+        <!-- БЛОК 8 (БЫВШИЙ 7): ПРИГЛАШЕНИЕ ВОДИТЕЛЕЙ -->
         <div class="mt-10 border-t pt-6 text-center">
             <h3 class="text-2xl font-bold text-gray-700 mb-4">Приглашаем Водителей в команду!</h3>
             <p class="text-gray-600 mb-4 max-w-md mx-auto">
@@ -496,7 +553,7 @@
             </p>
         </div>
         
-        <!-- БЛОК 8: Вход для водителя -->
+        <!-- БЛОК 9 (БЫВШИЙ 8): Вход для водителя -->
         <div class="mt-6 border-t pt-6 text-center">
             <h3 class="text-xl font-bold text-gray-700 mb-4">Для действующих водителей</h3>
             <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank"
@@ -1042,7 +1099,8 @@
         // Переменные окружения, предоставляемые Canvas
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // ИСПРАВЛЕНИЕ: Использовать __initial_auth_token
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
 
         /**
          * Инициализирует Firebase и выполняет аутентификацию.
@@ -2014,4 +2072,5 @@
     </script>
 </body>
 </html>
+
 

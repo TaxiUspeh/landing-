@@ -16,12 +16,20 @@
 
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #f8fafc; 
+            background-color: #ffffff; /* Чистый белый для зимней свежести */
             padding-bottom: 120px; 
             -webkit-tap-highlight-color: transparent; 
         }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* --- ПРАЗДНИЧНЫЙ СТИЛЬ: ШАПКА --- */
+        .header-main-festive {
+            /* Глубокий бордовый/красный с золотистым акцентом */
+            background: linear-gradient(135deg, #880e4f 0%, #b71c1c 100%); 
+            box-shadow: 0 4px 20px rgba(136, 14, 79, 0.6);
+            color: white;
+        }
 
         /* --- ЦВЕТА И ГРАДИЕНТЫ --- */
         .bg-semi-color { background-color: #e0f2fe; color: #0284c7; } 
@@ -31,10 +39,16 @@
         .bg-pizza-color { background-color: #fee2e2; color: #dc2626; } 
         .bg-snack-color { background-color: #fef9c3; color: #854d0e; } 
         
-        /* НОВОГОДНИЙ ГРАДИЕНТ */
+        /* НОВОГОДНИЙ ГРАДИЕНТ ПРОМО */
         .bg-promo-ny { background: linear-gradient(135deg, #a71e1e 0%, #7f1d1d 100%); }
         .bg-promo-sumo { background: linear-gradient(135deg, #d97706 0%, #b45309 100%); }
-        .bg-promo-banquet { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); }
+        
+        /* ЦВЕТ для Банкета (Пурпурно-синий) */
+        .bg-promo-banquet { background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%); } 
+        
+        /* НОВЫЙ ЦВЕТ для Повара (Желто-Красный Праздничный) */
+        .bg-promo-chef { background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); }
+
         .bg-instagram-gradient {
             background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
         }
@@ -152,8 +166,6 @@
             bottom: 0; 
             left: 0; 
             right: 0; 
-            background: #1e293b; 
-            color: white; 
             z-index: 50; 
             padding: 10px 20px; 
             display: flex; 
@@ -163,6 +175,7 @@
             transform: translateY(100%); 
             transition: transform 0.3s ease-out;
             cursor: pointer;
+            /* Убрано hardcoded background, теперь используется Tailwind в HTML */
         }
         .cart-bar.show {
             transform: translateY(0); 
@@ -201,7 +214,7 @@
         }
 
         /* Специальные стили для модалки с меню */
-        #special-menu-modal .modal-content {
+        #special-menu-modal .modal-content, #chef-inquiry-modal .modal-content {
              max-height: 95vh;
              padding: 0;
         }
@@ -212,6 +225,14 @@
              position: relative;
              overflow: hidden;
              background: linear-gradient(135deg, #a71e1e 0%, #7f1d1d 100%);
+        }
+        #chef-inquiry-modal .menu-header {
+             padding: 24px 24px 16px 24px;
+             border-radius: 20px 20px 0 0;
+             color: white;
+             position: relative;
+             overflow: hidden;
+             background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
         }
         #special-menu-modal .menu-list {
              padding: 24px;
@@ -301,26 +322,30 @@
 </head>
 <body>
     
+    <!-- ИНДИКАТОР ЗАГРУЗКИ (НОВЫЙ ЭЛЕМЕНТ) -->
     <div id="loading-overlay">
         <div class="spinner mb-4"></div>
         <p class="text-gray-700 font-semibold text-lg">Перенаправляем в WhatsApp...</p>
         <p class="text-sm text-gray-500">Пожалуйста, подождите.</p>
     </div>
 
-    <header class="px-5 pt-6 pb-2 flex justify-between items-center bg-white border-b border-gray-100">
+    <!-- Шапка (ПРАЗДНИЧНЫЙ СТИЛЬ) -->
+    <header class="header-main-festive px-5 pt-6 pb-2 flex justify-between items-center border-b border-red-800">
         <div>
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center text-white font-black"><i class="fas fa-hat-chef"></i></div>
-                <h1 class="text-xl font-black text-gray-900 tracking-tight">Домашний Праздник</h1>
+                <!-- Золотистый/желтый акцент на иконке -->
+                <div class="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center text-red-900 font-black shadow-lg"><i class="fas fa-hat-chef"></i></div>
+                <h1 class="text-xl font-black tracking-tight text-white">Домашний Праздник</h1>
             </div>
-            <p class="text-xs text-gray-400 font-medium mt-1 ml-10">Вкусно • Быстро • По-домашнему</p>
+            <p class="text-xs text-red-200 font-medium mt-1 ml-10">Вкусно • Быстро • По-домашнему</p>
         </div>
         
         <div class="flex gap-2">
             <a href="https://wa.me/77771789852" target="_blank" class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg transition hover:bg-green-600 active:scale-95" title="Написать в WhatsApp">
                 <i class="fab fa-whatsapp"></i>
             </a>
-            <a href="tel:+77771789852" class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg transition hover:bg-red-700 active:scale-95" title="Позвонить">
+            <!-- Золотистый/желтый акцент на кнопке звонка -->
+            <a href="tel:+77771789852" class="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center text-red-900 shadow-lg transition hover:bg-yellow-300 active:scale-95" title="Позвонить">
                 <i class="fas fa-phone"></i>
             </a>
             <a href="https://www.instagram.com/domashniy_prazdnik_uka?igsh=MWNyOWxicWRzZ3FneQ%3D%3D" target="_blank" class="w-10 h-10 bg-instagram-gradient rounded-full flex items-center justify-center text-white shadow-lg transition hover:opacity-90 active:scale-95" title="Меню и Отзывы в Instagram">
@@ -329,6 +354,7 @@
         </div>
     </header>
 
+    <!-- АКЦИИ (ПРОМО-КАРТОЧКИ) -->
     <div class="pt-4 pb-2">
         <div class="flex flex-col gap-4 px-4 max-w-lg mx-auto"> 
             
@@ -378,24 +404,47 @@
             </div>
             
             <div class="promo-base-card bg-promo-banquet w-full" onclick="openProductModal('promo_pers')">
-                <div class="badge bg-white text-slate-800">МЕНЮ</div>
+                <div class="badge bg-white text-purple-800">МЕНЮ</div>
                 <div>
                     <h3 class="text-2xl font-black uppercase mb-1 leading-none">🍽 Банкет (Персона)</h3>
-                    <p class="text-sm text-slate-300 mb-3 font-medium">С I человека</p>
+                    <p class="text-sm text-purple-200 mb-3 font-medium">С I человека</p>
                     <div class="my-4 p-3 bg-white/10 rounded-xl">
-                               <ul class="text-[12px] text-slate-200 list-disc list-inside space-y-1 font-medium opacity-90">
+                               <ul class="text-[12px] text-purple-100 list-disc list-inside space-y-1 font-medium opacity-90">
                                     <li>Горячее: Сырне/Манты</li>
                                     <li>Салаты: Баклажан, Тбилиси, Цезарь</li>
                                     <li>Закуски: Нарезки, Рулеты, Тарталетки</li>
-                                    <li>🎁 <span class="text-yellow-300 font-bold">Подарок:</span> Сервировка стола!</li>
+                                    <li>🎁 <span class="font-bold text-yellow-300">Подарок:</span> Сервировка стола!</li>
                                 </ul>
                     </div>
                 </div>
                 
                 <div class="mt-auto pt-2">
                     <div class="text-xl font-black mb-3 text-yellow-300">10 000 ₸ <span class="text-base font-normal opacity-70">/чел</span></div>
-                    <button onclick="event.stopPropagation(); addToCart('Банкет (на 1 чел)', 10000, 'promo_pers', 1); openModal('cart-modal')" class="w-full bg-white text-slate-900 font-extrabold py-3.5 px-4 rounded-xl text-lg shadow-xl active:scale-95 transition">
+                    <button onclick="event.stopPropagation(); addToCart('Банкет (на 1 чел)', 10000, 'promo_pers', 1); openModal('cart-modal')" class="w-full bg-white text-purple-900 font-extrabold py-3.5 px-4 rounded-xl text-lg shadow-xl active:scale-95 transition">
                         Заказать
+                    </button>
+                </div>
+            </div>
+            
+            <!-- ОБНОВЛЕННАЯ КАРТОЧКА: ВЫЕЗД ПОВАРА -->
+            <div class="promo-base-card bg-promo-chef w-full" onclick="openChefInquiryModal('promo_chef')">
+                <div class="badge bg-white text-red-700">НОВАЯ УСЛУГА</div>
+                <div>
+                    <h3 class="text-2xl font-black uppercase mb-2 leading-none">👨‍🍳 Повар на выезд</h3>
+                    <p class="text-sm text-yellow-100 font-medium">Профессиональный повар приедет к вам и приготовит блюда по вашему меню.</p>
+                    <div class="my-4 p-3 bg-black/10 rounded-xl">
+                               <ul class="text-[12px] text-white list-disc list-inside space-y-1 font-medium opacity-90">
+                                    <li>**Приготовление:** Полный цикл от подготовки до подачи.</li>
+                                    <li>**Обслуживание:** Помощь в сервировке и контроль мероприятия.</li>
+                                    <li>**Стоимость:** <span class="font-bold text-yellow-300">от 30 000 ₸ (работа повара)</span></li>
+                                </ul>
+                    </div>
+                </div>
+                
+                <div class="mt-auto pt-2">
+                    <button onclick="event.stopPropagation(); openChefInquiryModal('promo_chef')" class="w-full bg-white text-red-900 font-extrabold py-3.5 px-4 rounded-xl text-lg shadow-xl active:scale-95 transition flex justify-center items-center gap-2">
+                        <span>Оставить заявку на бронирование</span>
+                        <i class="fas fa-calendar-alt text-base"></i>
                     </button>
                 </div>
             </div>
@@ -403,34 +452,41 @@
         </div>
     </div>
 
+    <!-- Навигация -->
     <div class="nav-sticky">
         <div class="flex overflow-x-auto gap-2 px-5 hide-scroll">
             
+            <!-- 1. Салаты (Активный по умолчанию) -->
             <button onclick="scrollToId('salads', this)" data-id="salads" 
                     class="nav-btn-base active bg-green-100 text-green-800 border-green-300 hover:bg-green-200 active:bg-green-600 active:text-white">
                 🥗 Салаты
             </button>
             
+            <!-- 2. Роллы -->
             <button onclick="scrollToId('rolls', this)" data-id="rolls" 
                     class="nav-btn-base bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200 active:bg-orange-600 active:text-white">
                 🍣 Роллы
             </button>
             
+            <!-- 3. Горячее -->
             <button onclick="scrollToId('hot', this)" data-id="hot" 
                     class="nav-btn-base bg-red-100 text-red-800 border-red-300 hover:bg-red-200 active:bg-red-600 active:text-white">
                 🍖 Горячее
             </button>
             
+            <!-- 4. Пицца -->
             <button onclick="scrollToId('pizza', this)" data-id="pizza" 
                     class="nav-btn-base bg-pink-100 text-pink-800 border-pink-300 hover:bg-pink-200 active:bg-pink-600 active:text-white">
                 🍕 Пицца
             </button>
             
+            <!-- 5. Закуски -->
             <button onclick="scrollToId('tartlets', this)" data-id="tartlets" 
                     class="nav-btn-base bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 active:bg-yellow-600 active:text-white">
                 🥖 Закуски
             </button>
             
+            <!-- 6. Полуфабрикаты (Передвинуты в конец) -->
             <button onclick="scrollToId('semi', this)" data-id="semi" 
                     class="nav-btn-base bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200 active:bg-blue-600 active:text-white">
                 🥟 Полуфабрикаты
@@ -439,8 +495,10 @@
         </div>
     </div>
 
+    <!-- Меню (ОБНОВЛЕНО: новый порядок секций) -->
     <div class="px-4 pt-4 pb-20 max-w-2xl mx-auto space-y-8">
         
+        <!-- 1. САЛАТЫ -->
         <section id="salads">
             <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-green-600">🥗</span> Салаты (1 кг)</h2>
             <div class="space-y-3">
@@ -536,6 +594,7 @@
             </div>
         </section>
 
+        <!-- 2. РОЛЛЫ -->
         <section id="rolls">
             <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-orange-600">🍣</span> Роллы (8 шт)</h2>
             <div class="grid grid-cols-2 gap-3">
@@ -566,6 +625,7 @@
             </div>
         </section>
 
+        <!-- 3. ГОРЯЧЕЕ -->
         <section id="hot">
             <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-red-600">🍖</span> Горячее</h2>
             <div class="grid grid-cols-2 gap-3">
@@ -608,6 +668,7 @@
             </div>
         </section>
 
+        <!-- 4. ПИЦЦА -->
         <section id="pizza">
             <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-pink-600">🍕</span> Пицца (40 см)</h2>
             <div class="product-card p-4" onclick="openProductModal('pizza_all')">
@@ -628,6 +689,7 @@
             </div>
         </section>
 
+        <!-- 5. ЗАКУСКИ -->
         <section id="tartlets">
             <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-yellow-700">🥖</span> Закуски (шт/кг)</h2>
             <div class="space-y-6">
@@ -686,20 +748,23 @@
                 <h3 class="font-bold text-lg text-gray-700 border-b-2 border-yellow-100 pb-1 pt-4">Тарталетки и Брускетты</h3>
                 <div class="product-card p-3 col-span-2">
                     <div class="grid grid-cols-4 gap-2 mt-auto">
-                        <button onclick="event.stopPropagation(); openProductModal('t_kur')" class="bg-gray-100 text-xs font-bold py-3 rounded-xl hover:bg-yellow-100 active:scale-95">Курица (300₸)</button>
-                        <button onclick="event.stopPropagation(); openProductModal('t_sem')" class="bg-gray-100 text-xs font-bold py-3 rounded-xl hover:bg-yellow-100 active:scale-95">Семга (350₸)</button>
-                        <button onclick="event.stopPropagation(); openProductModal('t_oliv')" class="bg-gray-100 text-xs font-bold py-3 rounded-xl hover:bg-yellow-100 active:scale-95">Оливье (280₸)</button>
-                        <button onclick="event.stopPropagation(); openProductModal('t_jul')" class="bg-gray-100 text-xs font-bold py-3 rounded-xl hover:bg-yellow-100 active:scale-95">Жульен (520₸)</button>
-                        <button onclick="event.stopPropagation(); openProductModal('b_shrimp')" class="bg-yellow-50 text-xs font-bold py-3 rounded-xl hover:bg-yellow-100 active:scale-95">Брускетта Креветки (480₸)</button>
-                        <button onclick="event.stopPropagation(); openProductModal('b_salmon')" class="bg-yellow-50 text-xs font-bold py-3 rounded-xl hover:bg-yellow-100 active:scale-95">Брускетта Семга (480₸)</button>
-                        <button onclick="event.stopPropagation(); openProductModal('b_beef')" class="bg-yellow-50 text-xs font-bold py-3 rounded-xl hover:bg-yellow-100 active:scale-95">Брускетта Буженина (380₸)</button>
-                        <button onclick="event.stopPropagation(); openProductModal('b_mush')" class="bg-yellow-50 text-xs font-bold py-3 rounded-xl hover:bg-yellow-100 active:scale-95">Брускетта Грибы (320₸)</button>
+                        <!-- Тарталетки (Зеленая палитра) -->
+                        <button onclick="event.stopPropagation(); openProductModal('t_kur')" class="bg-green-100 text-xs font-bold py-3 rounded-xl hover:bg-green-200 active:scale-95 text-green-800 transition">Курица (300₸)</button>
+                        <button onclick="event.stopPropagation(); openProductModal('t_sem')" class="bg-green-100 text-xs font-bold py-3 rounded-xl hover:bg-green-200 active:scale-95 text-green-800 transition">Семга (350₸)</button>
+                        <button onclick="event.stopPropagation(); openProductModal('t_oliv')" class="bg-green-100 text-xs font-bold py-3 rounded-xl hover:bg-green-200 active:scale-95 text-green-800 transition">Оливье (280₸)</button>
+                        <button onclick="event.stopPropagation(); openProductModal('t_jul')" class="bg-green-100 text-xs font-bold py-3 rounded-xl hover:bg-green-200 active:scale-95 text-green-800 transition">Жульен (520₸)</button>
+                        <!-- Брускетты (Оранжевая палитра) -->
+                        <button onclick="event.stopPropagation(); openProductModal('b_shrimp')" class="bg-orange-100 text-xs font-bold py-3 rounded-xl hover:bg-orange-200 active:scale-95 text-orange-800 transition">Брускетта Креветки (480₸)</button>
+                        <button onclick="event.stopPropagation(); openProductModal('b_salmon')" class="bg-orange-100 text-xs font-bold py-3 rounded-xl hover:bg-orange-200 active:scale-95 text-orange-800 transition">Брускетта Семга (480₸)</button>
+                        <button onclick="event.stopPropagation(); openProductModal('b_beef')" class="bg-orange-100 text-xs font-bold py-3 rounded-xl hover:bg-orange-200 active:scale-95 text-orange-800 transition">Брускетта Буженина (380₸)</button>
+                        <button onclick="event.stopPropagation(); openProductModal('b_mush')" class="bg-orange-100 text-xs font-bold py-3 rounded-xl hover:bg-orange-200 active:scale-95 text-orange-800 transition">Брускетта Грибы (320₸)</button>
                     </div>
                 </div>
 
             </div>
         </section>
         
+        <!-- 6. ПОЛУФАБРИКАТЫ (Перенесены в конец) -->
         <section id="semi">
             <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-blue-600">🥟</span> Полуфабрикаты (1 кг)</h2>
             <div class="space-y-6">
@@ -800,20 +865,23 @@
 
     </div>
 
-    <div id="cart-bar" class="cart-bar" onclick="openModal('cart-modal')">
+    <!-- КОРЗИНА (ЯРКИЙ ПРАЗДНИЧНЫЙ АКЦЕНТ) -->
+    <div id="cart-bar" class="cart-bar bg-green-700 text-white" onclick="openModal('cart-modal')">
         <div class="flex items-center gap-3">
             <div class="relative">
                 <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-white"><i class="fas fa-shopping-basket"></i></div>
-                <div id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold border-2 border-[#1e293b]">0</div>
+                <div id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold border-2 border-green-700">0</div>
             </div>
             <div>
-                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Итого</div>
+                <div class="text-[10px] text-green-200 font-bold uppercase tracking-wider">Итого</div>
                 <div id="cart-total" class="text-xl font-extrabold leading-none">0 ₸</div>
             </div>
         </div>
-        <button class="bg-white text-gray-900 font-extrabold px-5 py-2.5 rounded-xl text-sm shadow-lg active:scale-95">Открыть</button>
+        <!-- Кнопка с обратным акцентом -->
+        <button class="bg-white text-green-700 font-extrabold px-5 py-2.5 rounded-xl text-sm shadow-lg active:scale-95 hover:bg-gray-100 transition">Открыть</button>
     </div>
 
+    <!-- МОДАЛКА КОРЗИНЫ -->
     <div id="cart-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('cart-modal')">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-6">
@@ -821,8 +889,10 @@
                 <button onclick="closeModal('cart-modal')" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 active:scale-95"><i class="fas fa-times"></i></button>
             </div>
             
+            <!-- Список товаров -->
             <div id="cart-list" class="space-y-2 mb-6"></div>
 
+            <!-- Форма оформления -->
             <div class="border-t border-gray-100 pt-4 mt-4">
                 <h3 class="text-xl font-black mb-4 flex items-center gap-2 text-gray-800"><i class="fas fa-shipping-fast text-red-500"></i> Доставка</h3>
                 
@@ -841,6 +911,7 @@
                     <span id="modal-total" class="text-3xl font-black text-gray-900">0 ₸</span>
                 </div>
                 
+                <!-- Кнопка оформления -->
                 <button onclick="checkout()" class="w-full bg-[#25D366] text-white font-extrabold py-4 rounded-xl text-lg shadow-lg flex items-center justify-center gap-2 hover:bg-[#128C7E] transition active:scale-95">
                     <i class="fab fa-whatsapp text-2xl"></i>
                     Отправить заказ в WhatsApp
@@ -849,6 +920,7 @@
         </div>
     </div>
     
+    <!-- МОДАЛКА КАРТОЧКИ ТОВАРА -->
     <div id="product-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('product-modal')">
         <div class="modal-content">
             <div id="product-modal-image-container" class="no-image">
@@ -896,6 +968,7 @@
         </div>
     </div>
 
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ СПЕЦИАЛЬНОГО МЕНЮ (ПЛАКУЧАЯ ИВА) -->
     <div id="special-menu-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('special-menu-modal')">
         <div class="modal-content">
             <div class="menu-header">
@@ -914,6 +987,7 @@
                 <div class="mb-4">
                     <h4 class="text-xl font-extrabold text-gray-800 mb-2 border-b-2 border-red-500 pb-1 flex items-center gap-2"><i class="fas fa-fire text-red-600"></i> Горячее</h4>
                     <div class="space-y-1">
+                        <!-- Горячее (из скриншота "меню прайс.jpeg") -->
                         <div class="menu-item"><span class="font-medium text-gray-700">Манты (рубленые/фарш)</span><span class="menu-item-price">3 шт. (порция)</span></div>
                         <div class="menu-item"><span class="font-medium text-gray-700">Сырне (Говядина)</span><span class="menu-item-price">350 гр. (порция)</span></div>
                         <div class="menu-item"><span class="font-medium text-gray-700">Куриные отбивные с грибами</span><span class="menu-item-price">1 шт.</span></div>
@@ -923,6 +997,7 @@
                 <div class="mb-4">
                     <h4 class="text-xl font-extrabold text-gray-800 mb-2 border-b-2 border-green-500 pb-1 flex items-center gap-2"><i class="fas fa-salad text-green-600"></i> Салаты (150 гр/чел)</h4>
                     <div class="space-y-1">
+                        <!-- Салаты (из скриншота "меню прайс.jpeg") -->
                         <div class="menu-item"><span class="font-medium text-gray-700">Сельдь под шубой</span><span class="menu-item-price">6 200 ₸ / кг</span></div>
                         <div class="menu-item"><span class="font-medium text-gray-700">Хрустящие баклажаны</span><span class="menu-item-price">6 200 ₸ / кг</span></div>
                         <div class="menu-item"><span class="font-medium text-gray-700">Тойбос (с копч. курицей)</span><span class="menu-item-price">6 900 ₸ / кг</span></div>
@@ -933,6 +1008,7 @@
                 <div class="mb-4">
                     <h4 class="text-xl font-extrabold text-gray-800 mb-2 border-b-2 border-yellow-500 pb-1 flex items-center gap-2"><i class="fas fa-bread-slice text-yellow-700"></i> Закуски</h4>
                     <div class="space-y-1">
+                        <!-- Закуски (из скриншота "меню прайс.jpeg") -->
                         <div class="menu-item"><span class="font-medium text-gray-700">Брускетта с бужениной</span><span class="menu-item-price">380 ₸ / шт</span></div>
                         <div class="menu-item"><span class="font-medium text-gray-700">Рулетики из баклажан (1 кг)</span><span class="menu-item-price">5 800 ₸ / кг</span></div>
                         <div class="menu-item"><span class="font-medium text-gray-700">Закуска по-русски (тарелка)</span><span class="menu-item-price">6 000 ₸</span></div>
@@ -953,6 +1029,50 @@
                 <button onclick="checkoutPromo('Новогоднее Предложение', 0)" class="w-full bg-green-600 text-white font-extrabold py-3.5 rounded-xl text-lg shadow-xl hover:bg-green-700 transition active:scale-95 flex items-center justify-center gap-2">
                     <i class="fab fa-whatsapp text-xl"></i>
                     Уточнить дату и забронировать
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ЗАЯВКИ "ПОВАР НА ВЫЕЗД" -->
+    <div id="chef-inquiry-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('chef-inquiry-modal')">
+        <div class="modal-content">
+            <div class="menu-header">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-2xl font-black text-white leading-tight">Заявка: Повар на выезд</h2>
+                    <button onclick="closeModal('chef-inquiry-modal')" class="w-8 h-8 bg-white/20 rounded-full text-white active:scale-95"><i class="fas fa-times"></i></button>
+                </div>
+                <h3 class="text-sm font-medium text-yellow-100 mb-1">Начните праздник без хлопот — мы приготовим все за вас!</h3>
+                <div class="flex justify-between items-end mt-4">
+                    <span class="text-xl font-black text-yellow-300">Стоимость работы: от 30 000 ₸</span>
+                </div>
+            </div>
+
+            <div class="menu-list space-y-4">
+                <div id="chef-validation-message" class="text-red-600 font-medium text-sm hidden bg-red-50 p-3 rounded-xl border border-red-300">
+                    <i class="fas fa-exclamation-triangle mr-1"></i> Пожалуйста, заполните все обязательные поля.
+                </div>
+                
+                <h4 class="text-xl font-extrabold text-gray-800 flex items-center gap-2"><i class="fas fa-info-circle text-red-600"></i> Детали мероприятия</h4>
+                
+                <input type="text" id="chef-name" placeholder="Ваше имя (обязательно)" class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-red-500 transition">
+                <input type="date" id="chef-date" class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-red-500 transition">
+                <input type="number" id="chef-guests" placeholder="Количество гостей (обязательно)" min="1" class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-red-500 transition">
+                
+                <select id="chef-event-type" class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-red-500 transition">
+                    <option value="" disabled selected>Тип мероприятия (обязательно)</option>
+                    <option value="Банкет">Банкет</option>
+                    <option value="Корпоратив">Корпоратив</option>
+                    <option value="День рождения">День рождения</option>
+                    <option value="Свадьба">Свадьба</option>
+                    <option value="Другое">Другое (уточню в WhatsApp)</option>
+                </select>
+                
+                <textarea id="chef-details" placeholder="Пожелания по меню или бюджету на продукты (необязательно)" rows="3" class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-red-500 transition"></textarea>
+                
+                <button onclick="sendChefInquiry()" class="w-full bg-green-600 text-white font-extrabold py-3.5 rounded-xl text-lg shadow-xl hover:bg-green-700 transition active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fab fa-whatsapp text-xl"></i>
+                    Отправить детали и обсудить бронь
                 </button>
             </div>
         </div>
@@ -984,9 +1104,21 @@
                 desc: 'Комплексное банкетное меню на одну персону. Минимальный заказ обсуждается индивидуально.', 
                 ingredients: 'Горячее (Сырне или Манты на выбор), салаты (Баклажан, Тбилиси, Цезарь), закуски (нарезки, рулеты, тарталетки). Подарок: Сервировка стола.', 
                 icon: 'fas fa-utensils', 
-                colorName: 'slate', 
-                colorShade: '900', 
+                colorName: 'purple', /* Изменен на фиолетовый */
+                colorShade: '700', /* Изменен на фиолетовый */
                 imageURL: 'URL_БанкетПерсона' 
+            },
+            
+            'promo_chef': { 
+                name: 'Повар на выезд', 
+                price: 0, 
+                desc: 'Профессиональный повар приедет к вам и приготовит блюда по вашему меню. Это идеальное решение для больших праздников, чтобы вы могли наслаждаться гостями.', 
+                ingredients: 'Услуга включает приготовление еды, помощь в организации, сервировку стола. Цена договорная.', 
+                icon: 'fas fa-hat-chef', 
+                colorName: 'yellow', 
+                colorShade: '500', 
+                imageURL: 'URL_ПоварНаВыезд',
+                isSpecialPromo: true 
             },
 
             // ПОЛУФАБРИКАТЫ (Манты, Пельмени, Вареники, др.)
@@ -1184,9 +1316,14 @@
             const product = products[id];
             if (!product) return;
             
-            // НОВАЯ ПРОВЕРКА: Если это специальная акция с меню, открываем special-menu-modal
+            // НОВАЯ ПРОВЕРКА: Если это специальная акция, которая не является обычным товаром, открываем специальную модалку
             if (product.isSpecialPromo) {
-                openSpecialMenuModal(id);
+                if (id === 'promo_ny') {
+                    openSpecialMenuModal(id);
+                } else if (id === 'promo_chef') {
+                    // Теперь открываем модалку заявки, а не сразу WhatsApp
+                    openChefInquiryModal(id);
+                }
                 return;
             }
 
@@ -1287,26 +1424,101 @@
             openModal('product-modal');
         }
 
-        // НОВАЯ ФУНКЦИЯ: открывает специальную модалку с меню
+        // ФУНКЦИЯ: открывает модалку для Новогоднего меню
         function openSpecialMenuModal(id) {
              const product = products[id];
              if (!product || !product.isSpecialPromo) return;
              
-             // Модалка уже содержит статическую информацию о меню
              openModal('special-menu-modal');
         }
 
+        // НОВАЯ ФУНКЦИЯ: открывает модалку для заявки повара
+        function openChefInquiryModal(id) {
+             const product = products[id];
+             if (!product || !product.isSpecialPromo) return;
+             
+             // Сброс полей и ошибок
+             document.getElementById('chef-name').value = '';
+             document.getElementById('chef-date').value = '';
+             document.getElementById('chef-guests').value = '';
+             document.getElementById('chef-event-type').value = '';
+             document.getElementById('chef-details').value = '';
+             document.getElementById('chef-validation-message').classList.add('hidden');
+             document.querySelectorAll('#chef-inquiry-modal input, #chef-inquiry-modal select').forEach(el => el.classList.remove('input-error'));
+
+             // Предзаполняем дату на завтра для удобства
+             const tomorrow = new Date();
+             tomorrow.setDate(tomorrow.getDate() + 1);
+             const day = String(tomorrow.getDate()).padStart(2, '0');
+             const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+             const year = tomorrow.getFullYear();
+             document.getElementById('chef-date').value = `${year}-${month}-${day}`;
+
+             openModal('chef-inquiry-modal');
+        }
+        
+        // НОВАЯ ФУНКЦИЯ: отправляет заявку повара через WhatsApp
+        function sendChefInquiry() {
+            const nameInput = document.getElementById('chef-name');
+            const dateInput = document.getElementById('chef-date');
+            const guestsInput = document.getElementById('chef-guests');
+            const eventInput = document.getElementById('chef-event-type');
+            const detailsInput = document.getElementById('chef-details');
+            const validationMsg = document.getElementById('chef-validation-message');
+
+            // Сброс ошибок
+            validationMsg.classList.add('hidden');
+            document.querySelectorAll('#chef-inquiry-modal input, #chef-inquiry-modal select').forEach(el => el.classList.remove('input-error'));
+            
+            // Валидация
+            let isValid = true;
+            if (nameInput.value.trim().length < 2) { nameInput.classList.add('input-error'); isValid = false; }
+            if (!dateInput.value) { dateInput.classList.add('input-error'); isValid = false; }
+            if (parseInt(guestsInput.value) < 1) { guestsInput.classList.add('input-error'); isValid = false; }
+            if (!eventInput.value) { eventInput.classList.add('input-error'); isValid = false; }
+
+            if (!isValid) {
+                validationMsg.classList.remove('hidden');
+                if(navigator.vibrate) navigator.vibrate(500);
+                return;
+            }
+
+            const data = {
+                name: nameInput.value.trim(),
+                date: dateInput.value,
+                guests: guestsInput.value,
+                event: eventInput.value,
+                details: detailsInput.value.trim()
+            };
+
+            closeModal('chef-inquiry-modal');
+            
+            // Вызов основной функции отправки с деталями
+            checkoutPromo('Выезд повара', 0, data);
+        }
 
         // Функция для оформления акций (не добавляем в корзину)
-        function checkoutPromo(name, price) {
+        function checkoutPromo(name, price, inquiryData = null) {
             // Показываем индикатор загрузки
             document.getElementById('loading-overlay').classList.add('show');
 
-            let msg;
-            if (price > 0) {
+            let msg = `Здравствуйте! Меня интересует услуга "${name}". Хотелось бы обсудить бронирование.\n\n`;
+
+            if (inquiryData && name === 'Выезд повара') {
+                 msg += `*Детали Заявки:*\n`;
+                 msg += `Имя: ${inquiryData.name}\n`;
+                 msg += `Дата: ${inquiryData.date}\n`;
+                 msg += `Кол-во гостей: ${inquiryData.guests}\n`;
+                 msg += `Тип мероприятия: ${inquiryData.event}\n`;
+                 if (inquiryData.details) {
+                     msg += `Пожелания: ${inquiryData.details}\n`;
+                 }
+                 msg += `\n*Ожидаю вашего ответа для обсуждения меню и адреса!*`;
+
+            } else if (price > 0) {
                  msg = `Здравствуйте! Хочу узнать подробнее об акции "${name}" за ${price.toLocaleString('ru-RU')} ₸. Расскажите, пожалуйста, как забронировать дату.`;
             } else {
-                 // Измененное сообщение для объединенного предложения
+                 // Сообщение для Новогоднего предложения (если нет enquiryData)
                  msg = `Здравствуйте! Хочу узнать подробнее о Новогоднем Предложении от "Плакучей Ивы" (от 20 000 ₸ с человека). Интересует бронирование/корпоративное меню.`;
             }
             const url = `https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(msg)}`;

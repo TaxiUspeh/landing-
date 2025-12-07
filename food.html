@@ -30,11 +30,10 @@
         .bg-hot-color { background-color: #fae8ff; color: #7e22ce; } 
         .bg-pizza-color { background-color: #fee2e2; color: #dc2626; } 
         .bg-snack-color { background-color: #fef9c3; color: #854d0e; } 
+        /* НОВОГОДНИЙ ГРАДИЕНТ */
         .bg-promo-ny { background: linear-gradient(135deg, #a71e1e 0%, #7f1d1d 100%); }
         .bg-promo-sumo { background: linear-gradient(135deg, #d97706 0%, #b45309 100%); }
         .bg-promo-banquet { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); }
-        /* Новый градиент для Корпоратива (больше не используется, но оставлен в стилях) */
-        .bg-promo-corporative { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
         .bg-instagram-gradient {
             background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
         }
@@ -189,10 +188,48 @@
             box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
             transform: translateY(100%); 
             transition: transform 0.3s ease-out;
+            max-height: 90vh; /* Ограничение высоты для контента */
+            overflow-y: auto; /* Скролл внутри модалки */
         }
         .modal-overlay.open .modal-content {
             transform: translateY(0); 
         }
+
+        /* Специальные стили для модалки с меню */
+        #special-menu-modal .modal-content {
+             max-height: 95vh;
+             padding: 0;
+        }
+        #special-menu-modal .menu-header {
+             padding: 24px 24px 16px 24px;
+             border-radius: 20px 20px 0 0;
+             color: white;
+             position: relative;
+             overflow: hidden;
+             background: linear-gradient(135deg, #a71e1e 0%, #7f1d1d 100%);
+        }
+        #special-menu-modal .menu-list {
+             padding: 24px;
+             padding-top: 16px;
+        }
+        .menu-item {
+             display: flex;
+             justify-content: space-between;
+             align-items: flex-start;
+             padding: 10px 0;
+             border-bottom: 1px dashed #e5e7eb;
+        }
+        .menu-item:last-child {
+             border-bottom: none;
+        }
+        .menu-item-price {
+            font-weight: 700;
+            color: #3b82f6; /* Синий цвет для цены */
+            text-align: right;
+            white-space: nowrap;
+            padding-left: 10px;
+        }
+
 
         #product-modal .modal-content {
             padding: 0;
@@ -249,7 +286,8 @@
         <div class="flex flex-col gap-4 px-4 max-w-lg mx-auto"> 
             
             <!-- 1. НОВЫЙ ГОД / РЕСТО-БАР "ПЛАКУЧАЯ ИВА" (Объединено) -->
-            <div class="promo-base-card bg-promo-ny w-full" onclick="openProductModal('promo_ny')">
+            <!-- Клик по карточке теперь открывает специальное модальное окно с меню -->
+            <div class="promo-base-card bg-promo-ny w-full" onclick="openSpecialMenuModal('promo_ny')">
                 <div class="badge bg-white text-red-700">НОВЫЙ ГОД 2026 🔥</div>
                 <div>
                     <!-- Заголовок объединен и адрес оставлен -->
@@ -259,7 +297,7 @@
                                <ul class="text-[12px] text-white list-disc list-inside space-y-1 font-medium opacity-90">
                                     <li>**Банкетное меню:** от 20 000 ₸ с человека.</li>
                                     <li>**RED PARTY:** Конкурсы, подарки, дресс-код (красный)!</li>
-                                    <li>**Корпоративное меню:** Горячее, салаты, закуски, напитки (см. детали).</li>
+                                    <li><span class="font-bold text-yellow-300">Нажмите, чтобы увидеть меню!</span></li>
                                 </ul>
                     </div>
                 </div>
@@ -745,7 +783,7 @@
         </div>
     </div>
     
-    <!-- МОДАЛКА КАРТОЧКИ ТОВАРА -->
+    <!-- МОДАЛКА КАРТОЧКИ ТОВАРА (для обычных позиций) -->
     <div id="product-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('product-modal')">
         <div class="modal-content">
             <div id="product-modal-image-container" class="no-image">
@@ -793,6 +831,72 @@
         </div>
     </div>
 
+    <!-- НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ СПЕЦИАЛЬНОГО МЕНЮ (ПЛАКУЧАЯ ИВА) -->
+    <div id="special-menu-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('special-menu-modal')">
+        <div class="modal-content">
+            <div class="menu-header">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-2xl font-black text-white leading-tight">Новогоднее Предложение 2026</h2>
+                    <button onclick="closeModal('special-menu-modal')" class="w-8 h-8 bg-white/20 rounded-full text-white active:scale-95"><i class="fas fa-times"></i></button>
+                </div>
+                <h3 class="text-sm font-medium text-red-100 mb-1">Ресто-бар "Плакучая Ива", п. Белоусовка</h3>
+                <div class="flex justify-between items-end mt-4">
+                    <span class="text-3xl font-black text-yellow-300">от 20 000 ₸</span>
+                    <span class="text-sm font-medium text-white/80">/ с 1 человека</span>
+                </div>
+            </div>
+
+            <div class="menu-list">
+                <div class="mb-4">
+                    <h4 class="text-xl font-extrabold text-gray-800 mb-2 border-b-2 border-red-500 pb-1 flex items-center gap-2"><i class="fas fa-fire text-red-600"></i> Горячее</h4>
+                    <div class="space-y-1">
+                        <!-- Горячее (из скриншота "меню прайс.jpeg") -->
+                        <div class="menu-item"><span class="font-medium text-gray-700">Манты (рубленые/фарш)</span><span class="menu-item-price">3 шт. (порция)</span></div>
+                        <div class="menu-item"><span class="font-medium text-gray-700">Сырне (Говядина)</span><span class="menu-item-price">350 гр. (порция)</span></div>
+                        <div class="menu-item"><span class="font-medium text-gray-700">Куриные отбивные с грибами</span><span class="menu-item-price">1 шт.</span></div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h4 class="text-xl font-extrabold text-gray-800 mb-2 border-b-2 border-green-500 pb-1 flex items-center gap-2"><i class="fas fa-salad text-green-600"></i> Салаты (150 гр/чел)</h4>
+                    <div class="space-y-1">
+                        <!-- Салаты (из скриншота "меню прайс.jpeg") -->
+                        <div class="menu-item"><span class="font-medium text-gray-700">Сельдь под шубой</span><span class="menu-item-price">6 200 ₸ / кг</span></div>
+                        <div class="menu-item"><span class="font-medium text-gray-700">Хрустящие баклажаны</span><span class="menu-item-price">6 200 ₸ / кг</span></div>
+                        <div class="menu-item"><span class="font-medium text-gray-700">Тойбос (с копч. курицей)</span><span class="menu-item-price">6 900 ₸ / кг</span></div>
+                        <div class="menu-item"><span class="font-medium text-gray-700">Цезарь с курицей</span><span class="menu-item-price">7 000 ₸ / кг</span></div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 class="text-xl font-extrabold text-gray-800 mb-2 border-b-2 border-yellow-500 pb-1 flex items-center gap-2"><i class="fas fa-bread-slice text-yellow-700"></i> Закуски</h4>
+                    <div class="space-y-1">
+                        <!-- Закуски (из скриншота "меню прайс.jpeg") -->
+                        <div class="menu-item"><span class="font-medium text-gray-700">Брускетта с бужениной</span><span class="menu-item-price">380 ₸ / шт</span></div>
+                        <div class="menu-item"><span class="font-medium text-gray-700">Рулетики из баклажан (1 кг)</span><span class="menu-item-price">5 800 ₸ / кг</span></div>
+                        <div class="menu-item"><span class="font-medium text-gray-700">Закуска по-русски (тарелка)</span><span class="menu-item-price">6 000 ₸</span></div>
+                        <div class="menu-item"><span class="font-medium text-gray-700">Сырное канапе</span><span class="menu-item-price">280 ₸ / шт</span></div>
+                        <div class="menu-item"><span class="font-medium text-gray-700">Хлебная корзина (белый и чёрный)</span><span class="menu-item-price">Включено</span></div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h4 class="text-xl font-extrabold text-gray-800 mb-2 border-b-2 border-pink-500 pb-1 flex items-center gap-2"><i class="fas fa-cake-candles text-pink-600"></i> Десерт и Напитки</h4>
+                    <div class="space-y-1">
+                        <div class="menu-item"><span class="font-medium text-gray-700">Новогодние капкейки</span><span class="menu-item-price">Включено</span></div>
+                        <div class="menu-item"><span class="font-medium text-gray-700">Чай с молоком</span><span class="menu-item-price">Включено</span></div>
+                        <div class="menu-item"><span class="font-medium text-gray-700">Собственные напитки</span><span class="menu-item-price font-extrabold text-red-600">Разрешены</span></div>
+                    </div>
+                </div>
+                
+                <button onclick="checkoutPromo('Новогоднее Предложение', 0)" class="w-full bg-green-600 text-white font-extrabold py-3.5 rounded-xl text-lg shadow-xl hover:bg-green-700 transition active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fab fa-whatsapp text-xl"></i>
+                    Уточнить дату и забронировать
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         // ------------------ ДАННЫЕ О ТОВАРАХ (ОБНОВЛЕНО) ------------------
@@ -800,18 +904,18 @@
             // ВАЖНО: ЗАМЕНИ "URL_ИМЯФОТО" НА РЕАЛЬНЫЕ АДРЕСА ТВОИХ ФОТОГРАФИЙ!
             
             // ПРОМО
-            // НОВОЕ: Объединено "Red Party" и "Корпоратив", цена убрана из основного объекта
+            // НОВОЕ: Добавлено isSpecialPromo: true для переключения на модалку с меню
             'promo_ny': { 
                 name: 'Новогоднее предложение (Плакучая Ива)', 
                 price: 0, 
                 desc: 'Ресто-бар "Плакучая Ива" предлагает комплексные решения для празднования Нового Года: корпоративные банкеты, праздничные вечеринки (включая "Red Party" 19-20.12.25) и персональные заказы. Отличный вариант для бронирования дат и предзаказа новогоднего меню.', 
-                ingredients: 'В предложение входит: Банкетное меню от 20 000 ₸ с человека (Горячее, Салаты "Сельдь под шубой" / "Баклажаны" / "Тойбос", Закуски, Напитки, Капкейки) и специальное меню для RED PARTY (45 000 ₸/чел). Уточняйте свободные даты и детали по меню.', 
+                ingredients: 'Банкетное меню от 20 000 ₸ с человека. Уточняйте свободные даты и детали по меню.', 
                 icon: 'fas fa-hat-chef', 
                 colorName: 'red', 
                 colorShade: '700', 
-                imageURL: 'URL_БанкетНГ' 
+                imageURL: 'URL_БанкетНГ',
+                isSpecialPromo: true // Флаг для открытия специальной модалки
             },
-            // promo_corp удален
 
             'promo_sumo': { name: 'Сет "Сумо-Сан"', price: 22000, desc: 'Огромный ролл-сет из 80 штук — идеальный выбор для большой компании любителей японской кухни.', ingredients: 'Роллы с креветкой, тобико, лососем, угрем, "Калифорния", "Бонито", "Краб". Подарок: 5 луковых + 5 сырных палочек.', icon: 'fas fa-sushi', colorName: 'orange', colorShade: '600', imageURL: 'URL_СетСумоСан' },
             'promo_pers': { name: 'Банкет (на 1 чел)', price: 10000, desc: 'Комплексное банкетное меню на одну персону. Минимальный заказ обсуждается индивидуально.', ingredients: 'Горячее (Сырне или Манты на выбор), салаты ("Баклажан", "Тбилиси", "Цезарь"), закуски (нарезки, рулеты, тарталетки). Подарок: Сервировка стола.', icon: 'fas fa-utensils', colorName: 'slate', colorShade: '900', imageURL: 'URL_БанкетПерсона' },
@@ -1007,6 +1111,12 @@
             const product = products[id];
             if (!product) return;
             
+            // НОВАЯ ПРОВЕРКА: Если это специальная акция с меню, открываем special-menu-modal
+            if (product.isSpecialPromo) {
+                openSpecialMenuModal(id);
+                return;
+            }
+
             currentModalId = id; 
             currentProductData = product;
 
@@ -1070,21 +1180,6 @@
                  addButton.disabled = false;
                  qtyControl.classList.remove('hidden'); 
                  addButton.innerText = `Добавить ${quantity} шт. за ${(product.price * quantity).toLocaleString('ru-RU')} ₸`;
-            }
-            
-            // Логика для акций (только кнопка "Подробнее/Забронировать")
-             if (id === 'promo_ny') { // Проверяем только 'promo_ny', т.к. 'promo_corp' удален
-                addButton.classList.remove('bg-red-600', 'hover:bg-red-700');
-                addButton.classList.add('bg-green-600', 'hover:bg-green-700');
-                addButton.innerHTML = `<i class="fab fa-whatsapp mr-2"></i> Уточнить детали бронирования`;
-                addButton.onclick = () => {
-                    checkoutPromo(product.name, product.price); // Используем отдельную функцию для акций
-                };
-                qtyControl.classList.add('hidden');
-            } else {
-                 addButton.classList.remove('bg-green-600', 'hover:bg-green-700');
-                 addButton.classList.add('bg-red-600', 'hover:bg-red-700');
-                 addButton.innerHTML = `<i class="fas fa-cart-plus mr-2"></i> Добавить ${quantity} шт. за ${(product.price * quantity).toLocaleString('ru-RU')} ₸`;
 
                  // Восстановление стандартной логики для не-акций
                  document.getElementById('qty-minus').onclick = () => {
@@ -1117,8 +1212,7 @@
                 };
             }
 
-
-            // Управление количеством в модалке
+            // Управление количеством в модалке (для обычных товаров)
             document.getElementById('qty-minus').onclick = () => {
                 if (quantity > 1) {
                     quantity--;
@@ -1138,17 +1232,28 @@
             openModal('product-modal');
         }
 
-        // Новая функция для оформления акций (не добавляем в корзину)
+        // НОВАЯ ФУНКЦИЯ: открывает специальную модалку с меню
+        function openSpecialMenuModal(id) {
+             const product = products[id];
+             if (!product || !product.isSpecialPromo) return;
+             
+             // Модалка уже содержит статическую информацию о меню
+             openModal('special-menu-modal');
+        }
+
+
+        // Функция для оформления акций (не добавляем в корзину)
         function checkoutPromo(name, price) {
             let msg;
             if (price > 0) {
                  msg = `Здравствуйте! Хочу узнать подробнее об акции "${name}" за ${price.toLocaleString('ru-RU')} ₸. Расскажите, пожалуйста, как забронировать дату.`;
             } else {
                  // Измененное сообщение для объединенного предложения
-                 msg = `Здравствуйте! Хочу узнать подробнее о Новогоднем Предложении от "Плакучей Ивы". Интересует бронирование/корпоративное меню.`;
+                 msg = `Здравствуйте! Хочу узнать подробнее о Новогоднем Предложении от "Плакучей Ивы" (от 20 000 ₸ с человека). Интересует бронирование/корпоративное меню.`;
             }
             const url = `https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(msg)}`;
             window.open(url, '_blank');
+            closeModal('special-menu-modal');
             closeModal('product-modal');
         }
 

@@ -30,6 +30,7 @@
         .bg-hot-color { background-color: #fae8ff; color: #7e22ce; } 
         .bg-pizza-color { background-color: #fee2e2; color: #dc2626; } 
         .bg-snack-color { background-color: #fef9c3; color: #854d0e; } 
+        
         /* НОВОГОДНИЙ ГРАДИЕНТ */
         .bg-promo-ny { background: linear-gradient(135deg, #a71e1e 0%, #7f1d1d 100%); }
         .bg-promo-sumo { background: linear-gradient(135deg, #d97706 0%, #b45309 100%); }
@@ -116,22 +117,26 @@
             padding: 12px 0;
             border-bottom: 1px solid #e2e8f0;
         }
-        .nav-btn {
+        /* Общий стиль для всех кнопок навигации */
+        .nav-btn-base {
              flex-shrink: 0;
              padding: 8px 16px;
              border-radius: 10px;
              font-weight: 600;
              font-size: 14px;
-             color: #374151;
-             border: 1px solid #e5e7eb;
-             background-color: #f9fafb;
              transition: all 0.2s;
+             border: 2px solid; /* Более заметная рамка */
+             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
         }
-        .nav-btn.active {
-            background: #0f172a;
-            color: white;
-            border-color: #0f172a;
-            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+
+        /* Стиль для активной кнопки (переопределяется в JS) */
+        .nav-btn-base.active {
+            filter: brightness(0.9);
+            transform: scale(0.98);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3); /* Яркий фокус */
+        }
+        .nav-btn-base:hover {
+            filter: brightness(1.1);
         }
 
         /* ЦЕНА В КАРТОЧКЕ */
@@ -188,8 +193,8 @@
             box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
             transform: translateY(100%); 
             transition: transform 0.3s ease-out;
-            max-height: 90vh; /* Ограничение высоты для контента */
-            overflow-y: auto; /* Скролл внутри модалки */
+            max-height: 90vh; 
+            overflow-y: auto; 
         }
         .modal-overlay.open .modal-content {
             transform: translateY(0); 
@@ -254,11 +259,54 @@
              background-color: #f3f4f6;
         }
         
+        /* Индикатор загрузки */
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #loading-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ef4444; /* Акцентный цвет */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Стили для валидации */
+        .input-error {
+            border: 2px solid #ef4444 !important;
+            background-color: #fef2f2 !important;
+        }
+
+        
     </style>
 </head>
 <body>
+    
+    <div id="loading-overlay">
+        <div class="spinner mb-4"></div>
+        <p class="text-gray-700 font-semibold text-lg">Перенаправляем в WhatsApp...</p>
+        <p class="text-sm text-gray-500">Пожалуйста, подождите.</p>
+    </div>
 
-    <!-- Шапка -->
     <header class="px-5 pt-6 pb-2 flex justify-between items-center bg-white border-b border-gray-100">
         <div>
             <div class="flex items-center gap-2">
@@ -281,16 +329,12 @@
         </div>
     </header>
 
-    <!-- АКЦИИ (ПРОМО-КАРТОЧКИ) -->
     <div class="pt-4 pb-2">
         <div class="flex flex-col gap-4 px-4 max-w-lg mx-auto"> 
             
-            <!-- 1. НОВЫЙ ГОД / РЕСТО-БАР "ПЛАКУЧАЯ ИВА" (Объединено) -->
-            <!-- Клик по карточке теперь открывает специальное модальное окно с меню -->
             <div class="promo-base-card bg-promo-ny w-full" onclick="openSpecialMenuModal('promo_ny')">
                 <div class="badge bg-white text-red-700">НОВЫЙ ГОД 2026 🔥</div>
                 <div>
-                    <!-- Заголовок объединен и адрес оставлен -->
                     <h3 class="text-2xl font-black uppercase mb-2 leading-none">🎄 Ресто-бар "Плакучая Ива"</h3>
                     <p class="text-sm text-red-100 font-medium">Корпоративы, банкеты и RED PARTY (19-20.12.25) в п. Белоусовка, Рабочая 37/4.</p>
                     <div class="my-4 p-3 bg-black/10 rounded-xl">
@@ -303,7 +347,6 @@
                 </div>
                 
                 <div class="mt-auto pt-2">
-                    <!-- Цена убрана по запросу -->
                     <button onclick="event.stopPropagation(); checkoutPromo('Новогоднее Предложение', 0)" class="w-full bg-white text-red-900 font-extrabold py-3.5 px-4 rounded-xl text-lg shadow-xl active:scale-95 transition flex justify-center items-center gap-2">
                         <span>Уточнить цену и забронировать</span>
                         <i class="fas fa-calendar-check text-base"></i>
@@ -311,7 +354,6 @@
                 </div>
             </div>
 
-            <!-- 2. Сет "Сумо-Сан" (оставлено без изменений) -->
             <div class="promo-base-card bg-promo-sumo w-full" onclick="openProductModal('promo_sumo')">
                 <div class="badge bg-white text-orange-600">80 ШТ</div>
                 <div>
@@ -335,7 +377,6 @@
                 </div>
             </div>
             
-            <!-- 3. Банкет Персона (оставлено без изменений) -->
             <div class="promo-base-card bg-promo-banquet w-full" onclick="openProductModal('promo_pers')">
                 <div class="badge bg-white text-slate-800">МЕНЮ</div>
                 <div>
@@ -362,123 +403,44 @@
         </div>
     </div>
 
-    <!-- Навигация -->
     <div class="nav-sticky">
         <div class="flex overflow-x-auto gap-2 px-5 hide-scroll">
-            <button onclick="scrollToId('semi', this)" data-id="semi" class="nav-btn active">🥟 Полуфабрикаты</button>
-            <button onclick="scrollToId('salads', this)" data-id="salads" class="nav-btn">🥗 Салаты</button>
-            <button onclick="scrollToId('rolls', this)" data-id="rolls" class="nav-btn">🍣 Роллы</button>
-            <button onclick="scrollToId('hot', this)" data-id="hot" class="nav-btn">🍖 Горячее</button>
-            <button onclick="scrollToId('pizza', this)" data-id="pizza" class="nav-btn">🍕 Пицца</button>
-            <button onclick="scrollToId('tartlets', this)" data-id="tartlets" class="nav-btn">🥖 Закуски</button>
+            
+            <button onclick="scrollToId('salads', this)" data-id="salads" 
+                    class="nav-btn-base active bg-green-100 text-green-800 border-green-300 hover:bg-green-200 active:bg-green-600 active:text-white">
+                🥗 Салаты
+            </button>
+            
+            <button onclick="scrollToId('rolls', this)" data-id="rolls" 
+                    class="nav-btn-base bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200 active:bg-orange-600 active:text-white">
+                🍣 Роллы
+            </button>
+            
+            <button onclick="scrollToId('hot', this)" data-id="hot" 
+                    class="nav-btn-base bg-red-100 text-red-800 border-red-300 hover:bg-red-200 active:bg-red-600 active:text-white">
+                🍖 Горячее
+            </button>
+            
+            <button onclick="scrollToId('pizza', this)" data-id="pizza" 
+                    class="nav-btn-base bg-pink-100 text-pink-800 border-pink-300 hover:bg-pink-200 active:bg-pink-600 active:text-white">
+                🍕 Пицца
+            </button>
+            
+            <button onclick="scrollToId('tartlets', this)" data-id="tartlets" 
+                    class="nav-btn-base bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 active:bg-yellow-600 active:text-white">
+                🥖 Закуски
+            </button>
+            
+            <button onclick="scrollToId('semi', this)" data-id="semi" 
+                    class="nav-btn-base bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200 active:bg-blue-600 active:text-white">
+                🥟 Полуфабрикаты
+            </button>
+            
         </div>
     </div>
 
-    <!-- Меню -->
     <div class="px-4 pt-4 pb-20 max-w-2xl mx-auto space-y-8">
-
-        <!-- 1. ПОЛУФАБРИКАТЫ -->
-        <section id="semi">
-            <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-blue-600">🥟</span> Полуфабрикаты (1 кг)</h2>
-            <div class="space-y-6">
-                
-                <h3 class="font-bold text-lg text-gray-700 border-b-2 border-blue-100 pb-1">Манты и Пельмени</h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="product-card" onclick="openProductModal('m_rub')">
-                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_МантыРубленые');"><i class="fas fa-utensils text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Манты (Рубленые)</h3>
-                        <p class="ingredients">Говядина, лук, тонкое тесто...</p>
-                        <div class="product-price mt-auto pt-2">3 700 ₸</div>
-                    </div>
-                    <div class="product-card" onclick="openProductModal('m_pump')">
-                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_МантыТыква');"><i class="fas fa-utensils text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Манты (Тыква)</h3>
-                        <p class="ingredients">Говядина, тыква, лук...</p>
-                        <div class="product-price mt-auto pt-2">3 500 ₸</div>
-                    </div>
-                    <div class="product-card" onclick="openProductModal('p_gov')">
-                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_ПельмениГов');"><i class="fas fa-snowflake text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Пельмени (Говядина)</h3>
-                        <p class="ingredients">Фарш говяжий, лук, перец...</p>
-                        <div class="product-price mt-auto pt-2">3 200 ₸</div>
-                    </div>
-                     <div class="product-card" onclick="openProductModal('p_kur')">
-                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_ПельмениКур');"><i class="fas fa-snowflake text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Пельмени (Курица)</h3>
-                        <p class="ingredients">Нежный куриный фарш...</p>
-                        <div class="product-price mt-auto pt-2">2 500 ₸</div>
-                    </div>
-                    <!-- Добавленные позиции -->
-                    <div class="product-card" onclick="openProductModal('p_gov_chick')">
-                        <div class="img-placeholder bg-semi-color"><i class="fas fa-snowflake text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Пельмени (Гов+Курица)</h3>
-                        <p class="ingredients">Говядина, курица, лук...</p>
-                        <div class="product-price mt-auto pt-2">3 000 ₸</div>
-                    </div>
-                    <div class="product-card" onclick="openProductModal('p_gov_pork')">
-                        <div class="img-placeholder bg-semi-color"><i class="fas fa-snowflake text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Пельмени (Гов+Свинина)</h3>
-                        <p class="ingredients">Говядина, свинина, лук...</p>
-                        <div class="product-price mt-auto pt-2">3 000 ₸</div>
-                    </div>
-                </div>
-
-                <h3 class="font-bold text-lg text-gray-700 border-b-2 border-blue-100 pb-1 pt-4">Вареники и другое</h3>
-                 <div class="grid grid-cols-2 gap-3">
-                    <div class="product-card" onclick="openProductModal('v_pot')">
-                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_ВареникиКартофель');"><i class="fas fa-lemon text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Вареники (Карт)</h3>
-                        <p class="ingredients">Картофель, жареный лук...</p>
-                        <div class="product-price mt-auto pt-2">1 800 ₸</div>
-                    </div>
-                     <div class="product-card" onclick="openProductModal('v_tvor')">
-                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_ВареникиТворог');"><i class="fas fa-lemon text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Вареники (Творог)</h3>
-                        <p class="ingredients">Домашний творог, зеленый лук...</p>
-                        <div class="product-price mt-auto pt-2">2 600 ₸</div>
-                    </div>
-                    <!-- Добавленные позиции -->
-                    <div class="product-card" onclick="openProductModal('v_pot_grib')">
-                        <div class="img-placeholder bg-semi-color"><i class="fas fa-mushroom text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Вареники (Карт+Грибы)</h3>
-                        <p class="ingredients">Картофель, грибы...</p>
-                        <div class="product-price mt-auto pt-2">2 200 ₸</div>
-                    </div>
-                     <div class="product-card" onclick="openProductModal('v_pot_cheese')">
-                        <div class="img-placeholder bg-semi-color"><i class="fas fa-cheese text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Вареники (Карт+Сыр)</h3>
-                        <p class="ingredients">Картофель, сыр...</p>
-                        <div class="product-price mt-auto pt-2">2 600 ₸</div>
-                    </div>
-                    <div class="product-card" onclick="openProductModal('golub')">
-                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_Голубцы');"><i class="fas fa-leaf text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Голубцы</h3>
-                        <p class="ingredients">Мясной фарш, рис, капуста...</p>
-                        <div class="product-price mt-auto pt-2">2 800 ₸</div>
-                    </div>
-                    <div class="product-card" onclick="openProductModal('pepper')">
-                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_ПерецФаршированный');"><i class="fas fa-pepper-hot text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Перец фаршированный</h3>
-                        <p class="ingredients">Болгарский перец, фарш, рис.</p>
-                        <div class="product-price mt-auto pt-2">3 000 ₸</div>
-                    </div>
-                    <div class="product-card" onclick="openProductModal('teft')">
-                        <div class="img-placeholder bg-semi-color"><i class="fas fa-circle text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Тефтели</h3>
-                        <p class="ingredients">Говядина, рис, лук.</p>
-                        <div class="product-price mt-auto pt-2">3 800 ₸</div>
-                    </div>
-                    <div class="product-card" onclick="openProductModal('cheb')">
-                        <div class="img-placeholder bg-semi-color"><i class="fas fa-moon text-blue-600"></i></div>
-                        <h3 class="font-extrabold text-sm leading-tight">Чебуреки</h3>
-                        <p class="ingredients">Сочная говядина, тонкое тесто...</p>
-                        <div class="product-price mt-auto pt-2">2 800 ₸</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 2. САЛАТЫ -->
+        
         <section id="salads">
             <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-green-600">🥗</span> Салаты (1 кг)</h2>
             <div class="space-y-3">
@@ -527,7 +489,6 @@
                         <button onclick="event.stopPropagation(); addToCart('Салат Тойбос', 6900, 'toybos', 1); openModal('cart-modal')" class="bg-gray-100 px-3 py-1 mt-1 rounded text-xs font-bold text-green-700 active:scale-95">+</button>
                     </div>
                 </div>
-                <!-- Добавленные позиции -->
                 <div class="product-card flex items-start gap-3 p-3" onclick="openProductModal('mechta')">
                     <div class="w-16 h-16 rounded-lg bg-salad-color flex items-center justify-center flex-shrink-0"><i class="fas fa-drumstick-bite text-xl text-green-600"></i></div>
                     <div class="flex-1">
@@ -575,7 +536,6 @@
             </div>
         </section>
 
-        <!-- 3. РОЛЛЫ -->
         <section id="rolls">
             <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-orange-600">🍣</span> Роллы (8 шт)</h2>
             <div class="grid grid-cols-2 gap-3">
@@ -597,7 +557,6 @@
                     <p class="ingredients">Лосось, сыр, икра тобико, панировка.</p>
                     <div class="product-price mt-auto pt-2">2 300 ₸</div>
                 </div>
-                <!-- Добавленные позиции -->
                 <div class="product-card" onclick="openProductModal('eel')">
                     <div class="img-placeholder bg-roll-color"><i class="fas fa-sushi text-orange-600"></i></div>
                     <h3 class="font-extrabold text-sm leading-tight">Ролл Угорь (Копченый)</h3>
@@ -607,9 +566,8 @@
             </div>
         </section>
 
-        <!-- 4. ГОРЯЧЕЕ -->
         <section id="hot">
-            <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-purple-600">🍖</span> Горячее</h2>
+            <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-red-600">🍖</span> Горячее</h2>
             <div class="grid grid-cols-2 gap-3">
                 <div class="product-card" onclick="openProductModal('kebab')">
                     <div class="img-placeholder bg-hot-color" style="background-image: url('URL_КазанКебаб');"><i class="fas fa-drumstick-bite text-purple-600"></i></div>
@@ -629,8 +587,7 @@
                     <p class="ingredients">Томленая говядина в соку.</p>
                     <div class="product-price mt-auto pt-2">8 700 ₸ / кг</div>
                 </div>
-                <!-- Добавленные позиции -->
-                 <div class="product-card" onclick="openProductModal('syrne_lamb')">
+                <div class="product-card" onclick="openProductModal('syrne_lamb')">
                     <div class="img-placeholder bg-hot-color"><i class="fas fa-utensils text-purple-600"></i></div>
                     <h3 class="font-extrabold text-sm leading-tight">Сырне (Баранина)</h3>
                     <p class="ingredients">Томленая баранина в соку.</p>
@@ -638,7 +595,7 @@
                 </div>
                 <div class="product-card" onclick="openProductModal('beef_steak')">
                     <div class="img-placeholder bg-hot-color"><i class="fas fa-steak text-purple-600"></i></div>
-                    <h3 class="font-extrabold text-sm leading-tight">Говяжьи стейки Гриль</h3>
+                    <h3 class="font-extrabold text-sm leading-tight">Говяжьи стейки Гриль (1кг)</h3>
                     <p class="ingredients">Сочные стейки из говядины.</p>
                     <div class="product-price mt-auto pt-2">7 000 ₸ / кг</div>
                 </div>
@@ -651,9 +608,8 @@
             </div>
         </section>
 
-        <!-- 5. ПИЦЦА -->
         <section id="pizza">
-            <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-red-600">🍕</span> Пицца (40 см)</h2>
+            <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-pink-600">🍕</span> Пицца (40 см)</h2>
             <div class="product-card p-4" onclick="openProductModal('pizza_all')">
                 <div class="flex gap-4 items-center mb-3">
                     <div id="pizza-all-img" class="w-16 h-16 rounded-xl bg-pizza-color flex-shrink-0 flex items-center justify-center" style="background-image: url('URL_ПиццаОбщая'); background-size: cover; background-color: transparent;"><i class="fas fa-pizza-slice text-2xl text-red-600"></i></div>
@@ -672,7 +628,6 @@
             </div>
         </section>
 
-        <!-- 6. ЗАКУСКИ -->
         <section id="tartlets">
             <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-yellow-700">🥖</span> Закуски (шт/кг)</h2>
             <div class="space-y-6">
@@ -744,10 +699,107 @@
 
             </div>
         </section>
+        
+        <section id="semi">
+            <h2 class="font-black text-xl mb-4 text-gray-800 flex items-center gap-2"><span class="text-blue-600">🥟</span> Полуфабрикаты (1 кг)</h2>
+            <div class="space-y-6">
+                
+                <h3 class="font-bold text-lg text-gray-700 border-b-2 border-blue-100 pb-1">Манты и Пельмени</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="product-card" onclick="openProductModal('m_rub')">
+                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_МантыРубленые');"><i class="fas fa-utensils text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Манты (Рубленые)</h3>
+                        <p class="ingredients">Говядина, лук, тонкое тесто...</p>
+                        <div class="product-price mt-auto pt-2">3 700 ₸</div>
+                    </div>
+                    <div class="product-card" onclick="openProductModal('m_pump')">
+                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_МантыТыква');"><i class="fas fa-utensils text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Манты (Тыква)</h3>
+                        <p class="ingredients">Говядина, тыква, лук...</p>
+                        <div class="product-price mt-auto pt-2">3 500 ₸</div>
+                    </div>
+                    <div class="product-card" onclick="openProductModal('p_gov')">
+                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_ПельмениГов');"><i class="fas fa-snowflake text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Пельмени (Говядина)</h3>
+                        <p class="ingredients">Фарш говяжий, лук, перец...</p>
+                        <div class="product-price mt-auto pt-2">3 200 ₸</div>
+                    </div>
+                     <div class="product-card" onclick="openProductModal('p_kur')">
+                        <div class="img-placeholder bg-semi-color"><i class="fas fa-snowflake text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Пельмени (Курица)</h3>
+                        <p class="ingredients">Нежный куриный фарш...</p>
+                        <div class="product-price mt-auto pt-2">2 500 ₸</div>
+                    </div>
+                    <div class="product-card" onclick="openProductModal('p_gov_chick')">
+                        <div class="img-placeholder bg-semi-color"><i class="fas fa-snowflake text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Пельмени (Гов+Курица)</h3>
+                        <p class="ingredients">Говядина, курица, лук...</p>
+                        <div class="product-price mt-auto pt-2">3 000 ₸</div>
+                    </div>
+                    <div class="product-card" onclick="openProductModal('p_gov_pork')">
+                        <div class="img-placeholder bg-semi-color"><i class="fas fa-snowflake text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Пельмени (Гов+Свинина)</h3>
+                        <p class="ingredients">Говядина, свинина, лук...</p>
+                        <div class="product-price mt-auto pt-2">3 000 ₸</div>
+                    </div>
+                </div>
+
+                <h3 class="font-bold text-lg text-gray-700 border-b-2 border-blue-100 pb-1 pt-4">Вареники и другое</h3>
+                 <div class="grid grid-cols-2 gap-3">
+                    <div class="product-card" onclick="openProductModal('v_pot')">
+                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_ВареникиКартофель');"><i class="fas fa-lemon text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Вареники (Карт)</h3>
+                        <p class="ingredients">Картофель, жареный лук...</p>
+                        <div class="product-price mt-auto pt-2">1 800 ₸</div>
+                    </div>
+                     <div class="product-card" onclick="openProductModal('v_tvor')">
+                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_ВареникиТворог');"><i class="fas fa-lemon text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Вареники (Творог)</h3>
+                        <p class="ingredients">Домашний творог, зеленый лук...</p>
+                        <div class="product-price mt-auto pt-2">2 600 ₸</div>
+                    </div>
+                    <div class="product-card" onclick="openProductModal('v_pot_grib')">
+                        <div class="img-placeholder bg-semi-color"><i class="fas fa-mushroom text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Вареники (Карт+Грибы)</h3>
+                        <p class="ingredients">Картофель, грибы...</p>
+                        <div class="product-price mt-auto pt-2">2 200 ₸</div>
+                    </div>
+                     <div class="product-card" onclick="openProductModal('v_pot_cheese')">
+                        <div class="img-placeholder bg-semi-color"><i class="fas fa-cheese text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Вареники (Карт+Сыр)</h3>
+                        <p class="ingredients">Картофель, сыр...</p>
+                        <div class="product-price mt-auto pt-2">2 600 ₸</div>
+                    </div>
+                    <div class="product-card" onclick="openProductModal('golub')">
+                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_Голубцы');"><i class="fas fa-leaf text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Голубцы</h3>
+                        <p class="ingredients">Мясной фарш, рис, капуста...</p>
+                        <div class="product-price mt-auto pt-2">2 800 ₸</div>
+                    </div>
+                    <div class="product-card" onclick="openProductModal('pepper')">
+                        <div class="img-placeholder bg-semi-color" style="background-image: url('URL_ПерецФаршированный');"><i class="fas fa-pepper-hot text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Перец фаршированный</h3>
+                        <p class="ingredients">Болгарский перец, фарш, рис.</p>
+                        <div class="product-price mt-auto pt-2">3 000 ₸</div>
+                    </div>
+                    <div class="product-card" onclick="openProductModal('teft')">
+                        <div class="img-placeholder bg-semi-color"><i class="fas fa-circle text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Тефтели</h3>
+                        <p class="ingredients">Говядина, рис, лук.</p>
+                        <div class="product-price mt-auto pt-2">3 800 ₸</div>
+                    </div>
+                    <div class="product-card" onclick="openProductModal('cheb')">
+                        <div class="img-placeholder bg-semi-color"><i class="fas fa-moon text-blue-600"></i></div>
+                        <h3 class="font-extrabold text-sm leading-tight">Чебуреки</h3>
+                        <p class="ingredients">Сочная говядина, тонкое тесто...</p>
+                        <div class="product-price mt-auto pt-2">2 800 ₸</div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
     </div>
 
-    <!-- КОРЗИНА -->
     <div id="cart-bar" class="cart-bar" onclick="openModal('cart-modal')">
         <div class="flex items-center gap-3">
             <div class="relative">
@@ -762,28 +814,41 @@
         <button class="bg-white text-gray-900 font-extrabold px-5 py-2.5 rounded-xl text-sm shadow-lg active:scale-95">Открыть</button>
     </div>
 
-    <!-- МОДАЛКА КОРЗИНЫ -->
     <div id="cart-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('cart-modal')">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-black">Ваш заказ</h2>
                 <button onclick="closeModal('cart-modal')" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 active:scale-95"><i class="fas fa-times"></i></button>
             </div>
+            
             <div id="cart-list" class="space-y-2 mb-6"></div>
-            <div class="border-t border-gray-100 pt-4">
+
+            <div class="border-t border-gray-100 pt-4 mt-4">
+                <h3 class="text-xl font-black mb-4 flex items-center gap-2 text-gray-800"><i class="fas fa-shipping-fast text-red-500"></i> Доставка</h3>
+                
+                <div id="validation-message" class="text-red-600 font-medium text-sm mb-3 hidden">
+                    <i class="fas fa-exclamation-triangle mr-1"></i> Пожалуйста, заполните Имя и Адрес.
+                </div>
+
+                <div class="space-y-3 mb-6">
+                    <input type="text" id="input-name" placeholder="Ваше имя (обязательно)" class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-red-500 transition" required>
+                    <input type="text" id="input-address" placeholder="Адрес доставки (обязательно)" class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-red-500 transition" required>
+                    <textarea id="input-comment" placeholder="Комментарий к заказу (этаж, домофон, пожелания)" rows="2" class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-red-500 transition"></textarea>
+                </div>
+
                 <div class="flex justify-between items-end mb-4">
-                    <span class="text-gray-500">Итого:</span>
+                    <span class="text-gray-500">Итого к оплате:</span>
                     <span id="modal-total" class="text-3xl font-black text-gray-900">0 ₸</span>
                 </div>
+                
                 <button onclick="checkout()" class="w-full bg-[#25D366] text-white font-extrabold py-4 rounded-xl text-lg shadow-lg flex items-center justify-center gap-2 hover:bg-[#128C7E] transition active:scale-95">
                     <i class="fab fa-whatsapp text-2xl"></i>
-                    Оформить заказ в WhatsApp
+                    Отправить заказ в WhatsApp
                 </button>
             </div>
         </div>
     </div>
     
-    <!-- МОДАЛКА КАРТОЧКИ ТОВАРА (для обычных позиций) -->
     <div id="product-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('product-modal')">
         <div class="modal-content">
             <div id="product-modal-image-container" class="no-image">
@@ -831,7 +896,6 @@
         </div>
     </div>
 
-    <!-- НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ СПЕЦИАЛЬНОГО МЕНЮ (ПЛАКУЧАЯ ИВА) -->
     <div id="special-menu-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('special-menu-modal')">
         <div class="modal-content">
             <div class="menu-header">
@@ -850,7 +914,6 @@
                 <div class="mb-4">
                     <h4 class="text-xl font-extrabold text-gray-800 mb-2 border-b-2 border-red-500 pb-1 flex items-center gap-2"><i class="fas fa-fire text-red-600"></i> Горячее</h4>
                     <div class="space-y-1">
-                        <!-- Горячее (из скриншота "меню прайс.jpeg") -->
                         <div class="menu-item"><span class="font-medium text-gray-700">Манты (рубленые/фарш)</span><span class="menu-item-price">3 шт. (порция)</span></div>
                         <div class="menu-item"><span class="font-medium text-gray-700">Сырне (Говядина)</span><span class="menu-item-price">350 гр. (порция)</span></div>
                         <div class="menu-item"><span class="font-medium text-gray-700">Куриные отбивные с грибами</span><span class="menu-item-price">1 шт.</span></div>
@@ -860,7 +923,6 @@
                 <div class="mb-4">
                     <h4 class="text-xl font-extrabold text-gray-800 mb-2 border-b-2 border-green-500 pb-1 flex items-center gap-2"><i class="fas fa-salad text-green-600"></i> Салаты (150 гр/чел)</h4>
                     <div class="space-y-1">
-                        <!-- Салаты (из скриншота "меню прайс.jpeg") -->
                         <div class="menu-item"><span class="font-medium text-gray-700">Сельдь под шубой</span><span class="menu-item-price">6 200 ₸ / кг</span></div>
                         <div class="menu-item"><span class="font-medium text-gray-700">Хрустящие баклажаны</span><span class="menu-item-price">6 200 ₸ / кг</span></div>
                         <div class="menu-item"><span class="font-medium text-gray-700">Тойбос (с копч. курицей)</span><span class="menu-item-price">6 900 ₸ / кг</span></div>
@@ -871,7 +933,6 @@
                 <div class="mb-4">
                     <h4 class="text-xl font-extrabold text-gray-800 mb-2 border-b-2 border-yellow-500 pb-1 flex items-center gap-2"><i class="fas fa-bread-slice text-yellow-700"></i> Закуски</h4>
                     <div class="space-y-1">
-                        <!-- Закуски (из скриншота "меню прайс.jpeg") -->
                         <div class="menu-item"><span class="font-medium text-gray-700">Брускетта с бужениной</span><span class="menu-item-price">380 ₸ / шт</span></div>
                         <div class="menu-item"><span class="font-medium text-gray-700">Рулетики из баклажан (1 кг)</span><span class="menu-item-price">5 800 ₸ / кг</span></div>
                         <div class="menu-item"><span class="font-medium text-gray-700">Закуска по-русски (тарелка)</span><span class="menu-item-price">6 000 ₸</span></div>
@@ -899,12 +960,11 @@
 
 
     <script>
-        // ------------------ ДАННЫЕ О ТОВАРАХ (ОБНОВЛЕНО) ------------------
+        // ------------------ ДАННЫЕ О ТОВАРАХ ------------------
         const products = {
             // ВАЖНО: ЗАМЕНИ "URL_ИМЯФОТО" НА РЕАЛЬНЫЕ АДРЕСА ТВОИХ ФОТОГРАФИЙ!
             
             // ПРОМО
-            // НОВОЕ: Добавлено isSpecialPromo: true для переключения на модалку с меню
             'promo_ny': { 
                 name: 'Новогоднее предложение (Плакучая Ива)', 
                 price: 0, 
@@ -914,11 +974,20 @@
                 colorName: 'red', 
                 colorShade: '700', 
                 imageURL: 'URL_БанкетНГ',
-                isSpecialPromo: true // Флаг для открытия специальной модалки
+                isSpecialPromo: true 
             },
 
             'promo_sumo': { name: 'Сет "Сумо-Сан"', price: 22000, desc: 'Огромный ролл-сет из 80 штук — идеальный выбор для большой компании любителей японской кухни.', ingredients: 'Роллы с креветкой, тобико, лососем, угрем, "Калифорния", "Бонито", "Краб". Подарок: 5 луковых + 5 сырных палочек.', icon: 'fas fa-sushi', colorName: 'orange', colorShade: '600', imageURL: 'URL_СетСумоСан' },
-            'promo_pers': { name: 'Банкет (на 1 чел)', price: 10000, desc: 'Комплексное банкетное меню на одну персону. Минимальный заказ обсуждается индивидуально.', ingredients: 'Горячее (Сырне или Манты на выбор), салаты ("Баклажан", "Тбилиси", "Цезарь"), закуски (нарезки, рулеты, тарталетки). Подарок: Сервировка стола.', icon: 'fas fa-utensils', colorName: 'slate', colorShade: '900', imageURL: 'URL_БанкетПерсона' },
+            'promo_pers': { 
+                name: 'Банкет (на 1 чел)', 
+                price: 10000, 
+                desc: 'Комплексное банкетное меню на одну персону. Минимальный заказ обсуждается индивидуально.', 
+                ingredients: 'Горячее (Сырне или Манты на выбор), салаты (Баклажан, Тбилиси, Цезарь), закуски (нарезки, рулеты, тарталетки). Подарок: Сервировка стола.', 
+                icon: 'fas fa-utensils', 
+                colorName: 'slate', 
+                colorShade: '900', 
+                imageURL: 'URL_БанкетПерсона' 
+            },
 
             // ПОЛУФАБРИКАТЫ (Манты, Пельмени, Вареники, др.)
             'm_rub': { name: 'Манты (Рубленые)', price: 3700, desc: 'Сочные домашние манты из рубленой говядины. Отлично подходит для заморозки и быстрой готовки.', ingredients: 'Рубленая говядина, репчатый лук, черный перец, соль, тонкое пшеничное тесто.', icon: 'fas fa-utensils', colorName: 'blue', colorShade: '600', imageURL: 'URL_МантыРубленые' },
@@ -950,7 +1019,7 @@
             'mur': { name: 'Муравейник', price: 6600, desc: 'Хрустящий салат с копченой курицей, свежими овощами и картофелем пай.', ingredients: 'Копченая курица, помидор, огурец, сыр, картофель пай, майонез.', icon: 'fas fa-layer-group', colorName: 'green', colorShade: '600', imageURL: 'URL_СалатМуравейник' },
             'shuba': { name: 'Сельдь под шубой', price: 6200, desc: 'Классический слоеный салат с сельдью и овощами.', ingredients: 'Сельдь, свекла, морковь, картофель, яйцо, майонез.', icon: 'fas fa-fish', colorName: 'green', colorShade: '600', imageURL: 'URL_СельдьПодШубой' },
             'caesar': { name: 'Цезарь (Курица)', price: 7000, desc: 'Классический Цезарь с курицей.', ingredients: 'Курица, айсберг, черри, пармезан, соус.', icon: 'fas fa-crown', colorName: 'green', colorShade: '600', imageURL: 'URL_СалатЦезарь' },
-            'tbil': { name: 'Тбилиси', price: 6900, desc: 'Пряный грузинский салат с говядиной, фасолью и грецким орехом.', ingredients: 'Говядина, фасоль, перец, красный лук, помидор, грецкий орех.', icon: 'fas fa-pepper-hot', colorName: 'green', colorShade: '600', imageURL: 'URL_СалатТбилиси' },
+            'tbil': { name: 'Тбилиси', price: 6900, desc: 'Пряный грузинский салат с говядиной, фасолью и грецким орехом.', ingredients: 'Говядина, фасоль, перец, красный лук, помидор, грецкий орех, заправка.', icon: 'fas fa-pepper-hot', colorName: 'green', colorShade: '600', imageURL: 'URL_СалатТбилиси' },
             'pom_cha': { name: 'Помидор Ча', price: 7200, desc: 'Острый салат с говядиной, луком, кинзой и чесночной заправкой.', ingredients: 'Помидор, говядина, лук, кинза, петрушка, заправка, чеснок.', icon: 'fas fa-lemon', colorName: 'green', colorShade: '600', imageURL: 'URL_СалатПомидорЧа' },
             'chin_tongue': { name: 'Китайский с языком', price: 6900, desc: 'Пикантный салат с говяжьим языком и свежими овощами.', ingredients: 'Язык говяжий, перец, помидор, огурец, лук красный, чеснок.', icon: 'fas fa-dragon', colorName: 'green', colorShade: '600', imageURL: 'URL_СалатКитайскийЯзык' },
             
@@ -1029,13 +1098,11 @@
         }
 
         function updateTotal() {
-            // Исправлено: Добавлена проверка существования элементов DOM
             const cartTotal = document.getElementById('cart-total');
             const cartCount = document.getElementById('cart-count');
             const modalTotal = document.getElementById('modal-total');
 
             if (!cartTotal || !cartCount || !modalTotal) {
-                // Если элементы еще не загружены, выходим
                 return;
             }
 
@@ -1084,6 +1151,12 @@
         function renderCartList() {
             const list = document.getElementById('cart-list');
             list.innerHTML = '';
+            
+            // Скрываем сообщение об ошибке при открытии
+            document.getElementById('validation-message').classList.add('hidden');
+            document.getElementById('input-name').classList.remove('input-error');
+            document.getElementById('input-address').classList.remove('input-error');
+
             if (Object.keys(cart).length === 0) {
                  list.innerHTML = `<div class="text-center py-8 text-gray-500 font-medium">Ваша корзина пуста. Добавьте что-нибудь вкусненькое!</div>`;
                  return;
@@ -1129,8 +1202,7 @@
             // 2. Настройка контейнера для изображения
             const imgContainer = document.getElementById('product-modal-image-container');
             const imgIcon = document.getElementById('product-modal-icon');
-            const placeholderFallback = 'https://placehold.co/600x400/f3f4f6/a1a1aa?text=Изображение+отсутствует';
-
+            
             let imageURL = null;
             if (product.imageURL && (product.imageURL.startsWith('http') || product.imageURL.includes('URL_'))) {
                  imageURL = product.imageURL;
@@ -1179,55 +1251,38 @@
                  addButton.classList.add('bg-red-600', 'hover:bg-red-700', 'active:scale-95');
                  addButton.disabled = false;
                  qtyControl.classList.remove('hidden'); 
-                 addButton.innerText = `Добавить ${quantity} шт. за ${(product.price * quantity).toLocaleString('ru-RU')} ₸`;
+                 addButton.innerHTML = `<i class="fas fa-cart-plus mr-2"></i> Добавить ${quantity} шт. за ${(product.price * quantity).toLocaleString('ru-RU')} ₸`;
 
                  // Восстановление стандартной логики для не-акций
                  document.getElementById('qty-minus').onclick = () => {
-                    if (quantity > 1) {
-                        quantity--;
-                        qtyDisplay.innerText = quantity;
-                        addButton.innerHTML = `<i class="fas fa-cart-plus mr-2"></i> Добавить ${quantity} шт. за ${(product.price * quantity).toLocaleString('ru-RU')} ₸`;
-                        if(navigator.vibrate) navigator.vibrate(20);
-                    }
-                };
-                document.getElementById('qty-plus').onclick = () => {
-                    quantity++;
-                    qtyDisplay.innerText = quantity;
-                    addButton.innerHTML = `<i class="fas fa-cart-plus mr-2"></i> Добавить ${quantity} шт. за ${(product.price * quantity).toLocaleString('ru-RU')} ₸`;
-                    if(navigator.vibrate) navigator.vibrate(20);
-                };
+                     if (quantity > 1) {
+                         quantity--;
+                         qtyDisplay.innerText = quantity;
+                         addButton.innerHTML = `<i class="fas fa-cart-plus mr-2"></i> Добавить ${quantity} шт. за ${(product.price * quantity).toLocaleString('ru-RU')} ₸`;
+                         if(navigator.vibrate) navigator.vibrate(20);
+                     }
+                 };
+                 document.getElementById('qty-plus').onclick = () => {
+                     quantity++;
+                     qtyDisplay.innerText = quantity;
+                     addButton.innerHTML = `<i class="fas fa-cart-plus mr-2"></i> Добавить ${quantity} шт. за ${(product.price * quantity).toLocaleString('ru-RU')} ₸`;
+                     if(navigator.vibrate) navigator.vibrate(20);
+                 };
 
-                addButton.onclick = () => {
-                    if (addButton.disabled) return;
-                    
-                    const currentCartItem = cart[finalId];
-                    if (currentCartItem) {
-                        currentCartItem.qty = quantity;
-                    } else {
-                        addToCart(product.name, product.price, id, quantity);
-                    }
-                    
-                    closeModal('product-modal');
-                    openModal('cart-modal'); 
-                };
+                 addButton.onclick = () => {
+                     if (addButton.disabled) return;
+                     
+                     const currentCartItem = cart[finalId];
+                     if (currentCartItem) {
+                         currentCartItem.qty = quantity;
+                     } else {
+                         addToCart(product.name, product.price, id, quantity);
+                     }
+                     
+                     closeModal('product-modal');
+                     openModal('cart-modal'); 
+                 };
             }
-
-            // Управление количеством в модалке (для обычных товаров)
-            document.getElementById('qty-minus').onclick = () => {
-                if (quantity > 1) {
-                    quantity--;
-                    qtyDisplay.innerText = quantity;
-                    addButton.innerText = `Добавить ${quantity} шт. за ${(product.price * quantity).toLocaleString('ru-RU')} ₸`;
-                    if(navigator.vibrate) navigator.vibrate(20);
-                }
-            };
-            document.getElementById('qty-plus').onclick = () => {
-                quantity++;
-                qtyDisplay.innerText = quantity;
-                addButton.innerText = `Добавить ${quantity} шт. за ${(product.price * quantity).toLocaleString('ru-RU')} ₸`;
-                if(navigator.vibrate) navigator.vibrate(20);
-            };
-
 
             openModal('product-modal');
         }
@@ -1244,6 +1299,9 @@
 
         // Функция для оформления акций (не добавляем в корзину)
         function checkoutPromo(name, price) {
+            // Показываем индикатор загрузки
+            document.getElementById('loading-overlay').classList.add('show');
+
             let msg;
             if (price > 0) {
                  msg = `Здравствуйте! Хочу узнать подробнее об акции "${name}" за ${price.toLocaleString('ru-RU')} ₸. Расскажите, пожалуйста, как забронировать дату.`;
@@ -1252,14 +1310,66 @@
                  msg = `Здравствуйте! Хочу узнать подробнее о Новогоднем Предложении от "Плакучей Ивы" (от 20 000 ₸ с человека). Интересует бронирование/корпоративное меню.`;
             }
             const url = `https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(msg)}`;
-            window.open(url, '_blank');
+            
+            // Задержка для анимации загрузки
+            setTimeout(() => {
+                window.open(url, '_blank');
+                document.getElementById('loading-overlay').classList.remove('show');
+            }, 500);
+
             closeModal('special-menu-modal');
             closeModal('product-modal');
         }
 
 
         function checkout() {
-            let msg = "Здравствуйте! Хочу сделать заказ:\n\n";
+            // Проверка, что корзина не пуста
+            if (Object.keys(cart).length === 0) {
+                closeModal('cart-modal');
+                return;
+            }
+
+            // 1. Получение данных формы
+            const nameInput = document.getElementById('input-name');
+            const addressInput = document.getElementById('input-address');
+            const commentInput = document.getElementById('input-comment');
+            const validationMsg = document.getElementById('validation-message');
+
+            const name = nameInput.value.trim();
+            const address = addressInput.value.trim();
+            const comment = commentInput.value.trim();
+            
+            // Сброс ошибок
+            nameInput.classList.remove('input-error');
+            addressInput.classList.remove('input-error');
+            validationMsg.classList.add('hidden');
+
+            // 2. Валидация
+            let isValid = true;
+            if (name.length < 2) {
+                nameInput.classList.add('input-error');
+                isValid = false;
+            }
+            if (address.length < 5) {
+                addressInput.classList.add('input-error');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                validationMsg.classList.remove('hidden');
+                if(navigator.vibrate) navigator.vibrate(500);
+                return;
+            }
+
+            // 3. Формирование сообщения
+            let msg = `*🎉 НОВЫЙ ЗАКАЗ (Домашний Праздник) 🎉*\n\n`;
+            msg += `👤 *Имя:* ${name}\n`;
+            msg += `📍 *Адрес доставки:* ${address}\n`;
+            if (comment) {
+                msg += `📝 *Комментарий:* ${comment}\n`;
+            }
+            msg += `\n--- Состав Заказа ---\n`;
+            
             let total = 0;
             for (let id in cart) {
                 const item = cart[id];
@@ -1267,17 +1377,33 @@
                 total += sum;
                 msg += `🔸 ${item.name} x${item.qty} шт. = ${sum.toLocaleString('ru-RU')} ₸\n`;
             }
-            msg += `\n💰 *ИТОГО: ${total.toLocaleString('ru-RU')} ₸*\n\n📍 Адрес доставки: `;
+            msg += `\n💰 *ИТОГО К ОПЛАТЕ: ${total.toLocaleString('ru-RU')} ₸*\n`;
             
+            // 4. Отправка
             const url = `https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(msg)}`;
-            window.open(url, '_blank');
+
+            closeModal('cart-modal');
+            
+            // Показываем индикатор загрузки
+            document.getElementById('loading-overlay').classList.add('show');
+
+            // Задержка для анимации загрузки
+            setTimeout(() => {
+                window.open(url, '_blank');
+                document.getElementById('loading-overlay').classList.remove('show');
+            }, 500);
+
+            // Очистка полей формы после отправки
+            nameInput.value = '';
+            addressInput.value = '';
+            commentInput.value = '';
         }
 
         // --- ФУНКЦИИ Скролла и Навигации ---
 
         function setupIntersectionObserver() {
             const sections = document.querySelectorAll('section');
-            const navButtons = document.querySelectorAll('.nav-btn');
+            const navButtons = document.querySelectorAll('.nav-btn-base'); 
             const navBar = document.querySelector('.nav-sticky');
             const navBarHeight = navBar ? navBar.offsetHeight : 0;
             
@@ -1290,7 +1416,7 @@
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     const sectionId = entry.target.id;
-                    const navLink = document.querySelector(`.nav-btn[data-id="${sectionId}"]`);
+                    const navLink = document.querySelector(`.nav-btn-base[data-id="${sectionId}"]`); 
                     
                     if (entry.isIntersecting && navLink) {
                         navButtons.forEach(b => b.classList.remove('active'));
@@ -1317,14 +1443,14 @@
                 behavior: 'smooth'
             });
             
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.nav-btn-base').forEach(b => b.classList.remove('active')); 
             btn.classList.add('active');
         }
 
         // Инициализация при загрузке страницы
         window.onload = () => {
             updateTotal();
-            // setupIntersectionObserver();
+            setupIntersectionObserver();
         };
     </script>
 </body>

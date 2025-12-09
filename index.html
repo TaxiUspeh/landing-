@@ -801,7 +801,8 @@
             <div class="p-6 text-center">
                 <div class="flex justify-end"><button onclick="window.closeModal('lotteryModal')" class="text-gray-500 hover:text-gray-700 text-2xl">×</button></div>
                 <h3 class="text-2xl font-bold text-violet-600 mb-2">🎰 Испытай Удачу!</h3>
-                <p class="text-gray-600 text-sm mb-4">Соберите 3 одинаковых символа и получите скидку!</p>
+                <!-- ИЗМЕНЕНИЕ: ОБНОВЛЕННЫЙ ТЕКСТ -->
+                <p class="text-gray-600 text-sm mb-4">Соберите 3 одинаковых символа и получите скидку или приз !</p>
                 <!-- Счетчик попыток -->
                 <div id="attemptsContainer" class="mb-2 font-bold text-lg text-indigo-600"></div>
                 
@@ -2268,7 +2269,7 @@
                 if (openModal) {
                     window.closeModal(openModal.id);
                 }
-            }
+            } // <-- УДАЛЕНА ЛИШНЯЯ ЗАКРЫВАЮЩАЯ СКОБКА
         });
         
         // --- Specific Assistance Modal Logic (for Подкачать/Прикурить) ---

@@ -336,6 +336,29 @@
         .dark .split-btn-lottery:hover {
             background-color: #5b21b6; /* violet-800 dark */
         }
+        
+        /* Слот-машина */
+        .slot-machine-container {
+            display: flex; justify-content: center; gap: 10px; margin: 20px 0;
+            background-color: #2d3748; padding: 15px; border-radius: 15px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5); border: 4px solid #f59e0b;
+        }
+        .reel {
+            width: 60px; height: 80px; background-color: white; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 3rem;
+            overflow: hidden; border: 2px solid #cbd5e1; position: relative;
+        }
+        @keyframes spinReel {
+            0% { transform: translateY(0); filter: blur(0); }
+            50% { filter: blur(4px); }
+            100% { transform: translateY(-100px); filter: blur(0); }
+        }
+        /* Анимация размытия во время вращения */
+        .spinning .reel-content { animation: spinBlur 0.1s infinite linear; }
+        @keyframes spinBlur {
+            0% { transform: translateY(-10px); filter: blur(2px); opacity: 0.7; }
+            100% { transform: translateY(10px); filter: blur(2px); opacity: 0.7; }
+        }
 
     </style>
 </head>
@@ -396,7 +419,7 @@
                     <span>Заказать Такси</span>
                 </a>
                 
-                <!-- 1.2. ЛОТЕРЕЯ (Вместо еды) -->
+                <!-- 1.2. ЛОТЕРЕЯ -->
                 <button onclick="showLotteryPrize()"
                     class="btn-hover split-btn-part split-btn-lottery">
                     <span>🎰 Лотерея</span>
@@ -768,6 +791,43 @@
                class="text-green-400 hover:text-green-300 underline">WhatsApp-канал</a>
         </p>
     </footer>
+
+
+    <!-- ========================================================= -->
+    <!-- 7. МОДАЛЬНОЕ ОКНО: ЛОТЕРЕЯ (LOTTERY) -->
+    <!-- ========================================================= -->
+    <div id="lotteryModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6 text-center">
+                <div class="flex justify-end"><button onclick="window.closeModal('lotteryModal')" class="text-gray-500 hover:text-gray-700 text-2xl">×</button></div>
+                <h3 class="text-2xl font-bold text-violet-600 mb-2">🎰 Испытай Удачу!</h3>
+                <p class="text-gray-600 text-sm mb-4">Соберите 3 одинаковых символа и получите скидку!</p>
+                <!-- Счетчик попыток -->
+                <div id="attemptsContainer" class="mb-2 font-bold text-lg text-indigo-600"></div>
+                
+                <!-- Барабаны -->
+                <div class="slot-machine-container">
+                    <div class="reel" id="reel1"><div class="reel-content">🍒</div></div>
+                    <div class="reel" id="reel2"><div class="reel-content">🍋</div></div>
+                    <div class="reel" id="reel3"><div class="reel-content">🍇</div></div>
+                </div>
+                
+                <!-- Результат -->
+                <div id="lotteryResult" class="min-h-[60px] flex items-center justify-center">
+                    <p class="text-gray-500 italic">Нажмите кнопку, чтобы крутить!</p>
+                </div>
+                
+                <!-- Кнопка КРУТИТЬ -->
+                <button id="spinButton" onclick="spinSlots()" 
+                    class="mt-4 bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-600 hover:to-fuchsia-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105 w-full text-lg">
+                    КРУТИТЬ! 🎲
+                </button>
+                <!-- Таймер до сброса -->
+                <p id="cooldownTimer" class="hidden mt-3 text-red-500 font-bold text-sm"></p>
+            </div>
+        </div>
+    </div>
+
 
     <!-- ========================================================= -->
     <!-- 1. МОДАЛЬНОЕ ОКНО: ТАКСИ (TAXI) -->
@@ -1244,6 +1304,8 @@
         </div>
     </div>
 
+    <div id="alertModal" class="hidden"></div> 
+
     <!-- ========================================================= -->
     <!-- FIREBASE и JAVASCRIPT ЛОГИКА -->
     <!-- ========================================================= -->
@@ -1272,8 +1334,6 @@
         const MOVER_PRICE_PER_HOUR = 3000; 
         
         // --- ИСПРАВЛЕНИЕ: РАЗДЕЛЕНИЕ СЧЕТЧИКОВ ---
-        // activeStopCount: следит за количеством текущих полей (макс 3)
-        // uniqueStopId: постоянно растет для уникальных ID элементов
         let activeStopCount = 0; 
         let uniqueStopId = 0; 
 
@@ -1305,6 +1365,176 @@
             'auction': { id: 'auctionModal', formId: 'auctionForm', title: 'АУКЦИОН', prefix: '🔨 ЗАКАЗ: АУКЦИОН (ЦЕНА КЛИЕНТА)' },
         };
         // ------------------------------------
+
+        // --- ЛОГИКА СЛОТ-МАШИНЫ (3 Попытки) - ВОССТАНОВЛЕНА ---
+        const symbols = ['🍒', '🍋', '🍇', '🍉', '💎', '7️⃣', '🚕'];
+
+        function getLotteryState() {
+            const stored = localStorage.getItem('lotteryState_v2'); 
+            if (stored) return JSON.parse(stored);
+            return { count: 3, lastReset: 0 }; 
+        }
+
+        function saveLotteryState(state) {
+            localStorage.setItem('lotteryState_v2', JSON.stringify(state));
+        }
+
+        function checkLotteryCooldown() {
+            const spinButton = document.getElementById('spinButton');
+            const resultText = document.getElementById('lotteryResult');
+            const cooldownText = document.getElementById('cooldownTimer');
+            const attemptsText = document.getElementById('attemptsContainer');
+
+            let state = getLotteryState();
+            const now = new Date().getTime();
+            const twentyFourHours = 24 * 60 * 60 * 1000;
+
+            // Если время последнего сброса было более 24 часов назад, обновляем счетчик
+            if (state.lastReset === 0 || (now - state.lastReset > twentyFourHours)) {
+                if (state.lastReset !== 0 && now - state.lastReset > twentyFourHours) {
+                     state = { count: 3, lastReset: 0 }; 
+                     saveLotteryState(state);
+                }
+            }
+
+            if (state.count > 0) {
+                if(spinButton) {
+                    spinButton.disabled = false;
+                    spinButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+                if(cooldownText) cooldownText.classList.add('hidden');
+                if(attemptsText) attemptsText.textContent = `Осталось попыток: ${state.count} из 3`;
+                if (resultText && (resultText.innerHTML.includes('Лимит') || resultText.innerHTML.includes('ПОБЕДА'))) {
+                     resultText.innerHTML = '<p class="text-gray-500 italic">Нажмите кнопку, чтобы крутить!</p>';
+                }
+                return true;
+            } else {
+                const diff = now - state.lastReset;
+                if (diff < twentyFourHours) {
+                    const remaining = twentyFourHours - diff;
+                    const hours = Math.floor(remaining / (1000 * 60 * 60));
+                    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    if(spinButton) {
+                        spinButton.disabled = true;
+                        spinButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                    if(cooldownText) {
+                        cooldownText.classList.remove('hidden');
+                        cooldownText.textContent = `Новые попытки через: ${hours} ч. ${minutes} мин.`;
+                    }
+                    if(attemptsText) attemptsText.textContent = `Попытки на сегодня исчерпаны`;
+                    if(resultText) resultText.innerHTML = '<p class="text-orange-500 font-bold">Лимит на сегодня исчерпан!</p>';
+                    return false;
+                } else {
+                    state = { count: 3, lastReset: 0 };
+                    saveLotteryState(state);
+                    return checkLotteryCooldown();
+                }
+            }
+        }
+
+        window.openLotteryModal = function() {
+            checkLotteryCooldown();
+            window.openModal('lotteryModal');
+        }
+        
+        // Привязка к кнопке в HTML
+        window.showLotteryPrize = function() {
+            window.openLotteryModal();
+        }
+
+        window.spinSlots = function() {
+            if (!checkLotteryCooldown()) return;
+
+            const spinButton = document.getElementById('spinButton');
+            const resultText = document.getElementById('lotteryResult');
+
+            if(spinButton) spinButton.disabled = true;
+            if(resultText) resultText.innerHTML = '<p class="text-violet-500 font-bold animate-pulse">Удачи!...</p>';
+
+            const reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
+            reels.forEach(reel => { if(reel) reel.classList.add('spinning') });
+
+            const isWin = Math.random() < 0.1; // 10% Chance
+            let finalSymbols = [];
+
+            if (isWin) {
+                const winningSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+                finalSymbols = [winningSymbol, winningSymbol, winningSymbol];
+            } else {
+                do {
+                    finalSymbols = [
+                        symbols[Math.floor(Math.random() * symbols.length)],
+                        symbols[Math.floor(Math.random() * symbols.length)],
+                        symbols[Math.floor(Math.random() * symbols.length)]
+                    ];
+                } while (finalSymbols[0] === finalSymbols[1] && finalSymbols[1] === finalSymbols[2]);
+            }
+
+            setTimeout(() => stopReel(0, finalSymbols[0]), 1000);
+            setTimeout(() => stopReel(1, finalSymbols[1]), 1500);
+            setTimeout(() => {
+                stopReel(2, finalSymbols[2]);
+                finishSpin(isWin);
+            }, 2000);
+        }
+
+        function stopReel(index, symbol) {
+            const reel = document.getElementById(`reel${index + 1}`);
+            if(reel) {
+                reel.classList.remove('spinning');
+                reel.innerHTML = `<div class="reel-content text-4xl font-bold">${symbol}</div>`;
+            }
+        }
+
+        function finishSpin(isWin) {
+            const resultText = document.getElementById('lotteryResult');
+            let state = getLotteryState();
+            const now = new Date().getTime();
+
+            if (state.count === 3) {
+                 state.lastReset = now;
+            }
+
+            state.count--;
+            if(state.count < 0) state.count = 0;
+            saveLotteryState(state);
+
+            if (isWin) {
+                const winCode = Date.now().toString().slice(-5);
+                if(resultText) {
+                    resultText.innerHTML = `
+                        <div class="text-green-600 font-bold text-xl animate-bounce mb-2">
+                            🎉 ПОБЕДА! 🎉
+                        </div>
+                        <p class="text-sm text-gray-700 mb-3">Выпало 3 одинаковых символа!</p>
+                        <a href="https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent('Здравствуйте! 🎰 Я выиграл в лотерее на сайте! Код выигрыша: ' + winCode)}" 
+                           target="_blank"
+                           class="inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transition transform hover:scale-110 animate-pulse">
+                            📩 Отправить выигрыш оператору
+                        </a>
+                        <p class="text-xs text-gray-400 mt-2">Код: ${winCode}</p>
+                    `;
+                }
+            } else {
+                const predictions = [
+                    "Удача любит терпеливых!",
+                    "Сегодня не повезло, повезет в любви! ❤️",
+                    "Ваше такси приедет быстрее!",
+                    "Звезды говорят: еще разок!",
+                    "Почти получилось! 🚕"
+                ];
+                const rnd = predictions[Math.floor(Math.random() * predictions.length)];
+                if(resultText) resultText.innerHTML = `<div class="text-gray-800 font-semibold">😢 Мимо!<br><span class="text-sm text-violet-600 italic">"${rnd}"</span></div>`;
+            }
+            
+            checkLotteryCooldown();
+        }
+
+        // КОНЕЦ БЛОКА ЛОТЕРЕИ
+        // =========================================================
+
 
         /**
          * Инициализирует Firebase и выполняет аутентификацию.
@@ -1524,14 +1754,14 @@
             const dismissKey = 'announcement_dismissed_v1';
             // Проверяем, был ли баннер закрыт.
             if (localStorage.getItem(dismissKey) === 'true') {
-                announcementBar.classList.add('hidden');
+                if(announcementBar) announcementBar.classList.add('hidden');
             } else {
-                announcementBar.classList.remove('hidden');
+                if(announcementBar) announcementBar.classList.remove('hidden');
             }
         }
 
         window.dismissAnnouncement = function() {
-            announcementBar.classList.add('hidden');
+            if(announcementBar) announcementBar.classList.add('hidden');
             localStorage.setItem('announcement_dismissed_v1', 'true');
         }
 
@@ -1551,8 +1781,11 @@
             const formattedNow = getFormattedCurrentTime();
             
             // Устанавливаем текущее время для полей предзаказа
-            document.getElementById('taxiDateTime').value = formattedNow;
-            document.getElementById('cargoDateTime').value = formattedNow;
+            const taxiDateTime = document.getElementById('taxiDateTime');
+            const cargoDateTime = document.getElementById('cargoDateTime');
+
+            if(taxiDateTime) taxiDateTime.value = formattedNow;
+            if(cargoDateTime) cargoDateTime.value = formattedNow;
             
             updateCargoPrice(); 
             updateTaxiPrice(); 
@@ -1572,6 +1805,8 @@
             if (mode === 'main') {
                 buttonEl = document.getElementById('locationBtn');
                 textEl = document.getElementById('locationBtnText');
+                if (!buttonEl || !textEl) return;
+                
                 if (isLoading) {
                     textEl.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Определяем...';
                     buttonEl.disabled = true;
@@ -1630,17 +1865,19 @@
 
                     switch (trigger) {
                         case 'main':
-                            locationResultEl.classList.remove('hidden');
-                            locationAddressEl.textContent = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
-                            locationAddressEl.href = yandexMapUrl; 
-                            locationAddressEl.title = 'Открыть местоположение на карте';
+                            if(locationResultEl) locationResultEl.classList.remove('hidden');
+                            if(locationAddressEl) {
+                                locationAddressEl.textContent = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
+                                locationAddressEl.href = yandexMapUrl; 
+                                locationAddressEl.title = 'Открыть местоположение на карте';
+                            }
 
                             setAllLocationFields(currentGeolocatedAddress);
                             
                             // Обновление основной WhatsApp ссылки
                             let whatsappMessage = `${currentGeolocatedAddress} - [Адрес КУДА]`;
                             const encodedText = encodeURIComponent(whatsappMessage);
-                            whatsappLinkEl.href = `https://wa.me/${PHONE_NUMBER}?text=${encodedText}`;
+                            if(whatsappLinkEl) whatsappLinkEl.href = `https://wa.me/${PHONE_NUMBER}?text=${encodedText}`;
 
                             openOrUpdateMessageModal('Готово!', 'Ваше местоположение (координаты и ссылка на карту) автоматически добавлено во все формы заказа!', false);
                             return;
@@ -1674,8 +1911,8 @@
                     }
                     
                     if (trigger === 'main') {
-                        locationResultEl.classList.add('hidden');
-                        whatsappLinkEl.href = originalWhatsappText; // Сброс
+                        if(locationResultEl) locationResultEl.classList.add('hidden');
+                        if(whatsappLinkEl) whatsappLinkEl.href = originalWhatsappText; // Сброс
                     }
                     
                     openOrUpdateMessageModal('Ошибка', errorMessage, true);
@@ -1808,22 +2045,21 @@
         
         /**
          * Открывает или обновляет модальное окно с сообщением.
-         * @param {string} title - Заголовок модального окна.
-         * @param {string} message - Содержимое сообщения (поддерживает HTML).
-         * @param {boolean} isError - Флаг ошибки (красный цвет).
-         * @param {boolean} showButton - Показывать ли кнопку "OK".
          */
         function openOrUpdateMessageModal(title, message, isError = false, showButton = true) {
             let modal = document.getElementById('alertModal');
             
             // 1. Если модальное окно не существует, создаем его
-            if (!modal) {
+            if (!modal || modal.classList.contains('hidden')) {
+                // Если модальное окно скрыто, оно могло быть удалено. Пересоздаем.
+                if (modal) modal.remove();
+                
                 const modalHtml = `
                     <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                         <div id="alertModalContent" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center dark:bg-gray-800 dark:text-gray-100">
                             <h3 id="alertModalTitle" class="text-xl font-bold mb-4"></h3>
                             <p id="alertModalMessage" class="mb-6 whitespace-pre-line"></p>
-                            <button id="alertModalButton" onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
+                            <button id="alertModalButton" onclick="document.getElementById('alertModal').classList.add('hidden')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
                                 OK
                             </button>
                         </div>
@@ -1831,7 +2067,9 @@
                 `;
                 document.body.insertAdjacentHTML('beforeend', modalHtml);
                 modal = document.getElementById('alertModal');
+                modal.classList.remove('hidden'); // Убеждаемся, что модальное окно видимо
             }
+
 
             // 2. Обновляем содержимое
             const titleEl = document.getElementById('alertModalTitle');
@@ -1859,42 +2097,6 @@
              openOrUpdateMessageModal(title, message, isError, true);
         }
 
-        /**
-         * Запускает симуляцию розыгрыша лотереи.
-         */
-        window.startLotterySimulation = function() {
-            // 1. Показываем состояние "Розыгрыш" со спиннером
-            openOrUpdateMessageModal(
-                '🎰 Запускаем розыгрыш...', 
-                'Подождите, барабан крутится...<br><i class="fas fa-spinner fa-spin text-4xl mt-3 text-violet-500"></i>', 
-                false, 
-                false // Скрываем кнопку OK во время розыгрыша
-            ); 
-
-            // 2. Ожидаем 2 секунды
-            setTimeout(() => {
-                // 3. Показываем результат
-                openOrUpdateMessageModal(
-                    '😢 Сегодня не Ваш день!', 
-                    'Эх, сегодня не повезло! 🎲\nПриз уже разыгран или пока недоступен. Попытайте удачу завтра!', 
-                    true, // Используем красный цвет (isError=true) для "не повезло"
-                    true // Показываем кнопку OK
-                );
-            }, 2000); // 2000 мс = 2 секунды
-        }
-
-        /**
-         * Вызывает симуляцию при нажатии на кнопку "Лотерея".
-         */
-        window.showLotteryPrize = function() {
-            startLotterySimulation(); 
-        }
-
-        // =========================================================
-        // === КОНЕЦ ЛОГИКИ МОДАЛЬНЫХ ОКОН (ОБНОВЛЕННАЯ ЛОГИКА) ===
-        // =========================================================
-
-
         // =========================================================
         // === ЛОГИКА МОДАЛЬНЫХ ОКОН И ФОРМ (ОСТАЛЬНОЕ) ===
         // =========================================================
@@ -1913,12 +2115,15 @@
                 
                 const formattedNow = getFormattedCurrentTime();
                 if (modalId === 'taxiModal') {
-                    document.getElementById('taxiDateTime').value = formattedNow;
+                    const taxiDateTime = document.getElementById('taxiDateTime');
+                    if(taxiDateTime) taxiDateTime.value = formattedNow;
                     updateTaxiPrice(); 
                 }
                 if (modalId === 'cargoModal') {
-                    document.getElementById('cargoDateTime').value = formattedNow;
-                    document.getElementById('cargoMovers').value = '0'; 
+                    const cargoDateTime = document.getElementById('cargoDateTime');
+                    if(cargoDateTime) cargoDateTime.value = formattedNow;
+                    const cargoMovers = document.getElementById('cargoMovers');
+                    if(cargoMovers) cargoMovers.value = '0'; 
                     updateCargoPrice(); 
                 }
                 
@@ -1948,19 +2153,24 @@
                 if (form) form.reset();
                 
                 if (modalId === 'assistanceModal') {
-                    document.getElementById('carDetails').classList.add('hidden');
-                    document.getElementById('assistanceType').value = '';
+                    const carDetails = document.getElementById('carDetails');
+                    const assistanceType = document.getElementById('assistanceType');
+                    if(carDetails) carDetails.classList.add('hidden');
+                    if(assistanceType) assistanceType.value = '';
                 }
                 
                 // Сброс динамических полей
                 const formattedNow = getFormattedCurrentTime();
                 if (modalId === 'taxiModal') {
-                    document.getElementById('taxiDateTime').value = formattedNow;
+                    const taxiDateTime = document.getElementById('taxiDateTime');
+                    if(taxiDateTime) taxiDateTime.value = formattedNow;
                     updateTaxiPrice(); 
                 }
                 if (modalId === 'cargoModal') {
-                    document.getElementById('cargoDateTime').value = formattedNow;
-                    document.getElementById('cargoMovers').value = '0'; 
+                    const cargoDateTime = document.getElementById('cargoDateTime');
+                    if(cargoDateTime) cargoDateTime.value = formattedNow;
+                    const cargoMovers = document.getElementById('cargoMovers');
+                    if(cargoMovers) cargoMovers.value = '0'; 
                     updateCargoPrice(); 
                 }
             }
@@ -1999,7 +2209,7 @@
                 </button>
             `;
             
-            stopsContainer.appendChild(stopDiv);
+            if(stopsContainer) stopsContainer.appendChild(stopDiv);
             setAddressHistory(); 
             if (mode === 'taxi') updateTaxiPrice();
         }
@@ -2018,10 +2228,12 @@
         }
 
         window.showPWAInstructions = function() {
-            document.getElementById('pwaModal').classList.remove('hidden');
+            const pwaModal = document.getElementById('pwaModal');
+            if(pwaModal) pwaModal.classList.remove('hidden');
         }
         window.showPartnerModal = function() {
-            document.getElementById('partnerModal').classList.remove('hidden');
+            const partnerModal = document.getElementById('partnerModal');
+            if(partnerModal) partnerModal.classList.remove('hidden');
         }
 
 
@@ -2037,7 +2249,8 @@
 
         document.querySelectorAll('.close-btn').forEach(button => {
             button.addEventListener('click', (e) => {
-                window.closeModal(e.target.closest('button').getAttribute('data-modal'));
+                const modalId = e.target.closest('button').getAttribute('data-modal');
+                if(modalId) window.closeModal(modalId);
             });
         });
 
@@ -2120,11 +2333,14 @@
                 };
                 
                 const handlePreorder = (dateTimeId, basePrefix) => {
-                    const dateTimeInput = document.getElementById(dateTimeId).value;
+                    const dateTimeInput = document.getElementById(dateTimeId);
+                    if (!dateTimeInput) return basePrefix;
+
+                    const dateTimeValue = dateTimeInput.value;
                     let prefixMessage = basePrefix;
                     
-                    if (dateTimeInput) {
-                        const selectedTime = new Date(dateTimeInput);
+                    if (dateTimeValue) {
+                        const selectedTime = new Date(dateTimeValue);
                         const currentTime = new Date();
                         
                         // Проверяем, если время выбрано в будущем (с запасом 5 минут)
@@ -2182,12 +2398,16 @@
                         break;
                         
                     case 'auction':
-                        const auctionPrice = document.getElementById('auctionPrice').value;
+                        const auctionPriceInput = document.getElementById('auctionPrice');
+                        const auctionPrice = auctionPriceInput ? auctionPriceInput.value : '';
+                        
                         if (!auctionPrice || parseInt(auctionPrice) < 500) {
                             requiredFieldsMissing = true;
                             // Отображаем ошибку в модальном окне аукциона
-                            statusEl.textContent = 'Пожалуйста, введите корректную цену (минимум 500 KZT).';
-                            statusEl.classList.remove('hidden');
+                            if(statusEl) {
+                                statusEl.textContent = 'Пожалуйста, введите корректную цену (минимум 500 KZT).';
+                                statusEl.classList.remove('hidden');
+                            }
                             return;
                         }
                         message += getVal('auctionFrom', 'Откуда', true);
@@ -2215,7 +2435,7 @@
                         
                     case 'cargo':
                         const cargoMoversSelect = document.getElementById('cargoMovers');
-                        const moversCount = parseInt(cargoMoversSelect.value);
+                        const moversCount = cargoMoversSelect ? parseInt(cargoMoversSelect.value) : 0;
                         const totalPrice = CARGO_BASE_PRICE + (moversCount * MOVER_PRICE_PER_HOUR);
                         const formattedPrice = totalPrice.toLocaleString('ru-RU');
                         
@@ -2251,12 +2471,16 @@
                         break;
                         
                     case 'assistance':
-                        const type = document.getElementById('assistanceType').value;
+                        const typeInput = document.getElementById('assistanceType');
+                        const type = typeInput ? typeInput.value : '';
+                        
                         if (!type) {
                             requiredFieldsMissing = true;
                             // Отображаем ошибку в модальном окне
-                            statusEl.textContent = 'Пожалуйста, выберите тип требуемой помощи.';
-                            statusEl.classList.remove('hidden');
+                            if(statusEl) {
+                                statusEl.textContent = 'Пожалуйста, выберите тип требуемой помощи.';
+                                statusEl.classList.remove('hidden');
+                            }
                             return;
                         }
 
@@ -2278,7 +2502,7 @@
 
                 if (requiredFieldsMissing) {
                     // Если не было выбрано поле помощи, но ошибка пробросилась выше (как в аукционе)
-                    if (statusEl.classList.contains('hidden')) {
+                    if (statusEl && statusEl.classList.contains('hidden')) {
                          statusEl.textContent = 'Пожалуйста, заполните все обязательные поля.';
                          statusEl.classList.remove('hidden');
                     }

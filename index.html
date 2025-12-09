@@ -269,15 +269,12 @@
             box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5);
         }
         /* Dark Mode Geo/Plus/Minus buttons */
-        .dark .geo-btn { background-color: #b45309; } /* amber-800 dark */
-        .dark .geo-btn:hover { background-color: #92400e; } /* amber-900 dark */
-        .dark .add-stop-btn { background-color: #047857; } /* emerald-700 dark */
-        .dark .add-stop-btn:hover { background-color: #065f46; /* emerald-800 dark */
-        }
-        .dark .remove-stop-btn { background-color: #b91c1c; /* red-700 dark */
-        }
-        .dark .remove-stop-btn:hover { background-color: #991b1b; /* red-800 dark */
-        }
+        .dark .geo-btn { background-color: #b45309; } 
+        .dark .geo-btn:hover { background-color: #92400e; } 
+        .dark .add-stop-btn { background-color: #047857; } 
+        .dark .add-stop-btn:hover { background-color: #065f46; }
+        .dark .remove-stop-btn { background-color: #b91c1c; }
+        .dark .remove-stop-btn:hover { background-color: #991b1b; }
         
         /* Стили для новой двойной кнопки */
         .split-btn {
@@ -1273,7 +1270,12 @@
         const PHONE_NUMBER = '77770649648'; 
         const CARGO_BASE_PRICE = 6000; 
         const MOVER_PRICE_PER_HOUR = 3000; 
-        let stopCounter = 0; 
+        
+        // --- ИСПРАВЛЕНИЕ: РАЗДЕЛЕНИЕ СЧЕТЧИКОВ ---
+        // activeStopCount: следит за количеством текущих полей (макс 3)
+        // uniqueStopId: постоянно растет для уникальных ID элементов
+        let activeStopCount = 0; 
+        let uniqueStopId = 0; 
 
         const INTERCITY_PRICES = {
             "усть-каменогорск": "от 4800–6210 тг",
@@ -1640,7 +1642,7 @@
                             const encodedText = encodeURIComponent(whatsappMessage);
                             whatsappLinkEl.href = `https://wa.me/${PHONE_NUMBER}?text=${encodedText}`;
 
-                            displayMessageModal('Готово!', 'Ваше местоположение (координаты и ссылка на карту) автоматически добавлено во все формы заказа!', false);
+                            openOrUpdateMessageModal('Готово!', 'Ваше местоположение (координаты и ссылка на карту) автоматически добавлено во все формы заказа!', false);
                             return;
 
                         case 'taxi': inputId = 'taxiFrom'; break;
@@ -1657,7 +1659,7 @@
                     if (input) {
                         input.value = currentGeolocatedAddress;
                     }
-                    displayMessageModal('Адрес определен', successMessage, false);
+                    openOrUpdateMessageModal('Адрес определен', successMessage, false);
                     
                     if (trigger === 'taxi') {
                         updateTaxiPrice();
@@ -1676,7 +1678,7 @@
                         whatsappLinkEl.href = originalWhatsappText; // Сброс
                     }
                     
-                    displayMessageModal('Ошибка', errorMessage, true);
+                    openOrUpdateMessageModal('Ошибка', errorMessage, true);
                     
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -1799,45 +1801,103 @@
                 cargoPriceNoteEl.classList.add('text-gray-600');
             }
         }
-        // =========================================================
         
         // =========================================================
-        // === ЛОГИКА ПРИЗА (ЛОТЕРЕИ) ===
+        // === ЛОГИКА МОДАЛЬНЫХ ОКОН И ФОРМ (ОБНОВЛЕННАЯ ЛОГИКА) ===
         // =========================================================
+        
         /**
-         * Выводит шуточное сообщение о лотерее.
+         * Открывает или обновляет модальное окно с сообщением.
+         * @param {string} title - Заголовок модального окна.
+         * @param {string} message - Содержимое сообщения (поддерживает HTML).
+         * @param {boolean} isError - Флаг ошибки (красный цвет).
+         * @param {boolean} showButton - Показывать ли кнопку "OK".
+         */
+        function openOrUpdateMessageModal(title, message, isError = false, showButton = true) {
+            let modal = document.getElementById('alertModal');
+            
+            // 1. Если модальное окно не существует, создаем его
+            if (!modal) {
+                const modalHtml = `
+                    <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                        <div id="alertModalContent" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center dark:bg-gray-800 dark:text-gray-100">
+                            <h3 id="alertModalTitle" class="text-xl font-bold mb-4"></h3>
+                            <p id="alertModalMessage" class="mb-6 whitespace-pre-line"></p>
+                            <button id="alertModalButton" onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                modal = document.getElementById('alertModal');
+            }
+
+            // 2. Обновляем содержимое
+            const titleEl = document.getElementById('alertModalTitle');
+            const messageEl = document.getElementById('alertModalMessage');
+            const buttonEl = document.getElementById('alertModalButton');
+            
+            if (titleEl) {
+                titleEl.textContent = title;
+                titleEl.className = `text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}`;
+            }
+            if (messageEl) {
+                messageEl.innerHTML = message;
+            }
+            if (buttonEl) {
+                if (showButton) {
+                    buttonEl.classList.remove('hidden');
+                } else {
+                    buttonEl.classList.add('hidden');
+                }
+            }
+        }
+        
+        // Переименовываем старую функцию для совместимости, используя новый функционал
+        window.displayMessageModal = function(title, message, isError = false) {
+             openOrUpdateMessageModal(title, message, isError, true);
+        }
+
+        /**
+         * Запускает симуляцию розыгрыша лотереи.
+         */
+        window.startLotterySimulation = function() {
+            // 1. Показываем состояние "Розыгрыш" со спиннером
+            openOrUpdateMessageModal(
+                '🎰 Запускаем розыгрыш...', 
+                'Подождите, барабан крутится...<br><i class="fas fa-spinner fa-spin text-4xl mt-3 text-violet-500"></i>', 
+                false, 
+                false // Скрываем кнопку OK во время розыгрыша
+            ); 
+
+            // 2. Ожидаем 2 секунды
+            setTimeout(() => {
+                // 3. Показываем результат
+                openOrUpdateMessageModal(
+                    '😢 Сегодня не Ваш день!', 
+                    'Эх, сегодня не повезло! 🎲\nПриз уже разыгран или пока недоступен. Попытайте удачу завтра!', 
+                    true, // Используем красный цвет (isError=true) для "не повезло"
+                    true // Показываем кнопку OK
+                );
+            }, 2000); // 2000 мс = 2 секунды
+        }
+
+        /**
+         * Вызывает симуляцию при нажатии на кнопку "Лотерея".
          */
         window.showLotteryPrize = function() {
-            const title = '🎰 Лотерея Такси «Успех»';
-            const message = 'Эх, сегодня не повезло! 🎲\nПриз уже разыгран или пока недоступен. Попытайте удачу завтра!';
-            displayMessageModal(title, message, false); 
+            startLotterySimulation(); 
         }
+
+        // =========================================================
+        // === КОНЕЦ ЛОГИКИ МОДАЛЬНЫХ ОКОН (ОБНОВЛЕННАЯ ЛОГИКА) ===
+        // =========================================================
 
 
         // =========================================================
-        // === ЛОГИКА МОДАЛЬНЫХ ОКОН И ФОРМ ===
+        // === ЛОГИКА МОДАЛЬНЫХ ОКОН И ФОРМ (ОСТАЛЬНОЕ) ===
         // =========================================================
-
-        /**
-         * Демонстрационное модальное окно (для оповещений)
-         */
-        function displayMessageModal(title, message, isError = false) {
-            const existingModal = document.getElementById('alertModal');
-            if (existingModal) existingModal.remove();
-
-            const modalHtml = `
-                <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                    <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center dark:bg-gray-800 dark:text-gray-100">
-                        <h3 class="text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}">${title}</h3>
-                        <p class="mb-6 whitespace-pre-line">${message}</p>
-                        <button onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
-                            OK
-                        </button>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-        }
 
         window.openModal = function(modalId) {
             const modal = document.getElementById(modalId);
@@ -1881,7 +1941,7 @@
                     if (stopsContainerTaxi) stopsContainerTaxi.innerHTML = '';
                     if (stopsContainerAuction) stopsContainerAuction.innerHTML = '';
                     
-                    stopCounter = 0; 
+                    activeStopCount = 0; // СБРОС АКТИВНЫХ ОСТАНОВОК (исправленная логика)
                 }
                 
                 const form = document.getElementById(modalId.replace('Modal', 'Form'));
@@ -1907,22 +1967,27 @@
         }
 
         /**
-         * Добавляет дополнительное поле адреса
+         * Добавляет дополнительное поле адреса (ИСПРАВЛЕНО)
          */
         window.addStop = function(containerId, mode) {
-            if (stopCounter >= 3) {
-                displayMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false);
+            // Проверяем ЛИМИТ по activeStopCount
+            if (activeStopCount >= 3) {
+                openOrUpdateMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false);
                 return;
             }
             
-            stopCounter++;
+            activeStopCount++; // Увеличиваем количество активных полей
+            uniqueStopId++; // Увеличиваем уникальный ID (всегда растет)
+            
             const stopsContainer = document.getElementById(containerId);
-            const stopId = `${containerId}Input${stopCounter}`;
-            const stopLabel = `Дополнительный адрес ${stopCounter}`;
+            
+            // Используем uniqueStopId для генерации ID, чтобы избежать дубликатов
+            const stopId = `${containerId}Input${uniqueStopId}`; 
+            const stopLabel = `Дополнительный адрес`; 
             
             const stopDiv = document.createElement('div');
             stopDiv.className = "flex space-x-2 additional-stop-item input-with-plus-btn"; 
-            const divId = `stopDiv${containerId}${stopCounter}`;
+            const divId = `stopDiv${containerId}${uniqueStopId}`;
             stopDiv.id = divId;
             
             const inputEvents = (mode === 'taxi') ? 'oninput="updateTaxiPrice()"' : '';
@@ -1940,14 +2005,14 @@
         }
         
         /**
-         * Удаляет дополнительное поле адреса
+         * Удаляет дополнительное поле адреса (ИСПРАВЛЕНО)
          */
         window.removeStop = function(divId, mode) {
             const elementToRemove = document.getElementById(divId);
             if (elementToRemove) {
                 elementToRemove.remove();
-                stopCounter--;
-                if (stopCounter < 0) stopCounter = 0;
+                activeStopCount--; // Уменьшаем только счетчик активных полей
+                if (activeStopCount < 0) activeStopCount = 0;
             }
             if (mode === 'taxi') updateTaxiPrice();
         }

@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ffffff">
+    <title>Шашлычный Двор | Доставка</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* --- НАСТРОЙКИ APP-STYLE --- */
+        :root {
+            --primary: #cc2525;         /* Основной красный */
+            --primary-dark: #991b1b;    /* Темный красный */
+            --accent: #f59e0b;          /* Оранжевый/Золотой */
+            --bg-app: #f2f3f5;          /* Светло-серый фон приложения */
+            --text-main: #1f2937;
+            --radius-card: 16px;
+            --radius-btn: 12px;
+        }
+
+        body { 
+            font-family: 'Manrope', sans-serif; 
+            background-color: var(--bg-app); 
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent; 
+            padding-bottom: 100px; /* Отступ под нижнюю панель */
+        }
+
+        /* Скрытие скроллбара, но сохранение прокрутки */
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* --- ШАПКА --- */
+        .app-header {
+            background: white;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* --- НАВИГАЦИЯ (Категории) --- */
+        .category-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 12px;
+            padding: 12px 16px;
+            scroll-behavior: smooth;
+        }
+        .cat-btn {
+            white-space: nowrap;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: white;
+            color: #6b7280;
+            font-weight: 600;
+            font-size: 13px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s;
+        }
+        .cat-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 10px rgba(204, 37, 37, 0.3);
+        }
+
+        /* --- КАРТОЧКИ ТОВАРОВ --- */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 0 16px;
+        }
+        .app-card {
+            background: white;
+            border-radius: var(--radius-card);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: transform 0.1s;
+        }
+        .app-card:active { transform: scale(0.97); }
+        
+        .card-img-wrap {
+            height: 120px;
+            background-color: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .card-content { padding: 10px; display: flex; flex-direction: column; flex-grow: 1; }
+        .card-title { font-weight: 700; font-size: 14px; line-height: 1.2; margin-bottom: 4px; }
+        .card-desc { font-size: 11px; color: #6b7280; line-height: 1.3; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .card-footer { margin-top: auto; display: flex; justify-content: space-between; align-items: center; }
+        .price-tag { font-weight: 800; font-size: 15px; color: var(--text-main); }
+        .add-btn-mini {
+            width: 28px; height: 28px;
+            background: #f3f4f6;
+            color: var(--text-main);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px;
+        }
+
+        /* --- ПРОМО БАННЕРЫ --- */
+        .promo-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 12px;
+            padding: 16px;
+            scroll-snap-type: x mandatory;
+        }
+        .promo-card {
+            flex-shrink: 0;
+            width: 85vw;
+            max-width: 320px;
+            height: 160px;
+            border-radius: var(--radius-card);
+            scroll-snap-align: center;
+            position: relative;
+            overflow: hidden;
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 8px 16px -4px rgba(0,0,0,0.2);
+        }
+        .promo-bg-1 { background: linear-gradient(120deg, #cc2525, #7f1d1d); }
+        .promo-bg-2 { background: linear-gradient(120deg, #d97706, #92400e); }
+        
+        /* --- БЛЮДО ДНЯ СТИЛЬ (НОВЫЙ) --- */
+        .daily-special-card {
+            background-color: white;
+            padding: 16px;
+            margin: 16px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            cursor: pointer;
+            border: 2px solid var(--accent);
+        }
+        .daily-special-img {
+            height: 180px;
+            border-radius: 12px;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: flex-end;
+            padding: 12px;
+            background-color: #f3f4f6;
+        }
+
+
+        /* --- МОДАЛЬНЫЕ ОКНА (Bottom Sheet Style) --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 60;
+            display: none;
+            justify-content: center;
+            align-items: flex-end; /* Для мобильных - снизу */
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.open { opacity: 1; }
+        
+        .modal-sheet {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 24px 24px 0 0;
+            padding: 24px;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        @media (min-width: 640px) {
+            .modal-overlay { align-items: center; }
+            .modal-sheet { border-radius: 24px; transform: translateY(20px) scale(0.95); width: 90%; }
+        }
+        .modal-overlay.open .modal-sheet { transform: translateY(0) scale(1); }
+
+        /* Стиль контента модалки */
+        .sheet-handle { width: 40px; height: 4px; background: #e5e7eb; border-radius: 2px; margin: 0 auto 16px; }
+        .modal-img-large {
+            height: 200px;
+            border-radius: 16px;
+            background-color: #f3f4f6;
+            margin-bottom: 20px;
+            background-size: cover; background-position: center;
+            display: flex; align-items: center; justify-content: center;
+        }
+        
+        /* Стиль для модалки полного меню */
+        .full-menu-section {
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+        }
+        .full-menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px dashed #f3f4f6;
+            cursor: pointer;
+        }
+        .full-menu-item:hover { background-color: #fafafa; border-radius: 8px; margin: 0 -8px; padding: 12px 8px; }
+        
+        /* Кнопка закрытия для всех модалок */
+        .modal-close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            background: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            z-index: 70;
+            transition: background 0.1s;
+        }
+        .modal-close-btn:active { background: #e5e7eb; transform: scale(0.95); }
+
+        /* --- НИЖНЯЯ ПАНЕЛЬ (Quick Access) --- */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white;
+            border-top: 1px solid #f3f4f6;
+            padding: 8px 16px 20px; /* Учитываем safe area */
+            display: flex; justify-content: space-around;
+            z-index: 50;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.03);
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            font-size: 10px; font-weight: 600; color: #9ca3af;
+            gap: 4px;
+            width: 60px;
+        }
+        .nav-item i { font-size: 20px; transition: 0.2s; }
+        /* !!! ОБНОВЛЕНИЕ: Кнопка "Меню" теперь открывает модальное окно !!! */
+        .nav-item.active { color: var(--primary); } 
+        .nav-item:active { transform: scale(0.9); }
+
+        /* Плавающая кнопка корзины */
+        .float-cart-btn {
+            position: fixed;
+            bottom: 80px; /* Над навбаром */
+            right: 16px;
+            background: var(--text-main);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            z-index: 55;
+            display: flex; align-items: center; gap: 10px;
+            transform: scale(0);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .float-cart-btn.show { transform: scale(1); }
+
+    </style>
+</head>
+<body>
+
+    <!-- Шапка -->
+    <header class="app-header px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white text-lg shadow-md shadow-red-200">
+                <i class="fas fa-fire"></i>
+            </div>
+            <div>
+                <!-- ИЗМЕНЕНИЕ: Шашлычный Двор -->
+                <h1 class="font-extrabold text-lg leading-none text-gray-900">Шашлычный Двор</h1>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Доставка шашлыка</p>
+            </div>
+        </div>
+        
+        <!-- Кнопки в шапке (Обновлено) -->
+        <div class="flex gap-2">
+            <!-- Кнопка "Фото Шашлыка" -->
+            <a href="https://drive.google.com/file/d/1VkuYb9EvYa7ZiDEAAGS-vCLxUNkQ1H7g/view?usp=drive_link" target="_blank" class="w-9 h-9 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center transition active:bg-gray-200" title="Посмотреть фото шашлыка">
+                <i class="fas fa-camera"></i>
+            </a>
+            <!-- Кнопка Такси -->
+            <a href="https://taxiuspeh.github.io/landing-/" target="_blank" class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center transition active:bg-blue-100">
+                <i class="fas fa-taxi"></i>
+            </a>
+            <!-- Кнопка Звонок -->
+            <a href="tel:+77771789852" class="w-9 h-9 rounded-full bg-green-50 text-green-600 flex items-center justify-center transition active:bg-green-100">
+                <i class="fas fa-phone"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Акции (Горизонтальный скролл) -->
+    <div class="promo-scroll hide-scroll">
+        
+        <div class="promo-card promo-bg-1" onclick="openProductModal('promo_family')">
+            <div class="absolute top-0 right-0 p-4 opacity-20"><i class="fas fa-users text-8xl"></i></div>
+            <span class="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg text-[10px] font-bold self-start mb-2">ХИТ ПРОДАЖ</span>
+            <h3 class="text-2xl font-extrabold leading-tight mb-1">Сет "Семейный"</h3>
+            <p class="text-xs opacity-90 mb-4 font-medium">3.5 кг отборного мяса для компании.</p>
+            <div class="mt-auto flex items-end gap-2">
+                <span class="text-2xl font-black">24 990 ₸</span>
+                <span class="text-sm opacity-70 line-through mb-1">28 000</span>
+            </div>
+        </div>
+
+        <div class="promo-card promo-bg-2" onclick="openChefInquiryModal('promo_catering')">
+            <div class="absolute top-0 right-0 p-4 opacity-20"><i class="fas fa-utensils text-8xl"></i></div>
+            <span class="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg text-[10px] font-bold self-start mb-2">УСЛУГА</span>
+            <h3 class="text-xl font-extrabold leading-tight mb-1">Повар на выезд</h3>
+            <p class="text-xs opacity-90 mb-4 font-medium">Приготовим шашлык на вашем празднике.</p>
+            <button class="mt-auto bg-white text-orange-700 py-2 px-4 rounded-lg text-sm font-bold shadow-sm active:scale-95 transition">Заказать</button>
+        </div>
+
+    </div>
+
+    <!-- !!! НОВАЯ СЕКЦИЯ: БЛЮДО ДНЯ / РЕКОМЕНДАЦИЯ !!! -->
+    <div class="daily-special-card" onclick="openDailySpecialModal('promo_daily_special')">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-star text-yellow-500 text-lg"></i>
+                <h3 class="text-lg font-extrabold text-gray-900">🔥 Рекомендация от Шефа!</h3>
+            </div>
+            <span class="text-xs font-semibold text-red-600">Смотреть ></span>
+        </div>
+        <div id="daily-special-banner" class="daily-special-img">
+            <div class="bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg font-bold text-sm">
+                СКИДКА -10%
+            </div>
+        </div>
+        <div class="mt-3">
+            <p class="font-bold text-base">«Королевский Шашлык» (Мякоть Говядины)</p>
+            <p class="text-sm text-gray-500">Попробуйте наш самый сочный шашлык сегодня по спеццене!</p>
+        </div>
+    </div>
+    <!-- !!! КОНЕЦ НОВОЙ СЕКЦИИ !!! -->
+
+    <!-- Липкая навигация -->
+    <div class="sticky top-[64px] bg-[#f2f3f5] z-30 pb-2">
+        <div class="category-scroll hide-scroll pl-4">
+            <button onclick="scrollToId('lamb', this)" data-id="lamb" class="cat-btn active">🐏 Баранина</button>
+            <button onclick="scrollToId('beef', this)" data-id="beef" class="cat-btn">🐂 Говядина</button>
+            <button onclick="scrollToId('pork', this)" data-id="pork" class="cat-btn">🐖 Свинина</button>
+            <button onclick="scrollToId('chicken', this)" data-id="chicken" class="cat-btn">🐔 Курица</button>
+            <button onclick="scrollToId('sides', this)" data-id="sides" class="cat-btn">🥦 Гарниры</button>
+            <button onclick="scrollToId('sauces', this)" data-id="sauces" class="cat-btn">🌶 Соусы</button>
+        </div>
+    </div>
+
+    <!-- Список товаров -->
+    <div class="pb-6 max-w-2xl mx-auto">
+        
+        <!-- Секция: Баранина -->
+        <div id="lamb" class="mb-6 scroll-mt-32">
+            <div class="px-4 mb-3 flex items-center justify-between">
+                <h2 class="text-lg font-extrabold text-gray-900">Баранина</h2>
+            </div>
+            <div class="product-grid">
+                <!-- Товар 1 -->
+                <div class="app-card" onclick="openProductModal('sh_lamb_meat')">
+                    <div class="card-img-wrap">
+                        <i class="fas fa-drumstick-bite text-4xl text-red-200"></i>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">Мякоть баранины</div>
+                        <div class="card-desc">Нежнейшая мякоть, маринованная в луке и горных травах.</div>
+                        <div class="card-footer">
+                            <div class="price-tag">7 900 ₸</div>
+                            <div class="add-btn-mini"><i class="fas fa-plus"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Товар 2: Бараньи ребрышки -->
+                <div class="app-card" onclick="openProductModal('sh_lamb_ribs')">
+                    <div class="card-img-wrap">
+                        <i class="fas fa-bone text-4xl text-red-200"></i>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">Бараньи ребрышки</div>
+                        <div class="card-desc">Сочные ребрышки на кости, приготовленные на углях.</div>
+                        <div class="card-footer">
+                            <div class="price-tag">6 500 ₸</div>
+                            <div class="add-btn-mini"><i class="fas fa-plus"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Товар 3 -->
+                <div class="app-card" onclick="openProductModal('sh_lula_beef')">
+                    <div class="card-img-wrap">
+                        <i class="fas fa-sausage text-4xl text-red-200"></i>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">Люля-Кебаб</div>
+                        <div class="card-desc">Рубленая говядина с курдюком и специями.</div>
+                        <div class="card-footer">
+                            <div class="price-tag">6 200 ₸</div>
+                            <div class="add-btn-mini"><i class="fas fa-plus"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Секция: Говядина -->
+        <div id="beef" class="mb-6 scroll-mt-32">
+            <div class="px-4 mb-3">
+                <h2 class="text-lg font-extrabold text-gray-900">Говядина</h2>
+            </div>
+            <div class="product-grid">
+                <div class="app-card" onclick="openProductModal('sh_beef_meat')">
+                    <div class="card-img-wrap">
+                        <i class="fas fa-drumstick-bite text-4xl text-red-800"></i>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">Мякоть говядины</div>
+                        <div class="card-desc">Сочный шашлык из мягкой говяжьей вырезки.</div>
+                        <div class="card-footer">
+                            <div class="price-tag">7 800 ₸</div>
+                            <div class="add-btn-mini"><i class="fas fa-plus"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Секция: Свинина -->
+        <div id="pork" class="mb-6 scroll-mt-32">
+            <div class="px-4 mb-3">
+                <h2 class="text-lg font-extrabold text-gray-900">Свинина</h2>
+            </div>
+            <div class="product-grid">
+                <div class="app-card" onclick="openProductModal('sh_pork_neck')">
+                    <div class="card-img-wrap">
+                        <i class="fas fa-bacon text-4xl text-orange-200"></i>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">Свиная шея</div>
+                        <div class="card-desc">Сочный шашлык из шейной части, классика жанра.</div>
+                        <div class="card-footer">
+                            <div class="price-tag">6 800 ₸</div>
+                            <div class="add-btn-mini"><i class="fas fa-plus"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="app-card" onclick="openProductModal('sh_pork_ribs')">
+                    <div class="card-img-wrap">
+                        <i class="fas fa-utensils text-4xl text-orange-200"></i>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">Свиные ребра</div>
+                        <div class="card-desc">Глазированные ребрышки BBQ, пальчики оближешь.</div>
+                        <div class="card-footer">
+                            <div class="price-tag">6 100 ₸</div>
+                            <div class="add-btn-mini"><i class="fas fa-plus"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Секция: Курица -->
+        <div id="chicken" class="mb-6 scroll-mt-32">
+            <div class="px-4 mb-3">
+                <h2 class="text-lg font-extrabold text-gray-900">Курица</h2>
+            </div>
+            <div class="product-grid">
+                <div class="app-card" onclick="openProductModal('sh_chick_fil')">
+                    <div class="card-img-wrap">
+                        <i class="fas fa-drumstick-bite text-4xl text-yellow-200"></i>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">Куриное филе</div>
+                        <div class="card-desc">Диетическое филе в лимонном маринаде.</div>
+                        <div class="card-footer">
+                            <div class="price-tag">5 500 ₸</div>
+                            <div class="add-btn-mini"><i class="fas fa-plus"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="app-card" onclick="openProductModal('sh_chick_wings')">
+                    <div class="card-img-wrap">
+                        <i class="fas fa-feather-alt text-4xl text-yellow-200"></i>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">Крылышки</div>
+                        <div class="card-desc">Острые куриные крылья с хрустящей корочкой.</div>
+                        <div class="card-footer">
+                            <div class="price-tag">4 900 ₸</div>
+                            <div class="add-btn-mini"><i class="fas fa-plus"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Секция: Овощи -->
+        <div id="sides" class="mb-6 scroll-mt-32">
+            <div class="px-4 mb-3">
+                <h2 class="text-lg font-extrabold text-gray-900">Овощи гриль</h2>
+            </div>
+            <div class="product-grid">
+                <div class="app-card" onclick="openProductModal('grill_veg')">
+                    <div class="card-img-wrap">
+                        <i class="fas fa-leaf text-4xl text-green-200"></i>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">Овощное ассорти</div>
+                        <div class="card-desc">Перец, баклажан, томат, цукини на мангале.</div>
+                        <div class="card-footer">
+                            <div class="price-tag">3 500 ₸</div>
+                            <div class="add-btn-mini"><i class="fas fa-plus"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="app-card" onclick="openProductModal('grill_mush')">
+                    <div class="card-img-wrap">
+                        <i class="fas fa-circle text-4xl text-green-200"></i> <!-- mushroom icon fallback -->
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">Грибы на мангале</div>
+                        <div class="card-desc">Шампиньоны с чесночным маслом.</div>
+                        <div class="card-footer">
+                            <div class="price-tag">4 000 ₸</div>
+                            <div class="add-btn-mini"><i class="fas fa-plus"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Секция: Соусы -->
+        <div id="sauces" class="mb-6 scroll-mt-32">
+            <div class="px-4 mb-3">
+                <h2 class="text-lg font-extrabold text-gray-900">Соусы и Хлеб</h2>
+            </div>
+            <div class="product-grid">
+                <div class="app-card" onclick="openProductModal('sauce_saceb')">
+                    <div class="card-content">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="card-title">Сацебели</div>
+                                <div class="card-desc">100 гр</div>
+                            </div>
+                            <div class="price-tag text-sm">500 ₸</div>
+                        </div>
+                        <div class="add-btn-mini mt-2 w-full"><i class="fas fa-plus"></i></div>
+                    </div>
+                </div>
+                <div class="app-card" onclick="openProductModal('lavash')">
+                    <div class="card-content">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="card-title">Лаваш</div>
+                                <div class="card-desc">1 шт</div>
+                            </div>
+                            <div class="price-tag text-sm">300 ₸</div>
+                        </div>
+                        <div class="add-btn-mini mt-2 w-full"><i class="fas fa-plus"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Плавающая кнопка корзины (появляется если есть товары) -->
+    <div id="float-cart" class="float-cart-btn" onclick="openModal('cart-modal')">
+        <div class="bg-yellow-400 text-black text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center" id="cart-badge">0</div>
+        <span>Корзина</span>
+        <span class="opacity-60">|</span>
+        <span id="float-total">0 ₸</span>
+    </div>
+
+    <!-- Bottom Navigation (App Style) -->
+    <nav class="bottom-nav">
+        <a href="https://taxiuspeh.github.io/landing-/" target="_blank" class="nav-item">
+            <i class="fas fa-taxi text-blue-500"></i>
+            <span>Такси</span>
+        </a>
+        <a href="https://wa.me/77771789852" target="_blank" class="nav-item">
+            <i class="fab fa-whatsapp text-green-500"></i>
+            <span>WhatsApp</span>
+        </a>
+        <!-- Кнопка "Меню" открывает модальное окно с полным меню -->
+        <button onclick="openFullMenuModal()" class="nav-item active">
+            <i class="fas fa-utensils"></i>
+            <span>Меню</span>
+        </button>
+        <!-- Кнопка "Фото" -->
+        <a href="https://drive.google.com/file/d/1VkuYb9EvYa7ZiDEAAGS-vCLxUNkQ1H7g/view?usp=drive_link" target="_blank" class="nav-item">
+            <i class="fas fa-images text-red-500"></i>
+            <span>Фото</span>
+        </a>
+        <a href="tel:+77771789852" class="nav-item">
+            <i class="fas fa-phone text-gray-500"></i>
+            <span>Звонок</span>
+        </a>
+    </nav>
+
+
+    <!-- === МОДАЛЬНЫЕ ОКНА === -->
+
+    <!-- 1. PRODUCT DETAIL MODAL -->
+    <div id="product-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('product-modal')">
+        <div class="modal-sheet">
+            <!-- Кнопка закрытия -->
+            <button class="modal-close-btn" onclick="closeModal('product-modal')"><i class="fas fa-times"></i></button>
+            <div class="sheet-handle"></div>
+            
+            <div id="modal-img" class="modal-img-large">
+                <i id="modal-icon" class="fas fa-image text-5xl text-gray-300"></i>
+            </div>
+
+            <div class="mb-6">
+                <h2 id="modal-title" class="text-2xl font-extrabold text-gray-900 mb-2">Название блюда</h2>
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">1 КГ / Порция</span>
+                    <span class="text-green-600 text-xs font-bold"><i class="fas fa-check-circle"></i> В наличии</span>
+                </div>
+                <p id="modal-desc" class="text-gray-600 text-sm leading-relaxed mb-4">Подробное описание состава блюда, вкусовых качеств и способа приготовления.</p>
+                <div class="bg-yellow-50 p-3 rounded-xl border border-yellow-100">
+                    <p class="text-xs text-yellow-800"><b>Состав:</b> <span id="modal-ingred">Ингредиенты...</span></p>
+                </div>
+            </div>
+
+            <!-- Footer модалки -->
+            <div class="flex gap-3 items-center pt-2 border-t border-gray-100 mt-auto">
+                <div class="flex items-center bg-gray-100 rounded-xl px-2 h-12">
+                    <button id="btn-minus" class="w-8 h-full text-lg font-bold text-gray-500 active:text-gray-900">-</button>
+                    <span id="modal-qty" class="w-8 text-center font-bold text-lg">1</span>
+                    <button id="btn-plus" class="w-8 h-full text-lg font-bold text-gray-500 active:text-gray-900">+</button>
+                </div>
+                <button id="modal-add-btn" class="flex-1 bg-red-600 text-white h-12 rounded-xl font-bold shadow-lg shadow-red-200 active:scale-95 transition flex justify-between items-center px-4">
+                    <span>Добавить</span>
+                    <span id="modal-btn-price">0 ₸</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. CART MODAL -->
+    <div id="cart-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('cart-modal')">
+        <div class="modal-sheet">
+            <!-- Кнопка закрытия -->
+            <button class="modal-close-btn" onclick="closeModal('cart-modal')"><i class="fas fa-times"></i></button>
+            <div class="sheet-handle"></div>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-extrabold">Ваш заказ</h2>
+                <button onclick="clearCart()" class="text-xs text-red-500 font-semibold">Очистить</button>
+            </div>
+
+            <div id="cart-items" class="space-y-4 mb-6 max-h-[40vh] overflow-y-auto pr-1">
+                <!-- Items injected here -->
+            </div>
+            
+            <!-- Инфо о заказе -->
+            <div class="border-t pt-4">
+                <div class="space-y-3 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Ваше имя</label>
+                        <input id="order-name" type="text" placeholder="Иван" class="w-full bg-gray-50 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-red-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Адрес доставки</label>
+                        <input id="order-address" type="text" placeholder="Улица, дом" class="w-full bg-gray-50 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-red-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Комментарий</label>
+                        <input id="order-comment" type="text" placeholder="Домофон, этаж..." class="w-full bg-gray-50 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-red-500">
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-end mb-4">
+                    <span class="text-gray-500 font-medium">Итого:</span>
+                    <span id="cart-modal-total" class="text-2xl font-black text-gray-900">0 ₸</span>
+                </div>
+
+                <button onclick="submitOrder()" class="w-full bg-green-500 text-white py-4 rounded-xl font-bold shadow-lg shadow-green-200 active:scale-95 transition flex justify-center items-center gap-2">
+                    <span>Заказать в WhatsApp</span>
+                    <i class="fab fa-whatsapp text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. CHEF/CATERING INQUIRY MODAL -->
+    <div id="inquiry-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('inquiry-modal')">
+        <div class="modal-sheet">
+            <!-- Кнопка закрытия -->
+            <button class="modal-close-btn" onclick="closeModal('inquiry-modal')"><i class="fas fa-times"></i></button>
+            <div class="sheet-handle"></div>
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-2xl mx-auto mb-3">
+                    <i class="fas fa-hat-chef"></i>
+                </div>
+                <h2 class="text-xl font-extrabold mb-1">Заявка на услугу</h2>
+                <p class="text-sm text-gray-500">Мангальщик на выезд или Кейтеринг</p>
+            </div>
+
+            <div class="space-y-3">
+                <input id="inq-name" type="text" placeholder="Ваше имя" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:border-orange-500 outline-none">
+                <input id="inq-date" type="date" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:border-orange-500 outline-none">
+                <input id="inq-guests" type="number" placeholder="Количество гостей" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:border-orange-500 outline-none">
+                <textarea id="inq-details" rows="3" placeholder="Пожелания (бюджет, меню...)" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:border-orange-500 outline-none"></textarea>
+                
+                <button onclick="submitInquiry()" class="w-full bg-gray-900 text-white py-3.5 rounded-xl font-bold shadow-lg mt-2 active:scale-95 transition">
+                    Отправить заявку
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 4. FULL MENU MODAL -->
+    <div id="full-menu-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('full-menu-modal')">
+        <div class="modal-sheet">
+            <!-- Кнопка закрытия (Добавлено) -->
+            <button class="modal-close-btn" onclick="closeModal('full-menu-modal')"><i class="fas fa-times"></i></button>
+            <div class="sheet-handle"></div>
+            
+            <div class="flex justify-between items-center mb-4 sticky top-0 bg-white pt-2 z-10">
+                <h2 class="text-2xl font-extrabold text-gray-900 flex items-center gap-2"><i class="fas fa-list-alt text-red-600"></i> Полное меню</h2>
+            </div>
+
+            <div id="full-menu-content" class="pb-4">
+                <!-- Меню будет сгенерировано здесь -->
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- 5. DAILY SPECIAL MODAL -->
+    <div id="daily-special-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('daily-special-modal')">
+        <div class="modal-sheet">
+            <!-- Кнопка закрытия -->
+            <button class="modal-close-btn" onclick="closeModal('daily-special-modal')"><i class="fas fa-times"></i></button>
+            <div class="sheet-handle"></div>
+
+            <div id="special-modal-img" class="modal-img-large border-4 border-yellow-300">
+                <span class="text-white text-xl font-black bg-black/60 p-2 rounded-lg">Блюдо Дня</span>
+            </div>
+
+            <h2 id="special-modal-title" class="text-3xl font-extrabold text-gray-900 mb-2"></h2>
+            <p id="special-modal-desc" class="text-lg text-gray-700 mb-4"></p>
+            
+            <div class="bg-red-50 p-3 rounded-xl border border-red-300 mb-6">
+                <p class="text-sm text-red-800 font-semibold">
+                    <i class="fas fa-tags mr-1"></i> Скидка действует только сегодня! <br>
+                    <span id="special-modal-price-old" class="line-through text-gray-500 mr-2"></span>
+                    <span id="special-modal-price-new" class="text-2xl font-black text-red-600"></span>
+                </p>
+            </div>
+
+            <div class="flex items-center pt-2 border-t border-gray-100 mt-auto">
+                <button id="special-modal-add-btn" class="flex-1 bg-green-600 text-white h-14 rounded-xl font-bold shadow-lg shadow-green-200 active:scale-95 transition flex justify-center items-center gap-2">
+                    <i class="fas fa-cart-plus"></i> Заказать прямо сейчас
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- ДАННЫЕ ---
+        // !!! ВАЖНО: Замените эту ссылку на прямую публичную ссылку на фото в Google Drive !!!
+        const PHOTOS_LINK = 'https://drive.google.com/file/d/1VkuYb9EvYa7ZiDEAAGS-vCLxUNkQ1H7g/view?usp=drive_link';
+        const DAILY_SPECIAL_IMAGE_URL = 'https://placehold.co/500x300/f59e0b/ffffff?text=Фото+Блюда+Дня';
+        
+        const products = {
+            'promo_family': { name: 'Сет "Семейный"', price: 24990, desc: 'Идеальный набор: Баранина (1кг), Курица (1кг), Свинина (1кг), Люля (0.5кг).', ingred: 'Мясо 3.5кг, маринованный лук, лаваш, 2 соуса.', icon: 'fas fa-users', category: 'Акции', color: 'red' },
+            'promo_catering': { name: 'Кейтеринг / Повар', price: 0, desc: 'Услуга выездного обслуживания.', ingred: 'Индивидуально', icon: 'fas fa-utensils', category: 'Акции', color: 'orange', isService: true },
+            // НОВЫЙ ПРОДУКТ ДНЯ
+            'promo_daily_special': { 
+                name: 'Королевский Шашлык', 
+                price: 7020, // 7800 * 0.9 (10% скидка)
+                oldPrice: 7800,
+                desc: 'Мякоть говядины (1 кг) по специальной цене! Самый нежный шашлык из вырезки.', 
+                ingred: 'Говядина (вырезка), специи, лук. Цена за 1 кг.', 
+                icon: 'fas fa-crown', 
+                category: 'Акции', 
+                isSpecial: true
+            },
+
+            'sh_lamb_meat': { name: 'Мякоть баранины', price: 7900, desc: 'Нежнейшая мякоть баранины, маринованная в травах.', ingred: 'Баранина, лук, специи.', icon: 'fas fa-drumstick-bite', category: 'Баранина' },
+            'sh_lamb_ribs': { name: 'Бараньи ребрышки', price: 6500, desc: 'Сочные ребрышки на кости, приготовленные на углях.', ingred: 'Бараньи ребра, специи.', icon: 'fas fa-bone', category: 'Баранина' },
+            'sh_lula_beef': { name: 'Люля-Кебаб', price: 6200, desc: 'Кебаб из говядины с курдюком.', ingred: 'Говядина, курдюк, лук.', icon: 'fas fa-sausage', category: 'Баранина' },
+            
+            'sh_beef_meat': { name: 'Мякоть говядины', price: 7800, desc: 'Сочный шашлык из мягкой говяжьей вырезки.', ingred: 'Говядина (вырезка), специи, лук.', icon: 'fas fa-drumstick-bite', category: 'Говядина' },
+
+            'sh_pork_neck': { name: 'Свиная шея', price: 6800, desc: 'Сочная свиная шейка.', ingred: 'Свинина, маринад.', icon: 'fas fa-bacon', category: 'Свинина' },
+            'sh_pork_ribs': { name: 'Свиные ребра', price: 6100, desc: 'Ребра в соусе BBQ.', ingred: 'Свинина, соус BBQ.', icon: 'fas fa-utensils', category: 'Свинина' },
+
+            'sh_chick_fil': { name: 'Куриное филе', price: 5500, desc: 'Диетическое филе.', ingred: 'Курица, лимон.', icon: 'fas fa-drumstick-bite', category: 'Курица' },
+            'sh_chick_wings': { name: 'Крылышки', price: 4900, desc: 'Острые крылья.', ingred: 'Курица, чили.', icon: 'fas fa-feather-alt', category: 'Курица' },
+
+            'grill_veg': { name: 'Овощи гриль', price: 3500, desc: 'Ассорти овощей.', ingred: 'Перец, баклажан, томат.', icon: 'fas fa-leaf', category: 'Гарниры' },
+            'grill_mush': { name: 'Грибы', price: 4000, desc: 'Шампиньоны.', ingred: 'Грибы, чеснок.', icon: 'fas fa-circle', category: 'Гарниры' },
+
+            'sauce_saceb': { name: 'Сацебели', price: 500, desc: 'Соус томатный.', ingred: 'Томаты, зелень.', icon: 'fas fa-pepper-hot', category: 'Соусы и Хлеб' },
+            'lavash': { name: 'Лаваш', price: 300, desc: 'Свежий хлеб.', ingred: 'Мука, вода.', icon: 'fas fa-bread-slice', category: 'Соусы и Хлеб' }
+        };
+
+        let cart = {};
+        let currentModalId = null;
+        let tempQty = 1;
+
+        // --- ЛОГИКА МОДАЛОК ---
+        function openModal(id) {
+            const el = document.getElementById(id);
+            el.style.display = 'flex';
+            setTimeout(() => el.classList.add('open'), 10);
+            document.body.style.overflow = 'hidden'; // Block scroll
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            el.classList.remove('open');
+            setTimeout(() => {
+                el.style.display = 'none';
+                document.body.style.overflow = '';
+            }, 300);
+        }
+        
+        // --- НОВАЯ ФУНКЦИЯ: Открытие модалки полного меню ---
+        function openFullMenuModal() {
+            renderFullMenuModal();
+            openModal('full-menu-modal');
+        }
+
+        // --- НОВАЯ ФУНКЦИЯ: Рендер полного меню ---
+        function renderFullMenuModal() {
+            const menuContent = document.getElementById('full-menu-content');
+            menuContent.innerHTML = ''; 
+
+            const categorizedProducts = {
+                'Акции': [],
+                'Баранина': [],
+                'Говядина': [],
+                'Свинина': [],
+                'Курица': [],
+                'Гарниры': [],
+                'Соусы и Хлеб': []
+            };
+
+            // Группировка товаров по категориям
+            for (const id in products) {
+                const item = products[id];
+                if (categorizedProducts[item.category]) {
+                    // Исключаем промо-продукт дня из полного списка, если он не имеет своей страницы
+                    if(item.isSpecial) continue; 
+                    categorizedProducts[item.category].push({ id, ...item });
+                }
+            }
+
+            // Рендеринг
+            for (const category in categorizedProducts) {
+                const items = categorizedProducts[category];
+                if (items.length > 0) {
+                    let sectionHtml = `
+                        <div class="full-menu-section">
+                            <h3 class="text-xl font-extrabold text-gray-800 mb-2">${category}</h3>
+                            <div class="space-y-1">
+                    `;
+                    items.forEach(item => {
+                        const priceText = item.price > 0 ? item.price.toLocaleString('ru-RU') + ' ₸' : 'Уточнить цену';
+                        const isService = item.isService || false;
+                        
+                        // При нажатии на item открывается модальное окно продукта
+                        sectionHtml += `
+                            <div class="full-menu-item" onclick="${isService ? `openChefInquiryModal('${item.id}')` : `openProductModalAndCloseMenu('${item.id}')`}">
+                                <div class="flex-1 pr-4">
+                                    <div class="font-semibold text-base text-gray-900">${item.name}</div>
+                                    <div class="text-xs text-gray-500">${item.desc.length > 50 ? item.desc.substring(0, 50) + '...' : item.desc}</div>
+                                </div>
+                                <div class="font-bold text-lg ${item.price > 0 ? 'text-red-600' : 'text-gray-500'} flex-shrink-0">
+                                    ${priceText}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    sectionHtml += `
+                            </div>
+                        </div>
+                    `;
+                    menuContent.innerHTML += sectionHtml;
+                }
+            }
+        }
+
+        // Вспомогательная функция для открытия модалки продукта и закрытия модалки меню
+        function openProductModalAndCloseMenu(id) {
+            closeModal('full-menu-modal');
+            openProductModal(id);
+        }
+
+        // --- НОВАЯ ФУНКЦИЯ: Открытие модалки "Блюдо Дня" ---
+        function openDailySpecialModal(id) {
+            const p = products[id];
+            
+            // Если это не специальный продукт, открываем обычное модальное окно
+            if (!p || !p.isSpecial) {
+                openProductModal(id);
+                return;
+            }
+            
+            currentModalId = id;
+            tempQty = 1; // Всегда 1 кг/шт. для спецпредложений
+
+            document.getElementById('special-modal-title').innerText = p.name;
+            document.getElementById('special-modal-desc').innerText = p.desc;
+            document.getElementById('special-modal-price-old').innerText = p.oldPrice.toLocaleString('ru-RU') + ' ₸';
+            document.getElementById('special-modal-price-new').innerText = p.price.toLocaleString('ru-RU') + ' ₸';
+
+            const imgDiv = document.getElementById('special-modal-img');
+            
+            // Настройка изображения: Используем ссылку от пользователя как заглушку
+            imgDiv.style.backgroundImage = `url('${DAILY_SPECIAL_IMAGE_URL}')`;
+            
+            // Установка кнопки "Заказать прямо сейчас"
+            const addButton = document.getElementById('special-modal-add-btn');
+            addButton.onclick = () => {
+                // Добавляем 1 шт/кг в корзину и открываем корзину
+                if (!cart[id]) cart[id] = { ...p, qty: 0 };
+                cart[id].qty += 1; // Добавляем одну единицу спецпредложения
+                
+                updateCartUI();
+                closeModal('daily-special-modal');
+                openModal('cart-modal');
+                if(navigator.vibrate) navigator.vibrate(50);
+            };
+
+            openModal('daily-special-modal');
+        }
+
+
+        // --- ЛОГИКА ПРОДУКТА (без изменений, кроме вызова closeModal) ---
+        function openProductModal(id) {
+            const p = products[id];
+            currentModalId = id;
+            tempQty = cart[id] ? cart[id].qty : 1;
+
+            document.getElementById('modal-title').innerText = p.name;
+            document.getElementById('modal-desc').innerText = p.desc;
+            document.getElementById('modal-ingred').innerText = p.ingred;
+            
+            // Icon handling (можно заменить на реальные фото в style.backgroundImage)
+            const imgBlock = document.getElementById('modal-img');
+            imgBlock.innerHTML = `<i class="${p.icon} text-6xl text-gray-300"></i>`;
+            
+            updateModalPrice();
+            openModal('product-modal');
+        }
+
+        function openChefInquiryModal(id) {
+            closeModal('full-menu-modal'); // Закрываем меню, если открыто
+            openModal('inquiry-modal');
+        }
+
+        // Кнопки плюс/минус в модалке
+        document.getElementById('btn-minus').onclick = () => { if(tempQty > 1) { tempQty--; updateModalPrice(); } };
+        document.getElementById('btn-plus').onclick = () => { tempQty++; updateModalPrice(); };
+
+        function updateModalPrice() {
+            const p = products[currentModalId];
+            document.getElementById('modal-qty').innerText = tempQty;
+            document.getElementById('modal-btn-price').innerText = (p.price * tempQty).toLocaleString('ru-RU') + ' ₸';
+        }
+
+        // Добавление в корзину
+        document.getElementById('modal-add-btn').onclick = () => {
+            const p = products[currentModalId];
+            if (!cart[currentModalId]) cart[currentModalId] = { ...p, qty: 0 };
+            cart[currentModalId].qty = tempQty;
+            
+            updateCartUI();
+            closeModal('product-modal');
+            
+            // Вибрация и анимация кнопки корзины
+            if(navigator.vibrate) navigator.vibrate(50);
+            const floatBtn = document.getElementById('float-cart');
+            floatBtn.classList.add('scale-110');
+            setTimeout(() => floatBtn.classList.remove('scale-110'), 200);
+        };
+
+        // --- ЛОГИКА КОРЗИНЫ (без изменений) ---
+        function updateCartUI() {
+            const list = document.getElementById('cart-items');
+            list.innerHTML = '';
+            let total = 0;
+            let count = 0;
+
+            if (Object.keys(cart).length === 0) {
+                list.innerHTML = '<div class="text-center text-gray-400 py-4">Корзина пуста</div>';
+                document.getElementById('float-cart').classList.remove('show');
+            } else {
+                for (const [id, item] of Object.entries(cart)) {
+                    total += item.price * item.qty;
+                    count += item.qty;
+                    list.innerHTML += `
+                        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl">
+                            <div>
+                                <div class="font-bold text-sm">${item.name}</div>
+                                <div class="text-xs text-gray-500">${item.price.toLocaleString('ru-RU')} ₸ x ${item.qty}</div>
+                            </div>
+                            <div class="font-bold">${(item.price * item.qty).toLocaleString('ru-RU')} ₸</div>
+                        </div>
+                    `;
+                }
+                document.getElementById('float-cart').classList.add('show');
+            }
+
+            document.getElementById('cart-badge').innerText = count;
+            document.getElementById('float-total').innerText = total.toLocaleString('ru-RU') + ' ₸';
+            document.getElementById('cart-modal-total').innerText = total.toLocaleString('ru-RU') + ' ₸';
+        }
+
+        function clearCart() {
+            cart = {};
+            updateCartUI();
+            closeModal('cart-modal');
+        }
+
+        // --- ОТПРАВКА ЗАКАЗА (без изменений) ---
+        function submitOrder() {
+            const name = document.getElementById('order-name').value;
+            const addr = document.getElementById('order-address').value;
+            const comm = document.getElementById('order-comment').value;
+
+            if(!name || !addr) {
+                // Используем console.error вместо alert для соответствия инструкциям
+                console.error('Пожалуйста, укажите имя и адрес'); 
+                return;
+            }
+
+            let msg = `*Новый заказ (App)*\n👤 ${name}\n📍 ${addr}\n`;
+            if(comm) msg += `📝 ${comm}\n`;
+            msg += `\n*Заказ:*\n`;
+            
+            let total = 0;
+            for (const [id, item] of Object.entries(cart)) {
+                total += item.price * item.qty;
+                msg += `▫️ ${item.name} x${item.qty} = ${item.price * item.qty}\n`;
+            }
+            msg += `\n💰 *Итого: ${total.toLocaleString('ru-RU')} ₸*`;
+
+            window.open(`https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(msg)}`, '_blank');
+            clearCart(); // Очистка корзины после отправки
+        }
+
+        function submitInquiry() {
+            const name = document.getElementById('inq-name').value;
+            const date = document.getElementById('inq-date').value;
+            const guests = document.getElementById('inq-guests').value;
+            const details = document.getElementById('inq-details').value;
+
+            let msg = `*Заявка на услугу (Повар/Кейтеринг)*\n👤 ${name}\n📅 ${date}\n👥 Гостей: ${guests}\n📝 ${details}`;
+            window.open(`https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // --- НАВИГАЦИЯ ---
+        function scrollToId(id, btn) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        
+        // Функционал прокрутки вверх
+        function scrollToTop() { 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+
+        // Observer для подсветки категорий
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                    const btn = document.querySelector(`.cat-btn[data-id="${id}"]`);
+                    if(btn) btn.classList.add('active');
+                }
+            });
+        }, { rootMargin: '-100px 0px -70% 0px' });
+
+        document.querySelectorAll('.scroll-mt-32').forEach(s => observer.observe(s));
+        
+        // Инициализация UI при загрузке
+        window.onload = updateCartUI;
+    </script>
+</body>
+</html>

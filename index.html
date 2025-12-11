@@ -12,7 +12,6 @@
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
         gtag('config', 'G-NMCTD2Q8R2');
     </script>
     <!-- КОНЕЦ Google Analytics -->
@@ -29,13 +28,10 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
+    <!-- Yandex Maps API был удален, так как больше не используется в модальных окнах -->
+    
     <style>
-        /* Основные переменные и шрифты */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        :root {
-            --color-primary-blue: #3b82f6; /* blue-500 */
-            --color-primary-dark: #2563eb; /* blue-600 */
-        }
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: #f5f5f5; /* light mode bg */
@@ -57,6 +53,7 @@
         .auction-cta { background-color: #fff; border: 2px solid #f59e0b; }
         .stroy-dom-cta { background-color: #ecfdf5; border: 3px solid #059669; animation: pulse-green 4s infinite; }
         
+        /* Ключевые кадры для анимации Light Mode */
         @keyframes pulse-green {
             0%, 100% { border-color: #059669; } /* emerald-600 */
             50% { border-color: #34d399; } /* emerald-400 */
@@ -129,6 +126,7 @@
             transition: transform 0.3s ease, background-color 0.3s;
         }
         
+        /* === СТИЛИ ДЛЯ ФОРМ И КНОПОК ВВОДА В МОДАЛЬНЫХ ОКНАХ (обновлено) === */
         .form-input-control {
              padding: 8px 12px;
              border: 1px solid #d1d5db;
@@ -138,7 +136,7 @@
              box-sizing: border-box; 
         }
         .form-input-control:focus {
-            border-color: var(--color-primary-blue);
+            border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
             outline: none;
         }
@@ -153,6 +151,7 @@
             min-width: 0; 
         }
         
+        /* Стили для кнопки "Компас" (Геолокация) */
         .geo-btn {
             flex-shrink: 0;
             width: 40px;
@@ -172,6 +171,7 @@
             transform: scale(1.05);
         }
 
+        /* Стили для кнопки "Плюс" (Добавить адрес) */
         .add-stop-btn {
             flex-shrink: 0;
             width: 40px;
@@ -191,6 +191,7 @@
             transform: scale(1.05);
         }
         
+        /* Стили для кнопки "Минус" (Удалить адрес) */
         .remove-stop-btn {
             flex-shrink: 0;
             width: 40px;
@@ -268,58 +269,58 @@
             border-color: #60a5fa; /* blue-400 */
             box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5);
         }
-        /* Dark Mode Geo/Plus/Minus buttons */
-        .dark .geo-btn { background-color: #b45309; } 
-        .dark .geo-btn:hover { background-color: #92400e; } 
-        .dark .add-stop-btn { background-color: #047857; } 
-        .dark .add-stop-btn:hover { background-color: #065f46; }
-        .dark .remove-stop-btn { background-color: #b91c1c; }
-        .dark .remove-stop-btn:hover { background-color: #991b1b; }
+        /* Dark Mode Geo/Plus/Minus buttons - сохраняют цвет для контраста, но делают темнее */
+        .dark .geo-btn { background-color: #b45309; } /* amber-800 dark */
+        .dark .geo-btn:hover { background-color: #92400e; } /* amber-900 dark */
+        .dark .add-stop-btn { background-color: #047857; } /* emerald-700 dark */
+        .dark .add-stop-btn:hover { background-color: #065f46; } /* emerald-800 dark */
+        .dark .remove-stop-btn { background-color: #b91c1c; } /* red-700 dark */
+        .dark .remove-stop-btn:hover { background-color: #991b1b; } /* red-800 dark */
         
         /* Стили для новой двойной кнопки */
         .split-btn {
             display: flex;
             width: 100%;
-            border-radius: 12px; 
-            overflow: hidden; 
+            border-radius: 12px; /* Общий радиус для контейнера */
+            overflow: hidden; /* Обрезаем, чтобы части кнопки слились */
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         .split-btn-part {
             flex: 1;
+            /* Выставляем те же отступы и размер шрифта, что у кнопки Заказ через форму (py-3, text-lg, font-bold) */
             padding: 0.75rem 0; 
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-center;
             font-weight: 700;
             font-size: 1.125rem; /* text-lg */
             transition: background-color 0.2s, transform 0.2s;
             text-align: center;
             line-height: 1.3;
-            /* Важно для кнопок: курсор */
-            cursor: pointer; 
         }
         .split-btn-part:hover {
             transform: scale(1.02);
             box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
         
+        /* Левая часть (ТАКСИ) - WhatsApp Green */
         .split-btn-taxi {
-            background-color: #10b981; /* emerald-500 */
+            background-color: #10b981; /* emerald-500 - Основной цвет WhatsApp */
             color: white;
-            border-right: 1px solid rgba(255, 255, 255, 0.3); 
+            border-right: 1px solid rgba(255, 255, 255, 0.3); /* Разделитель */
         }
         .split-btn-taxi:hover {
             background-color: #059669; /* emerald-600 */
         }
 
-        /* Стиль для кнопки ЛОТЕРЕЯ (Фиолетовый) */
-        .split-btn-lottery {
-            background-color: #8b5cf6; /* violet-500 */
+        /* Правая часть (ЕДА) - Delivery Orange/Red */
+        .split-btn-food {
+            background-color: #ef4444; /* red-500 - Для контраста и ассоциации с доставкой */
             color: white;
         }
-        .split-btn-lottery:hover {
-            background-color: #7c3aed; /* violet-600 */
+        .split-btn-food:hover {
+            background-color: #dc2626; /* red-600 */
         }
 
         /* Dark Mode Overrides for Split Button */
@@ -330,34 +331,11 @@
         .dark .split-btn-taxi:hover {
             background-color: #065f46; /* emerald-800 dark */
         }
-        .dark .split-btn-lottery {
-            background-color: #6d28d9; /* violet-700 dark */
+        .dark .split-btn-food {
+            background-color: #b91c1c; /* red-700 dark */
         }
-        .dark .split-btn-lottery:hover {
-            background-color: #5b21b6; /* violet-800 dark */
-        }
-        
-        /* Слот-машина */
-        .slot-machine-container {
-            display: flex; justify-content: center; gap: 10px; margin: 20px 0;
-            background-color: #2d3748; padding: 15px; border-radius: 15px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5); border: 4px solid #f59e0b;
-        }
-        .reel {
-            width: 60px; height: 80px; background-color: white; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; font-size: 3rem;
-            overflow: hidden; border: 2px solid #cbd5e1; position: relative;
-        }
-        @keyframes spinReel {
-            0% { transform: translateY(0); filter: blur(0); }
-            50% { filter: blur(4px); }
-            100% { transform: translateY(-100px); filter: blur(0); }
-        }
-        /* Анимация размытия во время вращения */
-        .spinning .reel-content { animation: spinBlur 0.1s infinite linear; }
-        @keyframes spinBlur {
-            0% { transform: translateY(-10px); filter: blur(2px); opacity: 0.7; }
-            100% { transform: translateY(10px); filter: blur(2px); opacity: 0.7; }
+        .dark .split-btn-food:hover {
+            background-color: #991b1b; /* red-800 dark */
         }
 
     </style>
@@ -371,6 +349,7 @@
         <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ТЕМЫ -->
         <div class="absolute top-4 right-4">
             <button id="themeToggle" onclick="toggleTheme()" class="text-white p-2 rounded-full bg-black bg-opacity-10 hover:bg-opacity-30 transition-all focus:outline-none z-50">
+                <!-- Иконка будет обновлена JavaScript'ом -->
                 <i id="themeIcon" class="fas fa-moon text-xl"></i>
             </button>
         </div>
@@ -382,7 +361,8 @@
         </div>
     </header>
 
-    <!-- БАННЕР: ОБЪЯВЛЕНИЕ -->
+    <!-- НОВЫЙ БАННЕР: ОБЪЯВЛЕНИЕ / НОВОСТИ (Dismissible) -->
+    <!-- Класс lg:hidden гарантирует, что баннер скрыт на больших экранах, но виден на мобильных -->
     <div id="announcementBar" class="bg-red-500 text-white p-3 shadow-lg lg:hidden">
         <div class="max-w-3xl mx-auto flex items-center justify-between">
             <div class="flex items-center space-x-3">
@@ -403,15 +383,16 @@
         <!-- БЛОК 1: ОСНОВНОЙ ЗАКАЗ (Супер CTA) -->
         <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">Быстрый Заказ Такси</h2>
         
+        <!-- Добавлен класс main-card для стилей темной темы -->
         <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6 main-card">
             
-            <!-- КНОТКА: ЗАКАЗ ЧЕРЕЗ ФОРМУ (ОТКРЫВАЕТ МОДАЛ TAXI) -->
+            <!-- НОВАЯ КНОТКА: ЗАКАЗ ЧЕРЕЗ ФОРМУ (ОТКРЫВАЕТ МОДАЛ TAXI) -->
             <button data-service="taxi"
                 class="service-btn btn-hover bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3">
-                <i class="fas fa-car-side text-lg"></i><span>Заказ Такси</span>
+                <i class="fas fa-car-side text-lg"></i><span>Заказ через форму (Taxi)</span>
             </button>
             
-            <!-- 1. ГЛАВНАЯ КНОТКА ЗАКАЗА (РАЗДЕЛЕННАЯ: ТАКСИ + ЛОТЕРЕЯ) -->
+            <!-- 1. ГЛАВНАЯ КНОТКА ЗАКАЗА (РАЗДЕЛЕННАЯ: ТАКСИ + ЕДА) -->
             <div class="split-btn mb-3">
                 <!-- 1.1. ЗАКАЗ ТАКСИ (WhatsApp) -->
                 <a id="whatsappLink" href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." target="_blank"
@@ -419,11 +400,11 @@
                     <span>Заказать Такси</span>
                 </a>
                 
-                <!-- 1.2. ЛОТЕРЕЯ -->
-                <button onclick="showLotteryPrize()"
-                    class="btn-hover split-btn-part split-btn-lottery">
-                    <span>🎰 Лотерея</span>
-                </button>
+                <!-- 1.2. ЗАКАЗ ЕДЫ (Внешняя ссылка) - ОБНОВЛЕННАЯ ССЫЛКА -->
+                <a href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html" target="_blank"
+                    class="btn-hover split-btn-part split-btn-food">
+                    <span>Заказ Еды</span>
+                </a>
             </div>
             
             <!-- 2. БЛОК БЫСТРЫХ ДЕЙСТВИЙ (3 колонки - одинаковая ширина) -->
@@ -452,6 +433,7 @@
                 <span id="locationBtnText">Использовать мое местоположение</span>
             </button>
             <p id="locationResult" class="text-xs text-center text-gray-500 mt-2 hidden">
+                <!-- Измененный элемент для кликабельных координат -->
                 <a id="locationAddress" href="#" target="_blank" class="coord-link"></a>
             </p>
             
@@ -619,7 +601,7 @@
                         <span>📦 Сколько стоит услуга Доставки?</span>
                         <i id="icon-faq-4" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
-                    <div id="faq-4" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
+                    <div id="faq-4" class="hidden p-4 pt-0 вtext-gray-600 border-t border-gray-100 faq-item-content">
                         <p>Стоимость услуги доставки начинается **от 1200 KZT**.</p>
                         <p class="mt-2 text-sm italic">Окончательная цена зависит от общего расстояния и объёма покупок.</p>
                     </div>
@@ -642,7 +624,7 @@
                         <span>📍 Примерные цены на Межгород и пригород</span>
                         <i id="icon-faq-3" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
-                    <div id="faq-3" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
+                    <div id="faq-3" class="hidden p-4 pt-0 вtext-gray-600 border-t border-gray-100 faq-item-content">
                         <p class="font-bold text-red-600 mb-2">
                             ⚠️ ВНИМАНИЕ: Цены ориентировочные!
                         </p>
@@ -673,7 +655,7 @@
                             <li>**🛣️ Состояние дороги:** Длительные участки бездорожья или ремонта.</li>
                             <li>**🅿️ Дополнительные услуги:** Простой в пути, ожидание или заезд в другой населенный пункт.</li>
                         </ul>
-                        <p class="mt-2 text-sm italic text-gray-600">Точная стоимость зависит от расстояния и времени в пути.</p>
+                        <p class="mt-2 вtext-sm italic text-gray-600">Точная стоимость зависит от расстояния и времени в пути.</p>
                     </div>
                 </div>
                 
@@ -682,7 +664,7 @@
         
         <!-- БЛОК 7 (БЫВШИЙ 6): РЕКЛАМА ДЛЯ ПАРТНЕРОВ -->
         <div class="mt-10 border-t pt-6">
-            <h3 class="text-xl font-bold text-pink-600 mb-6 text-center">📢 Реклама для Вашего Бизнеса</h3>
+            <h3 class="text-xl font-bold text-pink-600 mb-6 вtext-center">📢 Реклама для Вашего Бизнеса</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 
                 <!-- Слот 1: МАГАЗИН/ТОЧКА ПРОДАЖ -->
@@ -792,44 +774,6 @@
         </p>
     </footer>
 
-
-    <!-- ========================================================= -->
-    <!-- 7. МОДАЛЬНОЕ ОКНО: ЛОТЕРЕЯ (LOTTERY) -->
-    <!-- ========================================================= -->
-    <div id="lotteryModal" class="modal-overlay" aria-hidden="true" role="dialog">
-        <div class="modal">
-            <div class="p-6 text-center">
-                <div class="flex justify-end"><button onclick="window.closeModal('lotteryModal')" class="text-gray-500 hover:text-gray-700 text-2xl">×</button></div>
-                <h3 class="text-2xl font-bold text-violet-600 mb-2">🎰 Испытай Удачу!</h3>
-                <!-- ИЗМЕНЕНИЕ: ОБНОВЛЕННЫЙ ТЕКСТ -->
-                <p class="text-gray-600 text-sm mb-4">Соберите 3 одинаковых символа и получите скидку или приз !</p>
-                <!-- Счетчик попыток -->
-                <div id="attemptsContainer" class="mb-2 font-bold text-lg text-indigo-600"></div>
-                
-                <!-- Барабаны -->
-                <div class="slot-machine-container">
-                    <div class="reel" id="reel1"><div class="reel-content">🍒</div></div>
-                    <div class="reel" id="reel2"><div class="reel-content">🍋</div></div>
-                    <div class="reel" id="reel3"><div class="reel-content">🍇</div></div>
-                </div>
-                
-                <!-- Результат -->
-                <div id="lotteryResult" class="min-h-[60px] flex items-center justify-center">
-                    <p class="text-gray-500 italic">Нажмите кнопку, чтобы крутить!</p>
-                </div>
-                
-                <!-- Кнопка КРУТИТЬ -->
-                <button id="spinButton" onclick="spinSlots()" 
-                    class="mt-4 bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-600 hover:to-fuchsia-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105 w-full text-lg">
-                    КРУТИТЬ! 🎲
-                </button>
-                <!-- Таймер до сброса -->
-                <p id="cooldownTimer" class="hidden mt-3 text-red-500 font-bold text-sm"></p>
-            </div>
-        </div>
-    </div>
-
-
     <!-- ========================================================= -->
     <!-- 1. МОДАЛЬНОЕ ОКНО: ТАКСИ (TAXI) -->
     <!-- ========================================================= -->
@@ -850,7 +794,7 @@
                             <div class="input-with-plus-btn">
                                 <input id="taxiFrom" name="from" type="text" list="fromHistory" class="form-input-control" placeholder="Улица, дом (обязательно)" required oninput="updateTaxiPrice()">
                                 <datalist id="fromHistory"></datalist>
-                                <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                                <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                                 <button type="button" onclick="getCurrentLocation('taxi')" 
                                     class="geo-btn" 
                                     title="Использовать мое местоположение">
@@ -864,7 +808,7 @@
                             <div class="input-with-plus-btn">
                                 <input id="taxiTo" name="to" type="text" list="toHistory" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required oninput="updateTaxiPrice()">
                                 <datalist id="toHistory"></datalist>
-                                <!-- КНОПКА ДОБАВЛЕНИЯ АДРЕСА -->
+                                <!-- КНОПКА ДОБАВЛЕНИЯ АДРЕСА (обновлено) -->
                                 <button type="button" onclick="addStop('additionalStops', 'taxi')" 
                                     class="add-stop-btn" 
                                     title="Добавить дополнительный адрес по пути">
@@ -877,8 +821,8 @@
                     </div>
                     
                     <!-- БЛОК ПРЕДЗАКАЗА -->
-                    <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3 dark:bg-gray-700 dark:border-gray-600">
-                        <p class="text-sm font-bold text-blue-700 flex items-center dark:text-blue-300"><i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)</p>
+                    <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                        <p class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)</p>
                         <!-- Дата и время -->
                         <div class="flex flex-col">
                             <label for="taxiDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время поездки</label>
@@ -899,16 +843,16 @@
                     </div>
 
 
-                    <div id="taxiStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
+                    <div id="taxiStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
 
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
-                            <div class="price-note text-sm text-gray-500">Примерная стоимость:</div>
+                            <div class="price-note">Примерная стоимость:</div>
                             <!-- Элемент для динамического обновления цены -->
-                            <div id="taxiPriceEstimate" class="price-estimate text-xl font-bold text-green-600">от 700–900 тг</div>
-                            <div class="price-note text-xs text-red-600 font-semibold">Внимание: точная цена после подтверждения водителем.</div>
+                            <div id="taxiPriceEstimate" class="price-estimate">от 700–900 тг</div>
+                            <div class="price-note text-red-600 font-semibold">Внимание: точная цена после подтверждения водителем.</div>
                         </div>
-                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-200">
+                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
                             Заказать
                         </button>
                     </div>
@@ -918,7 +862,7 @@
     </div>
 
     <!-- ========================================================= -->
-    <!-- 2. МОДАЛЬНОЕ ОКНО: ДОСТАВКА (DELIVERY) -->
+    <!-- 2. МОДАЛЬНОЕ ОКНО: ДОСТАВКА (DELIVERY) - Добавлена кнопка ГЕО -->
     <!-- ========================================================= -->
     <div id="deliveryModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
@@ -941,7 +885,7 @@
                         <label for="deliveryAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес доставки *</label>
                         <div class="input-with-plus-btn">
                             <input id="deliveryAddress" name="address" type="text" class="form-input-control" placeholder="Улица, дом, квартира (например: Ленина 12)" required />
-                            <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                            <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                             <button type="button" onclick="getCurrentLocation('delivery')" 
                                 class="geo-btn" 
                                 title="Использовать мое местоположение">
@@ -950,15 +894,15 @@
                         </div>
                     </div>
 
-                    <div id="deliveryStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
+                    <div id="deliveryStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
 
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
-                            <div class="price-note text-sm text-gray-500">Примерная стоимость:</div>
-                            <div class="price-estimate text-xl font-bold text-green-600">от 1200 тг</div>
-                            <div class="price-note text-xs font-semibold text-gray-600">Стоимость зависит от расстояния и объёма покупок.</div>
+                            <div class="price-note">Примерная стоимость:</div>
+                            <div class="price-estimate">от 1200 тг</div>
+                            <div class="price-note font-semibold">Стоимость зависит от расстояния и объёма покупок.</div>
                         </div>
-                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-200">
+                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
                             Оформить заказ
                         </button>
                     </div>
@@ -968,7 +912,7 @@
     </div>
     
     <!-- ========================================================= -->
-    <!-- 3. МОДАЛЬНОЕ ОКНО: ГРУЗОВОЙ (CARGO) -->
+    <!-- 3. МОДАЛЬНОЕ ОКНО: ГРУЗОВОЙ (CARGO) - Добавлена кнопка ГЕО -->
     <!-- ========================================================= -->
     <div id="cargoModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
@@ -983,7 +927,7 @@
                         <label for="cargoFrom" class="text-sm font-medium text-gray-700 mb-1">Адрес погрузки *</label>
                         <div class="input-with-plus-btn">
                             <input id="cargoFrom" name="from" type="text" class="form-input-control" placeholder="Откуда забрать груз" required>
-                            <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                            <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                             <button type="button" onclick="getCurrentLocation('cargo')" 
                                 class="geo-btn" 
                                 title="Использовать мое местоположение">
@@ -1001,8 +945,8 @@
                     </div>
                     
                     <!-- БЛОК ПРЕДЗАКАЗА (НОВЫЙ для CARGO) -->
-                    <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3 dark:bg-gray-700 dark:border-gray-600">
-                        <p class="text-sm font-bold text-blue-700 flex items-center dark:text-blue-300"><i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)</p>
+                    <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                        <p class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)</p>
                         <!-- Дата и время -->
                         <div class="flex flex-col">
                             <label for="cargoDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время погрузки</label>
@@ -1014,31 +958,32 @@
                     <!-- ОБНОВЛЕННЫЙ БЛОК: КОЛИЧЕСТВО ГРУЗЧИКОВ (Select) -->
                     <div class="flex flex-col">
                         <label for="cargoMovers" class="text-sm font-medium text-gray-700 mb-1">Грузчики</label>
-                        <div class="input-with-plus-btn flex-col items-start sm:flex-row sm:items-center">
-                            <select id="cargoMovers" name="movers" class="form-input-control sm:flex-grow" required onchange="updateCargoPrice()">
+                        <div class="input-with-plus-btn">
+                            <!-- Добавлено onchange для обновления суммы -->
+                            <select id="cargoMovers" name="movers" class="form-input-control" required onchange="updateCargoPrice()">
                                 <option value="0">Не требуются (0 человек)</option>
                                 <option value="1">1 человек</option>
                                 <option value="2">2 человека</option>
                                 <option value="3">3 человека</option>
                                 <option value="4">4 человека (Максимум)</option>
                             </select>
-                            <span class="text-sm font-bold text-red-600 mt-2 sm:mt-0">(Доплата: +3000 тг/час за каждого)</span>
+                            <span class="text-sm font-bold text-red-600">(Доплата: +3000 тг/час за каждого)</span>
                         </div>
                         <p class="text-xs text-gray-500 mt-1">Выберите необходимое количество.</p>
                     </div>
                     <!-- КОНЕЦ ОБНОВЛЕННОГО БЛОКА -->
 
-                    <div id="cargoStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
+                    <div id="cargoStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
 
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
-                            <div class="price-note text-sm text-gray-500">Общая стоимость (за 1 час):</div>
+                            <div class="price-note">Общая стоимость (за 1 час):</div>
                             <!-- Итоговая сумма будет отображаться здесь -->
-                            <div id="cargoTotalPrice" class="price-estimate text-xl font-bold text-green-600">6000 тг</div>
+                            <div id="cargoTotalPrice" class="price-estimate">6000 тг</div>
                             <!-- Здесь будет обновляться подсказка -->
-                            <div id="cargoPriceNote" class="price-note text-xs font-semibold text-gray-600">Минимальный заказ - 1 час.</div>
+                            <div id="cargoPriceNote" class="price-note font-semibold">Минимальный заказ - 1 час.</div>
                         </div>
-                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-200">
+                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
                             Заказать грузоперевозку
                         </button>
                     </div>
@@ -1048,7 +993,7 @@
     </div>
 
     <!-- ========================================================= -->
-    <!-- 4. МОДАЛЬНОЕ ОКНО: ТРЕЗВЫЙ ВОДИТЕЛЬ (SOBER DRIVER) -->
+    <!-- 4. МОДАЛЬНОЕ ОКНО: ТРЕЗВЫЙ ВОДИТЕЛЬ (SOBER DRIVER) - Добавлена кнопка ГЕО -->
     <!-- ========================================================= -->
     <div id="soberDriverModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
@@ -1063,7 +1008,7 @@
                         <label for="soberDriverFrom" class="text-sm font-medium text-gray-700 mb-1">Ваш текущий адрес *</label>
                         <div class="input-with-plus-btn">
                             <input id="soberDriverFrom" name="from" type="text" class="form-input-control" placeholder="Адрес, где находится авто" required>
-                            <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                            <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                             <button type="button" onclick="getCurrentLocation('soberDriver')" 
                                 class="geo-btn" 
                                 title="Использовать мое местоположение">
@@ -1084,15 +1029,15 @@
                         <input id="soberDriverTo" name="to" type="text" class="form-input-control" placeholder="Конечный адрес" required>
                     </div>
 
-                    <div id="soberDriverStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
+                    <div id="soberDriverStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
 
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
-                            <div class="price-note text-sm text-gray-500">Примерная стоимость:</div>
-                            <div class="price-estimate text-xl font-bold text-green-600">от 3800 тг</div>
-                            <div class="price-note text-xs font-semibold text-gray-600">Цена зависит от расстояния.</div>
+                            <div class="price-note">Примерная стоимость:</div>
+                            <div class="price-estimate">от 3800 тг</div>
+                            <div class="price-note font-semibold">Цена зависит от расстояния.</div>
                         </div>
-                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-200">
+                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
                             Вызвать водителя
                         </button>
                     </div>
@@ -1102,7 +1047,7 @@
     </div>
     
     <!-- ========================================================= -->
-    <!-- 5. МОДАЛЬНОЕ ОКНО: ПОМОЩЬ / ПОРУЧЕНИЯ (ASSISTANCE) -->
+    <!-- 5. МОДАЛЬНОЕ ОКНО: ПОМОЩЬ / ПОРУЧЕНИЯ (ASSISTANCE) - Добавлена кнопка ГЕО -->
     <!-- ========================================================= -->
     <div id="assistanceModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
@@ -1123,8 +1068,8 @@
                     </div>
                     
                     <!-- Детали авто: отображаются только для помощи на дороге -->
-                    <div id="carDetails" class="space-y-4 p-3 bg-teal-50 rounded-lg border border-dashed border-teal-300 hidden dark:bg-teal-900 dark:border-teal-700">
-                        <p class="font-semibold text-sm text-teal-700 dark:text-teal-300">Данные для помощи на дороге</p>
+                    <div id="carDetails" class="space-y-4 p-3 bg-teal-50 rounded-lg border border-dashed border-teal-300 hidden">
+                        <p class="font-semibold text-sm text-teal-700">Данные для помощи на дороге</p>
                         <div class="flex flex-col">
                             <label for="carModel" class="text-sm font-medium text-gray-700 mb-1">Марка и модель авто</label>
                             <input id="carModel" name="carModel" type="text" class="form-input-control" placeholder="Например: Toyota Camry">
@@ -1144,7 +1089,7 @@
                         <label for="assistanceAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес (где нужна помощь) *</label>
                         <div class="input-with-plus-btn">
                             <input id="assistanceAddress" name="address" type="text" class="form-input-control" placeholder="Улица, дом или местоположение" required />
-                            <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                            <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                             <button type="button" onclick="getCurrentLocation('assistance')" 
                                 class="geo-btn" 
                                 title="Использовать мое местоположение">
@@ -1153,15 +1098,15 @@
                         </div>
                     </div>
 
-                    <div id="assistanceStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
+                    <div id="assistanceStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
 
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
-                            <div class="price-note text-sm text-gray-500">Примерная стоимость:</div>
-                            <div class="price-estimate text-xl font-bold text-green-600">от 1500 тг</div>
-                            <div class="price-note text-xs font-semibold text-gray-600">Цена зависит от характера требуемой помощи.</div>
+                            <div class="price-note">Примерная стоимость:</div>
+                            <div class="price-estimate">от 1500 тг</div>
+                            <div class="price-note font-semibold">Цена зависит от характера требуемой помощи.</div>
                         </div>
-                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-200">
+                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
                             Оформить заявку
                         </button>
                     </div>
@@ -1188,7 +1133,7 @@
                             <label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес)</label>
                             <div class="input-with-plus-btn">
                                 <input id="auctionFrom" name="from" type="text" class="form-input-control" placeholder="Улица, дом (обязательно)" required>
-                                <!-- КНОПКА ГЕОЛОКАЦИИ -->
+                                <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                                 <button type="button" onclick="getCurrentLocation('auction')" 
                                     class="geo-btn" 
                                     title="Использовать мое местоположение">
@@ -1201,7 +1146,7 @@
                             <label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
                             <div class="input-with-plus-btn">
                                 <input id="auctionTo" name="to" type="text" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required>
-                                <!-- КНОПКА ДОБАВЛЕНИЯ АДРЕСА -->
+                                <!-- КНОПКА ДОБАВЛЕНИЯ АДРЕСА (обновлено) -->
                                 <button type="button" onclick="addStop('additionalStopsAuction', 'auction')" 
                                     class="add-stop-btn" 
                                     title="Добавить дополнительный адрес по пути">
@@ -1210,6 +1155,7 @@
                             </div>
                             <!-- Контейнер для дополнительных адресов -->
                             <div id="additionalStopsAuction" class="mt-2 space-y-2">
+                                <!-- Здесь будут добавляться дополнительные поля -->
                             </div>
                         </div>
                     </div>
@@ -1223,14 +1169,14 @@
                         </p>
                     </div>
 
-                    <div id="auctionStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
+                    <div id="auctionStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
 
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
-                            <div class="price-note text-sm text-yellow-600 font-bold">Оплата по Вашей ставке.</div>
-                            <div class="price-estimate text-xl font-bold text-yellow-600">Начните от 500 тг</div>
+                            <div class="price-note text-yellow-600 font-bold">Оплата по Вашей ставке.</div>
+                            <div class="price-estimate text-yellow-600">Начните от 500 тг</div>
                         </div>
-                        <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-200">
+                        <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
                             Предложить цену
                         </button>
                     </div>
@@ -1242,16 +1188,16 @@
 
     <!-- Модальные окна PWA и Партнеры остаются без изменений -->
     <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
-        <div class="modal dark:bg-gray-800">
+        <div class="modal">
             <div class="p-6">
-                <h3 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Сохраните «Такси Успех» как приложение!</h3>
+                <h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните «Такси Успех» как приложение!</h3>
                 
-                <p class="mb-4 text-gray-700 dark:text-gray-300">Чтобы вам не пришлось каждый раз искать ссылку, сохраните нашу промо-страницу прямо на главном экране телефона.</p>
+                <p class="mb-4 text-gray-700">Чтобы вам не пришлось каждый раз искать ссылку, сохраните нашу промо-страницу прямо на главном экране телефона.</p>
                 
                 <!-- Инструкция для iPhone/iOS -->
-                <div class="border p-4 rounded-lg mb-4 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
+                <div class="border p-4 rounded-lg mb-4 bg-gray-50">
                     <h4 class="text-lg font-bold text-blue-600 mb-2 flex items-center"><i class="fab fa-apple mr-2"></i> Для iPhone (iOS)</h4>
-                    <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                    <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
                         <li>Откройте эту страницу в браузере **Safari**.</li>
                         <li>Нажмите на иконку **«Поделиться»** (<i class="fas fa-share-square"></i>) в нижней части экрана.</li>
                         <li>Прокрутите меню и выберите **«На экран "Домой"»**.</li>
@@ -1260,9 +1206,9 @@
                 </div>
                 
                 <!-- Инструкция для Android/Chrome -->
-                <div class="border p-4 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
+                <div class="border p-4 rounded-lg bg-gray-50">
                     <h4 class="text-lg font-bold text-green-600 mb-2 flex items-center"><i class="fab fa-android mr-2"></i> Для Android (Chrome)</h4>
-                    <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                    <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
                         <li>Нажмите на **три точки** (<i class="fas fa-ellipsis-v"></i>) в правом верхнем углу.</li>
                         <li>Выберите **«Добавить на главный экран»**.</li>
                         <li>Подтвердите добавление.</li>
@@ -1279,21 +1225,18 @@
 
     <!-- Модальное окно партнеров (заглушка) -->
     <div id="partnerModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
-        <div class="modal dark:bg-gray-800">
+        <div class="modal">
             <div class="p-6">
-                <div class="flex flex-col items-center justify-center border-b pb-4 mb-4">
-                    <h3 class="text-2xl font-bold text-pink-600 flex items-center">
-                        <i class="fas fa-handshake mr-2"></i> Партнерские Услуги
-                    </h3>
-                </div>
-                
-                <p class="mb-4 text-gray-800 dark:text-gray-300 font-semibold">
+                <h3 class="text-2xl font-bold mb-4 text-pink-600 flex items-center justify-center">
+                    <i class="fas fa-handshake mr-2"></i> Партнерские Услуги
+                </h3>
+                <p class="mb-4 вtext-gray-800 font-semibold">
                     Здесь будет размещаться реклама и специальные предложения наших партнеров!
                 </p>
-                <div class="border border-gray-200 p-4 rounded-lg mb-4 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
-                    <h4 class="text-lg font-bold text-gray-700 dark:text-gray-200">Хотите стать нашим Партнером?</h4>
+                <div class="border border-gray-200 p-4 rounded-lg mb-4 bg-gray-50">
+                    <h4 class="text-lg font-bold text-gray-700">Хотите стать нашим Партнером?</h4>
                     <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20обсудить%20размещение%20рекламы%20на%20вашей%20промо-странице%20такси." 
-                        target="_blank" class="w-full inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg transition text-center mt-2">
+                        target="_blank" class="w-full inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition">
                         Связаться по рекламе
                     </a>
                 </div>
@@ -1305,16 +1248,16 @@
         </div>
     </div>
 
-    <div id="alertModal" class="hidden"></div> 
-
     <!-- ========================================================= -->
     <!-- FIREBASE и JAVASCRIPT ЛОГИКА -->
     <!-- ========================================================= -->
     <script type="module">
         // --- FIREBASE ИМПОРТЫ ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // setLogLevel('Debug'); // Активировать для отладки Firestore
 
         // Глобальные переменные для Firebase
         let app = null;
@@ -1325,217 +1268,8 @@
         // Переменные окружения, предоставляемые Canvas
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        // ИСПРАВЛЕНИЕ: Использовать __initial_auth_token
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
-
-        // --- КОНСТАНТЫ ПРИЛОЖЕНИЯ ---
-        const ADDRESS_HISTORY_DOC_PATH = "settings";
-        const ADDRESS_HISTORY_FIELD = "addressHistory";
-        const PHONE_NUMBER = '77770649648'; 
-        const CARGO_BASE_PRICE = 6000; 
-        const MOVER_PRICE_PER_HOUR = 3000; 
-        
-        // --- ИСПРАВЛЕНИЕ: РАЗДЕЛЕНИЕ СЧЕТЧИКОВ ---
-        let activeStopCount = 0; 
-        let uniqueStopId = 0; 
-
-        const INTERCITY_PRICES = {
-            "усть-каменогорск": "от 4800–6210 тг",
-            "глубокое": "от 4200 тг",
-            "новая бухтарма": "от 24150 тг",
-            "риддер": "от 25300 тг",
-            "шемонаиха": "от 20700 тг",
-            "алтай": "от 45540 тг", 
-            "усть-таловка": "от 19780 тг",
-            "секисовка": "от 6440 тг",
-            "белокаменка": "от 3500 тг",
-            "михайловка": "от 4000 тг",
-            "прогресс": "от 2990–3500 тг",
-            "черногорка": "от 2100–3000 тг",
-            "красный партизан": "от 1800–2500 тг",
-            "планидовка": "от 2100–2500 тг",
-            "тарханка": "от 11270–12200 тг",
-            "предгорное": "от 8500–10000 тг",
-            "алтайский": "от 6000–8000 тг"
-        };
-        const MODALS = {
-            'taxi': { id: 'taxiModal', formId: 'taxiForm', title: 'ТАКСИ', prefix: '🚕 НОВЫЙ ЗАКАЗ: ТАКСИ' },
-            'delivery': { id: 'deliveryModal', formId: 'deliveryForm', title: 'ДОСТАВКА', prefix: '🛍️ НОВЫЙ ЗАКАЗ: ДОСТАВКА' },
-            'cargo': { id: 'cargoModal', formId: 'cargoForm', title: 'ГРУЗОВОЙ', prefix: '🚚 НОВЫЙ ЗАКАЗ: ГРУЗОВОЙ' },
-            'soberDriver': { id: 'soberDriverModal', formId: 'soberDriverForm', title: 'ТРЕЗВЫЙ ВОДИТЕЛЬ', prefix: '🔑 НОВЫЙ ЗАКАЗ: ТРЕЗВЫЙ ВОДИТЕЛЬ' },
-            'assistance': { id: 'assistanceModal', formId: 'assistanceForm', title: 'ПОМОЩЬ', prefix: '🙋 НОВЫЙ ЗАКАЗ: ПОМОЩЬ' },
-            'auction': { id: 'auctionModal', formId: 'auctionForm', title: 'АУКЦИОН', prefix: '🔨 ЗАКАЗ: АУКЦИОН (ЦЕНА КЛИЕНТА)' },
-        };
-        // ------------------------------------
-
-        // --- ЛОГИКА СЛОТ-МАШИНЫ (3 Попытки) - ВОССТАНОВЛЕНА ---
-        const symbols = ['🍒', '🍋', '🍇', '🍉', '💎', '7️⃣', '🚕'];
-
-        function getLotteryState() {
-            const stored = localStorage.getItem('lotteryState_v2'); 
-            if (stored) return JSON.parse(stored);
-            return { count: 3, lastReset: 0 }; 
-        }
-
-        function saveLotteryState(state) {
-            localStorage.setItem('lotteryState_v2', JSON.stringify(state));
-        }
-
-        function checkLotteryCooldown() {
-            const spinButton = document.getElementById('spinButton');
-            const resultText = document.getElementById('lotteryResult');
-            const cooldownText = document.getElementById('cooldownTimer');
-            const attemptsText = document.getElementById('attemptsContainer');
-
-            let state = getLotteryState();
-            const now = new Date().getTime();
-            const twentyFourHours = 24 * 60 * 60 * 1000;
-
-            // Если время последнего сброса было более 24 часов назад, обновляем счетчик
-            if (state.lastReset === 0 || (now - state.lastReset > twentyFourHours)) {
-                if (state.lastReset !== 0 && now - state.lastReset > twentyFourHours) {
-                     state = { count: 3, lastReset: 0 }; 
-                     saveLotteryState(state);
-                }
-            }
-
-            if (state.count > 0) {
-                if(spinButton) {
-                    spinButton.disabled = false;
-                    spinButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
-                if(cooldownText) cooldownText.classList.add('hidden');
-                if(attemptsText) attemptsText.textContent = `Осталось попыток: ${state.count} из 3`;
-                if (resultText && (resultText.innerHTML.includes('Лимит') || resultText.innerHTML.includes('ПОБЕДА'))) {
-                     resultText.innerHTML = '<p class="text-gray-500 italic">Нажмите кнопку, чтобы крутить!</p>';
-                }
-                return true;
-            } else {
-                const diff = now - state.lastReset;
-                if (diff < twentyFourHours) {
-                    const remaining = twentyFourHours - diff;
-                    const hours = Math.floor(remaining / (1000 * 60 * 60));
-                    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-                    
-                    if(spinButton) {
-                        spinButton.disabled = true;
-                        spinButton.classList.add('opacity-50', 'cursor-not-allowed');
-                    }
-                    if(cooldownText) {
-                        cooldownText.classList.remove('hidden');
-                        cooldownText.textContent = `Новые попытки через: ${hours} ч. ${minutes} мин.`;
-                    }
-                    if(attemptsText) attemptsText.textContent = `Попытки на сегодня исчерпаны`;
-                    if(resultText) resultText.innerHTML = '<p class="text-orange-500 font-bold">Лимит на сегодня исчерпан!</p>';
-                    return false;
-                } else {
-                    state = { count: 3, lastReset: 0 };
-                    saveLotteryState(state);
-                    return checkLotteryCooldown();
-                }
-            }
-        }
-
-        window.openLotteryModal = function() {
-            checkLotteryCooldown();
-            window.openModal('lotteryModal');
-        }
-        
-        // Привязка к кнопке в HTML
-        window.showLotteryPrize = function() {
-            window.openLotteryModal();
-        }
-
-        window.spinSlots = function() {
-            if (!checkLotteryCooldown()) return;
-
-            const spinButton = document.getElementById('spinButton');
-            const resultText = document.getElementById('lotteryResult');
-
-            if(spinButton) spinButton.disabled = true;
-            if(resultText) resultText.innerHTML = '<p class="text-violet-500 font-bold animate-pulse">Удачи!...</p>';
-
-            const reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
-            reels.forEach(reel => { if(reel) reel.classList.add('spinning') });
-
-            const isWin = Math.random() < 0.1; // 10% Chance
-            let finalSymbols = [];
-
-            if (isWin) {
-                const winningSymbol = symbols[Math.floor(Math.random() * symbols.length)];
-                finalSymbols = [winningSymbol, winningSymbol, winningSymbol];
-            } else {
-                do {
-                    finalSymbols = [
-                        symbols[Math.floor(Math.random() * symbols.length)],
-                        symbols[Math.floor(Math.random() * symbols.length)],
-                        symbols[Math.floor(Math.random() * symbols.length)]
-                    ];
-                } while (finalSymbols[0] === finalSymbols[1] && finalSymbols[1] === finalSymbols[2]);
-            }
-
-            setTimeout(() => stopReel(0, finalSymbols[0]), 1000);
-            setTimeout(() => stopReel(1, finalSymbols[1]), 1500);
-            setTimeout(() => {
-                stopReel(2, finalSymbols[2]);
-                finishSpin(isWin);
-            }, 2000);
-        }
-
-        function stopReel(index, symbol) {
-            const reel = document.getElementById(`reel${index + 1}`);
-            if(reel) {
-                reel.classList.remove('spinning');
-                reel.innerHTML = `<div class="reel-content text-4xl font-bold">${symbol}</div>`;
-            }
-        }
-
-        function finishSpin(isWin) {
-            const resultText = document.getElementById('lotteryResult');
-            let state = getLotteryState();
-            const now = new Date().getTime();
-
-            if (state.count === 3) {
-                 state.lastReset = now;
-            }
-
-            state.count--;
-            if(state.count < 0) state.count = 0;
-            saveLotteryState(state);
-
-            if (isWin) {
-                const winCode = Date.now().toString().slice(-5);
-                if(resultText) {
-                    resultText.innerHTML = `
-                        <div class="text-green-600 font-bold text-xl animate-bounce mb-2">
-                            🎉 ПОБЕДА! 🎉
-                        </div>
-                        <p class="text-sm text-gray-700 mb-3">Выпало 3 одинаковых символа!</p>
-                        <a href="https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent('Здравствуйте! 🎰 Я выиграл в лотерее на сайте! Код выигрыша: ' + winCode)}" 
-                           target="_blank"
-                           class="inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transition transform hover:scale-110 animate-pulse">
-                            📩 Отправить выигрыш оператору
-                        </a>
-                        <p class="text-xs text-gray-400 mt-2">Код: ${winCode}</p>
-                    `;
-                }
-            } else {
-                const predictions = [
-                    "Удача любит терпеливых!",
-                    "Сегодня не повезло, повезет в любви! ❤️",
-                    "Ваше такси приедет быстрее!",
-                    "Звезды говорят: еще разок!",
-                    "Почти получилось! 🚕"
-                ];
-                const rnd = predictions[Math.floor(Math.random() * predictions.length)];
-                if(resultText) resultText.innerHTML = `<div class="text-gray-800 font-semibold">😢 Мимо!<br><span class="text-sm text-violet-600 italic">"${rnd}"</span></div>`;
-            }
-            
-            checkLotteryCooldown();
-        }
-
-        // КОНЕЦ БЛОКА ЛОТЕРЕИ
-        // =========================================================
-
 
         /**
          * Инициализирует Firebase и выполняет аутентификацию.
@@ -1550,15 +1284,14 @@
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                
-                // Настраиваем персистентность (по умолчанию сессионная)
-                await setPersistence(auth, browserSessionPersistence);
 
-                // Аутентификация
+                // Ожидание аутентификации
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
+                    console.log("Firebase signed in with custom token.");
                 } else {
                     await signInAnonymously(auth);
+                    console.log("Firebase signed in anonymously.");
                 }
 
                 // Установка слушателя изменений состояния аутентификации
@@ -1581,23 +1314,23 @@
         }
         
         // --- ЛОГИКА ИСТОРИИ АДРЕСОВ (Firestore) ---
+        const ADDRESS_HISTORY_DOC_PATH = "settings";
+        const ADDRESS_HISTORY_FIELD = "addressHistory";
 
         /**
          * Загружает историю адресов пользователя из Firestore.
          */
         async function loadAddresses() {
             if (!db || !userId) {
-                return [];
+                 return [];
             }
             try {
-                // ПУТЬ: /artifacts/{appId}/users/{userId}/data/settings
                 const docRef = doc(db, "artifacts", appId, "users", userId, "data", ADDRESS_HISTORY_DOC_PATH);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    // Фильтруем координаты перед загрузкой в datalist
-                    return (data[ADDRESS_HISTORY_FIELD] || []).filter(addr => !addr.includes('[КООРДИНАТЫ]'));
+                    return data[ADDRESS_HISTORY_FIELD] || [];
                 } else {
                     return [];
                 }
@@ -1625,7 +1358,6 @@
                 history = history.slice(0, 10);
                 
                 const docRef = doc(db, "artifacts", appId, "users", userId, "data", ADDRESS_HISTORY_DOC_PATH);
-                // Используем setDoc с merge: true
                 await setDoc(docRef, { [ADDRESS_HISTORY_FIELD]: history }, { merge: true });
             } catch (e) {
                 console.error("Error saving address history to Firestore:", e);
@@ -1654,8 +1386,8 @@
          */
         window.setAddressHistory = async function() {
             if (db) { // Выполняем только если Firebase инициализирован
-                await populateDatalist('fromHistory');
-                await populateDatalist('toHistory');
+                 await populateDatalist('fromHistory');
+                 await populateDatalist('toHistory');
             }
         }
 
@@ -1676,18 +1408,17 @@
             if (content.classList.contains('hidden')) {
                 // Show content
                 content.classList.remove('hidden');
-                content.style.maxHeight = content.scrollHeight + 'px';
                 if (icon) icon.classList.add('rotate-180');
             } else {
                 // Hide content
                 content.classList.add('hidden');
-                content.style.maxHeight = '0';
                 if (icon) icon.classList.remove('rotate-180');
             }
         }
         // --- КОНЕЦ ЛОГИКИ АККОРДЕОНА ---
 
         
+        // Глобальные переменные из HTML/DOM
         const whatsappLinkEl = document.getElementById('whatsappLink');
         const locationBtnTextEl = document.getElementById('locationBtnText');
         const locationResultEl = document.getElementById('locationResult');
@@ -1698,6 +1429,43 @@
         
         let currentGeolocatedAddress = '';
         
+        // --- КОНФИГУРАЦИЯ ЦЕН И МОДАЛОВ ---
+        const CARGO_BASE_PRICE = 6000; 
+        const MOVER_PRICE_PER_HOUR = 3000; 
+        
+        // СЛОВАРЬ ЦЕН ДЛЯ МЕЖГОРОДА / ПРИГОРОДА
+        const INTERCITY_PRICES = {
+            "усть-каменогорск": "от 4800–6210 тг",
+            "глубокое": "от 4200 тг",
+            "новая бухтарма": "от 24150 тг",
+            "риддер": "от 25300 тг",
+            "шемонаиха": "от 20700 тг",
+            "алтай": "от 45540 тг", // Алтай (Зыряновск)
+            "усть-таловка": "от 19780 тг",
+            "секисовка": "от 6440 тг",
+            "белокаменка": "от 3500 тг",
+            "михайловка": "от 4000 тг",
+            "прогресс": "от 2990–3500 тг",
+            "черногорка": "от 2100–3000 тг",
+            "красный партизан": "от 1800–2500 тг",
+            "планидовка": "от 2100–2500 тг",
+            "тарханка": "от 11270–12200 тг",
+            "предгорное": "от 8500–10000 тг",
+            "алтайский": "от 6000–8000 тг" // посёлок Алтайский
+        };
+
+        const MODALS = {
+            'taxi': { id: 'taxiModal', formId: 'taxiForm', title: 'ТАКСИ', prefix: '🚕 НОВЫЙ ЗАКАЗ: ТАКСИ' },
+            'delivery': { id: 'deliveryModal', formId: 'deliveryForm', title: 'ДОСТАВКА', prefix: '🛍️ НОВЫЙ ЗАКАЗ: ДОСТАВКА' },
+            'cargo': { id: 'cargoModal', formId: 'cargoForm', title: 'ГРУЗОВОЙ', prefix: '🚚 НОВЫЙ ЗАКАЗ: ГРУЗОВОЙ' },
+            'soberDriver': { id: 'soberDriverModal', formId: 'soberDriverForm', title: 'ТРЕЗВЫЙ ВОДИТЕЛЬ', prefix: '🔑 НОВЫЙ ЗАКАЗ: ТРЕЗВЫЙ ВОДИТЕЛЬ' },
+            'assistance': { id: 'assistanceModal', formId: 'assistanceForm', title: 'ПОМОЩЬ', prefix: '🙋 НОВЫЙ ЗАКАЗ: ПОМОЩЬ' },
+            'auction': { id: 'auctionModal', formId: 'auctionForm', title: 'АУКЦИОН', prefix: '🔨 ЗАКАЗ: АУКЦИОН (ЦЕНА КЛИЕНТА)' },
+        };
+        
+        const PHONE_NUMBER = '77770649648'; 
+        // -----------------------------
+
         // =========================================================
         // === ЛОГИКА ДЕНЬ/НОЧЬ (THEME TOGGLE) ===
         // =========================================================
@@ -1705,6 +1473,10 @@
         const body = document.body;
         const themeIcon = document.getElementById('themeIcon');
         
+        /**
+         * Устанавливает иконку в зависимости от текущей темы.
+         * @param {string} theme - 'light' или 'dark'
+         */
         function updateThemeIcon(theme) {
             if (themeIcon) {
                 if (theme === 'dark') {
@@ -1719,6 +1491,10 @@
             }
         }
 
+        /**
+         * Применяет выбранную тему к элементу body.
+         * @param {string} theme - 'light' или 'dark'
+         */
         function applyTheme(theme) {
             if (theme === 'dark') {
                 body.classList.add('dark');
@@ -1728,68 +1504,83 @@
             updateThemeIcon(theme);
         }
 
+        /**
+         * Переключает тему между светлой и темной.
+         */
         window.toggleTheme = function() {
             const isDark = body.classList.contains('dark');
             const newTheme = isDark ? 'light' : 'dark';
             
             applyTheme(newTheme);
-            // Сохраняем предпочтение в localStorage
             localStorage.setItem(THEME_KEY, newTheme);
         }
         
+        /**
+         * Загружает сохраненную тему или использует системную/светлую по умолчанию.
+         */
         function loadTheme() {
             const savedTheme = localStorage.getItem(THEME_KEY);
             
             if (savedTheme) {
                 applyTheme(savedTheme);
             } else {
+                // Проверяем системные предпочтения (если поддерживается)
                 const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                 const defaultTheme = prefersDark ? 'dark' : 'light';
                 applyTheme(defaultTheme);
+                // Не сохраняем в localStorage, чтобы дать возможность системным настройкам менять тему.
             }
         }
         // =========================================================
+        // === КОНЕЦ ЛОГИКИ ДЕНЬ/НОЧЬ ===
+        // =========================================================
+
 
         // --- ЛОГИКА ДЛЯ ДИНАМИЧЕСКОГО БАННЕРА-ОБЪЯВЛЕНИЯ ---
         function checkAndShowAnnouncement() {
             const dismissKey = 'announcement_dismissed_v1';
-            // Проверяем, был ли баннер закрыт.
+            // Проверяем, был ли баннер закрыт. Если 'true', то добавляем класс 'hidden'.
+            // Баннер по умолчанию виден на мобильных (за счет lg:hidden в HTML).
             if (localStorage.getItem(dismissKey) === 'true') {
-                if(announcementBar) announcementBar.classList.add('hidden');
+                announcementBar.classList.add('hidden');
             } else {
-                if(announcementBar) announcementBar.classList.remove('hidden');
+                // Если не закрыт, убеждаемся, что он виден
+                announcementBar.classList.remove('hidden');
             }
         }
 
-        window.dismissAnnouncement = function() {
-            if(announcementBar) announcementBar.classList.add('hidden');
+        function dismissAnnouncement() {
+            announcementBar.classList.add('hidden');
             localStorage.setItem('announcement_dismissed_v1', 'true');
         }
 
         // Общая функция для установки текущего времени + 5 минут
         function getFormattedCurrentTime() {
-            const now = new Date();
-            // Вычисляем время с учетом сдвига часового пояса, чтобы получить локальное время,
-            // а затем добавляем 5 минут.
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset() + 5); 
-            return now.toISOString().slice(0, 16);
+             const now = new Date();
+             now.setMinutes(now.getMinutes() - now.getTimezoneOffset() + 5); 
+             return now.toISOString().slice(0, 16);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadTheme(); // Загружаем тему при старте
-            checkAndShowAnnouncement();
-            
-            const formattedNow = getFormattedCurrentTime();
-            
-            // Устанавливаем текущее время для полей предзаказа
-            const taxiDateTime = document.getElementById('taxiDateTime');
-            const cargoDateTime = document.getElementById('cargoDateTime');
-
-            if(taxiDateTime) taxiDateTime.value = formattedNow;
-            if(cargoDateTime) cargoDateTime.value = formattedNow;
-            
-            updateCargoPrice(); 
-            updateTaxiPrice(); 
+             loadTheme(); // Загружаем тему при старте
+             checkAndShowAnnouncement();
+             
+             const formattedNow = getFormattedCurrentTime();
+             
+             const taxiDateTimeInput = document.getElementById('taxiDateTime');
+             if (taxiDateTimeInput) {
+                 taxiDateTimeInput.value = formattedNow;
+             }
+             
+             const cargoDateTimeInput = document.getElementById('cargoDateTime');
+             if (cargoDateTimeInput) {
+                 cargoDateTimeInput.value = formattedNow;
+             }
+             
+             updateCargoPrice(); 
+             
+             // Инициализируем цену при загрузке страницы/открытии модального окна
+             updateTaxiPrice(); 
         });
         
         // =========================================================
@@ -1798,6 +1589,9 @@
 
         /**
          * Устанавливает статус загрузки для кнопки.
+         * @param {string} mode - 'main' или название сервиса
+         * @param {boolean} isLoading - Флаг загрузки
+         * @param {boolean} isError - Флаг ошибки
          */
         function setGeoButtonLoading(mode, isLoading, isError = false) {
             let buttonEl, iconEl, textEl;
@@ -1806,23 +1600,28 @@
             if (mode === 'main') {
                 buttonEl = document.getElementById('locationBtn');
                 textEl = document.getElementById('locationBtnText');
-                if (!buttonEl || !textEl) return;
-                
                 if (isLoading) {
                     textEl.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Определяем...';
                     buttonEl.disabled = true;
-                    buttonEl.classList.remove('bg-red-500/50', 'bg-green-500/50');
                 } else {
                     buttonEl.disabled = false;
                     textEl.innerHTML = isError ? '<i class="fas fa-times"></i> Ошибка определения' : '<i class="fas fa-check"></i> Адрес определен';
-                    buttonEl.classList.add(isError ? 'bg-red-500/50' : 'bg-green-500/50');
-                    buttonEl.classList.remove(isError ? 'bg-green-500/50' : 'bg-red-500/50');
                 }
                 return;
             } 
 
             // Для кнопок в модальных окнах
-            let iconId = `${mode}GeoIcon`;
+            let iconId;
+            switch(mode) {
+                case 'taxi': iconId = 'taxiGeoIcon'; break;
+                case 'auction': iconId = 'auctionGeoIcon'; break;
+                case 'delivery': iconId = 'deliveryGeoIcon'; break; 
+                case 'cargo': iconId = 'cargoGeoIcon'; break;              
+                case 'soberDriver': iconId = 'soberDriverGeoIcon'; break; 
+                case 'assistance': iconId = 'assistanceGeoIcon'; break; 
+                default: return;
+            }
+
             iconEl = document.getElementById(iconId);
             buttonEl = iconEl ? iconEl.closest('button') : null;
 
@@ -1841,6 +1640,7 @@
 
         /**
          * Основная функция для определения местоположения.
+         * @param {string} trigger - откуда была вызвана функция ('main', 'taxi', 'auction', 'delivery', 'cargo', 'soberDriver', 'assistance').
          */
         window.getCurrentLocation = function(trigger) {
             if (!navigator.geolocation) {
@@ -1862,42 +1662,72 @@
                     currentGeolocatedAddress = `[КООРДИНАТЫ] ${lat}, ${lon}. Ссылка: ${yandexMapUrl}`; 
                     
                     let inputId;
+                    let message;
+                    let placeholder;
                     let successMessage = 'Ваше местоположение добавлено в поле "Откуда".';
 
                     switch (trigger) {
                         case 'main':
-                            if(locationResultEl) locationResultEl.classList.remove('hidden');
-                            if(locationAddressEl) {
-                                locationAddressEl.textContent = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
-                                locationAddressEl.href = yandexMapUrl; 
-                                locationAddressEl.title = 'Открыть местоположение на карте';
-                            }
+                            // Обновление главного блока
+                            locationResultEl.classList.remove('hidden');
+                            locationAddressEl.textContent = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
+                            locationAddressEl.href = yandexMapUrl; 
+                            locationAddressEl.title = 'Открыть местоположение на карте';
 
                             setAllLocationFields(currentGeolocatedAddress);
                             
-                            // Обновление основной WhatsApp ссылки
                             let whatsappMessage = `${currentGeolocatedAddress} - [Адрес КУДА]`;
                             const encodedText = encodeURIComponent(whatsappMessage);
-                            if(whatsappLinkEl) whatsappLinkEl.href = `https://wa.me/${PHONE_NUMBER}?text=${encodedText}`;
+                            whatsappLinkEl.href = `https://wa.me/${PHONE_NUMBER}?text=${encodedText}`;
 
-                            openOrUpdateMessageModal('Готово!', 'Ваше местоположение (координаты и ссылка на карту) автоматически добавлено во все формы заказа!', false);
+                            displayMessageModal('Готово!', 'Ваше местоположение (координаты и ссылка на карту) автоматически добавлено во все формы заказа (Откуда/Адрес)! Нажмите кнопку "Заказать" в любой форме.', false);
                             return;
 
-                        case 'taxi': inputId = 'taxiFrom'; break;
-                        case 'auction': inputId = 'auctionFrom'; break;
-                        case 'delivery': inputId = 'deliveryAddress'; successMessage = 'Ваше местоположение добавлено в поле "Адрес доставки".'; break;
-                        case 'cargo': inputId = 'cargoFrom'; successMessage = 'Ваше местоположение добавлено в поле "Адрес погрузки".'; break; 
-                        case 'soberDriver': inputId = 'soberDriverFrom'; successMessage = 'Ваше местоположение добавлено в поле "Ваш текущий адрес".'; break; 
-                        case 'assistance': inputId = 'assistanceAddress'; successMessage = 'Ваше местоположение добавлено в поле "Адрес (где нужна помощь)".'; break; 
-                        default: return;
+                        case 'taxi': 
+                            inputId = 'taxiFrom'; 
+                            message = 'Откуда'; 
+                            placeholder = 'Откуда (Адрес определен)';
+                            break;
+                        case 'auction': 
+                            inputId = 'auctionFrom'; 
+                            message = 'Откуда'; 
+                            placeholder = 'Откуда (Адрес определен)';
+                            break;
+                        case 'delivery': 
+                            inputId = 'deliveryAddress'; 
+                            message = 'Адрес доставки'; 
+                            placeholder = 'Адрес доставки (Адрес определен)';
+                            successMessage = 'Ваше местоположение добавлено в поле "Адрес доставки".';
+                            break;
+                        case 'cargo': 
+                            inputId = 'cargoFrom'; 
+                            message = 'Адрес погрузки'; 
+                            placeholder = 'Адрес погрузки (Адрес определен)'; 
+                            successMessage = 'Ваше местоположение добавлено в поле "Адрес погрузки".';
+                            break;
+                        case 'soberDriver': 
+                            inputId = 'soberDriverFrom'; 
+                            message = 'Ваш текущий адрес'; 
+                            placeholder = 'Адрес авто (Адрес определен)'; 
+                            successMessage = 'Ваше местоположение добавлено в поле "Ваш текущий адрес".';
+                            break;
+                        case 'assistance': 
+                            inputId = 'assistanceAddress'; 
+                            message = 'Адрес помощи'; 
+                            placeholder = 'Адрес помощи (Адрес определен)'; 
+                            successMessage = 'Ваше местоположение добавлено в поле "Адрес (где нужна помощь)".';
+                            break;
+                        default:
+                            return;
                     }
 
                     // Обновление поля в модальном окне
                     const input = document.getElementById(inputId);
                     if (input) {
                         input.value = currentGeolocatedAddress;
+                        input.placeholder = placeholder;
                     }
-                    openOrUpdateMessageModal('Адрес определен', successMessage, false);
+                    displayMessageModal('Адрес определен', successMessage, false);
                     
                     if (trigger === 'taxi') {
                         updateTaxiPrice();
@@ -1912,38 +1742,79 @@
                     }
                     
                     if (trigger === 'main') {
-                        if(locationResultEl) locationResultEl.classList.add('hidden');
-                        if(whatsappLinkEl) whatsappLinkEl.href = originalWhatsappText; // Сброс
+                         locationResultEl.classList.add('hidden');
+                         whatsappLinkEl.href = originalWhatsappText;
                     }
                     
-                    openOrUpdateMessageModal('Ошибка', errorMessage, true);
+                    displayMessageModal('Ошибка', errorMessage, true);
                     
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
         
-        // --- Заполнение полей форм координатами ---
-        function setAllLocationFields(locationText) {
-            const fieldsToFill = [
-                'taxiFrom', 'deliveryAddress', 'cargoFrom', 'soberDriverFrom', 'assistanceAddress', 'auctionFrom'
-            ];
-            
-            fieldsToFill.forEach(id => {
-                const input = document.getElementById(id);
-                if (input) {
-                    input.value = locationText;
-                }
-            });
-            updateTaxiPrice();
-        }
+        // =========================================================
+        // === ЛОГИКА МОДАЛЬНЫХ ОКОН ===
+        // =========================================================
 
-        // =========================================================
-        // === ЛОГИКА ЦЕНЫ ТАКСИ ===
-        // =========================================================
+        let stopCounter = 0; 
+
+        /**
+         * Добавляет дополнительное поле адреса
+         * @param {string} containerId - ID контейнера ('additionalStops' или 'additionalStopsAuction')
+         * @param {string} mode - 'taxi' или 'auction'
+         */
+        window.addStop = function(containerId, mode) {
+            if (stopCounter >= 3) {
+                displayMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false);
+                return;
+            }
+            
+            stopCounter++;
+            const stopsContainer = document.getElementById(containerId);
+            const stopId = `${containerId}Input${stopCounter}`;
+            const stopLabel = `Дополнительный адрес ${stopCounter}`;
+            
+            const stopDiv = document.createElement('div');
+            // Используем класс input-with-plus-btn для выравнивания
+            stopDiv.className = "flex space-x-2 additional-stop-item input-with-plus-btn"; 
+            const divId = `stopDiv${containerId}${stopCounter}`;
+            stopDiv.id = divId;
+            
+            // Если это окно такси, добавляем oninput для обновления цены
+            const inputEvents = (mode === 'taxi') ? 'oninput="updateTaxiPrice()"' : '';
+
+            // Используем remove-stop-btn для кнопки удаления
+            stopDiv.innerHTML = `
+                <input id="${stopId}" name="${stopId}" type="text" list="toHistory" class="form-input-control" placeholder="${stopLabel} (обязательно)" required ${inputEvents}>
+                <button type="button" onclick="removeStop('${divId}', '${mode}')" class="remove-stop-btn" title="Удалить адрес">
+                    <i class="fas fa-minus"></i>
+                </button>
+            `;
+            
+            stopsContainer.appendChild(stopDiv);
+            setAddressHistory(); 
+            if (mode === 'taxi') updateTaxiPrice();
+        }
+        
+        /**
+         * Удаляет дополнительное поле адреса
+         * @param {string} divId - ID элемента <div> для удаления
+         * @param {string} mode - 'taxi' или 'auction'
+         */
+        window.removeStop = function(divId, mode) {
+            const elementToRemove = document.getElementById(divId);
+            if (elementToRemove) {
+                elementToRemove.remove();
+                stopCounter--;
+                if (stopCounter < 0) stopCounter = 0;
+            }
+            if (mode === 'taxi') updateTaxiPrice();
+        }
         
         /**
          * Подсчитывает количество заполненных полей адресов в модальном окне Такси
+         * (Откуда, Куда, и все Дополнительные)
          */
         function countFilledAddresses() {
             let count = 0;
@@ -1952,17 +1823,18 @@
             const toInput = document.getElementById('taxiTo');
             const stopsContainer = document.getElementById('additionalStops');
 
+            // Считаем только, если поле заполнено (длина больше 0)
             if (fromInput && fromInput.value.trim().length > 0) {
-                count++;
+                count++; // Адрес "Откуда"
             }
             if (toInput && toInput.value.trim().length > 0) {
-                count++;
+                count++; // Адрес "Куда"
             }
 
             if (stopsContainer) {
                 stopsContainer.querySelectorAll('input.form-input-control').forEach(input => {
                     if (input.value.trim().length > 0) {
-                        count++; 
+                        count++; // Дополнительные адреса
                     }
                 });
             }
@@ -1971,18 +1843,22 @@
         
         /**
          * Обновляет примерную цену в модальном окне Такси.
+         * Сначала проверяет на межгород, затем на количество остановок.
          */
         window.updateTaxiPrice = function() {
             const priceEl = document.getElementById('taxiPriceEstimate');
             if (!priceEl) return;
 
             const toInput = document.getElementById('taxiTo');
+            // Приводим введенное значение к нижнему регистру для сравнения
             const destination = toInput ? toInput.value.trim().toLowerCase() : '';
             let priceText;
 
             // 1. ПРИОРИТЕТ: Проверяем на Межгород / Пригород
             let isIntercity = false;
             for (const location in INTERCITY_PRICES) {
+                // Проверяем, начинается ли введенный текст с названия населенного пункта
+                // Это позволяет вводить "Усть-Каменогорск, ул. Бажова 10"
                 if (destination.startsWith(location)) {
                     priceText = INTERCITY_PRICES[location];
                     isIntercity = true;
@@ -1991,6 +1867,7 @@
             }
 
             if (isIntercity) {
+                // Если это межгород, используем цену из словаря
                 priceEl.textContent = priceText;
                 return; 
             }
@@ -1998,21 +1875,142 @@
             // 2. ВТОРИЧНЫЙ ПРИОРИТЕТ: Локальный маршрут по количеству остановок
             const addressCount = countFilledAddresses();
             
+            // 2 адреса (Откуда + Куда)
             if (addressCount <= 2) { 
                 priceText = 'от 700–900 тг';
             } 
+            // 3 или более адресов (3 или 4 поля)
             else if (addressCount >= 3) { 
-                // 3 или более адресов
                 priceText = 'от 1500–2000 тг';
             } 
+            // Если адресов 0 или 1 (должно быть 2 полей, но на всякий случай)
             else {
-                priceText = 'от 700–900 тг';
+                 priceText = 'от 700–900 тг';
             }
             
             priceEl.textContent = priceText;
         }
 
 
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                document.querySelectorAll('.status-message').forEach(el => el.classList.remove('active'));
+                
+                if (modalId === 'taxiModal' || modalId === 'auctionModal') {
+                    setAddressHistory();
+                }
+                
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                
+                const formattedNow = getFormattedCurrentTime();
+                 if (modalId === 'taxiModal') {
+                     document.getElementById('taxiDateTime').value = formattedNow;
+                     // При открытии модального окна всегда обновляем цену
+                     updateTaxiPrice(); 
+                 }
+                 if (modalId === 'cargoModal') {
+                     document.getElementById('cargoDateTime').value = formattedNow;
+                 }
+                 if (modalId === 'cargoModal') {
+                     document.getElementById('cargoMovers').value = '0'; 
+                     updateCargoPrice(); 
+                 }
+                
+                const firstInput = modal.querySelector('input, textarea, select');
+                if (firstInput) firstInput.focus();
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+                
+                if (modalId === 'taxiModal' || modalId === 'auctionModal') {
+                    const stopsContainerTaxi = document.getElementById('additionalStops');
+                    const stopsContainerAuction = document.getElementById('additionalStopsAuction');
+                    
+                    if (stopsContainerTaxi) stopsContainerTaxi.innerHTML = '';
+                    if (stopsContainerAuction) stopsContainerAuction.innerHTML = '';
+                    
+                    stopCounter = 0; 
+                    
+                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
+                    if (form) form.reset();
+                } else {
+                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
+                    if (form) form.reset();
+                }
+                
+                if (modalId === 'assistanceModal') {
+                    document.getElementById('carDetails').classList.add('hidden');
+                    document.getElementById('assistanceType').value = '';
+                }
+                
+                 const formattedNow = getFormattedCurrentTime();
+                 if (modalId === 'taxiModal') {
+                     document.getElementById('taxiDateTime').value = formattedNow;
+                     updateTaxiPrice(); // Сброс цены на базовую
+                 }
+                 if (modalId === 'cargoModal') {
+                     document.getElementById('cargoDateTime').value = formattedNow;
+                     document.getElementById('cargoMovers').value = '0'; 
+                     updateCargoPrice(); 
+                 }
+            }
+        }
+
+        function showStatus(modalId, message) {
+            const statusEl = document.getElementById(modalId.replace('Modal', 'Status'));
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.classList.add('active');
+            }
+        }
+        
+        // --- ДЕМОНСТРАЦИОННАЯ МОДАЛЬНОЕ ОКНО (для оповещений) ---
+        function displayMessageModal(title, message, isError = false) {
+            const existingModal = document.getElementById('alertModal');
+            if (existingModal) existingModal.remove();
+
+            const modalHtml = `
+                <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div class="bg-white p-6 rounded-lg shadow-2xl w-full max-w-sm text-center">
+                        <h3 class="text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}">${title}</h3>
+                        <p class="mb-6">${message}</p>
+                        <button onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
+                            OK
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // --- Заполнение полей форм координатами ---
+        function setAllLocationFields(locationText) {
+            const fieldsToFill = [
+                { id: 'taxiFrom', placeholder: 'Откуда (Адрес определен)' }, 
+                { id: 'deliveryAddress', placeholder: 'Адрес доставки (Адрес определен)' }, 
+                { id: 'cargoFrom', placeholder: 'Адрес погрузки (Адрес определен)' }, 
+                { id: 'soberDriverFrom', placeholder: 'Адрес авто (Адрес определен)' }, 
+                { id: 'assistanceAddress', placeholder: 'Адрес помощи (Адрес определен)' }, 
+                { id: 'auctionFrom', placeholder: 'Откуда (Адрес определен)' }
+            ];
+            
+            fieldsToFill.forEach(field => {
+                const input = document.getElementById(field.id);
+                if (input) {
+                    input.value = locationText;
+                    input.placeholder = field.placeholder; 
+                }
+            });
+            updateTaxiPrice();
+        }
+        
         // =========================================================
         // === ЛОГИКА КАЛЬКУЛЯЦИИ ДЛЯ ГРУЗОВОГО ===
         // =========================================================
@@ -2030,212 +2028,12 @@
             cargoTotalPriceEl.textContent = `${formattedPrice} тг`;
             
             if (moversCount > 0) {
-                cargoPriceNoteEl.innerHTML = `Базовая стоимость ${CARGO_BASE_PRICE.toLocaleString('ru-RU')} тг/час + доплата за ${moversCount} чел.`;
-                cargoPriceNoteEl.classList.remove('text-gray-600');
-                cargoPriceNoteEl.classList.add('text-blue-500');
+                cargoPriceNoteEl.innerHTML = `Базовая стоимость ${CARGO_BASE_PRICE.toLocaleString('ru-RU')} тг + доплата за ${moversCount} чел.`;
             } else {
                 cargoPriceNoteEl.textContent = 'Минимальный заказ - 1 час.';
-                cargoPriceNoteEl.classList.remove('text-blue-500');
-                cargoPriceNoteEl.classList.add('text-gray-600');
             }
         }
-        
         // =========================================================
-        // === ЛОГИКА МОДАЛЬНЫХ ОКОН И ФОРМ (ОБНОВЛЕННАЯ ЛОГИКА) ===
-        // =========================================================
-        
-        /**
-         * Открывает или обновляет модальное окно с сообщением.
-         */
-        function openOrUpdateMessageModal(title, message, isError = false, showButton = true) {
-            let modal = document.getElementById('alertModal');
-            
-            // 1. Если модальное окно не существует, создаем его
-            if (!modal || modal.classList.contains('hidden')) {
-                // Если модальное окно скрыто, оно могло быть удалено. Пересоздаем.
-                if (modal) modal.remove();
-                
-                const modalHtml = `
-                    <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                        <div id="alertModalContent" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center dark:bg-gray-800 dark:text-gray-100">
-                            <h3 id="alertModalTitle" class="text-xl font-bold mb-4"></h3>
-                            <p id="alertModalMessage" class="mb-6 whitespace-pre-line"></p>
-                            <button id="alertModalButton" onclick="document.getElementById('alertModal').classList.add('hidden')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
-                                OK
-                            </button>
-                        </div>
-                    </div>
-                `;
-                document.body.insertAdjacentHTML('beforeend', modalHtml);
-                modal = document.getElementById('alertModal');
-                modal.classList.remove('hidden'); // Убеждаемся, что модальное окно видимо
-            }
-
-
-            // 2. Обновляем содержимое
-            const titleEl = document.getElementById('alertModalTitle');
-            const messageEl = document.getElementById('alertModalMessage');
-            const buttonEl = document.getElementById('alertModalButton');
-            
-            if (titleEl) {
-                titleEl.textContent = title;
-                titleEl.className = `text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}`;
-            }
-            if (messageEl) {
-                messageEl.innerHTML = message;
-            }
-            if (buttonEl) {
-                if (showButton) {
-                    buttonEl.classList.remove('hidden');
-                } else {
-                    buttonEl.classList.add('hidden');
-                }
-            }
-        }
-        
-        // Переименовываем старую функцию для совместимости, используя новый функционал
-        window.displayMessageModal = function(title, message, isError = false) {
-             openOrUpdateMessageModal(title, message, isError, true);
-        }
-
-        // =========================================================
-        // === ЛОГИКА МОДАЛЬНЫХ ОКОН И ФОРМ (ОСТАЛЬНОЕ) ===
-        // =========================================================
-
-        window.openModal = function(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                document.querySelectorAll('.status-message').forEach(el => el.classList.add('hidden'));
-                
-                if (modalId === 'taxiModal' || modalId === 'auctionModal') {
-                    setAddressHistory();
-                }
-                
-                modal.classList.add('active');
-                modal.setAttribute('aria-hidden', 'false');
-                
-                const formattedNow = getFormattedCurrentTime();
-                if (modalId === 'taxiModal') {
-                    const taxiDateTime = document.getElementById('taxiDateTime');
-                    if(taxiDateTime) taxiDateTime.value = formattedNow;
-                    updateTaxiPrice(); 
-                }
-                if (modalId === 'cargoModal') {
-                    const cargoDateTime = document.getElementById('cargoDateTime');
-                    if(cargoDateTime) cargoDateTime.value = formattedNow;
-                    const cargoMovers = document.getElementById('cargoMovers');
-                    if(cargoMovers) cargoMovers.value = '0'; 
-                    updateCargoPrice(); 
-                }
-                
-                const firstInput = modal.querySelector('input, textarea, select');
-                if (firstInput) firstInput.focus();
-            }
-        }
-
-        window.closeModal = function(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.remove('active');
-                modal.setAttribute('aria-hidden', 'true');
-                
-                // Очистка и сброс форм/счетчиков
-                if (modalId === 'taxiModal' || modalId === 'auctionModal') {
-                    const stopsContainerTaxi = document.getElementById('additionalStops');
-                    const stopsContainerAuction = document.getElementById('additionalStopsAuction');
-                    
-                    if (stopsContainerTaxi) stopsContainerTaxi.innerHTML = '';
-                    if (stopsContainerAuction) stopsContainerAuction.innerHTML = '';
-                    
-                    activeStopCount = 0; // СБРОС АКТИВНЫХ ОСТАНОВОК (исправленная логика)
-                }
-                
-                const form = document.getElementById(modalId.replace('Modal', 'Form'));
-                if (form) form.reset();
-                
-                if (modalId === 'assistanceModal') {
-                    const carDetails = document.getElementById('carDetails');
-                    const assistanceType = document.getElementById('assistanceType');
-                    if(carDetails) carDetails.classList.add('hidden');
-                    if(assistanceType) assistanceType.value = '';
-                }
-                
-                // Сброс динамических полей
-                const formattedNow = getFormattedCurrentTime();
-                if (modalId === 'taxiModal') {
-                    const taxiDateTime = document.getElementById('taxiDateTime');
-                    if(taxiDateTime) taxiDateTime.value = formattedNow;
-                    updateTaxiPrice(); 
-                }
-                if (modalId === 'cargoModal') {
-                    const cargoDateTime = document.getElementById('cargoDateTime');
-                    if(cargoDateTime) cargoDateTime.value = formattedNow;
-                    const cargoMovers = document.getElementById('cargoMovers');
-                    if(cargoMovers) cargoMovers.value = '0'; 
-                    updateCargoPrice(); 
-                }
-            }
-        }
-
-        /**
-         * Добавляет дополнительное поле адреса (ИСПРАВЛЕНО)
-         */
-        window.addStop = function(containerId, mode) {
-            // Проверяем ЛИМИТ по activeStopCount
-            if (activeStopCount >= 3) {
-                openOrUpdateMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false);
-                return;
-            }
-            
-            activeStopCount++; // Увеличиваем количество активных полей
-            uniqueStopId++; // Увеличиваем уникальный ID (всегда растет)
-            
-            const stopsContainer = document.getElementById(containerId);
-            
-            // Используем uniqueStopId для генерации ID, чтобы избежать дубликатов
-            const stopId = `${containerId}Input${uniqueStopId}`; 
-            const stopLabel = `Дополнительный адрес`; 
-            
-            const stopDiv = document.createElement('div');
-            stopDiv.className = "flex space-x-2 additional-stop-item input-with-plus-btn"; 
-            const divId = `stopDiv${containerId}${uniqueStopId}`;
-            stopDiv.id = divId;
-            
-            const inputEvents = (mode === 'taxi') ? 'oninput="updateTaxiPrice()"' : '';
-
-            stopDiv.innerHTML = `
-                <input id="${stopId}" name="${stopId}" type="text" list="toHistory" class="form-input-control" placeholder="${stopLabel} (обязательно)" required ${inputEvents}>
-                <button type="button" onclick="removeStop('${divId}', '${mode}')" class="remove-stop-btn" title="Удалить адрес">
-                    <i class="fas fa-minus"></i>
-                </button>
-            `;
-            
-            if(stopsContainer) stopsContainer.appendChild(stopDiv);
-            setAddressHistory(); 
-            if (mode === 'taxi') updateTaxiPrice();
-        }
-        
-        /**
-         * Удаляет дополнительное поле адреса (ИСПРАВЛЕНО)
-         */
-        window.removeStop = function(divId, mode) {
-            const elementToRemove = document.getElementById(divId);
-            if (elementToRemove) {
-                elementToRemove.remove();
-                activeStopCount--; // Уменьшаем только счетчик активных полей
-                if (activeStopCount < 0) activeStopCount = 0;
-            }
-            if (mode === 'taxi') updateTaxiPrice();
-        }
-
-        window.showPWAInstructions = function() {
-            const pwaModal = document.getElementById('pwaModal');
-            if(pwaModal) pwaModal.classList.remove('hidden');
-        }
-        window.showPartnerModal = function() {
-            const partnerModal = document.getElementById('partnerModal');
-            if(partnerModal) partnerModal.classList.remove('hidden');
-        }
 
 
         // --- Event Listeners for Opening/Closing ---
@@ -2243,22 +2041,21 @@
             button.addEventListener('click', () => {
                 const service = button.getAttribute('data-service');
                 if (MODALS[service]) {
-                    window.openModal(MODALS[service].id);
+                    openModal(MODALS[service].id);
                 }
             });
         });
 
         document.querySelectorAll('.close-btn').forEach(button => {
             button.addEventListener('click', (e) => {
-                const modalId = e.target.closest('button').getAttribute('data-modal');
-                if(modalId) window.closeModal(modalId);
+                closeModal(e.target.getAttribute('data-modal'));
             });
         });
 
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) {
-                    window.closeModal(overlay.id);
+                    closeModal(overlay.id);
                 }
             });
         });
@@ -2267,9 +2064,9 @@
             if (e.key === 'Escape') {
                 const openModal = document.querySelector('.modal-overlay.active');
                 if (openModal) {
-                    window.closeModal(openModal.id);
+                    closeModal(openModal.id);
                 }
-            } // <-- УДАЛЕНА ЛИШНЯЯ ЗАКРЫВАЮЩАЯ СКОБКА
+            }
         });
         
         // --- Specific Assistance Modal Logic (for Подкачать/Прикурить) ---
@@ -2303,7 +2100,7 @@
 
                 const modalId = modalConfig.id;
                 const statusEl = document.getElementById(modalId.replace('Modal', 'Status'));
-                if (statusEl) statusEl.classList.add('hidden'); // Скрываем статус при попытке отправки
+                if (statusEl) statusEl.classList.remove('active');
                 
                 let message = `${modalConfig.prefix}\n\n`;
                 let requiredFieldsMissing = false;
@@ -2314,6 +2111,10 @@
 
                     if (isRequired && !value) {
                         requiredFieldsMissing = true;
+                    }
+                    
+                    if (input && input.type === 'checkbox') {
+                        value = input.checked ? 'Да' : 'Нет';
                     }
 
                     return `*${label}*:\n${value || '—'}\n\n`;
@@ -2334,18 +2135,14 @@
                 };
                 
                 const handlePreorder = (dateTimeId, basePrefix) => {
-                    const dateTimeInput = document.getElementById(dateTimeId);
-                    if (!dateTimeInput) return basePrefix;
-
-                    const dateTimeValue = dateTimeInput.value;
+                    const dateTimeInput = document.getElementById(dateTimeId).value;
                     let prefixMessage = basePrefix;
                     
-                    if (dateTimeValue) {
-                        const selectedTime = new Date(dateTimeValue);
+                    if (dateTimeInput) {
+                        const selectedTime = new Date(dateTimeInput);
                         const currentTime = new Date();
                         
-                        // Проверяем, если время выбрано в будущем (с запасом 5 минут)
-                        if (selectedTime.getTime() > (currentTime.getTime() + 5 * 60 * 1000)) {
+                        if (selectedTime > currentTime) {
                             const formattedDate = selectedTime.toLocaleString('ru-RU', { 
                                 year: 'numeric', month: '2-digit', day: '2-digit', 
                                 hour: '2-digit', minute: '2-digit' 
@@ -2390,6 +2187,7 @@
                             message += `*Телефон для связи*:\n${passengerPhone}\n\n`;
                         }
                         
+                        // Определяем цену для отправки в WhatsApp
                         const currentPriceText = document.getElementById('taxiPriceEstimate').textContent;
                         message += `💰 Примерная цена: ${currentPriceText} (уточнит водитель)`;
                         
@@ -2399,16 +2197,10 @@
                         break;
                         
                     case 'auction':
-                        const auctionPriceInput = document.getElementById('auctionPrice');
-                        const auctionPrice = auctionPriceInput ? auctionPriceInput.value : '';
-                        
+                        const auctionPrice = document.getElementById('auctionPrice').value;
                         if (!auctionPrice || parseInt(auctionPrice) < 500) {
                             requiredFieldsMissing = true;
-                            // Отображаем ошибку в модальном окне аукциона
-                            if(statusEl) {
-                                statusEl.textContent = 'Пожалуйста, введите корректную цену (минимум 500 KZT).';
-                                statusEl.classList.remove('hidden');
-                            }
+                            showStatus(modalId, 'Пожалуйста, введите корректную цену (минимум 500 KZT).');
                             return;
                         }
                         message += getVal('auctionFrom', 'Откуда', true);
@@ -2433,10 +2225,10 @@
                         const deliveryAddress = document.getElementById('deliveryAddress').value.trim();
                         if (deliveryAddress) addressesToSave.push(deliveryAddress);
                         break;
-                        
+                    
                     case 'cargo':
                         const cargoMoversSelect = document.getElementById('cargoMovers');
-                        const moversCount = cargoMoversSelect ? parseInt(cargoMoversSelect.value) : 0;
+                        const moversCount = parseInt(cargoMoversSelect.value);
                         const totalPrice = CARGO_BASE_PRICE + (moversCount * MOVER_PRICE_PER_HOUR);
                         const formattedPrice = totalPrice.toLocaleString('ru-RU');
                         
@@ -2470,19 +2262,12 @@
                         const soberDriverFromAddress = document.getElementById('soberDriverFrom').value.trim();
                         if (soberDriverFromAddress) addressesToSave.push(soberDriverFromAddress);
                         break;
-                        
+                    
                     case 'assistance':
-                        const typeInput = document.getElementById('assistanceType');
-                        const type = typeInput ? typeInput.value : '';
-                        
+                        const type = document.getElementById('assistanceType').value;
                         if (!type) {
                             requiredFieldsMissing = true;
-                            // Отображаем ошибку в модальном окне
-                            if(statusEl) {
-                                statusEl.textContent = 'Пожалуйста, выберите тип требуемой помощи.';
-                                statusEl.classList.remove('hidden');
-                            }
-                            return;
+                            break;
                         }
 
                         message += getVal('assistanceType', 'Тип помощи');
@@ -2502,27 +2287,28 @@
                 }
 
                 if (requiredFieldsMissing) {
-                    // Если не было выбрано поле помощи, но ошибка пробросилась выше (как в аукционе)
-                    if (statusEl && statusEl.classList.contains('hidden')) {
-                         statusEl.textContent = 'Пожалуйста, заполните все обязательные поля.';
-                         statusEl.classList.remove('hidden');
-                    }
+                    showStatus(modalId, 'Пожалуйста, заполните все обязательные поля.');
                     return;
                 }
                 
-                // Сохранение адресов
                 for (const address of addressesToSave) {
                     await saveAddress(address);
                 }
 
-                // Отправка в WhatsApp
                 const waLink = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
                 window.open(waLink, '_blank');
 
-                window.closeModal(modalId);
+                closeModal(modalId);
                 this.reset();
             });
         });
+
+        window.showPWAInstructions = function() {
+            document.getElementById('pwaModal').classList.remove('hidden');
+        }
+        window.showPartnerModal = function() {
+            document.getElementById('partnerModal').classList.remove('hidden');
+        }
 
     </script>
 </body>

@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Шашлычный Двор | Доставка по Белоусовке</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -20,19 +20,37 @@
                         fontFamily: {
                             sans: ['Inter', 'sans-serif'],
                         },
+                        screens: {
+                            'xs': '375px', // Для очень маленьких экранов
+                        }
                     }
                 }
             }
         }
     </script>
     <style>
+        /* Поддержка безопасных зон для iPhone X+ */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .pb-safe {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            .mb-safe {
+                margin-bottom: env(safe-area-inset-bottom);
+            }
+            .bottom-safe {
+                bottom: env(safe-area-inset-bottom);
+            }
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: #0c0a09;
             color: #f7f7f7;
-            /* Добавлено больше отступа, чтобы нижнее меню и sticky bar не перекрывали контент */
-            padding-bottom: 140px; 
+            /* Большой отступ снизу для навигации + безопасной зоны */
+            padding-bottom: calc(140px + env(safe-area-inset-bottom));
+            -webkit-tap-highlight-color: transparent; /* Убирает синюю подсветку при клике на Android */
         }
+        
         .section-title {
             position: relative;
             display: inline-block;
@@ -55,19 +73,20 @@
             box-shadow: 0 10px 15px -3px rgba(255, 140, 0, 0.5), 0 4px 6px -2px rgba(255, 140, 0, 0.5);
         }
         .hero-background {
-            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('https://placehold.co/1200x800/2E1E1E/F7F7F7?text=ГОРЯЧИЙ+ШАШЛЫК');
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.8)), url('https://placehold.co/1200x800/2E1E1E/F7F7F7?text=ГОРЯЧИЙ+ШАШЛЫК');
             background-size: cover;
             background-position: center;
         }
         
-        /* Стили для липкой панели заказа (ГЛАВНАЯ СТРАНИЦА) */
+        /* Стили для липкой панели заказа */
         #sticky-order-bar {
             position: fixed;
-            bottom: 70px; /* Над мобильной навигацией */
+            /* Позиционируем с учетом высоты нижнего меню (около 60-70px) + безопасная зона */
+            bottom: calc(70px + env(safe-area-inset-bottom)); 
             left: 0;
             right: 0;
             z-index: 80;
-            transform: translateY(150%);
+            transform: translateY(200%);
             transition: transform 0.3s ease-in-out;
         }
         #sticky-order-bar.visible {
@@ -82,10 +101,14 @@
             position: fixed;
             top: 20px;
             right: 20px;
+            left: 20px; /* На мобильном центрируем или растягиваем */
             z-index: 1000;
             transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-            transform: translateY(-100px);
+            transform: translateY(-150%);
             opacity: 0;
+        }
+        @media(min-width: 640px) {
+            #notification-box { left: auto; width: auto; }
         }
         #notification-box.show {
             transform: translateY(0);
@@ -94,24 +117,53 @@
         
         /* Modal Styles */
         .modal-backdrop {
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.85);
             z-index: 900;
+            backdrop-filter: blur(4px); /* Размытие фона для красоты */
         }
+        /* Mobile First Modal Content: Full Screen */
         .modal-content-lg {
             background-color: #1a1a1a;
             z-index: 910;
             width: 100%;
-            max-width: 800px;
-            height: 100%; /* Full screen on mobile */
+            height: 100%; 
             max-height: 100vh;
             border-radius: 0;
+            display: flex;
+            flex-direction: column;
         }
         @media(min-width: 768px) {
             .modal-content-lg {
                 width: 90%;
                 height: auto;
                 max-height: 90vh;
-                border-radius: 0.75rem; /* rounded-xl */
+                border-radius: 0.75rem; 
+            }
+        }
+        
+        /* Standard Modal (Booking/Callback) Mobile Styles */
+        .modal-content-sm {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            border-radius: 1rem 1rem 0 0; /* Закругление только сверху как Bottom Sheet */
+            position: absolute;
+            bottom: 0;
+            max-height: 90vh;
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        @media(min-width: 640px) {
+            .modal-content-sm {
+                max-width: 28rem; /* max-w-md */
+                margin: 1rem;
+                border-radius: 0.75rem;
+                position: relative;
+                bottom: auto;
+                animation: none;
             }
         }
 
@@ -120,7 +172,6 @@
             height: 1.5rem;
         }
         
-        /* Hide scrollbar for category nav */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -128,11 +179,45 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
+        .menu-tab {
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .menu-tab.active {
+            border-bottom-color: #FF8C00;
+            color: #FF8C00;
+            background-color: rgba(255, 140, 0, 0.1);
+        }
+        
+        /* Увеличенные тач-зоны для input date/time */
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+            padding: 5px;
+            width: 24px;
+            height: 24px;
+        }
+        
+        /* Увеличенная кнопка закрытия */
+        .close-btn {
+            padding: 0.75rem; /* Больше область нажатия */
+            margin: -0.5rem;  /* Компенсация отступа */
+            color: #9ca3af;
+        }
+        .close-btn:active {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+            border-radius: 9999px;
+        }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased selection:bg-grill-accent selection:text-black">
+
     <!-- Notification Toast -->
-    <div id="notification-box" class="bg-grill-green text-white px-6 py-3 rounded-full shadow-2xl font-bold text-center">
+    <div id="notification-box" class="bg-grill-green text-white px-6 py-4 rounded-xl shadow-2xl font-bold text-center mx-4 sm:mx-0 flex items-center justify-center">
+        <span class="text-2xl mr-3">✅</span>
         <p id="notification-text">Товар добавлен!</p>
     </div>
 
@@ -143,39 +228,71 @@
                 <span class="text-xs text-grill-dark font-bold uppercase">Ваш заказ:</span>
                 <span id="sticky-total" class="text-xl font-black text-grill-dark">0 ₸</span>
             </div>
-            <button onclick="showCartModal()" class="bg-white text-grill-dark font-bold py-2 px-6 rounded-full shadow-lg flex items-center animate-pulse hover:bg-gray-100 transition">
+            <button onclick="showCartModal()" class="bg-white text-grill-dark font-bold py-2 px-6 rounded-full shadow-lg flex items-center animate-pulse hover:bg-gray-100 transition active:scale-95">
                 К оформлению
                 <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </button>
         </div>
     </div>
     
-    <!-- Cart Modal (Окно подтверждения заказа) -->
-    <div id="cart-modal" class="modal-backdrop fixed inset-0 hidden items-center justify-center p-4" onclick="hideCartModal()">
-        <div class="bg-[#1a1a1a] w-full max-w-lg rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto border border-gray-700 m-4 relative flex flex-col" onclick="event.stopPropagation()">
-            <div class="p-5 bg-grill-dark border-b border-gray-700 flex justify-between items-center sticky top-0 z-10">
+    <!-- Cart Modal -->
+    <div id="cart-modal" class="modal-backdrop fixed inset-0 hidden items-end sm:items-center justify-center sm:p-4" onclick="hideCartModal()">
+        <!-- Используем modal-content-sm для мобильных (выезжает снизу) -->
+        <div class="bg-[#1a1a1a] modal-content-sm w-full sm:max-w-lg sm:rounded-xl shadow-2xl overflow-hidden border-t sm:border border-gray-700 flex flex-col max-h-[85vh]" onclick="event.stopPropagation()">
+            <div class="p-4 bg-grill-dark border-b border-gray-700 flex justify-between items-center sticky top-0 z-10">
                 <h4 class="text-2xl font-bold text-white">Ваш заказ</h4>
-                <button onclick="hideCartModal()" class="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 transition">&times;</button>
+                <button onclick="hideCartModal()" class="close-btn text-3xl leading-none">&times;</button>
             </div>
 
-            <div class="p-6 flex-grow overflow-y-auto">
+            <div class="p-4 flex-grow overflow-y-auto overscroll-contain">
                 <div id="cart-items-container" class="space-y-4">
-                    <!-- Items injected here -->
+                    <!-- Items -->
                 </div>
                 
                 <div id="cart-empty-message" class="text-center py-10 text-gray-500 hidden">
                     <div class="text-6xl mb-4">🍖</div>
                     <p class="text-xl text-white">Корзина пуста</p>
-                    <button onclick="hideCartModal(); showFullMenuModal();" class="mt-4 text-grill-accent underline font-bold">Открыть меню</button>
+                    <button onclick="hideCartModal(); openMenuCategory('grill');" class="mt-4 text-grill-accent underline font-bold py-2 px-4">Открыть меню</button>
+                </div>
+                
+                <div id="order-details-form" class="mt-6 pt-4 border-t border-gray-700 space-y-4 hidden pb-safe">
+                    <h5 class="text-white text-lg font-bold flex items-center"><span class="mr-2">📝</span> Детали доставки</h5>
+                    
+                    <div>
+                        <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Ваше имя</label>
+                        <!-- text-base added to prevent iOS zoom -->
+                        <input type="text" id="order-name" placeholder="Как к вам обращаться?" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Адрес доставки <span class="text-red-500">*</span></label>
+                        <input type="text" id="order-address" placeholder="Улица, дом, квартира" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Комментарий к заказу</label>
+                        <textarea id="order-comment" rows="2" placeholder="Например: 'Поострее', 'Не звонить в домофон'" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent"></textarea>
+                    </div>
+                </div>
+
+                <!-- AI Recommendation -->
+                <div class="mt-6 pt-4 border-t border-gray-700 pb-4">
+                    <h5 class="text-white text-lg font-bold mb-3 flex items-center">
+                        <span class="mr-2">✨</span> Что добавить?
+                    </h5>
+                    <button id="ai-recommendation-btn" onclick="generateRecommendation()" class="w-full bg-gray-700 text-white font-bold py-3 rounded-lg hover:bg-gray-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-base">
+                        ✨ Рекомендация от Шефа
+                    </button>
+                    <div id="ai-recommendation-result" class="mt-3 min-h-[40px]"></div>
                 </div>
             </div>
             
-            <div class="p-6 bg-gray-900 border-t border-gray-700 space-y-4">
+            <div class="p-4 bg-gray-900 border-t border-gray-700 space-y-4 pb-safe">
                 <div class="flex justify-between items-center text-xl font-bold text-white">
                     <span>Итого:</span>
                     <span id="cart-total-price" class="text-grill-accent text-2xl">0 ₸</span>
                 </div>
-                <button onclick="placeOrder()" id="place-order-btn" class="w-full bg-grill-green hover:bg-[#1DA851] text-white text-lg font-bold px-6 py-4 rounded-xl shadow-lg transition duration-300 flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <button onclick="placeOrder()" id="place-order-btn" class="w-full bg-grill-green hover:bg-[#1DA851] text-white text-lg font-bold px-6 py-4 rounded-xl shadow-lg transition duration-300 flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed active:scale-95" disabled>
                     <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                     Заказать в WhatsApp
                 </button>
@@ -183,36 +300,38 @@
         </div>
     </div>
     
-    <!-- Full Menu Modal (ГЛАВНОЕ МЕНЮ) -->
+    <!-- Full Menu Modal -->
     <div id="full-menu-modal" class="modal-backdrop fixed inset-0 hidden items-center justify-center sm:p-4 z-[100]" onclick="hideFullMenuModal()">
-        <div class="modal-content-lg bg-stone-900 shadow-2xl overflow-hidden border border-gray-700 flex flex-col relative" onclick="event.stopPropagation()">
+        <div class="modal-content-lg bg-stone-900 shadow-2xl overflow-hidden border-t sm:border border-gray-700 flex flex-col relative" onclick="event.stopPropagation()">
             
-            <!-- Modal Header + Close -->
-            <div class="p-4 bg-grill-dark border-b border-gray-700 flex justify-between items-center shrink-0">
-                <h4 class="text-xl font-bold text-grill-accent flex items-center">
-                    <span class="text-2xl mr-2">🔥</span> Меню
-                </h4>
-                <button onclick="hideFullMenuModal()" class="bg-gray-700/50 hover:bg-gray-600 text-white rounded-full p-2 transition">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
+            <div class="bg-grill-dark border-b border-gray-700 flex flex-col shrink-0 pt-safe">
+                <div class="p-4 flex justify-between items-center">
+                    <h4 class="text-xl font-bold text-grill-accent flex items-center">
+                        <span class="text-2xl mr-2">🔥</span> Меню
+                    </h4>
+                    <button onclick="hideFullMenuModal()" class="close-btn text-3xl leading-none">&times;</button>
+                </div>
+                
+                <div class="flex overflow-x-auto no-scrollbar px-2 bg-black/30">
+                    <button onclick="switchMenuTab('grill')" id="tab-grill" class="menu-tab flex-1 py-3 px-4 text-gray-400 font-bold text-sm sm:text-base whitespace-nowrap text-center">🔥 Шашлыки</button>
+                    <button onclick="switchMenuTab('salads')" id="tab-salads" class="menu-tab flex-1 py-3 px-4 text-gray-400 font-bold text-sm sm:text-base whitespace-nowrap text-center">🥗 Салаты</button>
+                    <button onclick="switchMenuTab('hot')" id="tab-hot" class="menu-tab flex-1 py-3 px-4 text-gray-400 font-bold text-sm sm:text-base whitespace-nowrap text-center">🍲 Горячее</button>
+                </div>
             </div>
 
-            <!-- Sticky Category Nav -->
-            <div class="bg-[#1a1a1a] border-b border-gray-700 sticky top-0 z-20 shrink-0">
+            <div class="bg-[#1a1a1a] border-b border-gray-700 sticky top-0 z-20 shrink-0 shadow-lg">
                 <div id="modal-category-nav" class="flex overflow-x-auto no-scrollbar py-3 px-2 space-x-2">
-                    <!-- Categories injected JS -->
+                    <!-- Categories -->
                 </div>
             </div>
 
-            <!-- Scrollable Content -->
-            <div id="full-menu-scroll-area" class="flex-grow overflow-y-auto p-4 md:p-6 bg-stone-900 pb-24">
+            <div id="full-menu-scroll-area" class="flex-grow overflow-y-auto p-4 md:p-6 bg-stone-900 pb-24 overscroll-contain">
                 <div id="full-menu-container" class="space-y-8">
-                    <!-- Menu Content is Rendered Here by JS -->
+                    <!-- Content -->
                 </div>
             </div>
 
-            <!-- Sticky Bottom Cart Button (INSIDE MENU) -->
-            <div id="menu-modal-footer" class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-none hidden">
+            <div id="menu-modal-footer" class="absolute bottom-0 left-0 right-0 p-4 pb-safe bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-none hidden">
                 <button onclick="showCartModal()" class="pointer-events-auto w-full bg-grill-green text-white font-bold py-3 px-6 rounded-xl shadow-lg flex justify-between items-center transform active:scale-95 transition">
                     <div class="flex items-center">
                          <div class="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center mr-3 font-mono" id="modal-footer-count">0</div>
@@ -225,109 +344,419 @@
         </div>
     </div>
 
-    <!-- JavaScript Data and Logic -->
+    <!-- Banquet Modal (ОБНОВЛЕННЫЙ) -->
+    <div id="banquet-modal" class="modal-backdrop fixed inset-0 hidden items-end sm:items-center justify-center sm:p-4 z-[110]" onclick="hideBanquetModal()">
+        <div class="bg-[#1a1a1a] modal-content-sm w-full sm:max-w-2xl sm:rounded-xl shadow-2xl overflow-y-auto border-t sm:border-2 border-grill-accent flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
+            <div class="p-6 bg-gradient-to-r from-grill-dark to-black border-b border-grill-accent sticky top-0 z-10 flex justify-between items-start pt-safe">
+                <div>
+                    <h4 class="text-2xl font-bold text-grill-accent mb-1">👑 Банкеты</h4>
+                    <p class="text-gray-300 text-sm">От 15 000 ₸ / чел</p>
+                </div>
+                <button onclick="hideBanquetModal()" class="close-btn text-3xl leading-none text-white">&times;</button>
+            </div>
+
+            <div class="p-6 text-white space-y-8 overflow-y-auto pb-safe">
+                <div class="space-y-4">
+                    <h5 class="font-bold text-lg text-white border-l-4 border-grill-accent pl-3">Примерное меню:</h5>
+                    <ul class="space-y-3 bg-gray-800/50 p-4 rounded-xl">
+                         <!-- Static items list -->
+                        <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🍢 Шашлык</span><span class="font-mono text-gray-400">1 шт.</span></li>
+                        <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🥗 Салат</span><span class="font-mono text-gray-400">1 порция</span></li>
+                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🍲 Горячее</span><span class="font-mono text-gray-400">1 порция</span></li>
+                        <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🍞 Хлеб/Лаваш</span><span class="font-mono text-gray-400">В ассорт.</span></li>
+                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🥣 Соус</span><span class="font-mono text-gray-400">1 порция</span></li>
+                        <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">☕ Напитки</span><span class="font-mono text-gray-400">Безлим.</span></li>
+                         <li class="flex justify-between items-center bg-grill-red/20 p-2 rounded-lg border border-grill-red/50 mt-2">
+                            <span class="font-bold text-grill-red">🍷 Спиртное</span><span class="text-xs text-white">Включено</span>
+                        </li>
+                    </ul>
+                    <p class="text-xs text-gray-400 italic text-center">* Индивидуальный расчет.</p>
+                </div>
+
+                <!-- НОВАЯ КНОПКА ЗАКАЗА БАНКЕТА ВНУТРИ ОКНА -->
+                <div class="mt-6 pt-4 border-t border-gray-700">
+                    <button onclick="openBanquetBooking()" class="w-full bg-grill-accent text-grill-dark font-bold py-4 rounded-xl shadow-lg transition hover:bg-orange-500 flex justify-center items-center active:scale-95">
+                        <span class="mr-2 text-xl">📅</span> Заказать банкет / Обсудить
+                    </button>
+                    <p class="text-xs text-gray-500 text-center mt-2">Нажмите, чтобы забронировать дату</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="modal-backdrop fixed inset-0 hidden items-end sm:items-center justify-center sm:p-4 z-[120]" onclick="hideBookingModal()">
+        <div class="bg-[#1a1a1a] modal-content-sm w-full sm:max-w-md sm:rounded-xl shadow-2xl border-t sm:border border-grill-accent flex flex-col" onclick="event.stopPropagation()">
+            <div class="p-5 bg-grill-dark border-b border-gray-700 flex justify-between items-center pt-safe">
+                <h4 class="text-xl font-bold text-white flex items-center"><span class="mr-2">📅</span> Бронь столика</h4>
+                <button onclick="hideBookingModal()" class="close-btn text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 space-y-5 pb-safe overflow-y-auto">
+                <div>
+                    <label class="block text-grill-accent font-bold text-sm mb-2">Дата</label>
+                    <input type="date" id="book-date" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-grill-accent font-bold text-sm mb-2">Время</label>
+                        <input type="time" id="book-time" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
+                    </div>
+                    <div>
+                         <label class="block text-grill-accent font-bold text-sm mb-2">Гостей</label>
+                        <select id="book-guests" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
+                            <option value="2">2 чел.</option>
+                            <option value="3">3 чел.</option>
+                            <option value="4">4 чел.</option>
+                            <option value="5">5 чел.</option>
+                            <option value="6">6 чел.</option>
+                            <option value="7-9">7-9 чел.</option>
+                            <option value="10+">10+ (Банкет)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-grill-accent font-bold text-sm mb-2">Тип мероприятия</label>
+                    <select id="book-type" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
+                        <option value="Обычный ужин">Обычный ужин</option>
+                        <option value="День рождения">День рождения 🎂</option>
+                        <option value="Корпоратив">Корпоратив 🎉</option>
+                        <option value="Банкет">Банкет 👑</option>
+                        <option value="Другое">Другое</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-grill-accent font-bold text-sm mb-2">Ваше имя</label>
+                    <input type="text" id="book-name" placeholder="Имя" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
+                </div>
+                <button onclick="sendBooking()" class="w-full bg-grill-green hover:bg-[#1EBE57] text-white font-bold py-4 rounded-xl shadow-lg transition mt-2 flex justify-center items-center active:scale-95">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12.039 2C6.541 2 2 6.541 2 12.039c0 1.972.585 3.844 1.76 5.438L2.015 22l4.63-1.503A10.048 10.048 0 0012.039 22c5.498 0 10.039-4.541 10.039-10.039C22.078 6.541 17.537 2 12.039 2zm4.845 13.906c-.198.342-.81.603-1.39.81-.58.207-1.28.324-1.91.324-.63 0-1.26-.117-1.89-.324-.63-.207-1.242-.468-1.44-.81-.198-.342-.315-1.026-.117-1.39.198-.36.432-.612.63-.81.198-.198.324-.315.396-.468.072-.153.036-.585-.117-.81-.153-.225-.918-1.116-1.053-1.44-.135-.324-.27-.27-.468-.27-.198 0-.468-.027-.738.036-.27.063-.513.117-.756.396-.243.279-.693.684-.693 1.62 0 .936.729 1.836.837 1.989.108.153 1.413 2.16 3.483 3.096 2.07.936 2.07.693 2.457.657.387-.036 1.188-.486 1.35-1.008.162-.522.162-.972.117-1.143-.045-.171-.243-.27-.486-.36z"/></svg>
+                    Подтвердить
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Callback Modal -->
+    <div id="callback-modal" class="modal-backdrop fixed inset-0 hidden items-end sm:items-center justify-center sm:p-4 z-[130]" onclick="hideCallbackModal()">
+        <div class="bg-[#1a1a1a] modal-content-sm w-full sm:max-w-md sm:rounded-xl shadow-2xl border-t sm:border border-grill-red flex flex-col" onclick="event.stopPropagation()">
+            <div class="p-5 bg-grill-dark border-b border-gray-700 flex justify-between items-center pt-safe">
+                <h4 class="text-xl font-bold text-white flex items-center"><span class="mr-2">📞</span> Заказать звонок</h4>
+                <button onclick="hideCallbackModal()" class="close-btn text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 space-y-5 pb-safe overflow-y-auto">
+                <div>
+                    <label class="block text-grill-accent font-bold text-sm mb-2">Имя</label>
+                    <input type="text" id="callback-name" placeholder="Имя" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
+                </div>
+                <div>
+                    <label class="block text-grill-accent font-bold text-sm mb-2">Телефон</label>
+                    <input type="tel" id="callback-phone" placeholder="+7 7.." class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
+                </div>
+                <div>
+                    <label class="block text-grill-accent font-bold text-sm mb-2">Комментарий</label>
+                    <textarea id="callback-comment" rows="3" placeholder="Когда позвонить?" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none"></textarea>
+                </div>
+                <button onclick="sendCallbackRequest()" class="w-full bg-grill-red hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-lg transition mt-2 flex justify-center items-center active:scale-95">
+                    Отправить заявку
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script>
-        // --- DATA ---
-        const productsData = [
-            { id: 'lula_hits', category: 'hits', name: 'Люля-кебаб (Хит)', price: 1850, desc: 'Фарш из отборной говядины с пряными травами. (400г)', img: 'https://placehold.co/400x300/4B2C1B/FFFFFF?text=ЛЮЛЯ-КЕБАБ' },
-            { id: 'pork_classic_hits', category: 'hits', name: 'Свинина «Классика»', price: 2100, desc: 'Сочный свиной ошеек, маринованный в луке и специях. (300г)', img: 'https://placehold.co/400x300/6A321A/FFFFFF?text=СВИНИНА+КЛАССИКА' },
-            { id: 'chicken_wings_hits', category: 'hits', name: 'Куриные крылья', price: 1600, desc: 'Хрустящие крылышки в пикантном маринаде BBQ. (450г)', img: 'https://placehold.co/400x300/774B00/FFFFFF?text=КУРИНЫЕ+КРЫЛЬЯ' },
+        // ... (Products Data - SAME as before, collapsed for brevity) ...
+         const productsData = [
+            // ХИТЫ
+            { id: 'lula_hits', category: 'hits', name: 'Люля-кебаб (Хит)', price: 2500, desc: 'Фарш из отборной говядины с пряными травами. (400г)', img: 'https://placehold.co/400x300/4B2C1B/FFFFFF?text=ЛЮЛЯ-КЕБАБ' },
+            { id: 'pork_classic_hits', category: 'hits', name: 'Свинина «Классика»', price: 3000, desc: 'Сочный свиной ошеек, маринованный в луке и специях. (300г)', img: 'https://placehold.co/400x300/6A321A/FFFFFF?text=СВИНИНА+КЛАССИКА' },
+            { id: 'chicken_wings_hits', category: 'hits', name: 'Куриные крылья', price: 2500, desc: 'Хрустящие крылышки в пикантном маринаде BBQ. (450г)', img: 'https://placehold.co/400x300/774B00/FFFFFF?text=КУРИНЫЕ+КРЫЛЬЯ' },
             
-            // НОВАЯ КАТЕГОРИЯ: УТКА
-            { id: 'duck_filet', category: 'duck', name: 'Утиная грудка гриль', price: 3500, desc: 'Нежное филе утки в медово-горчичном маринаде.', img: 'https://placehold.co/500x350/5C3A21/FFFFFF?text=УТИНАЯ+ГРУДКА' },
+            // ГОРЯЧИЕ БЛЮДА
+            { id: 'hd_kazakh', category: 'hot_dishes', name: 'Мясо по-казахски', price: 2500, desc: 'Говядина томленая со специями в собственном соку.', img: 'https://placehold.co/400x300/8B4513/FFFFFF?text=МЯСО+ПО-КАЗАХСКИ' },
+            { id: 'hd_thai', category: 'hot_dishes', name: 'Мясо по-тайски', price: 2500, desc: 'Говядина, болгарский перец, огурцы, чеснок, восточные специи.', img: 'https://placehold.co/400x300/D2691E/FFFFFF?text=МЯСО+ПО-ТАЙСКИ' },
+            { id: 'hd_manti_fried', category: 'hot_dishes', name: 'Манты жареные', price: 2500, desc: 'Хрустящие жареные манты с сочной мясной начинкой.', img: 'https://placehold.co/400x300/DAA520/FFFFFF?text=МАНТЫ+ЖАРЕНЫЕ' },
+            { id: 'hd_chop_greek', category: 'hot_dishes', name: 'Отбивная по-гречески', price: 2000, desc: 'Куриная отбивная, помидор, сыр, оливки.', img: 'https://placehold.co/400x300/F5DEB3/000000?text=ОТБИВНАЯ+ГРЕЧЕСКАЯ' },
+            { id: 'hd_chop_forest', category: 'hot_dishes', name: 'Отбивная лесная', price: 2000, desc: 'Куриная отбивная под шапкой из грибов и сыра.', img: 'https://placehold.co/400x300/8B4513/FFFFFF?text=ОТБИВНАЯ+ЛЕСНАЯ' },
+            { id: 'hd_dumplings', category: 'hot_dishes', name: 'Пельмени', price: 2000, desc: 'Домашние пельмени со сметаной или бульоном.', img: 'https://placehold.co/400x300/F0F8FF/000000?text=ПЕЛЬМЕНИ' },
+            { id: 'hd_cabbage_rolls', category: 'hot_dishes', name: 'Голубцы', price: 2000, desc: 'Классические голубцы с мясом и рисом в томатном соусе.', img: 'https://placehold.co/400x300/CD5C5C/FFFFFF?text=ГОЛУБЦЫ' },
+            { id: 'hd_chicken_veg', category: 'hot_dishes', name: 'Курица с овощами', price: 2000, desc: 'Тушеное филе курицы с сезонными овощами.', img: 'https://placehold.co/400x300/FFD700/000000?text=КУРИЦА+ОВОЩИ' },
+            { id: 'hd_chebureks', category: 'hot_dishes', name: 'Чебуреки (5 шт.)', price: 2000, desc: 'Порция из 5 сочных чебуреков.', img: 'https://placehold.co/400x300/DEB887/000000?text=ЧЕБУРЕКИ' },
+            { id: 'hd_nuggets', category: 'hot_dishes', name: 'Наггетсы (8 шт.)', price: 800, desc: 'Хрустящие куриные наггетсы.', img: 'https://placehold.co/400x300/FFA500/000000?text=НАГГЕТСЫ' },
+            { id: 'hd_khashlama', category: 'hot_dishes', name: 'Хашлама', price: 2000, desc: 'Наваристое блюдо из баранины с овощами.', img: 'https://placehold.co/400x300/8B0000/FFFFFF?text=ХАШЛАМА' },
+            { id: 'hd_manti', category: 'hot_dishes', name: 'Манты (на пару)', price: 2000, desc: 'Традиционные манты с рубленым мясом.', img: 'https://placehold.co/400x300/F5F5DC/000000?text=МАНТЫ' },
+
+            // САЛАТЫ
+            { id: 'salad_breeze', category: 'salads', name: 'Салат «Бриз весенний»', price: 1000, desc: 'Помидор, крабовые палочки, сыр, чеснок, майонез.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=БРИЗ' },
+            { id: 'salad_uyut', category: 'salads', name: 'Салат «Уют»', price: 1500, desc: 'Язык, филе куриное, жареные грибы, огурец.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=УЮТ' },
+            { id: 'salad_manon', category: 'salads', name: 'Салат «Манон»', price: 1000, desc: 'Огурец, помидор, сухарики, кукуруза, сыр, майонез.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=МАНОН' },
+            { id: 'salad_fantasy', category: 'salads', name: 'Салат «Фантазия»', price: 1300, desc: 'Куриное филе, ананас, пекинская капуста, орехи, майонез.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=ФАНТАЗИЯ' },
+            { id: 'salad_original', category: 'salads', name: 'Салат «Оригинальный»', price: 1500, desc: 'Куриное филе, грибы, говядина, огурец, майонез.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=ОРИГИНАЛЬНЫЙ' },
+            { id: 'salad_thai', category: 'salads', name: 'Салат «Тайский»', price: 1300, desc: 'Говядина, овощи, соевый соус.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=ТАЙСКИЙ' },
+            { id: 'salad_cha', category: 'salads', name: 'Салат «Ча»', price: 1300, desc: 'Говядина, помидор, соевый соус, чеснок, специи.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=ЧА' },
+            { id: 'salad_prince', category: 'salads', name: 'Салат «Принц»', price: 1300, desc: 'Руляда, маринованный огурец, яйцо, орехи, чеснок, майонез.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=ПРИНЦ' },
+            { id: 'salad_hussar', category: 'salads', name: 'Салат «Гусарский»', price: 1000, desc: 'Копченая курица, сыр, яйцо, огурец, майонез.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=ГУСАРСКИЙ' },
+            { id: 'salad_gourmet', category: 'salads', name: 'Салат «Гурман»', price: 1300, desc: 'Говядина, огурец, орехи, зелень, лист салата, чеснок, яичный блин.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=ГУРМАН' },
+            { id: 'salad_greek', category: 'salads', name: 'Греческий', price: 1000, desc: 'Помидор, огурец, брынза, болгарский перец, оливки, заливка.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=Греческий' },
+            { id: 'salad_olivier', category: 'salads', name: 'Оливье', price: 1000, desc: 'Маринованный огурец, картофель, морковь, колбаса, горошек, майонез.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=ОЛИВЬЕ' },
+            { id: 'salad_whatneeded', category: 'salads', name: 'Салат «То что надо»', price: 1000, desc: 'Кукуруза, помидор, сыр, сухарики, колбаса, майонез.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=ТО+ЧТО+НАДО' },
+            { id: 'salad_caesar', category: 'salads', name: 'Цезарь', price: 1000, desc: 'Классический салат с курицей, сухариками и фирменным соусом.', img: 'https://placehold.co/400x300/66BB6A/FFFFFF?text=ЦЕЗАРЬ' },
+
+            // ПРЕМИУМ
+            { id: 'royal_shashlyk', category: 'premium', name: 'Королевский шашлык', price: 4000, desc: 'Большой кусок отборной свиной корейки, маринованный в гранатовом соке. (450г)', img: 'https://placehold.co/500x350/D97D00/FFFFFF?text=КОРОЛЕВСКИЙ' },
+            { id: 'khan_shashlyk', category: 'premium', name: 'Ханский шашлык', price: 4000, desc: 'Сочное филе говядины, фаршированное сыром и грибами. (450г)', img: 'https://placehold.co/500x350/D97D00/FFFFFF?text=ХАНСКИЙ' },
+
+            // УТКА
+            { id: 'duck_filet', category: 'duck', name: 'Утиная грудка гриль', price: 2900, desc: 'Нежное филе утки в медово-горчичном маринаде.', img: 'https://placehold.co/500x350/5C3A21/FFFFFF?text=УТИНАЯ+ГРУДКА' },
             { id: 'duck_wings', category: 'duck', name: 'Утиные ножки', price: 2900, desc: 'Сочные ножки утки, запеченные с травами.', img: 'https://placehold.co/500x350/5C3A21/FFFFFF?text=УТИНЫЕ+НОЖКИ' },
 
-            { id: 'pork_bone', category: 'pork', name: 'Свинина на кости', price: 2400, desc: 'Сочное мясо, маринованное в специях и луке.', img: 'https://placehold.co/500x350/B85730/F7F7F7?text=СВИНИНА+НА+КОСТИ' },
-            { id: 'pork_neck', category: 'pork', name: 'Свиная шея', price: 2200, desc: 'Мягкий, с жировыми прослойками.', img: 'https://placehold.co/500x350/A05030/F7F7F7?text=СВИНАЯ+ШЕЯ' },
-
+            // СВИНИНА
+            { id: 'pork_classic', category: 'pork', name: 'Свинина «Классика»', price: 3000, desc: 'Сочный свиной ошеек, маринованный в луке и специях.', img: 'https://placehold.co/500x350/6A321A/FFFFFF?text=СВИНИНА+КЛАССИКА' },
+            { id: 'pork_entrecote', category: 'pork', name: 'Свинина Антрекот', price: 3000, desc: 'Мясо с реберной части, мягкое и очень сочное, на кости. (300г)', img: 'https://placehold.co/500x350/A05030/F7F7F7?text=АНТРЕКОТ' },
+            { id: 'pork_bone', category: 'pork', name: 'Свинина на кости', price: 3000, desc: 'Сочное мясо, маринованное в специях и луке.', img: 'https://placehold.co/500x350/B85730/F7F7F7?text=СВИНИНА+НА+КОСТИ' },
+            
+            // ГОВЯДИНА
             { id: 'beef_tenderloin', category: 'beef', name: 'Говядина (Вырезка)', price: 3200, desc: 'Нежная говяжья вырезка, маринованная в красном вине.', img: 'https://placehold.co/500x350/B54030/FFFFFF?text=ГОВЯДИНА+ВЫРЕЗКА' },
+            { id: 'beef_liver', category: 'beef', name: 'Печень в сетке', price: 2200, desc: 'Нежная говяжья печень в жировой сетке с травами.', img: 'https://placehold.co/500x350/B54030/FFFFFF?text=ПЕЧЕНЬ' },
             { id: 'beef_ribs', category: 'beef', name: 'Ребра говяжьи', price: 2800, desc: 'Томленые ребра на углях.', img: 'https://placehold.co/500x350/802010/FFFFFF?text=РЕБРА' },
 
-            { id: 'lamb_meat', category: 'lamb', name: 'Баранина (мякоть)', price: 2900, desc: 'Классика Востока. Нежное филе баранины.', img: 'https://placehold.co/500x350/935C3A/F7F7F7?text=БАРАНИНА+МЯКОТЬ' },
-            // НОВОЕ: БАРАНЬИ РЕБРА
-            { id: 'lamb_ribs', category: 'lamb', name: 'Бараньи семечки (ребрышки)', price: 3200, desc: 'Молодые ребрышки, обжаренные до золотистой корочки.', img: 'https://placehold.co/500x350/7A4A30/FFFFFF?text=БАРАНЬИ+РЕБРА' },
+            // БАРАНИНА
+            { id: 'lamb_meat', category: 'lamb', name: 'Баранина (мякоть)', price: 3500, desc: 'Классика Востока. Нежное филе баранины. (300г)', img: 'https://placehold.co/500x350/935C3A/F7F7F7?text=БАРАНИНА+МЯКОТЬ' },
+            { id: 'lamb_ribs', category: 'lamb', name: 'Бараньи семечки (ребрышки)', price: 3500, desc: 'Молодые ребрышки, обжаренные до золотистой корочки. (350г)', img: 'https://placehold.co/500x350/7A4A30/FFFFFF?text=БАРАНЬИ+РЕБРА' },
             
-            { id: 'chicken_filet', category: 'chicken', name: 'Куриное филе', price: 1750, desc: 'Диетический вариант, нежный и ароматный.', img: 'https://placehold.co/500x350/E9C46A/4D4D4D?text=КУРИНОЕ+ФИЛЕ' },
-            { id: 'lula_chk', category: 'lula', name: 'Люля из курицы', price: 1600, desc: 'Нежный фарш из куриного филе.', img: 'https://placehold.co/500x350/D9A44A/4D4D4D?text=ЛЮЛЯ+КУРИЦА' },
-            { id: 'lula_bf', category: 'lula', name: 'Люля говядина', price: 1800, desc: 'Сочный фарш с кинзой.', img: 'https://placehold.co/500x350/69342A/FFFFFF?text=ЛЮЛЯ+ГОВЯДИНА' },
-            // НОВОЕ: ЛЮЛЯ ИЗ БАРАНИНЫ
-            { id: 'lula_lamb', category: 'lula', name: 'Люля-кебаб баранина', price: 2200, desc: 'Традиционный рецепт с курдюком и специями.', img: 'https://placehold.co/500x350/5C3020/FFFFFF?text=ЛЮЛЯ+БАРАНИНА' },
+            // КУРИЦА
+            { id: 'chicken_filet', category: 'chicken', name: 'Куриное филе', price: 2500, desc: 'Диетический вариант, нежный и ароматный. (300г)', img: 'https://placehold.co/500x350/E9C46A/4D4D4D?text=КУРИНОЕ+ФИЛЕ' },
+            
+            // ЛЮЛЯ-КЕБАБ
+            { id: 'lula_chk', category: 'lula', name: 'Люля из курицы', price: 2500, desc: 'Нежный фарш из куриного филе. (400г)', img: 'https://placehold.co/500x350/D9A44A/4D4D4D?text=ЛЮЛЯ+КУРИЦА' },
+            { id: 'lula_bf', category: 'lula', name: 'Люля говядина', price: 2500, desc: 'Сочный фарш с кинзой. (400г)', img: 'https://placehold.co/500x350/69342A/FFFFFF?text=ЛЮЛЯ+ГОВЯДИНА' },
+            { id: 'lula_lamb', category: 'lula', name: 'Люля-кебаб баранина', price: 2500, desc: 'Традиционный рецепт с курдюком и специями. (400г)', img: 'https://placehold.co/500x350/5C3020/FFFFFF?text=ЛЮЛЯ+БАРАНИНА' },
 
-            { id: 'veg_mix', category: 'veg', name: 'Ассорти овощей', price: 1400, desc: 'Баклажан, перец, томаты, цукини.', img: 'https://placehold.co/500x350/4C723C/FFFFFF?text=ОВОЩИ+ГРИЛЬ' },
-            // НОВОЕ: ШАМПИНЬОНЫ
-            { id: 'veg_mushrooms', category: 'veg', name: 'Шампиньоны на углях', price: 1200, desc: 'Сочные грибы в фирменном маринаде.', img: 'https://placehold.co/500x350/8D8171/FFFFFF?text=ШАМПИНЬОНЫ' },
+            // ОВОЩИ И ГРИБЫ
+            { id: 'veg_mushrooms', category: 'veg', name: 'Шампиньоны на углях', price: 2500, desc: 'Сочные грибы в фирменном маринаде. (350г)', img: 'https://placehold.co/500x350/8D8171/FFFFFF?text=ШАМПИНЬОНЫ' },
+            { id: 'veg_mix', category: 'veg', name: 'Овощное ассорти гриль', price: 2200, desc: 'Баклажан, перец, томаты, цукини. (400г)', img: 'https://placehold.co/500x350/4C723C/FFFFFF?text=ОВОЩИ+ГРИЛЬ' },
             
-            { id: 'sauce_red', category: 'sauces', name: 'Томатный соус', price: 300, desc: 'Острый, идеально подходит к мясу.', img: 'https://placehold.co/500x350/5C2E2E/FFFFFF?text=КРАСНЫЙ+СОУС' },
-            // НОВЫЕ СОУСЫ
+            // НАРЕЗКИ
+            { id: 'platter_caucasus', category: 'platters', name: 'Ассорти "Кавказ"', price: 2500, desc: 'Свежие огурцы, помидоры, болгарский перец, брынза, редис, микс зелени.', img: 'https://placehold.co/400x300/4CAF50/FFFFFF?text=АССОРТИ+КАВКАЗ' },
+            { id: 'platter_veg', category: 'platters', name: 'Овощное ассорти', price: 2000, desc: 'Свежие огурцы, помидоры, болгарский перец, микс зелени.', img: 'https://placehold.co/400x300/60B088/FFFFFF?text=ОВОЩНОЕ+АССОРТИ' },
+
+            // СОУСЫ
+            { id: 'sauce_red', category: 'sauces', name: 'Красный соус', price: 300, desc: 'Томатный, острый, идеально подходит к мясу.', img: 'https://placehold.co/500x350/5C2E2E/FFFFFF?text=КРАСНЫЙ+СОУС' },
+            { id: 'sauce_white', category: 'sauces', name: 'Белый соус', price: 300, desc: 'Нежный сливочно-чесночный соус с зеленью.', img: 'https://placehold.co/500x350/FFFFFF/000000?text=БЕЛЫЙ+СОУС' },
             { id: 'sauce_bbq', category: 'sauces', name: 'Соус Барбекю', price: 350, desc: 'Дымный аромат, сладковато-пряный вкус.', img: 'https://placehold.co/500x350/3D1E10/FFFFFF?text=BBQ' },
             { id: 'sauce_tkemali', category: 'sauces', name: 'Ткемали', price: 400, desc: 'Грузинский кисло-сладкий соус из слив.', img: 'https://placehold.co/500x350/4A6B30/FFFFFF?text=ТКЕМАЛИ' },
 
+            // ГАРНИРЫ
             { id: 'potatoes', category: 'garnishes', name: 'Картофель фри', price: 500, desc: 'С солью (200г).', img: 'https://placehold.co/500x350/C6A500/000000?text=КАРТОФЕЛЬ+ФРИ' },
-            // НОВОЕ: ЛАВАШ
-            { id: 'lavash_firm', category: 'garnishes', name: 'Лаваш фирменный', price: 250, desc: 'Армянский лаваш с паприкой и зеленью.', img: 'https://placehold.co/500x350/F5DEB3/000000?text=ЛАВАШ' }
+            { id: 'lavash_firm', category: 'garnishes', name: 'Лаваш фирменный', price: 300, desc: 'Армянский лаваш, обжаренный с паприкой и зеленью.', img: 'https://placehold.co/500x350/F5DEB3/000000?text=ЛАВАШ' }
         ];
-        
+
+        // ... (Data Maps - SAME) ...
         const menuCategories = {
             hits: { name: "Хиты", icon: "⭐" },
-            duck: { name: "Утка", icon: "🦆" }, // Новая категория
+            hot_dishes: { name: "Горячие блюда", icon: "🍲" }, 
+            salads: { name: "Салаты", icon: "🥗" },
+            premium: { name: "Премиум", icon: "👑" },
+            duck: { name: "Утка", icon: "🦆" }, 
             pork: { name: "Свинина", icon: "🐷" },
             beef: { name: "Говядина", icon: "🐂" },
             lamb: { name: "Баранина", icon: "🐑" },
             chicken: { name: "Курица", icon: "🐔" },
             lula: { name: "Люля", icon: "🍢" },
-            veg: { name: "Овощи", icon: "🍆" },
+            veg: { name: "Овощи/Грибы", icon: "🍆" }, 
+            platters: { name: "Нарезки", icon: "🥒" },
             sauces: { name: "Соусы", icon: "🥣" },
             garnishes: { name: "Гарниры", icon: "🍟" }
         };
 
-        let cart = []; // Глобальный стейт корзины
+        const menuGroups = {
+            grill: ['hits', 'premium', 'duck', 'pork', 'beef', 'lamb', 'chicken', 'lula', 'veg', 'platters', 'sauces', 'garnishes'],
+            salads: ['salads'],
+            hot: ['hot_dishes', 'garnishes', 'sauces']
+        };
 
-        // --- UTILS ---
+        let cart = []; 
+        let activeMenuTab = 'grill'; 
+
+        const apiKey = ""; 
+        const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+        
+        // ... (Gemini API Functions - SAME) ...
+        async function callGeminiAPI(payload, maxRetries = 5) {
+            let attempt = 0;
+            while (attempt < maxRetries) {
+                try {
+                    const url = `${API_URL}?key=${apiKey}`;
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.status === 429) {
+                        if (attempt === maxRetries - 1) throw new Error("API rate limit exceeded.");
+                        const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        attempt++;
+                        continue;
+                    }
+                    if (!response.ok) throw new Error(`API call failed with status: ${response.status}`);
+                    const result = await response.json();
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Не удалось получить рекомендацию от Шефа.";
+                } catch (error) {
+                    console.error("Gemini API Error:", error);
+                    if (attempt === maxRetries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+                    attempt++;
+                }
+            }
+            return "Извините, сервис рекомендаций временно недоступен.";
+        }
+
+        async function generateRecommendation() {
+            const resultBox = document.getElementById('ai-recommendation-result');
+            const button = document.getElementById('ai-recommendation-btn');
+            button.disabled = true;
+            resultBox.innerHTML = ''; 
+
+            if (cart.length === 0) {
+                resultBox.innerHTML = '<p class="text-sm text-yellow-500">Корзина пуста. Добавьте блюда, чтобы Шеф мог дать рекомендацию!</p>';
+                button.disabled = false;
+                return;
+            }
+
+            resultBox.innerHTML = '<p class="text-sm text-gray-400 flex items-center justify-center"><svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-grill-accent" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Шеф думает над идеальным дополнением...</p>';
+
+            let cartSummary = cart.map(item => {
+                const product = getProductById(item.id);
+                return product ? `${product.name} (${item.count} шт.)` : '';
+            }).filter(Boolean).join(', ');
+            
+            const systemPrompt = "Вы — опытный шеф-повар и эксперт по кавказской кухне. Ваша задача — проанализировать текущий заказ клиента (список блюд в корзине) и предложить ОДНУ идеальную рекомендацию. Это должна быть недостающая позиция (соус, гарнир, лаваш) или напиток, который идеально дополнит заказ. Рекомендация должна быть краткой (одно-два предложения), продающей, начинаться со слов 'Совет Шефа: ' и включать эмодзи. Не используйте markdown-форматирование.";
+            
+            const userQuery = `Мой текущий заказ: ${cartSummary}. Что еще идеально дополнит мой стол в кавказском стиле? Предложи одну вещь.`;
+            
+            try {
+                const recommendation = await callGeminiAPI({
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                });
+                resultBox.innerHTML = `<div class="p-3 bg-gray-900 border border-grill-accent/50 rounded-lg shadow-inner text-white font-medium text-sm">${recommendation}</div>`;
+            } catch (e) {
+                resultBox.innerHTML = `<p class="text-sm text-red-500">Ошибка: ${e.message}</p>`;
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        // --- Core Helpers ---
         function getProductById(id) {
             return productsData.find(p => p.id === id);
         }
 
         function showNotification(message) {
             const notificationBox = document.getElementById('notification-box');
-            const notificationText = document.getElementById('notification-text');
-            notificationText.textContent = message;
+            document.getElementById('notification-text').textContent = message;
             notificationBox.classList.add('show');
             setTimeout(() => { notificationBox.classList.remove('show'); }, 2000);
         }
+        
+        function toggleBodyScroll(shouldLock) {
+            document.body.style.overflow = shouldLock ? 'hidden' : '';
+        }
+
+        // --- Modals Logic Optimized ---
+        function showModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+            document.getElementById(modalId).classList.add('flex');
+            toggleBodyScroll(true);
+        }
+
+        function hideModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            document.getElementById(modalId).classList.remove('flex');
+            toggleBodyScroll(false);
+        }
 
         function bookTable() {
-            const message = "Здравствуйте! Хочу забронировать столик 🍽️.\n\n📅 Дата: \n⏰ Время: \n👥 Гостей: ";
-            const whatsappNumber = "77771234567";
-            const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-            window.open(url, '_blank');
+            showModal('booking-modal');
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('book-date');
+            if(!dateInput.value) dateInput.value = today;
         }
 
-        // --- CART LOGIC ---
-        function saveCart() {
-            localStorage.setItem('shashlyk_cart', JSON.stringify(cart));
+        // НОВАЯ ФУНКЦИЯ ДЛЯ ЗАКАЗА БАНКЕТА ИЗ МОДАЛЬНОГО ОКНА
+        function openBanquetBooking() {
+            hideBanquetModal();
+            showModal('booking-modal');
+            
+            // Автозаполнение формы для банкета
+            const typeSelect = document.getElementById('book-type');
+            const guestsSelect = document.getElementById('book-guests');
+            const dateInput = document.getElementById('book-date');
+            
+            if(typeSelect) typeSelect.value = 'Банкет';
+            if(guestsSelect) guestsSelect.value = '10+';
+            
+            // Ставим текущую дату, если пусто
+            const today = new Date().toISOString().split('T')[0];
+            if(dateInput && !dateInput.value) dateInput.value = today;
         }
-        
-        function loadCart() {
-            const savedCart = localStorage.getItem('shashlyk_cart');
-            if (savedCart) {
-                try { cart = JSON.parse(savedCart); } catch (e) { cart = []; }
+
+        function hideBookingModal() { hideModal('booking-modal'); }
+        function showCallbackModal() { showModal('callback-modal'); }
+        function hideCallbackModal() { hideModal('callback-modal'); }
+        function showBanquetModal() { showModal('banquet-modal'); }
+        function hideBanquetModal() { hideModal('banquet-modal'); }
+
+        function sendBooking() {
+            const date = document.getElementById('book-date').value;
+            const time = document.getElementById('book-time').value;
+            const guests = document.getElementById('book-guests').value;
+            const type = document.getElementById('book-type').value; 
+            const name = document.getElementById('book-name').value;
+
+            if (!date || !time) {
+                showNotification('Выберите дату и время!');
+                return;
             }
+            const message = `Здравствуйте! Хочу забронировать столик 🍽️.\n\n📅 Дата: ${date}\n⏰ Время: ${time}\n🎭 Тип: ${type}\n👥 Гостей: ${guests}\n👤 Имя: ${name}`;
+            const url = `https://wa.me/77055071640?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+            hideBookingModal();
         }
+
+        function sendCallbackRequest() {
+            const name = document.getElementById('callback-name').value;
+            const phone = document.getElementById('callback-phone').value;
+            const comment = document.getElementById('callback-comment').value;
+
+            if (!name || !phone) {
+                showNotification('Укажите имя и телефон!');
+                return;
+            }
+            let message = `Здравствуйте! Перезвоните мне, пожалуйста 📞.\n\n👤 Имя: ${name}\n📱 Телефон: ${phone}`;
+            if(comment) message += `\n💬 Комментарий: ${comment}`;
+            
+            const url = `https://wa.me/77055071640?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+            hideCallbackModal();
+        }
+
+        // --- Cart Logic ---
+        function saveCart() { localStorage.setItem('shashlyk_cart', JSON.stringify(cart)); }
+        function loadCart() { try { cart = JSON.parse(localStorage.getItem('shashlyk_cart')) || []; } catch (e) { cart = []; } }
 
         function updateCartItemCount(productId, delta) {
             const existingItem = cart.find(item => item.id === productId);
             if (existingItem) {
                 existingItem.count += delta;
-                if (existingItem.count <= 0) {
-                    cart = cart.filter(item => item.id !== productId);
-                }
+                if (existingItem.count <= 0) cart = cart.filter(item => item.id !== productId);
             } else if (delta > 0) {
                 cart.push({ id: productId, count: delta });
             }
             saveCart();
             renderCartUI();
             renderCartModal(); 
-            // Also re-render menu items to update counters
             renderFullMenu(); 
         }
 
@@ -338,14 +767,11 @@
 
         function renderCartUI() {
             const totalCount = cart.reduce((sum, item) => sum + item.count, 0);
-            const totalPrice = cart.reduce((sum, item) => {
-                const product = getProductById(item.id);
-                return sum + (product ? product.price * item.count : 0);
-            }, 0);
+            const totalPrice = cart.reduce((sum, item) => sum + (getProductById(item.id)?.price || 0) * item.count, 0);
 
-            // 1. Sticky Bar on Main Page
             const stickyBar = document.getElementById('sticky-order-bar');
             const stickyTotal = document.getElementById('sticky-total');
+            
             if (totalCount > 0) {
                 stickyBar.classList.add('visible');
                 stickyTotal.textContent = `${totalPrice} ₸`;
@@ -353,20 +779,15 @@
                 stickyBar.classList.remove('visible');
             }
 
-            // 2. Footer inside Menu Modal
             const modalFooter = document.getElementById('menu-modal-footer');
-            const modalCount = document.getElementById('modal-footer-count');
-            const modalPrice = document.getElementById('modal-footer-price');
-            
             if (totalCount > 0) {
                 modalFooter.classList.remove('hidden');
-                modalCount.textContent = totalCount;
-                modalPrice.textContent = `${totalPrice} ₸`;
+                document.getElementById('modal-footer-count').textContent = totalCount;
+                document.getElementById('modal-footer-price').textContent = `${totalPrice} ₸`;
             } else {
                 modalFooter.classList.add('hidden');
             }
 
-            // 3. Mobile Nav Icon
             const mobileCartBtn = document.getElementById('mobile-cart-btn');
             if (mobileCartBtn) {
                  if (totalCount > 0) {
@@ -374,8 +795,7 @@
                         <div class="relative">
                             <svg class="nav-icon text-grill-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                             <span class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">${totalCount}</span>
-                        </div>
-                     `;
+                        </div>`;
                      mobileCartBtn.classList.add('bg-white');
                      mobileCartBtn.classList.remove('bg-grill-accent');
                  } else {
@@ -391,26 +811,32 @@
             const totalElement = document.getElementById('cart-total-price');
             const emptyMessage = document.getElementById('cart-empty-message');
             const orderBtn = document.getElementById('place-order-btn');
+            const aiButton = document.getElementById('ai-recommendation-btn');
+            const resultBox = document.getElementById('ai-recommendation-result');
+            const formContainer = document.getElementById('order-details-form');
 
             let total = 0;
             let itemsHTML = '';
 
             if (cart.length === 0) {
                 emptyMessage.classList.remove('hidden');
+                formContainer.classList.add('hidden'); 
                 container.innerHTML = '';
                 orderBtn.disabled = true;
+                aiButton.disabled = true;
                 totalElement.textContent = "0 ₸";
+                resultBox.innerHTML = '';
             } else {
                 emptyMessage.classList.add('hidden');
+                formContainer.classList.remove('hidden'); 
                 orderBtn.disabled = false;
+                aiButton.disabled = false;
 
                 cart.forEach(item => {
                     const product = getProductById(item.id);
                     if (!product) return;
-
                     const itemTotal = product.price * item.count;
                     total += itemTotal;
-
                     itemsHTML += `
                         <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700">
                             <div class="flex-grow mr-2">
@@ -418,12 +844,11 @@
                                 <p class="text-grill-accent text-sm font-bold">${itemTotal} ₸</p>
                             </div>
                             <div class="flex items-center bg-gray-700 rounded-lg p-1">
-                                <button onclick="updateCartItemCount('${item.id}', -1)" class="w-8 h-8 flex items-center justify-center text-white hover:text-grill-accent font-bold text-xl">-</button>
+                                <button onclick="updateCartItemCount('${item.id}', -1)" class="w-8 h-8 flex items-center justify-center text-white hover:text-grill-accent font-bold text-xl active:scale-90 transition">-</button>
                                 <span class="font-bold text-white w-8 text-center">${item.count}</span>
-                                <button onclick="updateCartItemCount('${item.id}', 1)" class="w-8 h-8 flex items-center justify-center text-white hover:text-grill-accent font-bold text-xl">+</button>
+                                <button onclick="updateCartItemCount('${item.id}', 1)" class="w-8 h-8 flex items-center justify-center text-white hover:text-grill-accent font-bold text-xl active:scale-90 transition">+</button>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
                 container.innerHTML = itemsHTML;
             }
@@ -431,23 +856,31 @@
         }
 
         function showCartModal() {
-            hideFullMenuModal(); // Ensure menu is closed underneath
-            document.getElementById('cart-modal').classList.remove('hidden');
-            document.getElementById('cart-modal').classList.add('flex'); 
+            hideFullMenuModal();
+            showModal('cart-modal');
             renderCartModal();
         }
 
-        function hideCartModal() {
-            document.getElementById('cart-modal').classList.add('hidden');
-            document.getElementById('cart-modal').classList.remove('flex');
-        }
+        function hideCartModal() { hideModal('cart-modal'); }
 
         function placeOrder() {
             if (cart.length === 0) return;
+            
+            const name = document.getElementById('order-name').value.trim();
+            const address = document.getElementById('order-address').value.trim();
+            const comment = document.getElementById('order-comment').value.trim();
+            
+            if (!address) {
+                showNotification('❗ Пожалуйста, укажите адрес доставки!');
+                const addressInput = document.getElementById('order-address');
+                addressInput.classList.add('border-red-500');
+                addressInput.focus();
+                setTimeout(() => addressInput.classList.remove('border-red-500'), 2000);
+                return;
+            }
 
             let orderDetails = "Здравствуйте! Хочу заказать шашлык 🍢:\n\n";
             let total = 0;
-
             cart.forEach(item => {
                 const product = getProductById(item.id);
                 if (product) {
@@ -456,27 +889,26 @@
                     orderDetails += `🔹 ${product.name} — ${item.count} шт. (${itemTotal} ₸)\n`;
                 }
             });
-
             orderDetails += `\n💰 *Итого: ${total} ₸*`;
-            orderDetails += `\n\n📍 Адрес доставки: [Напишите адрес]`;
-            orderDetails += `\n👤 Имя: [Ваше имя]`;
             
-            const whatsappNumber = "77771234567"; 
-            const encodedMessage = encodeURIComponent(orderDetails);
-            const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            if (name) orderDetails += `\n👤 Имя: ${name}`;
+            orderDetails += `\n📍 Адрес доставки: ${address}`;
+            if (comment) orderDetails += `\n💬 Комментарий: ${comment}`;
 
-            window.open(whatsappURL, '_blank');
+            const url = `https://wa.me/77055071640?text=${encodeURIComponent(orderDetails)}`;
+            window.open(url, '_blank');
             
             cart = [];
             localStorage.removeItem('shashlyk_cart');
+            document.getElementById('order-address').value = '';
+            document.getElementById('order-comment').value = '';
+            
             renderCartUI();
             hideCartModal();
             showNotification('Переходим в WhatsApp...');
         }
 
-
-        // --- NEW MENU RENDERING (The "App" look) ---
-
+        // ... (createMenuCard & renderFullMenu - Optimized) ...
         function createMenuCard(product) {
             const count = getCartCount(product.id);
             const buttonState = count > 0 
@@ -485,7 +917,7 @@
                      <span class="text-white font-bold w-6 text-center text-sm">${count}</span>
                      <button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', 1)" class="w-8 h-8 flex items-center justify-center text-white font-bold text-lg active:bg-black/20 rounded-r-lg">+</button>
                    </div>`
-                : `<button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', 1)" class="bg-gray-700 hover:bg-grill-accent hover:text-black text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow">
+                : `<button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', 1)" class="bg-gray-700 hover:bg-grill-accent hover:text-black text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow active:scale-95">
                      + Добавить
                    </button>`;
 
@@ -507,15 +939,15 @@
                 </div>
             `;
         }
-        
+
         function scrollToCategory(catId) {
              const element = document.getElementById(`cat-${catId}`);
              const scrollContainer = document.getElementById('full-menu-scroll-area');
              if(element && scrollContainer) {
-                 // Simple scroll
-                 element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                 // Using simple offset top calculation for better compatibility inside flex container
+                 const offset = element.offsetTop - scrollContainer.offsetTop;
+                 scrollContainer.scrollTo({ top: offset, behavior: 'smooth' });
                  
-                 // Highlight active tab
                  document.querySelectorAll('.cat-nav-btn').forEach(btn => {
                      btn.classList.remove('bg-grill-accent', 'text-black');
                      btn.classList.add('bg-gray-700', 'text-white');
@@ -536,19 +968,15 @@
             let contentHTML = '';
             let navHTML = '';
             
-            // Define categories - ВКЛЮЧАЯ НОВУЮ 'duck'
-            const categoryKeys = ['hits', 'duck', 'pork', 'beef', 'lamb', 'chicken', 'lula', 'veg', 'sauces', 'garnishes'];
+            const categoryKeys = menuGroups[activeMenuTab] || menuGroups['grill'];
             
             let isFirst = true;
-
             categoryKeys.forEach(key => {
                 const categoryProducts = productsData.filter(p => p.category === key);
                 if (categoryProducts.length === 0) return;
 
                 const catName = menuCategories[key].name;
                 const catIcon = menuCategories[key].icon;
-
-                // Nav Button
                 const activeClass = isFirst ? 'bg-grill-accent text-black' : 'bg-gray-700 text-white';
                 navHTML += `
                     <button id="btn-${key}" onclick="scrollToCategory('${key}')" class="cat-nav-btn shrink-0 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition ${activeClass}">
@@ -557,7 +985,6 @@
                 `;
                 isFirst = false;
 
-                // Section Content
                 contentHTML += `
                     <div id="cat-${key}" class="pt-2">
                         <h3 class="text-xl font-bold text-white mb-3 flex items-center sticky top-0 bg-stone-900/95 py-2 z-10">
@@ -569,294 +996,151 @@
                     </div>
                 `;
             });
-            
-            // Only update innerHTML if it's the first render or structural change, 
-            // but for simple counter updates, ideally we'd use virtual DOM. 
-            // Here we just re-render string for simplicity.
             container.innerHTML = contentHTML;
-            
-            // Only render nav once to avoid jumping, unless empty
-            if(navContainer.innerHTML === '') {
-                navContainer.innerHTML = navHTML;
-            }
+            navContainer.innerHTML = navHTML;
+            document.querySelectorAll('.menu-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(`tab-${activeMenuTab}`).classList.add('active');
         }
 
-        // --- MODAL CONTROLS ---
+        function openMenuCategory(tabName) {
+            activeMenuTab = tabName;
+            showFullMenuModal();
+        }
+        
+        function switchMenuTab(tabName) {
+            activeMenuTab = tabName;
+            renderFullMenu();
+        }
 
         function showFullMenuModal() {
             renderFullMenu(); 
-            document.getElementById('full-menu-modal').classList.remove('hidden');
-            document.getElementById('full-menu-modal').classList.add('flex'); 
-            renderCartUI(); // Update footer visibility
-            document.body.style.overflow = 'hidden'; // Lock body scroll
+            showModal('full-menu-modal');
+            renderCartUI(); 
         }
 
-        function hideFullMenuModal() {
-            document.getElementById('full-menu-modal').classList.add('hidden');
-            document.getElementById('full-menu-modal').classList.remove('flex');
-            document.body.style.overflow = ''; // Unlock body scroll
-        }
-
-        // --- INIT ---
+        function hideFullMenuModal() { hideModal('full-menu-modal'); }
 
         document.addEventListener('DOMContentLoaded', () => {
             loadCart();
             renderCartUI();
         });
     </script>
-
-    <!-- Header / Navigation (Simple fixed navigation) -->
+    
+    <!-- Hero Section -->
     <header class="bg-grill-dark/90 sticky top-0 z-50 shadow-lg backdrop-blur-sm">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-3xl font-bold text-grill-accent">Шашлычный Двор</h1>
             <nav class="hidden md:flex space-x-6 text-sm">
-                <!-- Кнопки в шапке теперь открывают модальное меню -->
-                <button onclick="showFullMenuModal()" class="text-white hover:text-grill-accent transition duration-300">Меню</button>
+                <button onclick="openMenuCategory('grill')" class="text-white hover:text-grill-accent transition duration-300">Меню</button>
                 <a href="#visit" class="text-white hover:text-grill-accent transition duration-300">Посетить нас</a>
                 <a href="#catering" class="text-white hover:text-grill-accent transition duration-300">Кейтеринг</a>
                 <a href="#contacts" class="text-white hover:text-grill-accent transition duration-300">Контакты</a>
             </nav>
-            <a href="tel:+77771234567" class="text-white text-lg font-semibold hover:text-grill-accent transition duration-300 hidden sm:block">
-                +7 777 123 4567
-            </a>
+            <a href="tel:+77055071640" class="text-white text-lg font-semibold hover:text-grill-accent transition duration-300 hidden sm:block">+7 705 507 1640</a>
         </div>
     </header>
 
-    <!-- 1. Hero Block -->
-    <section id="hero" class="hero-background h-[70vh] md:h-[85vh] flex items-center justify-center text-center">
-        <div class="p-4 md:p-8 bg-black/50 rounded-xl max-w-4xl mx-auto">
-            <h2 class="text-4xl sm:text-6xl md:text-7xl font-extrabold text-white mb-4 leading-tight shadow-xl">
-                Шашлычный Двор
-            </h2>
-            <p class="text-xl sm:text-2xl md:text-3xl font-light text-grill-accent mb-10 italic">
-                «Настоящий шашлык с дымком — доставка по Белоусовке и району»
-            </p>
-            <!-- КНОПКА ТЕПЕРЬ ОТКРЫВАЕТ ПОЛНОЕ МЕНЮ В МОДАЛЬНОМ ОКНЕ -->
-            <button onclick="showFullMenuModal()" class="primary-btn inline-block bg-grill-red text-white text-xl font-bold px-10 py-4 rounded-full transition duration-300 ease-in-out shadow-2xl animate-bounce">
-                Заказать шашлык
-            </button>
+    <section id="hero" class="hero-background min-h-[85vh] flex items-center justify-center text-center py-12">
+        <div class="p-4 md:p-8 bg-black/60 rounded-xl max-w-4xl mx-auto flex flex-col items-center w-full">
+            <h2 class="text-4xl sm:text-6xl md:text-7xl font-extrabold text-white mb-4 leading-tight shadow-xl">Шашлычный Двор</h2>
+            <p class="text-xl sm:text-2xl md:text-3xl font-light text-grill-accent mb-8 italic">«Настоящий шашлык с дымком — доставка по Белоусовке»</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl mb-8">
+                <button onclick="openMenuCategory('grill')" class="primary-btn bg-grill-red text-white text-lg font-bold py-4 rounded-xl shadow-2xl hover:brightness-110">Заказать шашлык 🍢</button>
+                <button onclick="openMenuCategory('salads')" class="primary-btn bg-white text-grill-dark text-lg font-bold py-4 rounded-xl shadow-2xl hover:bg-gray-100">Заказать салаты 🥗</button>
+                <button onclick="openMenuCategory('hot')" class="primary-btn bg-grill-accent text-grill-dark text-lg font-bold py-4 rounded-xl shadow-2xl hover:bg-orange-600 hover:text-white">Заказать горячее 🍲</button>
+            </div>
+            <div class="w-full max-w-2xl bg-gradient-to-br from-gray-900 to-black border border-grill-accent rounded-xl p-6 shadow-2xl relative overflow-hidden group text-left">
+                <h3 class="text-xl md:text-2xl font-bold text-grill-accent mb-3 leading-tight">Шашлычный Двор приглашает провести корпоративы, банкеты и торжества!</h3>
+                <p class="text-gray-300 text-sm mb-5">Мы возьмем на себя все заботы о вкусном столе.</p>
+                
+                <!-- ВОЗВРАЩЕННЫЙ БЛОК КОНТАКТОВ -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 text-sm">
+                    <div class="space-y-2">
+                        <p class="flex items-center text-white">
+                            <span class="mr-2 text-grill-red">📍</span>
+                            Белоусовка
+                            <a href="https://yandex.kz/maps/-/CLsSzWIR" target="_blank" class="ml-1 underline text-gray-400 hover:text-white text-xs">(На карте)</a>
+                        </p>
+                        <p class="flex items-center text-white">
+                            <span class="mr-2 text-grill-red">⏰</span>
+                            Ежедневно, 10:00 – 00:00
+                        </p>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="flex items-center text-white">
+                            <span class="mr-2 text-grill-red">📞</span>
+                            <a href="tel:+77055071640" class="hover:text-grill-accent">+7 705 507 1640</a>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="bookTable()" class="flex-1 bg-[#25D366] hover:bg-[#1EBE57] text-white font-bold py-3 px-4 rounded-lg text-center flex items-center justify-center transition shadow-lg">Написать в WhatsApp</button>
+                    <button onclick="showCallbackModal()" class="flex-1 bg-grill-red hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg">Оставить заявку</button>
+                </div>
+                 <div class="mt-4 text-center"><button onclick="showBanquetModal()" class="text-grill-accent text-sm underline hover:text-white">Посмотреть варианты банкетного меню</button></div>
+            </div>
         </div>
     </section>
 
-    <!-- 2. Почему мы? (Why Us?) -->
-    <section class="py-16 md:py-24 bg-stone-900">
+    <!-- ... (Other sections) ... -->
+     <section class="py-16 md:py-24 bg-stone-900">
         <div class="max-w-7xl mx-auto px-4">
             <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Почему выбирают нас?</h3>
-
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                <!-- Feature 1: На углях -->
-                <div class="p-6 bg-grill-dark rounded-xl shadow-xl border-b-4 border-grill-accent">
-                    <div class="text-5xl mb-3 text-grill-accent">🔥</div>
-                    <h4 class="text-xl font-semibold text-white mb-2">Готовим на углях</h4>
-                    <p class="text-gray-400 text-sm">Настоящий дымок и неповторимый вкус.</p>
-                </div>
-
-                <!-- Feature 2: Свежее мясо -->
-                <div class="p-6 bg-grill-dark rounded-xl shadow-xl border-b-4 border-grill-accent">
-                    <div class="text-5xl mb-3 text-grill-accent">🥩</div>
-                    <h4 class="text-xl font-semibold text-white mb-2">Только свежее мясо</h4>
-                    <p class="text-gray-400 text-sm">Строгий отбор поставщиков, никаких заморозок.</p>
-                </div>
-
-                <!-- Feature 3: Быстрая доставка -->
-                <div class="p-6 bg-grill-dark rounded-xl shadow-xl border-b-4 border-grill-accent">
-                    <div class="text-5xl mb-3 text-grill-accent">🚖</div>
-                    <h4 class="text-xl font-semibold text-white mb-2">Доставка от 20 минут</h4>
-                    <p class="text-gray-400 text-sm">Быстро привозим горячим по Белоусовке.</p>
-                </div>
-
-                <!-- Feature 4: Выездной мангальщик -->
-                <div class="p-6 bg-grill-dark rounded-xl shadow-xl border-b-4 border-grill-accent">
-                    <div class="text-5xl mb-3 text-grill-accent">👨‍🍳</div>
-                    <h4 class="text-xl font-semibold text-white mb-2">Выездной мангальщик</h4>
-                    <p class="text-gray-400 text-sm">Шашлык на вашем празднике. Без забот!</p>
-                </div>
+                <div class="p-6 bg-grill-dark rounded-xl shadow-xl border-b-4 border-grill-accent"><div class="text-5xl mb-3 text-grill-accent">🔥</div><h4 class="text-xl font-semibold text-white mb-2">На углях</h4></div>
+                <div class="p-6 bg-grill-dark rounded-xl shadow-xl border-b-4 border-grill-accent"><div class="text-5xl mb-3 text-grill-accent">🥩</div><h4 class="text-xl font-semibold text-white mb-2">Свежее мясо</h4></div>
+                <div class="p-6 bg-grill-dark rounded-xl shadow-xl border-b-4 border-grill-accent"><div class="text-5xl mb-3 text-grill-accent">🚖</div><h4 class="text-xl font-semibold text-white mb-2">Быстрая доставка</h4></div>
+                <div class="p-6 bg-grill-dark rounded-xl shadow-xl border-b-4 border-grill-accent"><div class="text-5xl mb-3 text-grill-accent">👨‍🍳</div><h4 class="text-xl font-semibold text-white mb-2">Выездной мангал</h4></div>
             </div>
         </div>
     </section>
 
-    <!-- 3. Отзывы клиентов (Customer Reviews) -->
-    <section class="py-16 md:py-24 bg-grill-dark">
-        <div class="max-w-7xl mx-auto px-4">
-            <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Отзывы клиентов</h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Review 1 -->
-                <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border-l-4 border-grill-red">
-                    <p class="text-lg italic text-white mb-4">
-                        "Заказывали на праздник — всё супер! Мясо сочное, горячее, с настоящим дымком. Гости были в восторге. Доставили точно в срок. Спасибо!"
-                    </p>
-                    <p class="font-semibold text-grill-accent">- Мария К., Белоусовка</p>
-                </div>
-                <!-- Review 2 -->
-                <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border-l-4 border-grill-red">
-                    <p class="text-lg italic text-white mb-4">
-                        "Сочно, вкусно, быстро! Это лучший шашлык в нашем районе. Всегда заказываем тут свинину. Порции большие, цена адекватная. Рекомендую!"
-                    </p>
-                    <p class="font-semibold text-grill-accent">- Игорь С., п. Касыма Кайсенова</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 4. Посетите нас (Visit Us) -->
-    <section id="visit" class="py-16 md:py-24 bg-stone-900">
-        <div class="max-w-4xl mx-auto px-4">
-            <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Приглашаем в наш Шашлычный Двор</h3>
-            
-            <div class="grid md:grid-cols-2 gap-8">
-                <!-- Card 1: Бронь -->
-                <div class="bg-grill-dark p-6 rounded-xl shadow-2xl flex flex-col items-center text-center border border-gray-700">
-                    <div class="bg-gray-800 p-3 rounded-full mb-4">
-                        <span class="text-3xl">📅</span>
-                    </div>
-                    <h4 class="text-xl font-bold text-grill-accent mb-2">Забронировать столик</h4>
-                    <p class="text-sm text-gray-400 mb-6 flex-grow">Планируете встречу или праздник? Забронируйте лучшее место заранее.</p>
-                    <button onclick="bookTable()" class="w-full bg-grill-green text-white hover:bg-[#1EBE57] font-bold py-3 px-6 rounded-full transition flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        Написать в WhatsApp
-                    </button>
-                </div>
-
-                <!-- Card 2: Просто прийти -->
-                <div class="bg-grill-dark p-6 rounded-xl shadow-2xl flex flex-col items-center text-center border border-gray-700">
-                    <div class="bg-gray-800 p-3 rounded-full mb-4">
-                        <span class="text-3xl">🚶‍♂️</span>
-                    </div>
-                    <h4 class="text-xl font-bold text-white mb-2">Приходите без записи!</h4>
-                    <p class="text-sm text-gray-400 mb-6 flex-grow">Горячий шашлык прямо с мангала и уютная атмосфера ждут вас.</p>
-                    <a href="https://yandex.kz/maps/-/CLsr4EYj" target="_blank" class="w-full bg-grill-accent hover:bg-orange-600 text-grill-dark font-bold py-3 px-6 rounded-full transition flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        Проложить маршрут
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 5. Услуги на выезд (Catering Services) -->
-    <section id="catering" class="py-16 md:py-24 bg-grill-dark">
-        <div class="max-w-4xl mx-auto px-4">
-            <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Наши выездные услуги</h3>
-            
-            <div class="bg-gray-800 rounded-xl shadow-2xl overflow-hidden md:flex">
-                <img src="https://placehold.co/600x400/3E2E2E/FFFFFF?text=ВЫЕЗДНОЙ+МАНГАЛ" alt="Мангальщик на мероприятии" class="md:w-1/2 h-64 md:h-auto object-cover">
-                <div class="p-8 md:p-10 md:w-1/2 flex flex-col justify-center">
-                    <h4 class="text-3xl font-bold text-grill-accent mb-4">Мангальщик на мероприятие</h4>
-                    <p class="text-lg text-white mb-6">
-                        Забудьте о хлопотах! Наш профессиональный мангальщик приедет к вам со всем оборудованием и приготовит шашлык прямо на вашем празднике.
-                    </p>
-                    <h4 class="text-2xl font-bold text-grill-accent mb-4">Кейтеринг для банкетов</h4>
-                    <p class="text-lg text-white mb-6">
-                        Полное сопровождение вашего торжества: от закусок и салатов до фирменных горячих блюд на гриле. Обслуживание под ключ.
-                    </p>
-                    <a href="https://wa.me/77771234567" target="_blank" class="primary-btn inline-block bg-grill-red text-white text-lg font-bold px-8 py-3 rounded-full text-center transition duration-300">
-                        Узнать цену и обсудить меню
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 6. Контакты / Форма заказа (Contacts / Order Form) -->
     <section id="contacts" class="py-16 md:py-24 bg-stone-900">
         <div class="max-w-7xl mx-auto px-4">
-            <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Контакты и заказ</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-                <!-- Contact Info -->
-                <div class="bg-gray-800 p-8 rounded-xl shadow-2xl">
+             <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Контакты и заказ</h3>
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                 <div class="bg-gray-800 p-8 rounded-xl shadow-2xl">
                     <h4 class="text-2xl font-bold text-grill-accent mb-4">Свяжитесь с нами</h4>
-                    
-                    <div class="space-y-4 text-lg">
-                        <p class="flex items-center text-white">
-                            <!-- Phone Icon (Inline SVG) -->
-                            <svg class="w-6 h-6 mr-3 text-grill-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                            Телефон: <a href="tel:+77771234567" class="ml-2 hover:text-grill-accent transition">+7 777 123 4567</a>
-                        </p>
-                        <p class="flex items-center text-white">
-                            <!-- Location Icon (Inline SVG) -->
-                            <svg class="w-6 h-6 mr-3 text-grill-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            Адрес: ул. Центральная, 14, Белоусовка
-                        </p>
-                        <p class="flex items-center text-white">
-                            <!-- Clock Icon (Inline SVG) -->
-                            <svg class="w-6 h-6 mr-3 text-grill-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            График работы: Ежедневно, <span class="ml-2 font-semibold text-grill-accent">11:00 – 23:00</span>
-                        </p>
-                    </div>
-
-                    <a href="https://wa.me/77771234567" target="_blank" class="mt-8 primary-btn flex items-center justify-center bg-[#25D366] text-white text-xl font-bold px-6 py-3 rounded-full transition duration-300 shadow-lg hover:bg-[#1EBE57]">
-                        <!-- WhatsApp Icon (Inline SVG) -->
-                        <svg class="w-6 h-6 mr-3" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12.039 2C6.541 2 2 6.541 2 12.039c0 1.972.585 3.844 1.76 5.438L2.015 22l4.63-1.503A10.048 10.048 0 0012.039 22c5.498 0 10.039-4.541 10.039-10.039C22.078 6.541 17.537 2 12.039 2zm4.845 13.906c-.198.342-.81.603-1.39.81-.58.207-1.28.324-1.91.324-.63 0-1.26-.117-1.89-.324-.63-.207-1.242-.468-1.44-.81-.198-.342-.315-1.026-.117-1.39.198-.36.432-.612.63-.81.198-.198.324-.315.396-.468.072-.153.036-.585-.117-.81-.153-.225-.918-1.116-1.053-1.44-.135-.324-.27-.27-.468-.27-.198 0-.468-.027-.738.036-.27.063-.513.117-.756.396-.243.279-.693.684-.693 1.62 0 .936.729 1.836.837 1.989.108.153 1.413 2.16 3.483 3.096 2.07.936 2.07.693 2.457.657.387-.036 1.188-.486 1.35-1.008.162-.522.162-.972.117-1.143-.045-.171-.243-.27-.486-.36z"/></svg>
-                        Написать в WhatsApp
-                    </a>
+                    <p class="text-white mb-2">📞 <a href="tel:+77055071640">+7 705 507 1640</a></p>
+                    <p class="text-white mb-2">📍 Белоусовка</p>
+                    <a href="https://wa.me/77055071640" target="_blank" class="mt-8 primary-btn flex items-center justify-center bg-[#25D366] text-white text-xl font-bold px-6 py-3 rounded-full transition duration-300 shadow-lg hover:bg-[#1EBE57]">Написать в WhatsApp</a>
+                 </div>
+                 <div class="bg-gray-800 p-8 rounded-xl shadow-2xl flex flex-col justify-center text-center">
+                    <h4 class="text-3xl font-bold text-white mb-4">Остались вопросы?</h4>
+                    <button onclick="showCallbackModal()" class="w-full primary-btn bg-grill-red text-white text-xl font-bold px-6 py-4 rounded-full transition duration-300 shadow-lg">Заказать звонок</button>
                 </div>
-
-                <!-- Simple Order Form -->
-                <div class="bg-gray-800 p-8 rounded-xl shadow-2xl">
-                    <h4 class="text-2xl font-bold text-grill-accent mb-4">Оставить заявку на звонок</h4>
-                    <form action="#" method="POST" class="space-y-4">
-                        <div>
-                            <input type="text" placeholder="Ваше имя" required class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:border-grill-accent focus:ring focus:ring-grill-accent/50">
-                        </div>
-                        <div>
-                            <input type="tel" placeholder="Номер телефона" required class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:border-grill-accent focus:ring focus:ring-grill-accent/50">
-                        </div>
-                        <div>
-                            <textarea placeholder="Комментарий к заказу (по желанию)" rows="3" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:border-grill-accent focus:ring focus:ring-grill-accent/50"></textarea>
-                        </div>
-                        <button type="submit" class="w-full primary-btn bg-grill-red text-white text-xl font-bold px-6 py-3 rounded-lg transition duration-300">
-                            Отправить заявку
-                        </button>
-                    </form>
-                </div>
-            </div>
+             </div>
         </div>
     </section>
 
-    <!-- Bottom Navigation (Mobile Only) -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-grill-dark border-t border-gray-700 shadow-2xl py-2 md:hidden z-50">
-        <div class="flex justify-around items-center max-w-lg mx-auto">
-            
-            <!-- 1. Заказ (Меню - ОТКРЫВАЕТ МОДАЛ) -->
-            <button onclick="showFullMenuModal()" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1">
-                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                <span class="mt-1">Заказ</span>
+    <!-- Optimized Bottom Navigation (Safe Area + Larger Text) -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-grill-dark border-t border-gray-700 shadow-2xl py-2 md:hidden z-50 pb-safe">
+        <div class="flex justify-around items-center max-w-lg mx-auto h-full">
+            <button onclick="openMenuCategory('grill')" class="flex flex-col items-center text-xs text-gray-400 hover:text-grill-accent transition p-2 active:scale-95">
+                <svg class="nav-icon mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                <span>Заказ</span>
             </button>
             
-            <!-- 2. Звонок -->
-            <a href="tel:+77771234567" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1">
-                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                <span class="mt-1">Звонок</span>
+            <a href="tel:+77055071640" class="flex flex-col items-center text-xs text-gray-400 hover:text-grill-accent transition p-2 active:scale-95">
+                <svg class="nav-icon mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                <span>Звонок</span>
             </a>
 
-            <!-- 3. Корзина (Центральная кнопка) - ОТКРЫВАЕТ МОДАЛ КОРЗИНЫ -->
-            <a onclick="showCartModal()" id="mobile-cart-btn" class="transform -translate-y-4 flex flex-col items-center bg-grill-accent p-3 rounded-full shadow-lg border-4 border-grill-dark text-grill-dark transition duration-300 cursor-pointer">
-                <!-- SVG Icon is updated dynamically by JS (renderCartUI) -->
-                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <a onclick="showCartModal()" id="mobile-cart-btn" class="transform -translate-y-6 flex flex-col items-center justify-center bg-grill-accent w-16 h-16 rounded-full shadow-lg border-4 border-grill-dark text-grill-dark transition duration-300 cursor-pointer active:scale-90">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
             </a>
             
-            <!-- 4. Такси -->
-            <a href="https://taxiuspeh.github.io/landing-/" target="_blank" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1">
-                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M14 10l2 1m-2-1l-2-1m2 1V7.5m0 3.5h.01M12 4v0m.01 0l.01.01M12 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM12 12a2 2 0 100-4 2 2 0 000 4z"></path></svg>
-                <span class="mt-1">Такси</span>
+            <a href="https://taxiuspeh.github.io/landing-/" target="_blank" class="flex flex-col items-center text-xs text-gray-400 hover:text-grill-accent transition p-2 active:scale-95">
+                <svg class="nav-icon mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M14 10l2 1m-2-1l-2-1m2 1V7.5m0 3.5h.01M12 4v0m.01 0l.01.01M12 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM12 12a2 2 0 100-4 2 2 0 000 4z"></path></svg>
+                <span>Такси</span>
             </a>
             
-            <!-- 5. WhatsApp -->
-            <a href="https://wa.me/77771234567" target="_blank" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-green transition p-1">
-                <svg class="nav-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12.039 2C6.541 2 2 6.541 2 12.039c0 1.972.585 3.844 1.76 5.438L2.015 22l4.63-1.503A10.048 10.048 0 0012.039 22c5.498 0 10.039-4.541 10.039-10.039C22.078 6.541 17.537 2 12.039 2zm4.845 13.906c-.198.342-.81.603-1.39.81-.58.207-1.28.324-1.91.324-.63 0-1.26-.117-1.89-.324-.63-.207-1.242-.468-1.44-.81-.198-.342-.315-1.026-.117-1.39.198-.36.432-.612.63-.81.198-.198.324-.315.396-.468.072-.153.036-.585-.117-.81-.153-.225-.918-1.116-1.053-1.44-.135-.324-.27-.27-.468-.27-.198 0-.468-.027-.738.036-.27.063-.513.117-.756.396-.243.279-.693.684-.693 1.62 0 .936.729 1.836.837 1.989.108.153 1.413 2.16 3.483 3.096 2.07.936 2.07.693 2.457.657.387-.036 1.188-.486 1.35-1.008.162-.522.162-.972.117-1.143-.045-.171-.243-.27-.486-.36z"/></svg>
-                <span class="mt-1">WhatsApp</span>
+            <a href="https://wa.me/77055071640" target="_blank" class="flex flex-col items-center text-xs text-gray-400 hover:text-grill-green transition p-2 active:scale-95">
+                <svg class="nav-icon mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12.039 2C6.541 2 2 6.541 2 12.039c0 1.972.585 3.844 1.76 5.438L2.015 22l4.63-1.503A10.048 10.048 0 0012.039 22c5.498 0 10.039-4.541 10.039-10.039C22.078 6.541 17.537 2 12.039 2zm4.845 13.906c-.198.342-.81.603-1.39.81-.58.207-1.28.324-1.91.324-.63 0-1.26-.117-1.89-.324-.63-.207-1.242-.468-1.44-.81-.198-.342-.315-1.026-.117-1.39.198-.36.432-.612.63-.81.198-.198.324-.315.396-.468.072-.153.036-.585-.117-.81-.153-.225-.918-1.116-1.053-1.44-.135-.324-.27-.27-.468-.27-.198 0-.468-.027-.738.036-.27.063-.513.117-.756.396-.243.279-.693.684-.693 1.62 0 .936.729 1.836.837 1.989.108.153 1.413 2.16 3.483 3.096 2.07.936 2.07.693 2.457.657.387-.036 1.188-.486 1.35-1.008.162-.522.162-.972.117-1.143-.045-.171-.243-.27-.486-.36z"/></svg>
+                <span>WhatsApp</span>
             </a>
         </div>
     </nav>
-
-    <!-- Footer -->
-    <footer class="bg-black py-8">
-        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500">
-            <p>&copy; 2025 Шашлычный Двор. Все права защищены. <br> Доставка шашлыка по Белоусовке и району.</p>
-        </div>
-    </footer>
-
 </body>
 </html>

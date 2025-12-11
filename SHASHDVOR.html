@@ -60,7 +60,7 @@
             background-position: center;
         }
         
-        /* Стили для липкой панели заказа */
+        /* Стили для липкой панели заказа (ГЛАВНАЯ СТРАНИЦА) */
         #sticky-order-bar {
             position: fixed;
             bottom: 70px; /* Над мобильной навигацией */
@@ -97,9 +97,36 @@
             background-color: rgba(0, 0, 0, 0.8);
             z-index: 900;
         }
-        .modal-content {
+        .modal-content-lg {
             background-color: #1a1a1a;
             z-index: 910;
+            width: 100%;
+            max-width: 800px;
+            height: 100%; /* Full screen on mobile */
+            max-height: 100vh;
+            border-radius: 0;
+        }
+        @media(min-width: 768px) {
+            .modal-content-lg {
+                width: 90%;
+                height: auto;
+                max-height: 90vh;
+                border-radius: 0.75rem; /* rounded-xl */
+            }
+        }
+
+        .nav-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        
+        /* Hide scrollbar for category nav */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 </head>
@@ -109,7 +136,7 @@
         <p id="notification-text">Товар добавлен!</p>
     </div>
 
-    <!-- Sticky Order Bar (Bottom) - Появляется при добавлении товара -->
+    <!-- Sticky Order Bar (Bottom Main Page) -->
     <div id="sticky-order-bar" onclick="showCartModal()" class="cursor-pointer bg-grill-accent border-t-2 border-white/10 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex flex-col">
@@ -117,46 +144,84 @@
                 <span id="sticky-total" class="text-xl font-black text-grill-dark">0 ₸</span>
             </div>
             <button onclick="showCartModal()" class="bg-white text-grill-dark font-bold py-2 px-6 rounded-full shadow-lg flex items-center animate-pulse hover:bg-gray-100 transition">
-                Перейти к оформлению
+                К оформлению
                 <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </button>
         </div>
     </div>
     
-    <!-- Cart Modal (Окно корзины) -->
+    <!-- Cart Modal (Окно подтверждения заказа) -->
     <div id="cart-modal" class="modal-backdrop fixed inset-0 hidden items-center justify-center p-4" onclick="hideCartModal()">
-        <div class="modal-content w-full max-w-lg rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto border border-gray-700 m-4" onclick="event.stopPropagation()">
+        <div class="bg-[#1a1a1a] w-full max-w-lg rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto border border-gray-700 m-4 relative flex flex-col" onclick="event.stopPropagation()">
             <div class="p-5 bg-grill-dark border-b border-gray-700 flex justify-between items-center sticky top-0 z-10">
-                <h4 class="text-2xl font-bold text-white">Корзина</h4>
+                <h4 class="text-2xl font-bold text-white">Ваш заказ</h4>
                 <button onclick="hideCartModal()" class="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 transition">&times;</button>
             </div>
 
-            <div class="p-6">
+            <div class="p-6 flex-grow overflow-y-auto">
                 <div id="cart-items-container" class="space-y-4">
                     <!-- Items injected here -->
                 </div>
                 
                 <div id="cart-empty-message" class="text-center py-10 text-gray-500 hidden">
                     <div class="text-6xl mb-4">🍖</div>
-                    <p class="text-xl text-white">Тут пока пусто</p>
-                    <p class="text-sm mt-2">Выберите что-нибудь вкусное в меню!</p>
-                    <button onclick="hideCartModal()" class="mt-4 text-grill-accent underline">Вернуться к меню</button>
+                    <p class="text-xl text-white">Корзина пуста</p>
+                    <button onclick="hideCartModal(); showFullMenuModal();" class="mt-4 text-grill-accent underline font-bold">Открыть меню</button>
                 </div>
             </div>
             
             <div class="p-6 bg-gray-900 border-t border-gray-700 space-y-4">
                 <div class="flex justify-between items-center text-xl font-bold text-white">
-                    <span>Итого к оплате:</span>
+                    <span>Итого:</span>
                     <span id="cart-total-price" class="text-grill-accent text-2xl">0 ₸</span>
-                </div>
-                <div class="text-gray-400 text-xs text-center mb-2">
-                    Нажимая кнопку, вы перейдете в WhatsApp для отправки заказа менеджеру.
                 </div>
                 <button onclick="placeOrder()" id="place-order-btn" class="w-full bg-grill-green hover:bg-[#1DA851] text-white text-lg font-bold px-6 py-4 rounded-xl shadow-lg transition duration-300 flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                     <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                    Отправить заказ в WhatsApp
+                    Заказать в WhatsApp
                 </button>
             </div>
+        </div>
+    </div>
+    
+    <!-- Full Menu Modal (ГЛАВНОЕ МЕНЮ) -->
+    <div id="full-menu-modal" class="modal-backdrop fixed inset-0 hidden items-center justify-center sm:p-4 z-[100]" onclick="hideFullMenuModal()">
+        <div class="modal-content-lg bg-stone-900 shadow-2xl overflow-hidden border border-gray-700 flex flex-col relative" onclick="event.stopPropagation()">
+            
+            <!-- Modal Header + Close -->
+            <div class="p-4 bg-grill-dark border-b border-gray-700 flex justify-between items-center shrink-0">
+                <h4 class="text-xl font-bold text-grill-accent flex items-center">
+                    <span class="text-2xl mr-2">🔥</span> Меню
+                </h4>
+                <button onclick="hideFullMenuModal()" class="bg-gray-700/50 hover:bg-gray-600 text-white rounded-full p-2 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Sticky Category Nav -->
+            <div class="bg-[#1a1a1a] border-b border-gray-700 sticky top-0 z-20 shrink-0">
+                <div id="modal-category-nav" class="flex overflow-x-auto no-scrollbar py-3 px-2 space-x-2">
+                    <!-- Categories injected JS -->
+                </div>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div id="full-menu-scroll-area" class="flex-grow overflow-y-auto p-4 md:p-6 bg-stone-900 pb-24">
+                <div id="full-menu-container" class="space-y-8">
+                    <!-- Menu Content is Rendered Here by JS -->
+                </div>
+            </div>
+
+            <!-- Sticky Bottom Cart Button (INSIDE MENU) -->
+            <div id="menu-modal-footer" class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-none hidden">
+                <button onclick="showCartModal()" class="pointer-events-auto w-full bg-grill-green text-white font-bold py-3 px-6 rounded-xl shadow-lg flex justify-between items-center transform active:scale-95 transition">
+                    <div class="flex items-center">
+                         <div class="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center mr-3 font-mono" id="modal-footer-count">0</div>
+                         <span>Перейти к заказу</span>
+                    </div>
+                    <span class="text-xl" id="modal-footer-price">0 ₸</span>
+                </button>
+            </div>
+            
         </div>
     </div>
 
@@ -167,21 +232,53 @@
             { id: 'lula_hits', category: 'hits', name: 'Люля-кебаб (Хит)', price: 1850, desc: 'Фарш из отборной говядины с пряными травами. (400г)', img: 'https://placehold.co/400x300/4B2C1B/FFFFFF?text=ЛЮЛЯ-КЕБАБ' },
             { id: 'pork_classic_hits', category: 'hits', name: 'Свинина «Классика»', price: 2100, desc: 'Сочный свиной ошеек, маринованный в луке и специях. (300г)', img: 'https://placehold.co/400x300/6A321A/FFFFFF?text=СВИНИНА+КЛАССИКА' },
             { id: 'chicken_wings_hits', category: 'hits', name: 'Куриные крылья', price: 1600, desc: 'Хрустящие крылышки в пикантном маринаде BBQ. (450г)', img: 'https://placehold.co/400x300/774B00/FFFFFF?text=КУРИНЫЕ+КРЫЛЬЯ' },
-            { id: 'mix_hits', category: 'hits', name: 'Ассорти «Гриль-микс»', price: 4500, desc: 'Набор из свинины, курицы и люля-кебаба. (1кг)', img: 'https://placehold.co/400x300/553311/FFFFFF?text=ГРИЛЬ-МИКС+АССОРТИ' },
-
-            // НОВАЯ КАРТОЧКА: ГОВЯДИНА
-            { id: 'beef_tenderloin', category: 'beef', name: 'Говядина (Вырезка)', price: 3200, desc: 'Нежная говяжья вырезка, маринованная в красном вине и травах. (300г)', img: 'https://placehold.co/500x350/B54030/FFFFFF?text=ГОВЯДИНА+ВЫРЕЗКА' },
             
+            // НОВАЯ КАТЕГОРИЯ: УТКА
+            { id: 'duck_filet', category: 'duck', name: 'Утиная грудка гриль', price: 3500, desc: 'Нежное филе утки в медово-горчичном маринаде.', img: 'https://placehold.co/500x350/5C3A21/FFFFFF?text=УТИНАЯ+ГРУДКА' },
+            { id: 'duck_wings', category: 'duck', name: 'Утиные ножки', price: 2900, desc: 'Сочные ножки утки, запеченные с травами.', img: 'https://placehold.co/500x350/5C3A21/FFFFFF?text=УТИНЫЕ+НОЖКИ' },
+
             { id: 'pork_bone', category: 'pork', name: 'Свинина на кости', price: 2400, desc: 'Сочное мясо, маринованное в специях и луке.', img: 'https://placehold.co/500x350/B85730/F7F7F7?text=СВИНИНА+НА+КОСТИ' },
+            { id: 'pork_neck', category: 'pork', name: 'Свиная шея', price: 2200, desc: 'Мягкий, с жировыми прослойками.', img: 'https://placehold.co/500x350/A05030/F7F7F7?text=СВИНАЯ+ШЕЯ' },
+
+            { id: 'beef_tenderloin', category: 'beef', name: 'Говядина (Вырезка)', price: 3200, desc: 'Нежная говяжья вырезка, маринованная в красном вине.', img: 'https://placehold.co/500x350/B54030/FFFFFF?text=ГОВЯДИНА+ВЫРЕЗКА' },
+            { id: 'beef_ribs', category: 'beef', name: 'Ребра говяжьи', price: 2800, desc: 'Томленые ребра на углях.', img: 'https://placehold.co/500x350/802010/FFFFFF?text=РЕБРА' },
+
             { id: 'lamb_meat', category: 'lamb', name: 'Баранина (мякоть)', price: 2900, desc: 'Классика Востока. Нежное филе баранины.', img: 'https://placehold.co/500x350/935C3A/F7F7F7?text=БАРАНИНА+МЯКОТЬ' },
+            // НОВОЕ: БАРАНЬИ РЕБРА
+            { id: 'lamb_ribs', category: 'lamb', name: 'Бараньи семечки (ребрышки)', price: 3200, desc: 'Молодые ребрышки, обжаренные до золотистой корочки.', img: 'https://placehold.co/500x350/7A4A30/FFFFFF?text=БАРАНЬИ+РЕБРА' },
+            
             { id: 'chicken_filet', category: 'chicken', name: 'Куриное филе', price: 1750, desc: 'Диетический вариант, нежный и ароматный.', img: 'https://placehold.co/500x350/E9C46A/4D4D4D?text=КУРИНОЕ+ФИЛЕ' },
-            { id: 'veg_mix', category: 'veg', name: 'Ассорти овощей гриль', price: 1400, desc: 'Баклажан, перец, томаты, цукини.', img: 'https://placehold.co/500x350/4C723C/FFFFFF?text=ОВОЩИ+ГРИЛЬ' },
-            { id: 'veg_pepper', category: 'veg', name: 'Болгарский перец гриль', price: 800, desc: 'Сладкий перец, запеченный на мангале.', img: 'https://placehold.co/500x350/4C723C/FFFFFF?text=ПЕРЕЦ+ГРИЛЬ' },
-            { id: 'sauce_red', category: 'sauces', name: 'Фирменный томатный соус', price: 300, desc: 'Острый, идеально подходит к мясу.', img: 'https://placehold.co/500x350/5C2E2E/FFFFFF?text=КРАСНЫЙ+СОУС' },
-            { id: 'sauce_white', category: 'sauces', name: 'Чесночный белый соус', price: 350, desc: 'Нежный йогуртовый соус с чесноком.', img: 'https://placehold.co/500x350/4D4D4D/FFFFFF?text=БЕЛЫЙ+СОУС' },
-            { id: 'potatoes', category: 'garnishes', name: 'Картофель фри (250г)', price: 500, desc: 'Классический картофель фри с солью.', img: 'https://placehold.co/500x350/C6A500/000000?text=КАРТОФЕЛЬ+ФРИ' },
-            { id: 'lula_menu', category: 'lula', name: 'Люля-кебаб из курицы', price: 1600, desc: 'Нежный фарш из куриного филе.', img: 'https://placehold.co/500x350/4B2C1B/FFFFFF?text=ЛЮЛЯ-КЕБАБ+КУРИЦА' }
+            { id: 'lula_chk', category: 'lula', name: 'Люля из курицы', price: 1600, desc: 'Нежный фарш из куриного филе.', img: 'https://placehold.co/500x350/D9A44A/4D4D4D?text=ЛЮЛЯ+КУРИЦА' },
+            { id: 'lula_bf', category: 'lula', name: 'Люля говядина', price: 1800, desc: 'Сочный фарш с кинзой.', img: 'https://placehold.co/500x350/69342A/FFFFFF?text=ЛЮЛЯ+ГОВЯДИНА' },
+            // НОВОЕ: ЛЮЛЯ ИЗ БАРАНИНЫ
+            { id: 'lula_lamb', category: 'lula', name: 'Люля-кебаб баранина', price: 2200, desc: 'Традиционный рецепт с курдюком и специями.', img: 'https://placehold.co/500x350/5C3020/FFFFFF?text=ЛЮЛЯ+БАРАНИНА' },
+
+            { id: 'veg_mix', category: 'veg', name: 'Ассорти овощей', price: 1400, desc: 'Баклажан, перец, томаты, цукини.', img: 'https://placehold.co/500x350/4C723C/FFFFFF?text=ОВОЩИ+ГРИЛЬ' },
+            // НОВОЕ: ШАМПИНЬОНЫ
+            { id: 'veg_mushrooms', category: 'veg', name: 'Шампиньоны на углях', price: 1200, desc: 'Сочные грибы в фирменном маринаде.', img: 'https://placehold.co/500x350/8D8171/FFFFFF?text=ШАМПИНЬОНЫ' },
+            
+            { id: 'sauce_red', category: 'sauces', name: 'Томатный соус', price: 300, desc: 'Острый, идеально подходит к мясу.', img: 'https://placehold.co/500x350/5C2E2E/FFFFFF?text=КРАСНЫЙ+СОУС' },
+            // НОВЫЕ СОУСЫ
+            { id: 'sauce_bbq', category: 'sauces', name: 'Соус Барбекю', price: 350, desc: 'Дымный аромат, сладковато-пряный вкус.', img: 'https://placehold.co/500x350/3D1E10/FFFFFF?text=BBQ' },
+            { id: 'sauce_tkemali', category: 'sauces', name: 'Ткемали', price: 400, desc: 'Грузинский кисло-сладкий соус из слив.', img: 'https://placehold.co/500x350/4A6B30/FFFFFF?text=ТКЕМАЛИ' },
+
+            { id: 'potatoes', category: 'garnishes', name: 'Картофель фри', price: 500, desc: 'С солью (200г).', img: 'https://placehold.co/500x350/C6A500/000000?text=КАРТОФЕЛЬ+ФРИ' },
+            // НОВОЕ: ЛАВАШ
+            { id: 'lavash_firm', category: 'garnishes', name: 'Лаваш фирменный', price: 250, desc: 'Армянский лаваш с паприкой и зеленью.', img: 'https://placehold.co/500x350/F5DEB3/000000?text=ЛАВАШ' }
         ];
+        
+        const menuCategories = {
+            hits: { name: "Хиты", icon: "⭐" },
+            duck: { name: "Утка", icon: "🦆" }, // Новая категория
+            pork: { name: "Свинина", icon: "🐷" },
+            beef: { name: "Говядина", icon: "🐂" },
+            lamb: { name: "Баранина", icon: "🐑" },
+            chicken: { name: "Курица", icon: "🐔" },
+            lula: { name: "Люля", icon: "🍢" },
+            veg: { name: "Овощи", icon: "🍆" },
+            sauces: { name: "Соусы", icon: "🥣" },
+            garnishes: { name: "Гарниры", icon: "🍟" }
+        };
 
         let cart = []; // Глобальный стейт корзины
 
@@ -205,7 +302,7 @@
             window.open(url, '_blank');
         }
 
-        // --- CART LOGIC (Сохранение в localStorage для персистентности) ---
+        // --- CART LOGIC ---
         function saveCart() {
             localStorage.setItem('shashlyk_cart', JSON.stringify(cart));
         }
@@ -227,18 +324,16 @@
             } else if (delta > 0) {
                 cart.push({ id: productId, count: delta });
             }
+            saveCart();
             renderCartUI();
             renderCartModal(); 
-            saveCart();
+            // Also re-render menu items to update counters
+            renderFullMenu(); 
         }
 
-        function handleOrder(productId) {
-            const product = getProductById(productId);
-            if (!product) return;
-            updateCartItemCount(productId, 1);
-            showNotification(`${product.name} — добавлен!`);
-            
-            if (navigator.vibrate) navigator.vibrate(50);
+        function getCartCount(productId) {
+            const item = cart.find(i => i.id === productId);
+            return item ? item.count : 0;
         }
 
         function renderCartUI() {
@@ -248,10 +343,9 @@
                 return sum + (product ? product.price * item.count : 0);
             }, 0);
 
-            // Обновление Sticky Order Bar
+            // 1. Sticky Bar on Main Page
             const stickyBar = document.getElementById('sticky-order-bar');
             const stickyTotal = document.getElementById('sticky-total');
-            
             if (totalCount > 0) {
                 stickyBar.classList.add('visible');
                 stickyTotal.textContent = `${totalPrice} ₸`;
@@ -259,22 +353,35 @@
                 stickyBar.classList.remove('visible');
             }
 
-            // Обновление иконки в мобильной навигации
-            const mobileBtn = document.getElementById('mobile-cart-btn');
-            if (mobileBtn) {
+            // 2. Footer inside Menu Modal
+            const modalFooter = document.getElementById('menu-modal-footer');
+            const modalCount = document.getElementById('modal-footer-count');
+            const modalPrice = document.getElementById('modal-footer-price');
+            
+            if (totalCount > 0) {
+                modalFooter.classList.remove('hidden');
+                modalCount.textContent = totalCount;
+                modalPrice.textContent = `${totalPrice} ₸`;
+            } else {
+                modalFooter.classList.add('hidden');
+            }
+
+            // 3. Mobile Nav Icon
+            const mobileCartBtn = document.getElementById('mobile-cart-btn');
+            if (mobileCartBtn) {
                  if (totalCount > 0) {
-                     mobileBtn.innerHTML = `
+                     mobileCartBtn.innerHTML = `
                         <div class="relative">
-                            <svg class="w-8 h-8 text-grill-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            <svg class="nav-icon text-grill-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                             <span class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">${totalCount}</span>
                         </div>
                      `;
-                     mobileBtn.classList.add('bg-white');
-                     mobileBtn.classList.remove('bg-grill-accent');
+                     mobileCartBtn.classList.add('bg-white');
+                     mobileCartBtn.classList.remove('bg-grill-accent');
                  } else {
-                     mobileBtn.innerHTML = `<svg class="w-8 h-8 text-grill-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`;
-                     mobileBtn.classList.add('bg-grill-accent');
-                     mobileBtn.classList.remove('bg-white');
+                     mobileCartBtn.innerHTML = `<svg class="nav-icon text-grill-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`;
+                     mobileCartBtn.classList.add('bg-grill-accent');
+                     mobileCartBtn.classList.remove('bg-white');
                  }
             }
         }
@@ -324,6 +431,7 @@
         }
 
         function showCartModal() {
+            hideFullMenuModal(); // Ensure menu is closed underneath
             document.getElementById('cart-modal').classList.remove('hidden');
             document.getElementById('cart-modal').classList.add('flex'); 
             renderCartModal();
@@ -345,8 +453,7 @@
                 if (product) {
                     const itemTotal = product.price * item.count;
                     total += itemTotal;
-                    // Добавляем описание/вес в сообщение для ясности
-                    orderDetails += `🔹 ${product.name} ${product.desc} — ${item.count} шт. (${itemTotal} ₸)\n`;
+                    orderDetails += `🔹 ${product.name} — ${item.count} шт. (${itemTotal} ₸)\n`;
                 }
             });
 
@@ -368,75 +475,132 @@
         }
 
 
-        // --- INIT ---
-        function createProductCard(product) {
-            // Карточка адаптирована для кликабельности и отображения деталей
+        // --- NEW MENU RENDERING (The "App" look) ---
+
+        function createMenuCard(product) {
+            const count = getCartCount(product.id);
+            const buttonState = count > 0 
+                ? `<div class="flex items-center bg-grill-green rounded-lg shadow-lg">
+                     <button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', -1)" class="w-8 h-8 flex items-center justify-center text-white font-bold text-lg active:bg-black/20 rounded-l-lg">-</button>
+                     <span class="text-white font-bold w-6 text-center text-sm">${count}</span>
+                     <button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', 1)" class="w-8 h-8 flex items-center justify-center text-white font-bold text-lg active:bg-black/20 rounded-r-lg">+</button>
+                   </div>`
+                : `<button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', 1)" class="bg-gray-700 hover:bg-grill-accent hover:text-black text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow">
+                     + Добавить
+                   </button>`;
+
             return `
-                <div class="bg-gray-800 rounded-xl shadow-lg flex flex-col transition duration-300 overflow-hidden group">
-                    <div class="relative h-48 overflow-hidden">
-                        <img src="${product.img}" alt="${product.name}" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500" onerror="this.onerror=null;this.src='https://placehold.co/500x350/666666/FFFFFF?text=Фото+нет'">
-                        <div class="absolute bottom-0 left-0 bg-gradient-to-t from-black/80 to-transparent w-full p-2">
-                            <span class="text-grill-accent font-bold text-lg">${product.price} ₸</span>
-                        </div>
+                <div class="flex bg-gray-800 rounded-xl overflow-hidden shadow-lg border border-gray-700">
+                    <div class="w-1/3 min-w-[100px] h-auto relative">
+                         <img src="${product.img}" alt="${product.name}" class="absolute inset-0 w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/200x200/444444/FFFFFF?text=Фото'">
                     </div>
-                    <div class="p-4 flex flex-col flex-grow">
-                        <h4 class="text-lg font-bold text-white mb-1 leading-tight">${product.name}</h4>
-                        <!-- Добавлено описание/ингридиенты для наглядности -->
-                        <p class="text-xs text-gray-400 mb-4 flex-grow line-clamp-3">${product.desc}</p>
-                        <button onclick="handleOrder('${product.id}')" class="w-full bg-grill-red hover:bg-grill-accent hover:text-black text-white py-3 rounded-lg font-bold transition duration-200 flex items-center justify-center group-hover:shadow-lg active:scale-95">
-                            <span>Добавить +</span>
-                        </button>
+                    <div class="w-2/3 p-3 flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-white text-base leading-tight mb-1">${product.name}</h4>
+                            <p class="text-[10px] text-gray-400 line-clamp-2 leading-snug">${product.desc}</p>
+                        </div>
+                        <div class="flex justify-between items-end mt-3">
+                            <span class="text-grill-accent font-bold text-lg">${product.price} ₸</span>
+                            ${buttonState}
+                        </div>
                     </div>
                 </div>
             `;
         }
         
-        document.addEventListener('DOMContentLoaded', () => {
-            loadCart();
+        function scrollToCategory(catId) {
+             const element = document.getElementById(`cat-${catId}`);
+             const scrollContainer = document.getElementById('full-menu-scroll-area');
+             if(element && scrollContainer) {
+                 // Simple scroll
+                 element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                 
+                 // Highlight active tab
+                 document.querySelectorAll('.cat-nav-btn').forEach(btn => {
+                     btn.classList.remove('bg-grill-accent', 'text-black');
+                     btn.classList.add('bg-gray-700', 'text-white');
+                 });
+                 const activeBtn = document.getElementById(`btn-${catId}`);
+                 if(activeBtn) {
+                     activeBtn.classList.remove('bg-gray-700', 'text-white');
+                     activeBtn.classList.add('bg-grill-accent', 'text-black');
+                 }
+             }
+        }
+
+        function renderFullMenu() {
+            const container = document.getElementById('full-menu-container');
+            const navContainer = document.getElementById('modal-category-nav');
+            if (!container || !navContainer) return;
+
+            let contentHTML = '';
+            let navHTML = '';
             
-            const hitsContainer = document.getElementById('hits-items');
-            const menuContainer = document.getElementById('menu-items');
+            // Define categories - ВКЛЮЧАЯ НОВУЮ 'duck'
+            const categoryKeys = ['hits', 'duck', 'pork', 'beef', 'lamb', 'chicken', 'lula', 'veg', 'sauces', 'garnishes'];
+            
+            let isFirst = true;
 
-            // 1. Рендеринг Хитов
-            const hitsHTML = productsData
-                .filter(p => p.category.includes('hits'))
-                .map(createProductCard)
-                .join('');
-            if (hitsContainer) hitsContainer.innerHTML = hitsHTML;
+            categoryKeys.forEach(key => {
+                const categoryProducts = productsData.filter(p => p.category === key);
+                if (categoryProducts.length === 0) return;
 
-            // 2. Логика фильтрации и рендеринга меню
-            const menuTabs = document.querySelectorAll('.menu-tab');
-            const menuCategories = {
-                pork: ['pork'], lamb: ['lamb'], chicken: ['chicken'], 
-                lula: ['lula'], veg: ['veg'], sauces: ['sauces'], garnishes: ['garnishes'],
-                beef: ['beef'] 
-            };
+                const catName = menuCategories[key].name;
+                const catIcon = menuCategories[key].icon;
 
-            function filterAndRenderMenu(category) {
-                 const categoriesToInclude = menuCategories[category];
-                 const filteredHTML = productsData
-                    .filter(p => categoriesToInclude.includes(p.category) && !p.category.includes('hits'))
-                    .map(createProductCard)
-                    .join('');
-                if (menuContainer) menuContainer.innerHTML = filteredHTML;
-            }
+                // Nav Button
+                const activeClass = isFirst ? 'bg-grill-accent text-black' : 'bg-gray-700 text-white';
+                navHTML += `
+                    <button id="btn-${key}" onclick="scrollToCategory('${key}')" class="cat-nav-btn shrink-0 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition ${activeClass}">
+                        ${catIcon} ${catName}
+                    </button>
+                `;
+                isFirst = false;
 
-            menuTabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const filterCategory = this.getAttribute('data-category');
-                    menuTabs.forEach(t => {
-                        t.classList.remove('bg-grill-accent', 'text-grill-dark');
-                        t.classList.add('bg-gray-700', 'text-white');
-                    });
-                    this.classList.add('bg-grill-accent', 'text-grill-dark');
-                    this.classList.remove('bg-gray-700', 'text-white');
-                    filterAndRenderMenu(filterCategory);
-                });
+                // Section Content
+                contentHTML += `
+                    <div id="cat-${key}" class="pt-2">
+                        <h3 class="text-xl font-bold text-white mb-3 flex items-center sticky top-0 bg-stone-900/95 py-2 z-10">
+                            <span class="mr-2">${catIcon}</span> ${catName}
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            ${categoryProducts.map(createMenuCard).join('')}
+                        </div>
+                    </div>
+                `;
             });
             
-            const defaultCategory = document.querySelector('[data-category="pork"]');
-            if(defaultCategory) defaultCategory.click();
+            // Only update innerHTML if it's the first render or structural change, 
+            // but for simple counter updates, ideally we'd use virtual DOM. 
+            // Here we just re-render string for simplicity.
+            container.innerHTML = contentHTML;
+            
+            // Only render nav once to avoid jumping, unless empty
+            if(navContainer.innerHTML === '') {
+                navContainer.innerHTML = navHTML;
+            }
+        }
 
+        // --- MODAL CONTROLS ---
+
+        function showFullMenuModal() {
+            renderFullMenu(); 
+            document.getElementById('full-menu-modal').classList.remove('hidden');
+            document.getElementById('full-menu-modal').classList.add('flex'); 
+            renderCartUI(); // Update footer visibility
+            document.body.style.overflow = 'hidden'; // Lock body scroll
+        }
+
+        function hideFullMenuModal() {
+            document.getElementById('full-menu-modal').classList.add('hidden');
+            document.getElementById('full-menu-modal').classList.remove('flex');
+            document.body.style.overflow = ''; // Unlock body scroll
+        }
+
+        // --- INIT ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCart();
             renderCartUI();
         });
     </script>
@@ -446,8 +610,8 @@
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-3xl font-bold text-grill-accent">Шашлычный Двор</h1>
             <nav class="hidden md:flex space-x-6 text-sm">
-                <a href="#menu" class="text-white hover:text-grill-accent transition duration-300">Меню</a>
-                <a href="#hits" class="text-white hover:text-grill-accent transition duration-300">Хиты</a>
+                <!-- Кнопки в шапке теперь открывают модальное меню -->
+                <button onclick="showFullMenuModal()" class="text-white hover:text-grill-accent transition duration-300">Меню</button>
                 <a href="#visit" class="text-white hover:text-grill-accent transition duration-300">Посетить нас</a>
                 <a href="#catering" class="text-white hover:text-grill-accent transition duration-300">Кейтеринг</a>
                 <a href="#contacts" class="text-white hover:text-grill-accent transition duration-300">Контакты</a>
@@ -467,48 +631,14 @@
             <p class="text-xl sm:text-2xl md:text-3xl font-light text-grill-accent mb-10 italic">
                 «Настоящий шашлык с дымком — доставка по Белоусовке и району»
             </p>
-            <!-- ИСПРАВЛЕНИЕ: Кнопка ведет на отдельную страницу меню -->
-            <a href="SHASHDVOR.html" class="primary-btn inline-block bg-grill-red text-white text-xl font-bold px-10 py-4 rounded-full transition duration-300 ease-in-out shadow-2xl">
+            <!-- КНОПКА ТЕПЕРЬ ОТКРЫВАЕТ ПОЛНОЕ МЕНЮ В МОДАЛЬНОМ ОКНЕ -->
+            <button onclick="showFullMenuModal()" class="primary-btn inline-block bg-grill-red text-white text-xl font-bold px-10 py-4 rounded-full transition duration-300 ease-in-out shadow-2xl animate-bounce">
                 Заказать шашлык
-            </a>
+            </button>
         </div>
     </section>
 
-    <!-- 2. Хиты недели (Hits of the Week) -->
-    <section id="hits" class="py-16 md:py-24 bg-stone-900">
-        <div class="max-w-7xl mx-auto px-4">
-            <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Хиты недели</h3>
-
-            <div id="hits-items" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                <!-- Dynamic Hit Cards injected here by JS -->
-            </div>
-        </div>
-    </section>
-
-    <!-- 3. Основное меню (Main Menu) -->
-    <section id="menu" class="py-16 md:py-24 bg-grill-dark">
-        <div class="max-w-7xl mx-auto px-4">
-            <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Основное меню</h3>
-            
-            <div class="flex flex-wrap justify-center mb-10 space-x-2 md:space-x-4">
-                <!-- Категории меню -->
-                <button class="menu-tab bg-grill-accent text-grill-dark font-semibold px-4 py-2 rounded-full mb-2 hover:bg-white transition duration-200" data-category="pork">🐷 Свинина</button>
-                <button class="menu-tab bg-gray-700 text-white font-semibold px-4 py-2 rounded-full mb-2 hover:bg-grill-accent hover:text-grill-dark transition duration-200" data-category="beef">🐂 Говядина</button>
-                <button class="menu-tab bg-gray-700 text-white font-semibold px-4 py-2 rounded-full mb-2 hover:bg-grill-accent hover:text-grill-dark transition duration-200" data-category="lamb">🐑 Баранина</button>
-                <button class="menu-tab bg-gray-700 text-white font-semibold px-4 py-2 rounded-full mb-2 hover:bg-grill-accent hover:text-grill-dark transition duration-200" data-category="chicken">🐔 Курица</button>
-                <button class="menu-tab bg-gray-700 text-white font-semibold px-4 py-2 rounded-full mb-2 hover:bg-grill-accent hover:text-grill-dark transition duration-200" data-category="lula">🍢 Люля-кебаб</button>
-                <button class="menu-tab bg-gray-700 text-white font-semibold px-4 py-2 rounded-full mb-2 hover:bg-grill-accent hover:text-grill-dark transition duration-200" data-category="veg">🍆 Овощи гриль</button>
-                <button class="menu-tab bg-gray-700 text-white font-semibold px-4 py-2 rounded-full mb-2 hover:bg-grill-accent hover:text-grill-dark transition duration-200" data-category="sauces">🥣 Соусы</button>
-                <button class="menu-tab bg-gray-700 text-white font-semibold px-4 py-2 rounded-full mb-2 hover:bg-grill-accent hover:text-grill-dark transition duration-200" data-category="garnishes">🍟 Гарниры</button>
-            </div>
-
-            <div id="menu-items" class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <!-- Dynamic Menu Cards injected here by JS -->
-            </div>
-        </div>
-    </section>
-
-    <!-- 4. Почему мы? (Why Us?) -->
+    <!-- 2. Почему мы? (Why Us?) -->
     <section class="py-16 md:py-24 bg-stone-900">
         <div class="max-w-7xl mx-auto px-4">
             <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Почему выбирают нас?</h3>
@@ -545,7 +675,7 @@
         </div>
     </section>
 
-    <!-- 5. Отзывы клиентов (Customer Reviews) -->
+    <!-- 3. Отзывы клиентов (Customer Reviews) -->
     <section class="py-16 md:py-24 bg-grill-dark">
         <div class="max-w-7xl mx-auto px-4">
             <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Отзывы клиентов</h3>
@@ -569,7 +699,7 @@
         </div>
     </section>
 
-    <!-- 6. Посетите нас (Visit Us) -->
+    <!-- 4. Посетите нас (Visit Us) -->
     <section id="visit" class="py-16 md:py-24 bg-stone-900">
         <div class="max-w-4xl mx-auto px-4">
             <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Приглашаем в наш Шашлычный Двор</h3>
@@ -604,7 +734,7 @@
         </div>
     </section>
 
-    <!-- 7. Услуги на выезд (Catering Services) -->
+    <!-- 5. Услуги на выезд (Catering Services) -->
     <section id="catering" class="py-16 md:py-24 bg-grill-dark">
         <div class="max-w-4xl mx-auto px-4">
             <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Наши выездные услуги</h3>
@@ -628,7 +758,7 @@
         </div>
     </section>
 
-    <!-- 8. Контакты / Форма заказа (Contacts / Order Form) -->
+    <!-- 6. Контакты / Форма заказа (Contacts / Order Form) -->
     <section id="contacts" class="py-16 md:py-24 bg-stone-900">
         <div class="max-w-7xl mx-auto px-4">
             <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Контакты и заказ</h3>
@@ -685,32 +815,37 @@
         </div>
     </section>
 
-    <!-- Bottom Navigation (Mobile Only) - Новая мобильная навигация -->
+    <!-- Bottom Navigation (Mobile Only) -->
     <nav class="fixed bottom-0 left-0 right-0 bg-grill-dark border-t border-gray-700 shadow-2xl py-2 md:hidden z-50">
         <div class="flex justify-around items-center max-w-lg mx-auto">
-            <!-- 1. Позвонить -->
+            
+            <!-- 1. Заказ (Меню - ОТКРЫВАЕТ МОДАЛ) -->
+            <button onclick="showFullMenuModal()" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                <span class="mt-1">Заказ</span>
+            </button>
+            
+            <!-- 2. Звонок -->
             <a href="tel:+77771234567" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1">
-                <span class="text-2xl">📞</span>
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                 <span class="mt-1">Звонок</span>
             </a>
-            <!-- 2. Меню -->
-            <a href="#menu" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1">
-                <span class="text-2xl">🍖</span>
-                <span class="mt-1">Меню</span>
-            </a>
-            <!-- 3. Корзина (Центральная кнопка) -->
+
+            <!-- 3. Корзина (Центральная кнопка) - ОТКРЫВАЕТ МОДАЛ КОРЗИНЫ -->
             <a onclick="showCartModal()" id="mobile-cart-btn" class="transform -translate-y-4 flex flex-col items-center bg-grill-accent p-3 rounded-full shadow-lg border-4 border-grill-dark text-grill-dark transition duration-300 cursor-pointer">
                 <!-- SVG Icon is updated dynamically by JS (renderCartUI) -->
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
             </a>
-            <!-- 4. Маршрут / Нас найти -->
-            <a href="#visit" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1">
-                <span class="text-2xl">📍</span>
-                <span class="mt-1">Найти нас</span>
+            
+            <!-- 4. Такси -->
+            <a href="https://taxiuspeh.github.io/landing-/" target="_blank" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M14 10l2 1m-2-1l-2-1m2 1V7.5m0 3.5h.01M12 4v0m.01 0l.01.01M12 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM12 12a2 2 0 100-4 2 2 0 000 4z"></path></svg>
+                <span class="mt-1">Такси</span>
             </a>
+            
             <!-- 5. WhatsApp -->
             <a href="https://wa.me/77771234567" target="_blank" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-green transition p-1">
-                <span class="text-2xl">💬</span>
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12.039 2C6.541 2 2 6.541 2 12.039c0 1.972.585 3.844 1.76 5.438L2.015 22l4.63-1.503A10.048 10.048 0 0012.039 22c5.498 0 10.039-4.541 10.039-10.039C22.078 6.541 17.537 2 12.039 2zm4.845 13.906c-.198.342-.81.603-1.39.81-.58.207-1.28.324-1.91.324-.63 0-1.26-.117-1.89-.324-.63-.207-1.242-.468-1.44-.81-.198-.342-.315-1.026-.117-1.39.198-.36.432-.612.63-.81.198-.198.324-.315.396-.468.072-.153.036-.585-.117-.81-.153-.225-.918-1.116-1.053-1.44-.135-.324-.27-.27-.468-.27-.198 0-.468-.027-.738.036-.27.063-.513.117-.756.396-.243.279-.693.684-.693 1.62 0 .936.729 1.836.837 1.989.108.153 1.413 2.16 3.483 3.096 2.07.936 2.07.693 2.457.657.387-.036 1.188-.486 1.35-1.008.162-.522.162-.972.117-1.143-.045-.171-.243-.27-.486-.36z"/></svg>
                 <span class="mt-1">WhatsApp</span>
             </a>
         </div>

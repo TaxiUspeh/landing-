@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Такси «Успех» — Белоусовка</title>
 
     <!-- Google Analytics (КОД АКТИВИРОВАН: G-NMCTD2Q8R2) -->
@@ -292,7 +292,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-center;
+            justify-content: center;
             font-weight: 700;
             font-size: 1.125rem; /* text-lg */
             transition: background-color 0.2s, transform 0.2s;
@@ -601,7 +601,7 @@
                         <span>📦 Сколько стоит услуга Доставки?</span>
                         <i id="icon-faq-4" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
-                    <div id="faq-4" class="hidden p-4 pt-0 вtext-gray-600 border-t border-gray-100 faq-item-content">
+                    <div id="faq-4" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
                         <p>Стоимость услуги доставки начинается **от 1200 KZT**.</p>
                         <p class="mt-2 text-sm italic">Окончательная цена зависит от общего расстояния и объёма покупок.</p>
                     </div>
@@ -624,7 +624,7 @@
                         <span>📍 Примерные цены на Межгород и пригород</span>
                         <i id="icon-faq-3" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
-                    <div id="faq-3" class="hidden p-4 pt-0 вtext-gray-600 border-t border-gray-100 faq-item-content">
+                    <div id="faq-3" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
                         <p class="font-bold text-red-600 mb-2">
                             ⚠️ ВНИМАНИЕ: Цены ориентировочные!
                         </p>
@@ -655,7 +655,7 @@
                             <li>**🛣️ Состояние дороги:** Длительные участки бездорожья или ремонта.</li>
                             <li>**🅿️ Дополнительные услуги:** Простой в пути, ожидание или заезд в другой населенный пункт.</li>
                         </ul>
-                        <p class="mt-2 вtext-sm italic text-gray-600">Точная стоимость зависит от расстояния и времени в пути.</p>
+                        <p class="mt-2 text-sm italic text-gray-600">Точная стоимость зависит от расстояния и времени в пути.</p>
                     </div>
                 </div>
                 
@@ -664,7 +664,7 @@
         
         <!-- БЛОК 7 (БЫВШИЙ 6): РЕКЛАМА ДЛЯ ПАРТНЕРОВ -->
         <div class="mt-10 border-t pt-6">
-            <h3 class="text-xl font-bold text-pink-600 mb-6 вtext-center">📢 Реклама для Вашего Бизнеса</h3>
+            <h3 class="text-xl font-bold text-pink-600 mb-6 text-center">📢 Реклама для Вашего Бизнеса</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 
                 <!-- Слот 1: МАГАЗИН/ТОЧКА ПРОДАЖ -->
@@ -852,7 +852,8 @@
                             <div id="taxiPriceEstimate" class="price-estimate">от 700–900 тг</div>
                             <div class="price-note text-red-600 font-semibold">Внимание: точная цена после подтверждения водителем.</div>
                         </div>
-                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
+                        <!-- ИСПРАВЛЕНИЕ: Замена на bg-blue-600 hover:bg-blue-700 -->
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
                             Заказать
                         </button>
                     </div>
@@ -902,7 +903,8 @@
                             <div class="price-estimate">от 1200 тг</div>
                             <div class="price-note font-semibold">Стоимость зависит от расстояния и объёма покупок.</div>
                         </div>
-                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
+                        <!-- ИСПРАВЛЕНИЕ: Замена на bg-blue-600 hover:bg-blue-700 -->
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
                             Оформить заказ
                         </button>
                     </div>
@@ -983,7 +985,8 @@
                             <!-- Здесь будет обновляться подсказка -->
                             <div id="cargoPriceNote" class="price-note font-semibold">Минимальный заказ - 1 час.</div>
                         </div>
-                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
+                        <!-- ИСПРАВЛЕНИЕ: Замена на bg-blue-600 hover:bg-blue-700 -->
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
                             Заказать грузоперевозку
                         </button>
                     </div>
@@ -1037,7 +1040,8 @@
                             <div class="price-estimate">от 3800 тг</div>
                             <div class="price-note font-semibold">Цена зависит от расстояния.</div>
                         </div>
-                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
+                        <!-- ИСПРАВЛЕНИЕ: Замена на bg-blue-600 hover:bg-blue-700 -->
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
                             Вызвать водителя
                         </button>
                     </div>
@@ -1106,7 +1110,8 @@
                             <div class="price-estimate">от 1500 тг</div>
                             <div class="price-note font-semibold">Цена зависит от характера требуемой помощи.</div>
                         </div>
-                        <button type="submit" class="bg-primary-blue hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
+                        <!-- ИСПРАВЛЕНИЕ: Замена на bg-blue-600 hover:bg-blue-700 -->
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
                             Оформить заявку
                         </button>
                     </div>
@@ -1230,7 +1235,7 @@
                 <h3 class="text-2xl font-bold mb-4 text-pink-600 flex items-center justify-center">
                     <i class="fas fa-handshake mr-2"></i> Партнерские Услуги
                 </h3>
-                <p class="mb-4 вtext-gray-800 font-semibold">
+                <p class="mb-4 text-gray-800 font-semibold">
                     Здесь будет размещаться реклама и специальные предложения наших партнеров!
                 </p>
                 <div class="border border-gray-200 p-4 rounded-lg mb-4 bg-gray-50">
@@ -1549,7 +1554,7 @@
             }
         }
 
-        function dismissAnnouncement() {
+        window.dismissAnnouncement = function() {
             announcementBar.classList.add('hidden');
             localStorage.setItem('announcement_dismissed_v1', 'true');
         }
@@ -1615,8 +1620,8 @@
             switch(mode) {
                 case 'taxi': iconId = 'taxiGeoIcon'; break;
                 case 'auction': iconId = 'auctionGeoIcon'; break;
-                case 'delivery': iconId = 'deliveryGeoIcon'; break; 
-                case 'cargo': iconId = 'cargoGeoIcon'; break;              
+                case 'delivery': iconId = 'deliveryGeoIcon'; break;     
+                case 'cargo': iconId = 'cargoGeoIcon'; break;          
                 case 'soberDriver': iconId = 'soberDriverGeoIcon'; break; 
                 case 'assistance': iconId = 'assistanceGeoIcon'; break; 
                 default: return;
@@ -2048,7 +2053,9 @@
 
         document.querySelectorAll('.close-btn').forEach(button => {
             button.addEventListener('click', (e) => {
-                closeModal(e.target.getAttribute('data-modal'));
+                // Ensure we get the correct modal ID from the data attribute
+                const modalId = button.getAttribute('data-modal');
+                closeModal(modalId);
             });
         });
 
@@ -2225,7 +2232,7 @@
                         const deliveryAddress = document.getElementById('deliveryAddress').value.trim();
                         if (deliveryAddress) addressesToSave.push(deliveryAddress);
                         break;
-                    
+                        
                     case 'cargo':
                         const cargoMoversSelect = document.getElementById('cargoMovers');
                         const moversCount = parseInt(cargoMoversSelect.value);
@@ -2262,7 +2269,7 @@
                         const soberDriverFromAddress = document.getElementById('soberDriverFrom').value.trim();
                         if (soberDriverFromAddress) addressesToSave.push(soberDriverFromAddress);
                         break;
-                    
+                        
                     case 'assistance':
                         const type = document.getElementById('assistanceType').value;
                         if (!type) {
@@ -2284,7 +2291,7 @@
                         const assistanceAddress = document.getElementById('assistanceAddress').value.trim();
                         if (assistanceAddress) addressesToSave.push(assistanceAddress);
                         break;
-                }
+                } 
 
                 if (requiredFieldsMissing) {
                     showStatus(modalId, 'Пожалуйста, заполните все обязательные поля.');
@@ -2300,8 +2307,8 @@
 
                 closeModal(modalId);
                 this.reset();
-            });
-        });
+            }); 
+        }); 
 
         window.showPWAInstructions = function() {
             document.getElementById('pwaModal').classList.remove('hidden');

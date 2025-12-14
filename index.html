@@ -850,18 +850,26 @@
                         </div>
                     </div>
                     
-                    <!-- БЛОК ПРЕДЗАКАЗА -->
-                    <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
-                        <p class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)</p>
-                        <!-- Дата и время -->
-                        <div class="flex flex-col">
-                            <label for="taxiDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время поездки</label>
-                            <input id="taxiDateTime" name="dateTime" type="datetime-local" class="form-input-control">
-                        </div>
-                        <!-- Пожелания -->
-                        <div class="flex flex-col">
-                            <label for="taxiWishes" class="text-xs font-medium text-gray-600 mb-1">Пожелания (детское кресло, большой багажник)</label>
-                            <textarea id="taxiWishes" name="wishes" rows="2" class="form-input-control" placeholder="Например: Нужно детское кресло, машина побольше."></textarea>
+                    <!-- БЛОК ПРЕДЗАКАЗА (Collapsible) -->
+                    <div class="border border-blue-200 rounded-lg overflow-hidden">
+                        <button type="button" onclick="togglePreorder()" class="w-full p-3 bg-blue-50 flex justify-between items-center text-left focus:outline-none">
+                            <span class="text-sm font-bold text-blue-700 flex items-center">
+                                <i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)
+                            </span>
+                            <i id="preorderIcon" class="fas fa-chevron-down text-blue-500 transition-transform duration-300"></i>
+                        </button>
+                        
+                        <div id="preorderContent" class="hidden p-3 bg-white border-t border-blue-100 space-y-3">
+                            <!-- Дата и время -->
+                            <div class="flex flex-col">
+                                <label for="taxiDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время поездки</label>
+                                <input id="taxiDateTime" name="dateTime" type="datetime-local" class="form-input-control">
+                            </div>
+                            <!-- Пожелания -->
+                            <div class="flex flex-col">
+                                <label for="taxiWishes" class="text-xs font-medium text-gray-600 mb-1">Пожелания (детское кресло, большой багажник)</label>
+                                <textarea id="taxiWishes" name="wishes" rows="2" class="form-input-control" placeholder="Например: Нужно детское кресло, машина побольше."></textarea>
+                            </div>
                         </div>
                     </div>
                     <!-- КОНЕЦ БЛОКА ПРЕДЗАКАЗА -->
@@ -1992,12 +2000,23 @@
                     document.getElementById('assistanceType').value = '';
                 }
                 
-                 const formattedNow = getFormattedCurrentTime();
-                 if (modalId === 'taxiModal') {
+                // Сброс сворачивания предзаказа в такси
+                if (modalId === 'taxiModal') {
+                     const content = document.getElementById('preorderContent');
+                     const icon = document.getElementById('preorderIcon');
+                     if (content && !content.classList.contains('hidden')) {
+                         content.classList.add('hidden');
+                     }
+                     if (icon && icon.classList.contains('rotate-180')) {
+                         icon.classList.remove('rotate-180');
+                     }
+                     
+                     const formattedNow = getFormattedCurrentTime();
                      document.getElementById('taxiDateTime').value = formattedNow;
                      updateTaxiPrice(); // Сброс цены на базовую
                  }
                  if (modalId === 'cargoModal') {
+                     const formattedNow = getFormattedCurrentTime();
                      document.getElementById('cargoDateTime').value = formattedNow;
                      document.getElementById('cargoMovers').value = '0'; 
                      updateCargoPrice(); 
@@ -2076,6 +2095,22 @@
             }
         }
         // =========================================================
+
+        // --- ЛОГИКА СВОРАЧИВАНИЯ ПРЕДЗАКАЗА (НОВОЕ) ---
+        window.togglePreorder = function() {
+            const content = document.getElementById('preorderContent');
+            const icon = document.getElementById('preorderIcon');
+            
+            if (content.classList.contains('hidden')) {
+                // Раскрыть
+                content.classList.remove('hidden');
+                if (icon) icon.classList.add('rotate-180');
+            } else {
+                // Свернуть
+                content.classList.add('hidden');
+                if (icon) icon.classList.remove('rotate-180');
+            }
+        }
 
 
         // --- Event Listeners for Opening/Closing ---
@@ -2209,7 +2244,15 @@
                         const wishes = document.getElementById('taxiWishes').value.trim();
                         const passengerPhone = document.getElementById('passengerPhone').value.trim(); 
                         
-                        message = handlePreorder('taxiDateTime', modalConfig.prefix);
+                        // Check if preorder content is visible
+                        const preorderContent = document.getElementById('preorderContent');
+                        const isPreorderOpen = preorderContent && !preorderContent.classList.contains('hidden');
+                        
+                        if (isPreorderOpen) {
+                            message = handlePreorder('taxiDateTime', modalConfig.prefix);
+                        } else {
+                            message = `${modalConfig.prefix}\n\n`;
+                        }
                         
                         message += getVal('taxiFrom', 'Откуда', true);
                         message += getVal('taxiTo', 'Куда', true);
@@ -2356,4 +2399,4 @@
 
     </script>
 </body>
-                                                                                                                               </html>
+</html>

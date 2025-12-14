@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Такси «Успех» — Белоусовка</title>
@@ -28,14 +28,18 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
-    <!-- Yandex Maps API был удален, так как больше не используется в модальных окнах -->
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        
+        /* Улучшение для PWA: отключение "резиновой" прокрутки */
+        html, body {
+            overscroll-behavior-y: none;
+        }
+
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: #f5f5f5; /* light mode bg */
-            padding-bottom: 72px; 
+            padding-bottom: 80px; /* Увеличено немного для безопасности */
             transition: background-color 0.3s, color 0.3s;
             color: #1f2937; /* Default text color */
         }
@@ -57,6 +61,23 @@
         @keyframes pulse-green {
             0%, 100% { border-color: #059669; } /* emerald-600 */
             50% { border-color: #34d399; } /* emerald-400 */
+        }
+
+        /* --- ОБНОВЛЕННАЯ АНИМАЦИЯ МОРГАНИЯ ДЛЯ КНОПКИ ЗАКАЗА (БОЛЕЕ ЗАМЕТНАЯ) --- */
+        @keyframes blink-custom {
+            0%, 100% { 
+                transform: scale(1); 
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+                filter: brightness(1);
+            }
+            50% { 
+                transform: scale(1.03); /* Чуть сильнее увеличение */
+                box-shadow: 0 0 20px rgba(59, 130, 246, 0.9); /* Яркое синее свечение */
+                filter: brightness(1.2); /* Кнопка становится ярче */
+            }
+        }
+        .blink-btn {
+            animation: blink-custom 1.5s infinite ease-in-out; /* Ускорено до 1.5 сек для динамики */
         }
         
         #locationBtn {
@@ -107,6 +128,7 @@
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
+            backdrop-filter: blur(4px); /* Modern blur effect */
         }
 
         .modal-overlay.active {
@@ -128,12 +150,13 @@
         
         /* === СТИЛИ ДЛЯ ФОРМ И КНОПОК ВВОДА В МОДАЛЬНЫХ ОКНАХ (обновлено) === */
         .form-input-control {
-             padding: 8px 12px;
+             padding: 10px 12px; /* Чуть больше padding для удобства пальцем */
              border: 1px solid #d1d5db;
              border-radius: 8px;
              width: 100%;
              transition: border-color 0.2s, box-shadow 0.2s;
              box-sizing: border-box; 
+             font-size: 16px; /* Предотвращает зум на iPhone при фокусе */
         }
         .form-input-control:focus {
             border-color: #3b82f6;
@@ -154,8 +177,8 @@
         /* Стили для кнопки "Компас" (Геолокация) */
         .geo-btn {
             flex-shrink: 0;
-            width: 40px;
-            height: 40px;
+            width: 44px; /* Увеличено для тача */
+            height: 44px;
             background-color: #f59e0b; /* amber-500 */
             color: white;
             border-radius: 8px;
@@ -165,6 +188,7 @@
             justify-content: center;
             font-size: 1.1rem;
             box-shadow: 0 2px 5px rgba(245, 158, 11, 0.5);
+            cursor: pointer;
         }
         .geo-btn:hover {
             background-color: #d97706; /* amber-700 */
@@ -174,8 +198,8 @@
         /* Стили для кнопки "Плюс" (Добавить адрес) */
         .add-stop-btn {
             flex-shrink: 0;
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             background-color: #10b981; /* emerald-500 */
             color: white;
             border-radius: 8px;
@@ -185,6 +209,7 @@
             justify-content: center;
             font-size: 1.1rem;
             box-shadow: 0 2px 5px rgba(16, 185, 129, 0.5);
+            cursor: pointer;
         }
         .add-stop-btn:hover {
             background-color: #059669; /* emerald-600 */
@@ -194,8 +219,8 @@
         /* Стили для кнопки "Минус" (Удалить адрес) */
         .remove-stop-btn {
             flex-shrink: 0;
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             background-color: #ef4444; /* red-500 */
             color: white;
             border-radius: 8px;
@@ -205,6 +230,7 @@
             justify-content: center;
             font-size: 1.1rem;
             box-shadow: 0 2px 5px rgba(239, 68, 68, 0.5);
+            cursor: pointer;
         }
         .remove-stop-btn:hover {
             background-color: #dc2626; /* red-600 */
@@ -264,6 +290,9 @@
             background-color: #374151; /* gray-700 */
             border-color: #4b5563; /* gray-600 */
             color: #f3f4f6; /* gray-100 */
+        }
+        .dark .form-input-control::placeholder {
+            color: #9ca3af;
         }
         .dark .form-input-control:focus {
             border-color: #60a5fa; /* blue-400 */
@@ -387,9 +416,10 @@
         <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6 main-card">
             
             <!-- НОВАЯ КНОТКА: ЗАКАЗ ЧЕРЕЗ ФОРМУ (ОТКРЫВАЕТ МОДАЛ TAXI) -->
+            <!-- ДОБАВЛЕНО: Класс blink-btn для моргания и изменен текст -->
             <button data-service="taxi"
-                class="service-btn btn-hover bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3">
-                <i class="fas fa-car-side text-lg"></i><span>Заказ через форму (Taxi)</span>
+                class="service-btn btn-hover bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3 blink-btn">
+                <i class="fas fa-car-side text-lg"></i><span>Заказать Taxi</span>
             </button>
             
             <!-- 1. ГЛАВНАЯ КНОТКА ЗАКАЗА (РАЗДЕЛЕННАЯ: ТАКСИ + ЕДА) -->
@@ -792,7 +822,7 @@
                         <div class="flex flex-col">
                             <label for="taxiFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес) *</label>
                             <div class="input-with-plus-btn">
-                                <input id="taxiFrom" name="from" type="text" list="fromHistory" class="form-input-control" placeholder="Улица, дом (обязательно)" required oninput="updateTaxiPrice()">
+                                <input id="taxiFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control" placeholder="Улица, дом (обязательно)" required oninput="updateTaxiPrice()">
                                 <datalist id="fromHistory"></datalist>
                                 <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                                 <button type="button" onclick="getCurrentLocation('taxi')" 
@@ -806,7 +836,7 @@
                         <div class="flex flex-col">
                             <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
                             <div class="input-with-plus-btn">
-                                <input id="taxiTo" name="to" type="text" list="toHistory" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required oninput="updateTaxiPrice()">
+                                <input id="taxiTo" name="to" type="text" list="toHistory" autocomplete="off" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required oninput="updateTaxiPrice()">
                                 <datalist id="toHistory"></datalist>
                                 <!-- КНОПКА ДОБАВЛЕНИЯ АДРЕСА (обновлено) -->
                                 <button type="button" onclick="addStop('additionalStops', 'taxi')" 
@@ -839,7 +869,7 @@
                     <!-- НОВОЕ ПОЛЕ: Номер Пассажира (единое поле) -->
                     <div class="flex flex-col">
                         <label for="passengerPhone" class="text-sm font-medium text-gray-700 mb-1">Телефон для связи (пассажира, если заказываете другому)</label>
-                        <input id="passengerPhone" name="passengerPhone" type="tel" class="form-input-control" placeholder="+7...">
+                        <input id="passengerPhone" name="passengerPhone" type="tel" pattern="[0-9+]*" class="form-input-control" placeholder="+7...">
                     </div>
 
 
@@ -1137,7 +1167,7 @@
                         <div class="flex flex-col">
                             <label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес)</label>
                             <div class="input-with-plus-btn">
-                                <input id="auctionFrom" name="from" type="text" class="form-input-control" placeholder="Улица, дом (обязательно)" required>
+                                <input id="auctionFrom" name="from" type="text" autocomplete="off" class="form-input-control" placeholder="Улица, дом (обязательно)" required>
                                 <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
                                 <button type="button" onclick="getCurrentLocation('auction')" 
                                     class="geo-btn" 
@@ -1150,7 +1180,7 @@
                         <div class="flex flex-col">
                             <label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
                             <div class="input-with-plus-btn">
-                                <input id="auctionTo" name="to" type="text" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required>
+                                <input id="auctionTo" name="to" type="text" autocomplete="off" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required>
                                 <!-- КНОПКА ДОБАВЛЕНИЯ АДРЕСА (обновлено) -->
                                 <button type="button" onclick="addStop('additionalStopsAuction', 'auction')" 
                                     class="add-stop-btn" 
@@ -1559,11 +1589,18 @@
             localStorage.setItem('announcement_dismissed_v1', 'true');
         }
 
-        // Общая функция для установки текущего времени + 5 минут
+        // Общая функция для установки текущего времени + 15 минут (Local Time Fixed)
         function getFormattedCurrentTime() {
              const now = new Date();
-             now.setMinutes(now.getMinutes() - now.getTimezoneOffset() + 5); 
-             return now.toISOString().slice(0, 16);
+             now.setMinutes(now.getMinutes() + 15); // Add 15 mins buffer
+             
+             const year = now.getFullYear();
+             const month = String(now.getMonth() + 1).padStart(2, '0');
+             const day = String(now.getDate()).padStart(2, '0');
+             const hours = String(now.getHours()).padStart(2, '0');
+             const minutes = String(now.getMinutes()).padStart(2, '0');
+             
+             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -1620,8 +1657,8 @@
             switch(mode) {
                 case 'taxi': iconId = 'taxiGeoIcon'; break;
                 case 'auction': iconId = 'auctionGeoIcon'; break;
-                case 'delivery': iconId = 'deliveryGeoIcon'; break;     
-                case 'cargo': iconId = 'cargoGeoIcon'; break;          
+                case 'delivery': iconId = 'deliveryGeoIcon'; break;      
+                case 'cargo': iconId = 'cargoGeoIcon'; break;           
                 case 'soberDriver': iconId = 'soberDriverGeoIcon'; break; 
                 case 'assistance': iconId = 'assistanceGeoIcon'; break; 
                 default: return;
@@ -1791,7 +1828,7 @@
 
             // Используем remove-stop-btn для кнопки удаления
             stopDiv.innerHTML = `
-                <input id="${stopId}" name="${stopId}" type="text" list="toHistory" class="form-input-control" placeholder="${stopLabel} (обязательно)" required ${inputEvents}>
+                <input id="${stopId}" name="${stopId}" type="text" list="toHistory" autocomplete="off" class="form-input-control" placeholder="${stopLabel} (обязательно)" required ${inputEvents}>
                 <button type="button" onclick="removeStop('${divId}', '${mode}')" class="remove-stop-btn" title="Удалить адрес">
                     <i class="fas fa-minus"></i>
                 </button>
@@ -2319,4 +2356,4 @@
 
     </script>
 </body>
-</html>
+                                                                                                                               </html>

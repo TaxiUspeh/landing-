@@ -344,7 +344,7 @@
         </div>
     </div>
 
-    <!-- Banquet Modal (ОБНОВЛЕННЫЙ) -->
+    <!-- Banquet Modal (ВОЗВРАЩЕНА ЛОГИКА С openBanquetBooking) -->
     <div id="banquet-modal" class="modal-backdrop fixed inset-0 hidden items-end sm:items-center justify-center sm:p-4 z-[110]" onclick="hideBanquetModal()">
         <div class="bg-[#1a1a1a] modal-content-sm w-full sm:max-w-2xl sm:rounded-xl shadow-2xl overflow-y-auto border-t sm:border-2 border-grill-accent flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
             <div class="p-6 bg-gradient-to-r from-grill-dark to-black border-b border-grill-accent sticky top-0 z-10 flex justify-between items-start pt-safe">
@@ -373,7 +373,7 @@
                     <p class="text-xs text-gray-400 italic text-center">* Индивидуальный расчет.</p>
                 </div>
 
-                <!-- НОВАЯ КНОПКА ЗАКАЗА БАНКЕТА ВНУТРИ ОКНА -->
+                <!-- КНОПКА ЗАКАЗА БАНКЕТА ВНУТРИ ОКНА, КОТОРАЯ ОТКРЫВАЕТ ФОРМУ БРОНИРОВАНИЯ -->
                 <div class="mt-6 pt-4 border-t border-gray-700">
                     <button onclick="openBanquetBooking()" class="w-full bg-grill-accent text-grill-dark font-bold py-4 rounded-xl shadow-lg transition hover:bg-orange-500 flex justify-center items-center active:scale-95">
                         <span class="mr-2 text-xl">📅</span> Заказать банкет / Обсудить
@@ -465,7 +465,12 @@
 
     <!-- Scripts -->
     <script>
-        // ... (Products Data - SAME as before, collapsed for brevity) ...
+        /*
+        * ВНИМАНИЕ: Если вы хотите использовать свое фото шашлыка "Баранина",
+        * замените URL-адрес в поле 'img' для продуктов 'lamb_meat' и 'lamb_ribs' 
+        * (строки 88 и 89) на вашу публичную ссылку на изображение (например, с Imgur, Google Photos).
+        * Локальные файлы с компьютера загрузить невозможно.
+        */
          const productsData = [
             // ХИТЫ
             { id: 'lula_hits', category: 'hits', name: 'Люля-кебаб (Хит)', price: 2500, desc: 'Фарш из отборной говядины с пряными травами. (400г)', img: 'https://placehold.co/400x300/4B2C1B/FFFFFF?text=ЛЮЛЯ-КЕБАБ' },
@@ -520,7 +525,7 @@
             { id: 'beef_liver', category: 'beef', name: 'Печень в сетке', price: 2200, desc: 'Нежная говяжья печень в жировой сетке с травами.', img: 'https://placehold.co/500x350/B54030/FFFFFF?text=ПЕЧЕНЬ' },
             { id: 'beef_ribs', category: 'beef', name: 'Ребра говяжьи', price: 2800, desc: 'Томленые ребра на углях.', img: 'https://placehold.co/500x350/802010/FFFFFF?text=РЕБРА' },
 
-            // БАРАНИНА
+            // БАРАНИНА (МЕСТО ДЛЯ ВАШЕГО ФОТО)
             { id: 'lamb_meat', category: 'lamb', name: 'Баранина (мякоть)', price: 3500, desc: 'Классика Востока. Нежное филе баранины. (300г)', img: 'https://placehold.co/500x350/935C3A/F7F7F7?text=БАРАНИНА+МЯКОТЬ' },
             { id: 'lamb_ribs', category: 'lamb', name: 'Бараньи семечки (ребрышки)', price: 3500, desc: 'Молодые ребрышки, обжаренные до золотистой корочки. (350г)', img: 'https://placehold.co/500x350/7A4A30/FFFFFF?text=БАРАНЬИ+РЕБРА' },
             
@@ -684,7 +689,7 @@
             if(!dateInput.value) dateInput.value = today;
         }
 
-        // НОВАЯ ФУНКЦИЯ ДЛЯ ЗАКАЗА БАНКЕТА ИЗ МОДАЛЬНОГО ОКНА
+        // ФУНКЦИЯ ДЛЯ ЗАКАЗА БАНКЕТА ИЗ МОДАЛЬНОГО ОКНА (ВОЗВРАЩЕНА)
         function openBanquetBooking() {
             hideBanquetModal();
             showModal('booking-modal');
@@ -1053,13 +1058,13 @@
                 <h3 class="text-xl md:text-2xl font-bold text-grill-accent mb-3 leading-tight">Шашлычный Двор приглашает провести корпоративы, банкеты и торжества!</h3>
                 <p class="text-gray-300 text-sm mb-5">Мы возьмем на себя все заботы о вкусном столе.</p>
                 
-                <!-- ВОЗВРАЩЕННЫЙ БЛОК КОНТАКТОВ -->
+                <!-- БЛОК КОНТАКТОВ С ОБНОВЛЕННОЙ ССЫЛКОЙ НА КАРТУ -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 text-sm">
                     <div class="space-y-2">
                         <p class="flex items-center text-white">
                             <span class="mr-2 text-grill-red">📍</span>
                             Белоусовка
-                            <a href="https://yandex.kz/maps/-/CLsSzWIR" target="_blank" class="ml-1 underline text-gray-400 hover:text-white text-xs">(На карте)</a>
+                            <a href="https://yandex.kz/maps/-/CLwmUZ9a" target="_blank" class="ml-1 underline text-gray-400 hover:text-white text-xs">(Показать на карте)</a>
                         </p>
                         <p class="flex items-center text-white">
                             <span class="mr-2 text-grill-red">⏰</span>

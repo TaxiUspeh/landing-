@@ -2010,23 +2010,28 @@
                     await saveAddress(address);
                 }
 
+                // VIBRATION FOR EVERYONE (ПЕРЕНЕСЕНО СЮДА)
+                if (navigator.vibrate) {
+                    navigator.vibrate(200); 
+                }
+
                 // Логика перенаправления
                 if (orderDestination === 'telegram') {
                     copyToClipboard(message);
                     
-                    if (navigator.vibrate) {
-                        navigator.vibrate(200); 
-                    }
-
                     displayMessageModal('Заказ сформирован!', 'Текст заказа скопирован. Сейчас откроется Telegram — просто вставьте текст в чат.', false);
                     setTimeout(() => {
                         window.open('https://t.me/TaxiUspehk', '_blank');
-                    }, 500);
+                    }, 1500); // 1.5 секунды задержки для Telegram
 
                 } else {
-                    // Стандартный WhatsApp
-                    const waLink = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
-                    window.open(waLink, '_blank');
+                    // Стандартный WhatsApp (ТЕПЕРЬ ТОЖЕ С АНИМАЦИЕЙ)
+                    displayMessageModal('Заказ сформирован!', 'Переходим в WhatsApp для отправки сообщения...', false);
+                    
+                    setTimeout(() => {
+                         const waLink = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
+                         window.open(waLink, '_blank');
+                    }, 1000); // 1 секунда задержки для WhatsApp, чтобы увидеть галочку
                 }
 
                 closeModal(modalId);

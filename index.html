@@ -38,15 +38,22 @@
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: #f5f5f5; /* light mode bg */
-            padding-bottom: 80px; /* Увеличено немного для безопасности */
+            padding-bottom: 90px; /* Увеличено из-за нижнего бара */
             transition: background-color 0.3s, color 0.3s;
-            color: #1f2937; /* Default text color */
+            color: #1f2937; 
+            -webkit-tap-highlight-color: transparent; /* Убирает синюю подсветку при тапе на Android */
         }
+        
+        /* Glassmorphism Header */
         .header-bg { 
-            background: linear-gradient(135deg, #f59e0b 0%, #1d4ed8 100%); 
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.95) 0%, rgba(29, 78, 216, 0.95) 100%); 
+            backdrop-filter: blur(10px);
             transition: background 0.3s;
         }
+
         .btn-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
+        .btn-active:active { transform: scale(0.97); } /* Эффект нажатия */
+
         .service-card, .main-card, .auction-cta, .stroy-dom-cta, .faq-item { 
             transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, border-color 0.3s, color 0.3s;
             border-radius: 12px;
@@ -56,230 +63,166 @@
         .auction-cta { background-color: #fff; border: 2px solid #f59e0b; }
         .stroy-dom-cta { background-color: #ecfdf5; border: 3px solid #059669; animation: pulse-green 4s infinite; }
         
-        /* Ключевые кадры для анимации Light Mode */
         @keyframes pulse-green {
-            0%, 100% { border-color: #059669; } /* emerald-600 */
-            50% { border-color: #34d399; } /* emerald-400 */
+            0%, 100% { border-color: #059669; } 
+            50% { border-color: #34d399; } 
         }
 
-        /* АНИМАЦИЯ МОРГАНИЯ ДЛЯ КНОПКИ ЗАКАЗА */
+        /* Анимация галочки успеха */
+        @keyframes checkmark {
+            0% { stroke-dashoffset: 100px; }
+            100% { stroke-dashoffset: 0; }
+        }
+        @keyframes checkmark-circle {
+            0% { stroke-dashoffset: 480px; }
+            100% { stroke-dashoffset: 960px; }
+        }
+        @keyframes colored-circle { 
+            0% { opacity:0; }
+            100% { opacity:100; }
+        }
+        .success-checkmark { width: 80px; height: 80px; margin: 0 auto; }
+        .success-checkmark circle { 
+            fill: none; stroke-width: 4; stroke-miterlimit: 10; stroke: #10b981; 
+            stroke-dasharray: 480px; stroke-dashoffset: 480px;
+            animation: checkmark-circle 0.6s ease-in-out backwards;
+        }
+        .success-checkmark path { 
+            fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke: #10b981;
+            stroke-dasharray: 100px; stroke-dashoffset: 100px;
+            animation: checkmark 0.4s ease-in-out 0.3s backwards;
+        }
+
+        /* АНИМАЦИЯ МОРГАНИЯ */
         @keyframes blink-custom {
-            0%, 100% { 
-                transform: scale(1); 
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
-                filter: brightness(1);
-            }
-            50% { 
-                transform: scale(1.03); 
-                box-shadow: 0 0 20px rgba(59, 130, 246, 0.9); 
-                filter: brightness(1.2); 
-            }
+            0%, 100% { transform: scale(1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); filter: brightness(1); }
+            50% { transform: scale(1.03); box-shadow: 0 0 20px rgba(59, 130, 246, 0.9); filter: brightness(1.2); }
         }
-        .blink-btn {
-            animation: blink-custom 1.5s infinite ease-in-out; 
-        }
+        .blink-btn { animation: blink-custom 1.5s infinite ease-in-out; }
         
         #locationBtn {
-            padding: 10px 12px;
-            font-size: 1rem;
-            background-color: #e5e7eb; 
-            color: #374151; 
-            font-weight: 600;
-            border-radius: 8px;
-            transition: background-color 0.2s;
+            padding: 10px 12px; font-size: 1rem; background-color: #e5e7eb; color: #374151; font-weight: 600;
+            border-radius: 8px; transition: background-color 0.2s, color 0.2s;
         }
-        #locationBtn:hover {
-            background-color: #d1d5db; 
-        }
+        #locationBtn:hover { background-color: #d1d5db; }
+
         .compact-util-btn {
-            padding: 12px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            font-weight: 600;
-            line-height: 1.2;
+            padding: 12px 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: 600; line-height: 1.2;
         }
         .quick-order-btn {
-            padding-top: 12px;
-            padding-bottom: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.875rem; 
-            font-weight: 700; 
+            padding-top: 12px; padding-bottom: 12px; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; font-size: 0.875rem; font-weight: 700; 
         }
         
-        /* === СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКОН === */
+        /* === MODALS === */
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-            backdrop-filter: blur(4px); /* Modern blur effect */
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center;
+            z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+            backdrop-filter: blur(4px); 
         }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
+        .modal-overlay.active { opacity: 1; visibility: visible; }
         .modal {
-            background: white;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 90vh; 
-            overflow-y: auto; 
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            transform: scale(0.95);
+            background: white; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; 
+            overflow-y: auto; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); transform: scale(0.95);
             transition: transform 0.3s ease, background-color 0.3s;
         }
         
-        /* === СТИЛИ ДЛЯ ФОРМ И КНОПОК ВВОДА В МОДАЛЬНЫХ ОКНАХ === */
         .form-input-control {
-             padding: 10px 12px;
-             border: 1px solid #d1d5db;
-             border-radius: 8px;
-             width: 100%;
-             transition: border-color 0.2s, box-shadow 0.2s;
-             box-sizing: border-box; 
-             font-size: 16px; 
+             padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; width: 100%;
+             transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; font-size: 16px; 
         }
         .form-input-control:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
-            outline: none;
+            border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); outline: none;
         }
         
-        .input-with-plus-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px; 
-        }
-        .input-with-plus-btn .form-input-control {
-            flex-grow: 1; 
-            min-width: 0; 
-        }
+        .input-with-plus-btn { display: flex; align-items: center; gap: 8px; }
+        .input-with-plus-btn .form-input-control { flex-grow: 1; min-width: 0; }
         
-        /* Стили для кнопок в модальных окнах */
         .geo-btn, .add-stop-btn, .remove-stop-btn {
-            flex-shrink: 0;
-            width: 44px;
-            height: 44px;
-            color: white;
-            border-radius: 8px;
-            transition: background-color 0.2s, transform 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            cursor: pointer;
+            flex-shrink: 0; width: 44px; height: 44px; color: white; border-radius: 8px;
+            transition: background-color 0.2s, transform 0.2s; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; cursor: pointer;
         }
         .geo-btn { background-color: #f59e0b; box-shadow: 0 2px 5px rgba(245, 158, 11, 0.5); }
-        .geo-btn:hover { background-color: #d97706; transform: scale(1.05); }
         .add-stop-btn { background-color: #10b981; box-shadow: 0 2px 5px rgba(16, 185, 129, 0.5); }
-        .add-stop-btn:hover { background-color: #059669; transform: scale(1.05); }
         .remove-stop-btn { background-color: #ef4444; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.5); }
-        .remove-stop-btn:hover { background-color: #dc2626; transform: scale(1.05); }
         
-        /* Новые стили для тегов пожеланий */
-        .wish-tag {
-            transition: all 0.2s ease;
-            user-select: none;
+        .wish-tag { transition: all 0.2s ease; user-select: none; }
+        .wish-tag:active { transform: scale(0.95); }
+        
+        /* Стили для чипсов истории адресов */
+        .history-chips-container {
+            display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; padding-top: 4px;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE 10+ */
         }
-        .wish-tag:active {
-            transform: scale(0.95);
+        .history-chips-container::-webkit-scrollbar { width: 0; height: 0; display: none; }
+        
+        .history-chip {
+            white-space: nowrap; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+            background-color: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; cursor: pointer;
+            transition: all 0.2s; display: flex; align-items: center;
         }
+        .history-chip:hover { background-color: #e5e7eb; }
+        .history-chip:active { transform: scale(0.95); background-color: #d1d5db; }
+        .history-chip i { margin-right: 4px; color: #9ca3af; }
 
-        /* Dark Mode Overrides */
-        .dark { 
-            background-color: #111827; /* gray-900 */
-            color: #f3f4f6; /* gray-100 */
-        }
-        .dark .header-bg { 
-            background: linear-gradient(135deg, #4c1d95 0%, #10b981 100%); 
-        }
+        /* Dark Mode */
+        .dark { background-color: #111827; color: #f3f4f6; }
+        .dark .header-bg { background: linear-gradient(135deg, rgba(76, 29, 149, 0.95) 0%, rgba(16, 185, 129, 0.95) 100%); }
         .dark .main-card, .dark .service-card, .dark .auction-cta, .dark .stroy-dom-cta, 
         .dark .modal, .dark #faq-accordion > div, .dark .faq-item-content {
-            background-color: #1f2937 !important; 
-            color: #e5e7eb !important; 
+            background-color: #1f2937 !important; color: #e5e7eb !important; 
         }
-        
         .dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700 { color: #d1d5db !important; }
         .dark .text-gray-600 { color: #9ca3af !important; }
         .dark .text-gray-500 { color: #6b7280 !important; }
         .dark .text-blue-900 { color: #93c5fd !important; }
-        .dark .text-emerald-800 { color: #a7f3d0 !important; }
-        .dark .text-blue-600 { color: #60a5fa !important; }
-
         .dark .border-t, .dark .border, .dark .border-b { border-color: #374151 !important; }
-        
         .dark .main-card { border-color: #059669 !important; }
-        .dark .stroy-dom-cta { 
-            border-color: #34d399 !important; background-color: #064e3b !important; color: #d1fae5 !important;
-            animation: pulse-dark-green 4s infinite;
-        }
-        .dark .auction-cta { border-color: #fbbf24 !important; }
-        @keyframes pulse-dark-green {
-            0%, 100% { border-color: #34d399; }
-            50% { border-color: #059669; }
-        }
-
-        .dark .form-input-control {
-            background-color: #374151; border-color: #4b5563; color: #f3f4f6;
-        }
+        .dark .stroy-dom-cta { border-color: #34d399 !important; background-color: #064e3b !important; color: #d1fae5 !important; }
+        .dark .form-input-control { background-color: #374151; border-color: #4b5563; color: #f3f4f6; }
         .dark .form-input-control:focus { border-color: #60a5fa; }
-        
         .dark .geo-btn { background-color: #b45309; }
-        .dark .add-stop-btn { background-color: #047857; }
-        .dark .remove-stop-btn { background-color: #b91c1c; }
+        .dark #locationBtn { background-color: #374151; color: #f3f4f6; border: 1px solid #4b5563; }
+        .dark #locationBtn:hover { background-color: #4b5563; }
+        .dark .bg-red-100 { background-color: #7f1d1d !important; border-color: #991b1b !important; }
+        .dark .text-red-700, .dark .text-red-600 { color: #fca5a5 !important; }
+        .dark .bg-blue-50 { background-color: #1e3a8a !important; border-color: #1e40af !important; }
+        .dark .border-blue-100, .dark .border-blue-200 { border-color: #1e40af !important; }
+        .dark .text-blue-700 { color: #bfdbfe !important; }
         
-        .dark .wish-tag {
-            background-color: #374151;
-            color: #d1d5db;
-            border-color: #4b5563;
-        }
-        .dark .wish-tag:hover {
-            background-color: #4b5563;
-            border-color: #60a5fa;
-        }
-        
-        /* Стили для новой двойной кнопки */
-        .split-btn {
-            display: flex; width: 100%; border-radius: 12px; overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .split-btn-part {
-            flex: 1; padding: 0.75rem 0; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; font-weight: 700;
-            font-size: 1.125rem; transition: background-color 0.2s, transform 0.2s;
-            text-align: center; line-height: 1.3;
-            cursor: pointer; /* Добавлено, так как теперь это кнопки */
-            border: none;
-        }
-        .split-btn-part:hover { transform: scale(1.02); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
-        
-        .split-btn-taxi { background-color: #10b981; color: white; border-right: 1px solid rgba(255, 255, 255, 0.3); }
-        .split-btn-taxi:hover { background-color: #059669; }
-        .split-btn-food { background-color: #ef4444; color: white; }
-        .split-btn-food:hover { background-color: #dc2626; }
+        /* Dark Mode Chips */
+        .dark .history-chip { background-color: #374151; color: #d1d5db; border-color: #4b5563; }
+        .dark .history-chip i { color: #6b7280; }
+        .dark .history-chip:hover { background-color: #4b5563; }
 
+        /* Split Button */
+        .split-btn { display: flex; width: 100%; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .split-btn-part {
+            flex: 1; padding: 0.75rem 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1.125rem; transition: background-color 0.2s, transform 0.2s; text-align: center;
+            line-height: 1.3; cursor: pointer; border: none;
+        }
+        .split-btn-part:hover { transform: scale(1.02); }
+        .split-btn-taxi { background-color: #10b981; color: white; border-right: 1px solid rgba(255, 255, 255, 0.3); }
+        .split-btn-food { background-color: #ef4444; color: white; }
         .dark .split-btn-taxi { background-color: #047857; border-right: 1px solid rgba(255, 255, 255, 0.1); }
-        .dark .split-btn-taxi:hover { background-color: #065f46; }
         .dark .split-btn-food { background-color: #b91c1c; }
-        .dark .split-btn-food:hover { background-color: #991b1b; }
+
+        /* GLASSMORPHISM BOTTOM BAR */
+        .bottom-bar-glass {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(229, 231, 235, 0.5);
+        }
+        .dark .bottom-bar-glass {
+            background-color: rgba(17, 24, 39, 0.9);
+            border-top: 1px solid rgba(55, 65, 81, 0.5);
+        }
 
     </style>
 </head>
@@ -289,7 +232,7 @@
     <!-- HEADER -->
     <header class="header-bg text-white py-10 rounded-b-xl shadow-xl relative">
         <div class="absolute top-4 right-4">
-            <button id="themeToggle" onclick="toggleTheme()" class="text-white p-2 rounded-full bg-black bg-opacity-10 hover:bg-opacity-30 transition-all focus:outline-none z-50">
+            <button id="themeToggle" onclick="toggleTheme()" class="text-white p-2 rounded-full bg-black bg-opacity-10 hover:bg-opacity-30 transition-all focus:outline-none z-50 btn-active">
                 <i id="themeIcon" class="fas fa-moon text-xl"></i>
             </button>
         </div>
@@ -309,7 +252,7 @@
                     Внимание! Из-за повышенного спроса на такси или погодных условий время подачи от 15-20 минут.
                 </p>
             </div>
-            <button onclick="dismissAnnouncement()" class="text-sm opacity-80 hover:opacity-100 transition">
+            <button onclick="dismissAnnouncement()" class="text-sm opacity-80 hover:opacity-100 transition btn-active">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -325,7 +268,7 @@
             
             <!-- КНОПКА 1 (СИНЯЯ): БЫСТРЫЙ ЗАКАЗ (МОДАЛ TAXI) -->
             <button data-service="taxi"
-                class="service-btn btn-hover bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3 blink-btn">
+                class="service-btn btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3 blink-btn">
                 <i class="fas fa-car-side text-lg"></i><span>Заказать Taxi</span>
             </button>
             
@@ -333,13 +276,13 @@
             <div class="split-btn mb-3">
                 <!-- ЗЕЛЕНАЯ КНОПКА: ОТКРЫВАЕТ МЕНЮ В РЕЖИМЕ WHATSAPP -->
                 <button onclick="openServicesMenu('whatsapp')"
-                    class="btn-hover split-btn-part split-btn-taxi">
+                    class="btn-hover btn-active split-btn-part split-btn-taxi">
                     <span>Меню услуг</span>
                 </button>
                 
                 <!-- КНОПКА ЕДА: ВНЕШНЯЯ ССЫЛКА -->
                 <a href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html" target="_blank"
-                    class="btn-hover split-btn-part split-btn-food">
+                    class="btn-hover btn-active split-btn-part split-btn-food">
                     <span>Заказ Еды</span>
                 </a>
             </div>
@@ -348,26 +291,26 @@
             <div class="grid grid-cols-3 gap-2 mb-4">
                 <!-- Кнопка Поделиться (ВМЕСТО ЗВОНКА) -->
                 <button onclick="shareApp()" 
-                    class="btn-hover bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
+                    class="btn-hover btn-active bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
                     <i class="fas fa-share-alt mb-0.5"></i><span>Поделиться</span>
                 </button>
                 
                 <!-- TELEGRAM: ОТКРЫВАЕТ МЕНЮ В РЕЖИМЕ TELEGRAM -->
                 <button onclick="openServicesMenu('telegram')"
-                    class="btn-hover bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
+                    class="btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
                     <i class="fab fa-telegram-plane mb-0.5"></i><span>Telegram</span>
                 </button>
                 
                 <!-- Аукцион -->
                 <button data-service="auction"
-                    class="service-btn btn-hover bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
+                    class="service-btn btn-hover btn-active bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
                     <i class="fas fa-gavel mb-0.5"></i><span>Аукцион</span>
                 </button>
             </div>
             
             <!-- БЛОК ГЕОЛОКАЦИИ -->
             <button type="button" onclick="getCurrentLocation('main')" id="locationBtn"
-                class="w-full text-gray-700 font-semibold transition flex items-center justify-center space-x-3 shadow-inner">
+                class="w-full text-gray-700 font-semibold transition flex items-center justify-center space-x-3 shadow-inner btn-active">
                 <i class="fas fa-location-arrow"></i>
                 <span id="locationBtnText">Использовать мое местоположение</span>
             </button>
@@ -408,15 +351,15 @@
                 
                 <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                     <a href="https://wa.me/77764764606?text=Здравствуйте!%20Интересуют%20стройматериалы%20в%20магазине%20%22Строй%20Дом%22%20по%20адресу%20Юбилейная%2010." target="_blank"
-                       class="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
+                       class="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
                         <i class="fab fa-whatsapp mr-2"></i> WhatsApp
                     </a>
                     <a href="https://yandex.kz/maps/-/CLgm7KK9" target="_blank"
-                       class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
+                       class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
                         <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
                     </a>
                     <a href="https://www.instagram.com/stroy_dom_bk" target="_blank"
-                       class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
+                       class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
                         <i class="fab fa-instagram mr-2"></i> Instagram
                     </a>
                 </div>
@@ -428,19 +371,19 @@
         
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
             <button data-service="delivery"
-                class="service-btn service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500">
+                class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500">
                 <i class="fas fa-box-open text-2xl mb-1 text-green-600"></i><span class="text-sm">Доставка</span>
             </button>
             <button data-service="cargo"
-                class="service-btn service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
+                class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
                 <i class="fas fa-truck-loading text-2xl mb-1 text-yellow-600"></i><span class="text-sm">Грузовой</span>
             </button>
             <button data-service="soberDriver"
-                class="service-btn service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-red-500">
+                class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-red-500">
                 <i class="fas fa-cocktail text-2xl mb-1 text-red-600"></i><span class="text-sm">Трезвый водитель</span>
             </button>
             <button data-service="assistance"
-                class="service-btn service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-indigo-500">
+                class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-indigo-500">
                 <i class="fas fa-life-ring text-2xl mb-1 text-indigo-600"></i><span class="text-sm">Помощь</span>
             </button>
         </div>
@@ -450,21 +393,21 @@
         <h3 class="text-xl font-bold text-center mb-4 text-gray-700 border-t pt-4">Быстрые Действия</h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
             <a href="https://wa.me/77770649648?text=Оцените%20работу%20такси%20%C2%ABУспех%C2%BB%20по%20шкале%20от%201%20(Плохо)%20до%205%20(Отлично)." target="_blank"
-                class="btn-hover bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-lg transition-all compact-util-btn">
+                class="btn-hover btn-active bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-lg transition-all compact-util-btn">
                 <i class="fas fa-star text-xl mb-1"></i><span>Оценка</span>
             </a>
             <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank"
-                class="btn-hover bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-lg transition-all compact-util-btn">
+                class="btn-hover btn-active bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-lg transition-all compact-util-btn">
                 <i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span>
             </a>
             
             <button onclick="showPartnerModal()" 
-                class="btn-hover bg-pink-600 hover:bg-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn">
+                class="btn-hover btn-active bg-pink-600 hover:bg-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn">
                 <i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span>
             </button>
             
             <button onclick="showPWAInstructions()" 
-                class="btn-hover bg-gray-700 hover:bg-gray-800 text-white rounded-xl shadow-lg transition-all compact-util-btn">
+                class="btn-hover btn-active bg-gray-700 hover:bg-gray-800 text-white rounded-xl shadow-lg transition-all compact-util-btn">
                 <i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span>
             </button>
         </div>
@@ -484,15 +427,15 @@
                 
                 <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                     <a href="https://wa.me/77771383856?text=Здравствуйте!%20Хочу%20записаться%20на%20Технический%20Осмотр%20по%20адресу%20Молодежная%2037." target="_blank"
-                       class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
+                       class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
                         <i class="fab fa-whatsapp mr-2"></i> WhatsApp
                     </a>
                     <a href="https://yandex.kz/navi/-/CLGK5Sli" target="_blank"
-                       class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
+                       class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
                         <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
                     </a>
                     <a href="tel:+77771383856"
-                       class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
+                       class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
                         <i class="fas fa-phone-alt mr-2"></i> Звонок
                     </a>
                 </div>
@@ -600,7 +543,7 @@
                 Хотите зарабатывать в удобное время и быть частью успешной команды в Белоусовке?
             </p>
             <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20стать%20водителем%20такси%20%C2%ABУспех%C2%BB.%20Укажите%2C%20пожалуйста%2C%20условия%20и%20требования." target="_blank"
-               class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover">
+               class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover btn-active">
                 <i class="fas fa-car-side mr-2"></i> Отправить Заявку Водителя
             </a>
             <p class="text-sm text-gray-500 mt-4">
@@ -612,7 +555,7 @@
         <div class="mt-6 border-t pt-6 text-center">
             <h3 class="text-xl font-bold text-gray-700 mb-4">Для действующих водителей</h3>
             <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank"
-               class="inline-block bg-pink-600 hover:bg-pink-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-lg transition-all">
+               class="inline-block bg-pink-600 hover:bg-pink-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-lg transition-all btn-active">
                 <i class="fas fa-user-shield mr-2"></i> Вход в режим Водителя
             </a>
             <p class="text-sm text-gray-500 mt-2">
@@ -626,24 +569,25 @@
     <section class="bg-blue-700 py-6 text-center mt-10 shadow-inner">
         <h3 class="text-xl font-bold text-white mb-3">🗺 Откройте Яндекс.Навигатор</h3>
         <a href="https://yandex.kz/navi" target="_blank"
-            class="inline-block bg-yellow-400 hover:bg-yellow-500 text-blue-900 px-8 py-3 rounded-xl text-lg font-semibold shadow-lg transition-all">
+            class="inline-block bg-yellow-400 hover:bg-yellow-500 text-blue-900 px-8 py-3 rounded-xl text-lg font-semibold shadow-lg transition-all btn-active">
             <i class="fas fa-location-arrow mr-2"></i> Открыть Навигатор
         </a>
     </section>
 
     <!-- ФИКСИРОВАННЫЙ НИЖНИЙ БАР (ДЛЯ МОБИЛЬНЫХ) -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-40 sm:hidden">
+    <!-- ДОБАВЛЕН КЛАСС bottom-bar-glass ДЛЯ ЭФФЕКТА СТЕКЛА -->
+    <div class="fixed bottom-0 left-0 right-0 bottom-bar-glass shadow-2xl z-40 sm:hidden">
         <div class="flex justify-around items-center h-16">
-            <a href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." class="flex flex-col items-center text-green-600 hover:text-green-700">
+            <a href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." class="flex flex-col items-center text-green-600 hover:text-green-700 btn-active p-1 rounded-lg">
                 <i class="fab fa-whatsapp text-2xl"></i><span class="text-xs mt-0.5">Заказ</span>
             </a>
-            <a href="tel:+77770649648" class="flex flex-col items-center text-red-600 hover:text-red-700">
+            <a href="tel:+77770649648" class="flex flex-col items-center text-red-600 hover:text-red-700 btn-active p-1 rounded-lg">
                 <i class="fas fa-phone-alt text-2xl"></i><span class="text-xs mt-0.5">Звонок</span>
             </a>
-            <a data-service="delivery" class="service-btn flex flex-col items-center text-yellow-600 hover:text-yellow-700">
+            <a data-service="delivery" class="service-btn flex flex-col items-center text-yellow-600 hover:text-yellow-700 btn-active p-1 rounded-lg">
                 <i class="fas fa-box-open text-2xl"></i><span class="text-xs mt-0.5">Доставка</span>
             </a>
-            <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" class="flex flex-col items-center text-pink-600 hover:text-pink-700">
+            <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" class="flex flex-col items-center text-pink-600 hover:text-pink-700 btn-active p-1 rounded-lg">
                 <i class="fas fa-user-shield text-2xl"></i><span class="text-xs mt-0.5">Водитель</span>
             </a>
         </div>
@@ -670,7 +614,7 @@
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">📋 Все услуги Taxi «Успех»</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="servicesMenuModal">×</button>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="servicesMenuModal">×</button>
                 </div>
                 
                 <p class="text-gray-600 mb-4 text-center">Выберите услугу для оформления заказа:</p>
@@ -678,37 +622,37 @@
                 <div class="grid grid-cols-2 gap-3 mb-6">
                     <!-- Такси -->
                     <button onclick="openServiceFromMenu('taxi')" 
-                        class="p-4 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 flex flex-col items-center text-center transition">
+                        class="p-4 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 flex flex-col items-center text-center transition btn-active">
                         <i class="fas fa-car-side text-2xl text-blue-600 mb-2"></i>
                         <span class="font-bold text-gray-800 text-sm">Такси</span>
                     </button>
                     <!-- Аукцион -->
                     <button onclick="openServiceFromMenu('auction')"
-                        class="p-4 bg-yellow-50 hover:bg-yellow-100 rounded-xl border border-yellow-200 flex flex-col items-center text-center transition">
+                        class="p-4 bg-yellow-50 hover:bg-yellow-100 rounded-xl border border-yellow-200 flex flex-col items-center text-center transition btn-active">
                         <i class="fas fa-gavel text-2xl text-yellow-600 mb-2"></i>
                         <span class="font-bold text-gray-800 text-sm">Аукцион</span>
                     </button>
                     <!-- Доставка -->
                     <button onclick="openServiceFromMenu('delivery')"
-                        class="p-4 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 flex flex-col items-center text-center transition">
+                        class="p-4 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 flex flex-col items-center text-center transition btn-active">
                         <i class="fas fa-box-open text-2xl text-green-600 mb-2"></i>
                         <span class="font-bold text-gray-800 text-sm">Доставка</span>
                     </button>
                     <!-- Грузовой -->
                     <button onclick="openServiceFromMenu('cargo')"
-                        class="p-4 bg-orange-50 hover:bg-orange-100 rounded-xl border border-orange-200 flex flex-col items-center text-center transition">
+                        class="p-4 bg-orange-50 hover:bg-orange-100 rounded-xl border border-orange-200 flex flex-col items-center text-center transition btn-active">
                         <i class="fas fa-truck-loading text-2xl text-orange-600 mb-2"></i>
                         <span class="font-bold text-gray-800 text-sm">Грузовой</span>
                     </button>
                     <!-- Трезвый водитель -->
                     <button onclick="openServiceFromMenu('soberDriver')"
-                        class="p-4 bg-red-50 hover:bg-red-100 rounded-xl border border-red-200 flex flex-col items-center text-center transition">
+                        class="p-4 bg-red-50 hover:bg-red-100 rounded-xl border border-red-200 flex flex-col items-center text-center transition btn-active">
                         <i class="fas fa-cocktail text-2xl text-red-600 mb-2"></i>
                         <span class="font-bold text-gray-800 text-sm">Трезвый водитель</span>
                     </button>
                     <!-- Помощь -->
                     <button onclick="openServiceFromMenu('assistance')"
-                        class="p-4 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 flex flex-col items-center text-center transition">
+                        class="p-4 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 flex flex-col items-center text-center transition btn-active">
                         <i class="fas fa-life-ring text-2xl text-indigo-600 mb-2"></i>
                         <span class="font-bold text-gray-800 text-sm">Помощь</span>
                     </button>
@@ -718,7 +662,7 @@
                 <div id="servicesMenuFooter" class="border-t pt-4 text-center hidden">
                     <p class="text-sm text-gray-500 mb-2">Хотите перейти в канал?</p>
                     <a href="https://t.me/TaxiUspehk" target="_blank" 
-                       class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg shadow transition">
+                       class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg shadow transition btn-active">
                         <i class="fab fa-telegram-plane mr-2"></i> Перейти в Telegram
                     </a>
                 </div>
@@ -734,7 +678,7 @@
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🚕 Заказать Такси</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="taxiModal">×</button>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="taxiModal">×</button>
                 </div>
                 <form id="taxiForm" class="space-y-4">
                     <div id="addressInputsTaxi">
@@ -743,13 +687,15 @@
                             <div class="input-with-plus-btn">
                                 <input id="taxiFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control" placeholder="Улица, дом (обязательно)" required oninput="updateTaxiPrice()">
                                 <datalist id="fromHistory"></datalist>
-                                <button type="button" onclick="getCurrentLocation('taxi')" class="geo-btn" title="Использовать мое местоположение"><i id="taxiGeoIcon" class="fas fa-compass"></i></button>
+                                <button type="button" onclick="getCurrentLocation('taxi')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="taxiGeoIcon" class="fas fa-compass"></i></button>
                             </div>
+                            <!-- НОВОЕ: Контейнер для чипсов истории -->
+                            <div id="taxiHistoryChips" class="history-chips-container mt-2"></div>
                         </div>
                         
                         <!-- 1. НОВАЯ КНОПКА: ПОМЕНЯТЬ МЕСТАМИ -->
                         <div class="relative flex justify-center -my-3 z-10">
-                             <button type="button" onclick="swapTaxiAddresses()" class="bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-full p-2 shadow-md border border-white transition transform hover:rotate-180 focus:outline-none" title="Поменять местами">
+                             <button type="button" onclick="swapTaxiAddresses()" class="bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-full p-2 shadow-md border border-white transition transform hover:rotate-180 focus:outline-none btn-active" title="Поменять местами">
                                 <i class="fas fa-exchange-alt rotate-90"></i>
                              </button>
                         </div>
@@ -759,14 +705,14 @@
                             <div class="input-with-plus-btn">
                                 <input id="taxiTo" name="to" type="text" list="toHistory" autocomplete="off" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required oninput="updateTaxiPrice()">
                                 <datalist id="toHistory"></datalist>
-                                <button type="button" onclick="addStop('additionalStops', 'taxi')" class="add-stop-btn" title="Добавить адрес"><i class="fas fa-plus"></i></button>
+                                <button type="button" onclick="addStop('additionalStops', 'taxi')" class="add-stop-btn btn-active" title="Добавить адрес"><i class="fas fa-plus"></i></button>
                             </div>
                             <div id="additionalStops" class="mt-2 space-y-2" oninput="updateTaxiPrice()"></div>
                         </div>
                     </div>
                     
                     <div class="border border-blue-200 rounded-lg overflow-hidden">
-                        <button type="button" onclick="togglePreorder()" class="w-full p-3 bg-blue-50 flex justify-between items-center text-left focus:outline-none">
+                        <button type="button" onclick="togglePreorder()" class="w-full p-3 bg-blue-50 flex justify-between items-center text-left focus:outline-none btn-active">
                             <span class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)</span>
                             <i id="preorderIcon" class="fas fa-chevron-down text-blue-500 transition-transform duration-300"></i>
                         </button>
@@ -804,7 +750,7 @@
                             <div id="taxiPriceEstimate" class="price-estimate">от 700–900 тг</div>
                             <div class="price-note text-red-600 font-semibold">Внимание: точная цена после подтверждения водителем.</div>
                         </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">Заказать</button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Заказать</button>
                     </div>
                 </form>
             </div>
@@ -817,7 +763,7 @@
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🛍️ Доставка Товаров</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="deliveryModal">×</button>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="deliveryModal">×</button>
                 </div>
                 <form id="deliveryForm" class="space-y-4">
                     <div class="flex flex-col">
@@ -832,7 +778,7 @@
                         <label for="deliveryAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес доставки *</label>
                         <div class="input-with-plus-btn">
                             <input id="deliveryAddress" name="address" type="text" class="form-input-control" placeholder="Улица, дом, квартира" required />
-                            <button type="button" onclick="getCurrentLocation('delivery')" class="geo-btn" title="Использовать мое местоположение"><i id="deliveryGeoIcon" class="fas fa-compass"></i></button>
+                            <button type="button" onclick="getCurrentLocation('delivery')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="deliveryGeoIcon" class="fas fa-compass"></i></button>
                         </div>
                     </div>
                     <div id="deliveryStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
@@ -841,7 +787,7 @@
                             <div class="price-note">Примерная стоимость:</div>
                             <div class="price-estimate">от 1200 тг</div>
                         </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">Оформить заказ</button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Оформить заказ</button>
                     </div>
                 </form>
             </div>
@@ -854,14 +800,14 @@
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🚚 Грузовые Перевозки</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="cargoModal">×</button>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="cargoModal">×</button>
                 </div>
                 <form id="cargoForm" class="space-y-4">
                     <div class="flex flex-col">
                         <label for="cargoFrom" class="text-sm font-medium text-gray-700 mb-1">Адрес погрузки *</label>
                         <div class="input-with-plus-btn">
                             <input id="cargoFrom" name="from" type="text" class="form-input-control" placeholder="Откуда забрать груз" required>
-                            <button type="button" onclick="getCurrentLocation('cargo')" class="geo-btn" title="Использовать мое местоположение"><i id="cargoGeoIcon" class="fas fa-compass"></i></button>
+                            <button type="button" onclick="getCurrentLocation('cargo')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="cargoGeoIcon" class="fas fa-compass"></i></button>
                         </div>
                     </div>
                     <div class="flex flex-col">
@@ -899,7 +845,7 @@
                             <div id="cargoTotalPrice" class="price-estimate">6000 тг</div>
                             <div id="cargoPriceNote" class="price-note font-semibold">Минимальный заказ - 1 час.</div>
                         </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">Заказать</button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Заказать</button>
                     </div>
                 </form>
             </div>
@@ -912,14 +858,14 @@
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🔑 Трезвый Водитель</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="soberDriverModal">×</button>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="soberDriverModal">×</button>
                 </div>
                 <form id="soberDriverForm" class="space-y-4">
                     <div class="flex flex-col">
                         <label for="soberDriverFrom" class="text-sm font-medium text-gray-700 mb-1">Ваш текущий адрес *</label>
                         <div class="input-with-plus-btn">
                             <input id="soberDriverFrom" name="from" type="text" class="form-input-control" placeholder="Адрес, где находится авто" required>
-                            <button type="button" onclick="getCurrentLocation('soberDriver')" class="geo-btn" title="Использовать мое местоположение"><i id="soberDriverGeoIcon" class="fas fa-compass"></i></button>
+                            <button type="button" onclick="getCurrentLocation('soberDriver')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="soberDriverGeoIcon" class="fas fa-compass"></i></button>
                         </div>
                     </div>
                     <div class="flex flex-col">
@@ -936,7 +882,7 @@
                             <div class="price-note">Примерная стоимость:</div>
                             <div class="price-estimate">от 3800 тг</div>
                         </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">Вызвать водителя</button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Вызвать водителя</button>
                     </div>
                 </form>
             </div>
@@ -949,7 +895,7 @@
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🙋 Помощь / Помощь на дороге</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="assistanceModal">×</button>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="assistanceModal">×</button>
                 </div>
                 <form id="assistanceForm" class="space-y-4">
                     <div class="flex flex-col">
@@ -980,7 +926,7 @@
                         <label for="assistanceAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес *</label>
                         <div class="input-with-plus-btn">
                             <input id="assistanceAddress" name="address" type="text" class="form-input-control" placeholder="Улица, дом или местоположение" required />
-                            <button type="button" onclick="getCurrentLocation('assistance')" class="geo-btn" title="Использовать мое местоположение"><i id="assistanceGeoIcon" class="fas fa-compass"></i></button>
+                            <button type="button" onclick="getCurrentLocation('assistance')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="assistanceGeoIcon" class="fas fa-compass"></i></button>
                         </div>
                     </div>
                     <div id="assistanceStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
@@ -989,7 +935,7 @@
                             <div class="price-note">Примерная стоимость:</div>
                             <div class="price-estimate">от 1500 тг</div>
                         </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">Оформить заявку</button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Оформить заявку</button>
                     </div>
                 </form>
             </div>
@@ -1002,7 +948,7 @@
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🔨 Заказ-Аукцион</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="auctionModal">×</button>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="auctionModal">×</button>
                 </div>
                 <form id="auctionForm" class="space-y-4">
                     <div id="addressInputsAuction">
@@ -1010,14 +956,14 @@
                             <label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес)</label>
                             <div class="input-with-plus-btn">
                                 <input id="auctionFrom" name="from" type="text" autocomplete="off" class="form-input-control" placeholder="Улица, дом (обязательно)" required>
-                                <button type="button" onclick="getCurrentLocation('auction')" class="geo-btn" title="Использовать мое местоположение"><i id="auctionGeoIcon" class="fas fa-compass"></i></button>
+                                <button type="button" onclick="getCurrentLocation('auction')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="auctionGeoIcon" class="fas fa-compass"></i></button>
                             </div>
                         </div>
                         <div class="flex flex-col">
                             <label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
                             <div class="input-with-plus-btn">
                                 <input id="auctionTo" name="to" type="text" autocomplete="off" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required>
-                                <button type="button" onclick="addStop('additionalStopsAuction', 'auction')" class="add-stop-btn" title="Добавить адрес"><i class="fas fa-plus"></i></button>
+                                <button type="button" onclick="addStop('additionalStopsAuction', 'auction')" class="add-stop-btn btn-active" title="Добавить адрес"><i class="fas fa-plus"></i></button>
                             </div>
                             <div id="additionalStopsAuction" class="mt-2 space-y-2"></div>
                         </div>
@@ -1032,7 +978,7 @@
                         <div>
                             <div class="price-estimate text-yellow-600">Начните от 500 тг</div>
                         </div>
-                        <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">Предложить цену</button>
+                        <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Предложить цену</button>
                     </div>
                 </form>
             </div>
@@ -1060,7 +1006,7 @@
                         <li>Выберите **«Добавить на главный экран»**.</li>
                     </ol>
                 </div>
-                <button onclick="document.getElementById('pwaModal').classList.add('hidden')" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">Понятно</button>
+                <button onclick="document.getElementById('pwaModal').classList.add('hidden')" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">Понятно</button>
             </div>
         </div>
     </div>
@@ -1072,9 +1018,9 @@
                 <p class="mb-4 text-gray-800 font-semibold">Здесь будет размещаться реклама и специальные предложения наших партнеров!</p>
                 <div class="border border-gray-200 p-4 rounded-lg mb-4 bg-gray-50">
                     <h4 class="text-lg font-bold text-gray-700">Хотите стать нашим Партнером?</h4>
-                    <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20обсудить%20размещение%20рекламы%20на%20вашей%20промо-странице%20такси." target="_blank" class="w-full inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition">Связаться по рекламе</a>
+                    <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20обсудить%20размещение%20рекламы%20на%20вашей%20промо-странице%20такси." target="_blank" class="w-full inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition btn-active">Связаться по рекламе</a>
                 </div>
-                <button onclick="document.getElementById('partnerModal').classList.add('hidden')" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">Закрыть</button>
+                <button onclick="document.getElementById('partnerModal').classList.add('hidden')" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">Закрыть</button>
             </div>
         </div>
     </div>
@@ -1122,15 +1068,12 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        // При авторизации синхронизируем данные из облака
                         syncAddressHistory();
                     } 
-                    // Сразу отображаем то, что есть в LS (даже до авторизации)
                     setAddressHistory();
                 });
             } catch (error) {
                 console.error("Firebase initialization or authentication failed:", error);
-                // Даже если Firebase упал, показываем локальные данные
                 setAddressHistory();
             }
         }
@@ -1140,14 +1083,12 @@
 
         // --- ОБНОВЛЕНО: СНАЧАЛА ГРУЗИМ ИЗ LS, ПОТОМ СИНХРОНИЗИРУЕМ ---
         async function loadAddresses() {
-            // 1. Мгновенная загрузка из LocalStorage
             let localData = [];
             try {
                 const stored = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
                 if (stored) localData = JSON.parse(stored);
             } catch (e) { console.error("LS Error:", e); }
-            
-            return localData; // Возвращаем сразу для скорости
+            return localData; 
         }
         
         // --- НОВАЯ ФУНКЦИЯ СИНХРОНИЗАЦИИ ---
@@ -1159,9 +1100,7 @@
                 if (docSnap.exists()) {
                     const cloudData = docSnap.data()[ADDRESS_HISTORY_FIELD] || [];
                     if (cloudData.length > 0) {
-                        // Обновляем LS данными из облака (облако главнее при старте)
                         localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(cloudData));
-                        // Обновляем UI
                         setAddressHistory();
                     }
                 }
@@ -1171,31 +1110,25 @@
         }
 
         async function saveAddress(address) {
-            if (!address || address.includes('[КООРДИНАТЫ]') || address.length < 5) return;
+            if (!address || address.includes('[КООРДИНАТЫ]') || address.length < 3) return;
 
-            // 1. Сначала работаем с LocalStorage (быстро)
             let history = [];
             try {
                 const stored = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
                 if (stored) history = JSON.parse(stored);
             } catch(e) {}
 
-            // Убираем дубликаты и добавляем новый адрес в начало
             history = history.filter(item => item.toLowerCase() !== address.toLowerCase());
             history.unshift(address);
             history = history.slice(0, 10);
             
-            // Сохраняем локально
             localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(history));
 
-            // 2. Отправляем в Firebase (асинхронно, не блокируя интерфейс)
             if (db && userId) {
                  const docRef = doc(db, "artifacts", appId, "users", userId, "data", ADDRESS_HISTORY_DOC_PATH);
-                 // Не ставим await, пусть летит в фоне
                  setDoc(docRef, { [ADDRESS_HISTORY_FIELD]: history }, { merge: true }).catch(e => console.log("Firebase save error:", e));
             }
             
-            // 3. Обновляем списки в интерфейсе
             await setAddressHistory();
         }
 
@@ -1211,9 +1144,58 @@
             });
         }
         
+        // НОВАЯ ФУНКЦИЯ ДЛЯ ОТРИСОВКИ "ЧИПСОВ" ИСТОРИИ
+        async function renderHistoryChips() {
+            const historyArray = await loadAddresses();
+            const container = document.getElementById('taxiHistoryChips');
+            if (!container) return;
+            container.innerHTML = '';
+
+            // Показываем только первые 5
+            const recent = historyArray.slice(0, 5);
+            
+            if (recent.length === 0) {
+                 container.style.display = 'none';
+                 return;
+            } else {
+                 container.style.display = 'flex';
+            }
+
+            recent.forEach(addr => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'history-chip btn-active';
+                // Урезаем слишком длинные адреса для чипса
+                const displayAddr = addr.length > 20 ? addr.substring(0, 20) + '...' : addr;
+                chip.innerHTML = `<i class="fas fa-history"></i> ${displayAddr}`;
+                chip.onclick = () => fillAddressFromChip(addr);
+                container.appendChild(chip);
+            });
+        }
+        
+        // Логика автозаполнения из чипса
+        window.fillAddressFromChip = function(address) {
+            const fromInput = document.getElementById('taxiFrom');
+            const toInput = document.getElementById('taxiTo');
+            
+            if (!fromInput.value) {
+                fromInput.value = address;
+            } else if (!toInput.value) {
+                toInput.value = address;
+            } else {
+                // Если оба заполнены, перезаписываем "Куда"
+                toInput.value = address;
+            }
+            updateTaxiPrice();
+            
+            // Вибрация
+            if (navigator.vibrate) navigator.vibrate(10);
+        }
+        
         window.setAddressHistory = async function() {
              await populateDatalist('fromHistory');
              await populateDatalist('toHistory');
+             await renderHistoryChips();
         }
 
         initFirebaseAndAuth();
@@ -1356,6 +1338,15 @@
                 });
             }
         }
+        
+        // Добавляем глобальный слушатель для вибрации при клике
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('button') || e.target.closest('a')) {
+                 if (navigator.vibrate) {
+                     navigator.vibrate(5); // Очень короткая вибрация
+                 }
+            }
+        });
 
         document.addEventListener('DOMContentLoaded', () => {
              loadTheme(); 
@@ -1500,7 +1491,7 @@
             const inputEvents = (mode === 'taxi') ? 'oninput="updateTaxiPrice()"' : '';
             stopDiv.innerHTML = `
                 <input id="${stopId}" name="${stopId}" type="text" list="toHistory" autocomplete="off" class="form-input-control" placeholder="${stopLabel} (обязательно)" required ${inputEvents}>
-                <button type="button" onclick="removeStop('${divId}', '${mode}')" class="remove-stop-btn" title="Удалить адрес"><i class="fas fa-minus"></i></button>
+                <button type="button" onclick="removeStop('${divId}', '${mode}')" class="remove-stop-btn btn-active" title="Удалить адрес"><i class="fas fa-minus"></i></button>
             `;
             stopsContainer.appendChild(stopDiv);
             setAddressHistory(); 
@@ -1645,12 +1636,34 @@
         function displayMessageModal(title, message, isError = false) {
             const existingModal = document.getElementById('alertModal');
             if (existingModal) existingModal.remove();
+            
+            // Если это УСПЕХ, показываем красивую анимацию
+            if (!isError && (title === 'Заказ сформирован!' || title === 'Готово!')) {
+                 const modalHtml = `
+                    <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-60 z-[2000] flex items-center justify-center p-4">
+                        <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center transform transition-all scale-100">
+                            <div class="success-checkmark mb-4">
+                                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130.2 130.2">
+                                  <circle class="path circle" fill="none" stroke="#10b981" stroke-width="6" stroke-miterlimit="10" cx="65.1" cy="65.1" r="62.1"/>
+                                  <polyline class="path check" fill="none" stroke="#10b981" stroke-width="6" stroke-linecap="round" stroke-miterlimit="10" points="100.2,40.2 51.5,88.8 29.8,67.5 "/>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-2 text-gray-800 dark:text-white">${title}</h3>
+                            <p class="mb-6 text-gray-600 dark:text-gray-300 text-sm">${message}</p>
+                            <button onclick="document.getElementById('alertModal').remove()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition transform hover:scale-105 btn-active">Отлично</button>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                return;
+            }
+
             const modalHtml = `
                 <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                    <div class="bg-white p-6 rounded-lg shadow-2xl w-full max-w-sm text-center">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-sm text-center">
                         <h3 class="text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}">${title}</h3>
-                        <p class="mb-6">${message}</p>
-                        <button onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">OK</button>
+                        <p class="mb-6 text-gray-700 dark:text-gray-300">${message}</p>
+                        <button onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">OK</button>
                     </div>
                 </div>
             `;
@@ -2001,7 +2014,6 @@
                 if (orderDestination === 'telegram') {
                     copyToClipboard(message);
                     
-                    // --- 4. ВИБРАЦИЯ (HAPTIC FEEDBACK) ---
                     if (navigator.vibrate) {
                         navigator.vibrate(200); 
                     }

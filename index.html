@@ -16,11 +16,10 @@
     </script>
     <!-- КОНЕЦ Google Analytics -->
 
-    <!-- Favicon и иконки для Apple/Android (ПОЛНЫЙ КОМПЛЕКТ С ПРИНУДИТЕЛЬНЫМ СБРОСОМ КЭША v12) -->
+    <!-- Favicon и иконки для Apple/Android -->
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=12">
     <link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png?v=12">
     <link rel="apple-touch-icon" href="apple-touch-icon.png?v=12">
-    <!-- АКТИВИРОВАН МАНАФЕСТ ДЛЯ ПРАВИЛЬНОГО ОТОБРАЖЕНИЯ ЯРЛЫКА НА РАБОЧЕМ СТОЛЕ -->
     <link rel="manifest" href="site.webmanifest?v=12">
 
     <!-- Tailwind CSS -->
@@ -63,7 +62,7 @@
             50% { border-color: #34d399; } /* emerald-400 */
         }
 
-        /* --- ОБНОВЛЕННАЯ АНИМАЦИЯ МОРГАНИЯ ДЛЯ КНОПКИ ЗАКАЗА (БОЛЕЕ ЗАМЕТНАЯ) --- */
+        /* АНИМАЦИЯ МОРГАНИЯ ДЛЯ КНОПКИ ЗАКАЗА */
         @keyframes blink-custom {
             0%, 100% { 
                 transform: scale(1); 
@@ -71,13 +70,13 @@
                 filter: brightness(1);
             }
             50% { 
-                transform: scale(1.03); /* Чуть сильнее увеличение */
-                box-shadow: 0 0 20px rgba(59, 130, 246, 0.9); /* Яркое синее свечение */
-                filter: brightness(1.2); /* Кнопка становится ярче */
+                transform: scale(1.03); 
+                box-shadow: 0 0 20px rgba(59, 130, 246, 0.9); 
+                filter: brightness(1.2); 
             }
         }
         .blink-btn {
-            animation: blink-custom 1.5s infinite ease-in-out; /* Ускорено до 1.5 сек для динамики */
+            animation: blink-custom 1.5s infinite ease-in-out; 
         }
         
         #locationBtn {
@@ -148,15 +147,15 @@
             transition: transform 0.3s ease, background-color 0.3s;
         }
         
-        /* === СТИЛИ ДЛЯ ФОРМ И КНОПОК ВВОДА В МОДАЛЬНЫХ ОКНАХ (обновлено) === */
+        /* === СТИЛИ ДЛЯ ФОРМ И КНОПОК ВВОДА В МОДАЛЬНЫХ ОКНАХ === */
         .form-input-control {
-             padding: 10px 12px; /* Чуть больше padding для удобства пальцем */
+             padding: 10px 12px;
              border: 1px solid #d1d5db;
              border-radius: 8px;
              width: 100%;
              transition: border-color 0.2s, box-shadow 0.2s;
              box-sizing: border-box; 
-             font-size: 16px; /* Предотвращает зум на iPhone при фокусе */
+             font-size: 16px; 
         }
         .form-input-control:focus {
             border-color: #3b82f6;
@@ -174,33 +173,11 @@
             min-width: 0; 
         }
         
-        /* Стили для кнопки "Компас" (Геолокация) */
-        .geo-btn {
-            flex-shrink: 0;
-            width: 44px; /* Увеличено для тача */
-            height: 44px;
-            background-color: #f59e0b; /* amber-500 */
-            color: white;
-            border-radius: 8px;
-            transition: background-color 0.2s, transform 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            box-shadow: 0 2px 5px rgba(245, 158, 11, 0.5);
-            cursor: pointer;
-        }
-        .geo-btn:hover {
-            background-color: #d97706; /* amber-700 */
-            transform: scale(1.05);
-        }
-
-        /* Стили для кнопки "Плюс" (Добавить адрес) */
-        .add-stop-btn {
+        /* Стили для кнопок в модальных окнах */
+        .geo-btn, .add-stop-btn, .remove-stop-btn {
             flex-shrink: 0;
             width: 44px;
             height: 44px;
-            background-color: #10b981; /* emerald-500 */
             color: white;
             border-radius: 8px;
             transition: background-color 0.2s, transform 0.2s;
@@ -208,33 +185,22 @@
             align-items: center;
             justify-content: center;
             font-size: 1.1rem;
-            box-shadow: 0 2px 5px rgba(16, 185, 129, 0.5);
             cursor: pointer;
         }
-        .add-stop-btn:hover {
-            background-color: #059669; /* emerald-600 */
-            transform: scale(1.05);
-        }
+        .geo-btn { background-color: #f59e0b; box-shadow: 0 2px 5px rgba(245, 158, 11, 0.5); }
+        .geo-btn:hover { background-color: #d97706; transform: scale(1.05); }
+        .add-stop-btn { background-color: #10b981; box-shadow: 0 2px 5px rgba(16, 185, 129, 0.5); }
+        .add-stop-btn:hover { background-color: #059669; transform: scale(1.05); }
+        .remove-stop-btn { background-color: #ef4444; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.5); }
+        .remove-stop-btn:hover { background-color: #dc2626; transform: scale(1.05); }
         
-        /* Стили для кнопки "Минус" (Удалить адрес) */
-        .remove-stop-btn {
-            flex-shrink: 0;
-            width: 44px;
-            height: 44px;
-            background-color: #ef4444; /* red-500 */
-            color: white;
-            border-radius: 8px;
-            transition: background-color 0.2s, transform 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.5);
-            cursor: pointer;
+        /* Новые стили для тегов пожеланий */
+        .wish-tag {
+            transition: all 0.2s ease;
+            user-select: none;
         }
-        .remove-stop-btn:hover {
-            background-color: #dc2626; /* red-600 */
-            transform: scale(1.05);
+        .wish-tag:active {
+            transform: scale(0.95);
         }
 
         /* Dark Mode Overrides */
@@ -243,129 +209,77 @@
             color: #f3f4f6; /* gray-100 */
         }
         .dark .header-bg { 
-            background: linear-gradient(135deg, #4c1d95 0%, #10b981 100%); /* New darker header gradient */
+            background: linear-gradient(135deg, #4c1d95 0%, #10b981 100%); 
         }
-        .dark .main-card, 
-        .dark .service-card, 
-        .dark .auction-cta, 
-        .dark .stroy-dom-cta, 
-        .dark .modal, 
-        .dark #faq-accordion > div,
-        .dark .faq-item-content {
-            background-color: #1f2937 !important; /* gray-800 */
-            color: #e5e7eb !important; /* gray-200 */
+        .dark .main-card, .dark .service-card, .dark .auction-cta, .dark .stroy-dom-cta, 
+        .dark .modal, .dark #faq-accordion > div, .dark .faq-item-content {
+            background-color: #1f2937 !important; 
+            color: #e5e7eb !important; 
         }
         
-        /* Text color overrides for dark mode */
         .dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700 { color: #d1d5db !important; }
-        .dark .text-gray-600 { color: #9ca3af !important; } /* gray-400 */
-        .dark .text-gray-500 { color: #6b7280 !important; } /* gray-500 */
-        .dark .text-blue-900 { color: #93c5fd !important; } /* blue-300 */
+        .dark .text-gray-600 { color: #9ca3af !important; }
+        .dark .text-gray-500 { color: #6b7280 !important; }
+        .dark .text-blue-900 { color: #93c5fd !important; }
         .dark .text-emerald-800 { color: #a7f3d0 !important; }
         .dark .text-blue-600 { color: #60a5fa !important; }
 
-        /* Border adjustments for dark mode */
-        .dark .border-t { border-color: #374151 !important; } /* gray-700 */
-        .dark .border { border-color: #374151 !important; }
-        .dark .border-b { border-color: #374151 !important; }
+        .dark .border-t, .dark .border, .dark .border-b { border-color: #374151 !important; }
         
-        /* Specific Card adjustments for dark mode */
-        .dark .main-card { border-color: #059669 !important; } /* green-600 */
+        .dark .main-card { border-color: #059669 !important; }
         .dark .stroy-dom-cta { 
-            border-color: #34d399 !important; /* emerald-400 */
-            background-color: #064e3b !important; /* emerald-900 */
-            color: #d1fae5 !important; /* emerald-100 */
+            border-color: #34d399 !important; background-color: #064e3b !important; color: #d1fae5 !important;
             animation: pulse-dark-green 4s infinite;
         }
-        .dark .auction-cta { border-color: #fbbf24 !important; } /* amber-400 */
-
-        /* Ключевые кадры для анимации Dark Mode */
+        .dark .auction-cta { border-color: #fbbf24 !important; }
         @keyframes pulse-dark-green {
-            0%, 100% { border-color: #34d399; } /* emerald-400 */
-            50% { border-color: #059669; } /* emerald-600 */
+            0%, 100% { border-color: #34d399; }
+            50% { border-color: #059669; }
         }
 
-        /* Dark Mode Form Inputs */
         .dark .form-input-control {
-            background-color: #374151; /* gray-700 */
-            border-color: #4b5563; /* gray-600 */
-            color: #f3f4f6; /* gray-100 */
+            background-color: #374151; border-color: #4b5563; color: #f3f4f6;
         }
-        .dark .form-input-control::placeholder {
-            color: #9ca3af;
+        .dark .form-input-control:focus { border-color: #60a5fa; }
+        
+        .dark .geo-btn { background-color: #b45309; }
+        .dark .add-stop-btn { background-color: #047857; }
+        .dark .remove-stop-btn { background-color: #b91c1c; }
+        
+        .dark .wish-tag {
+            background-color: #374151;
+            color: #d1d5db;
+            border-color: #4b5563;
         }
-        .dark .form-input-control:focus {
-            border-color: #60a5fa; /* blue-400 */
-            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5);
+        .dark .wish-tag:hover {
+            background-color: #4b5563;
+            border-color: #60a5fa;
         }
-        /* Dark Mode Geo/Plus/Minus buttons - сохраняют цвет для контраста, но делают темнее */
-        .dark .geo-btn { background-color: #b45309; } /* amber-800 dark */
-        .dark .geo-btn:hover { background-color: #92400e; } /* amber-900 dark */
-        .dark .add-stop-btn { background-color: #047857; } /* emerald-700 dark */
-        .dark .add-stop-btn:hover { background-color: #065f46; } /* emerald-800 dark */
-        .dark .remove-stop-btn { background-color: #b91c1c; } /* red-700 dark */
-        .dark .remove-stop-btn:hover { background-color: #991b1b; } /* red-800 dark */
         
         /* Стили для новой двойной кнопки */
         .split-btn {
-            display: flex;
-            width: 100%;
-            border-radius: 12px; /* Общий радиус для контейнера */
-            overflow: hidden; /* Обрезаем, чтобы части кнопки слились */
+            display: flex; width: 100%; border-radius: 12px; overflow: hidden;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         .split-btn-part {
-            flex: 1;
-            /* Выставляем те же отступы и размер шрифта, что у кнопки Заказ через форму (py-3, text-lg, font-bold) */
-            padding: 0.75rem 0; 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1.125rem; /* text-lg */
-            transition: background-color 0.2s, transform 0.2s;
-            text-align: center;
-            line-height: 1.3;
+            flex: 1; padding: 0.75rem 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; font-weight: 700;
+            font-size: 1.125rem; transition: background-color 0.2s, transform 0.2s;
+            text-align: center; line-height: 1.3;
+            cursor: pointer; /* Добавлено, так как теперь это кнопки */
+            border: none;
         }
-        .split-btn-part:hover {
-            transform: scale(1.02);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-        }
+        .split-btn-part:hover { transform: scale(1.02); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
         
-        /* Левая часть (ТАКСИ) - WhatsApp Green */
-        .split-btn-taxi {
-            background-color: #10b981; /* emerald-500 - Основной цвет WhatsApp */
-            color: white;
-            border-right: 1px solid rgba(255, 255, 255, 0.3); /* Разделитель */
-        }
-        .split-btn-taxi:hover {
-            background-color: #059669; /* emerald-600 */
-        }
+        .split-btn-taxi { background-color: #10b981; color: white; border-right: 1px solid rgba(255, 255, 255, 0.3); }
+        .split-btn-taxi:hover { background-color: #059669; }
+        .split-btn-food { background-color: #ef4444; color: white; }
+        .split-btn-food:hover { background-color: #dc2626; }
 
-        /* Правая часть (ЕДА) - Delivery Orange/Red */
-        .split-btn-food {
-            background-color: #ef4444; /* red-500 - Для контраста и ассоциации с доставкой */
-            color: white;
-        }
-        .split-btn-food:hover {
-            background-color: #dc2626; /* red-600 */
-        }
-
-        /* Dark Mode Overrides for Split Button */
-        .dark .split-btn-taxi {
-            background-color: #047857; /* emerald-700 dark */
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .dark .split-btn-taxi:hover {
-            background-color: #065f46; /* emerald-800 dark */
-        }
-        .dark .split-btn-food {
-            background-color: #b91c1c; /* red-700 dark */
-        }
-        .dark .split-btn-food:hover {
-            background-color: #991b1b; /* red-800 dark */
-        }
+        .dark .split-btn-taxi { background-color: #047857; border-right: 1px solid rgba(255, 255, 255, 0.1); }
+        .dark .split-btn-taxi:hover { background-color: #065f46; }
+        .dark .split-btn-food { background-color: #b91c1c; }
+        .dark .split-btn-food:hover { background-color: #991b1b; }
 
     </style>
 </head>
@@ -374,15 +288,11 @@
 
     <!-- HEADER -->
     <header class="header-bg text-white py-10 rounded-b-xl shadow-xl relative">
-        
-        <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ТЕМЫ -->
         <div class="absolute top-4 right-4">
             <button id="themeToggle" onclick="toggleTheme()" class="text-white p-2 rounded-full bg-black bg-opacity-10 hover:bg-opacity-30 transition-all focus:outline-none z-50">
-                <!-- Иконка будет обновлена JavaScript'ом -->
                 <i id="themeIcon" class="fas fa-moon text-xl"></i>
             </button>
         </div>
-        
         <div class="max-w-md mx-auto px-4 text-center">
             <i class="fas fa-taxi text-4xl text-yellow-300 mb-2"></i>
             <h1 class="text-4xl font-extrabold tracking-tight mb-1">Такси «Успех»</h1>
@@ -390,8 +300,7 @@
         </div>
     </header>
 
-    <!-- НОВЫЙ БАННЕР: ОБЪЯВЛЕНИЕ / НОВОСТИ (Dismissible) -->
-    <!-- Класс lg:hidden гарантирует, что баннер скрыт на больших экранах, но виден на мобильных -->
+    <!-- НОВЫЙ БАННЕР: ОБЪЯВЛЕНИЕ -->
     <div id="announcementBar" class="bg-red-500 text-white p-3 shadow-lg lg:hidden">
         <div class="max-w-3xl mx-auto flex items-center justify-between">
             <div class="flex items-center space-x-3">
@@ -409,65 +318,64 @@
     <!-- MAIN -->
     <main class="max-w-3xl mx-auto px-4 py-8 flex-grow">
         
-        <!-- БЛОК 1: ОСНОВНОЙ ЗАКАЗ (Супер CTA) -->
+        <!-- БЛОК 1: ОСНОВНОЙ ЗАКАЗ -->
         <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">Быстрый Заказ Такси</h2>
         
-        <!-- Добавлен класс main-card для стилей темной темы -->
         <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6 main-card">
             
-            <!-- НОВАЯ КНОТКА: ЗАКАЗ ЧЕРЕЗ ФОРМУ (ОТКРЫВАЕТ МОДАЛ TAXI) -->
-            <!-- ДОБАВЛЕНО: Класс blink-btn для моргания и изменен текст -->
+            <!-- КНОПКА 1 (СИНЯЯ): БЫСТРЫЙ ЗАКАЗ (МОДАЛ TAXI) -->
             <button data-service="taxi"
                 class="service-btn btn-hover bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3 blink-btn">
                 <i class="fas fa-car-side text-lg"></i><span>Заказать Taxi</span>
             </button>
             
-            <!-- 1. ГЛАВНАЯ КНОТКА ЗАКАЗА (РАЗДЕЛЕННАЯ: ТАКСИ + ЕДА) -->
+            <!-- 1. РАЗДЕЛЕННАЯ КНОПКА (ТЕПЕРЬ ЗЕЛЕНАЯ КНОПКА ТОЖЕ ОТКРЫВАЕТ МЕНЮ) -->
             <div class="split-btn mb-3">
-                <!-- 1.1. ЗАКАЗ ТАКСИ (WhatsApp) -->
-                <a id="whatsappLink" href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." target="_blank"
+                <!-- ЗЕЛЕНАЯ КНОПКА: ОТКРЫВАЕТ МЕНЮ В РЕЖИМЕ WHATSAPP -->
+                <button onclick="openServicesMenu('whatsapp')"
                     class="btn-hover split-btn-part split-btn-taxi">
-                    <span>Заказать Такси</span>
-                </a>
+                    <span>Меню услуг</span>
+                </button>
                 
-                <!-- 1.2. ЗАКАЗ ЕДЫ (Внешняя ссылка) - ОБНОВЛЕННАЯ ССЫЛКА -->
+                <!-- КНОПКА ЕДА: ВНЕШНЯЯ ССЫЛКА -->
                 <a href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html" target="_blank"
                     class="btn-hover split-btn-part split-btn-food">
                     <span>Заказ Еды</span>
                 </a>
             </div>
             
-            <!-- 2. БЛОК БЫСТРЫХ ДЕЙСТВИЙ (3 колонки - одинаковая ширина) -->
+            <!-- 2. БЛОК БЫСТРЫХ ДЕЙСТВИЙ (ОБНОВЛЕН: ПОДЕЛИТЬСЯ ВМЕСТО ЗВОНКА) -->
             <div class="grid grid-cols-3 gap-2 mb-4">
-                <!-- Позвонить (Одинаковый размер) -->
-                <a href="tel:+77770649648"
-                    class="btn-hover bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all shadow-md quick-order-btn">
-                    <i class="fas fa-phone-alt mb-0.5"></i><span>Звонок</span>
-                </a>
-                <!-- Telegram (Одинаковый размер) -->
-                <a href="https://t.me/TaxiUspehk" target="_blank"
+                <!-- Кнопка Поделиться (ВМЕСТО ЗВОНКА) -->
+                <button onclick="shareApp()" 
+                    class="btn-hover bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
+                    <i class="fas fa-share-alt mb-0.5"></i><span>Поделиться</span>
+                </button>
+                
+                <!-- TELEGRAM: ОТКРЫВАЕТ МЕНЮ В РЕЖИМЕ TELEGRAM -->
+                <button onclick="openServicesMenu('telegram')"
                     class="btn-hover bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
                     <i class="fab fa-telegram-plane mb-0.5"></i><span>Telegram</span>
-                </a>
-                <!-- Аукцион (Одинаковый размер) -->
+                </button>
+                
+                <!-- Аукцион -->
                 <button data-service="auction"
                     class="service-btn btn-hover bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
                     <i class="fas fa-gavel mb-0.5"></i><span>Аукцион</span>
                 </button>
             </div>
             
-            <!-- БЛОК ГЕОЛОКАЦИИ (ВСТРОЕННЫЙ) -->
+            <!-- БЛОК ГЕОЛОКАЦИИ -->
             <button type="button" onclick="getCurrentLocation('main')" id="locationBtn"
                 class="w-full text-gray-700 font-semibold transition flex items-center justify-center space-x-3 shadow-inner">
                 <i class="fas fa-location-arrow"></i>
                 <span id="locationBtnText">Использовать мое местоположение</span>
             </button>
             <p id="locationResult" class="text-xs text-center text-gray-500 mt-2 hidden">
-                <!-- Измененный элемент для кликабельных координат -->
                 <a id="locationAddress" href="#" target="_blank" class="coord-link"></a>
             </p>
             
-            <!-- СПОСОБЫ ОПЛАТЫ (КОМПАКТНЫЙ ИНФОБЛОК) -->
+            <!-- СПОСОБЫ ОПЛАТЫ -->
             <div class="mt-4 pt-3 border-t border-gray-100 flex justify-center space-x-6 text-gray-600">
                 <div class="flex items-center space-x-1">
                     <i class="fas fa-money-bill-wave text-xl text-green-500"></i>
@@ -481,7 +389,7 @@
             
         </div>
         
-        <!-- НОВЫЙ БЛОК 2: МАГАЗИН "СТРОЙ ДОМ" (ПРОДВИНУТЫЙ ПАРТНЕР) -->
+        <!-- БЛОК 2: МАГАЗИН "СТРОЙ ДОМ" -->
         <div class="mt-8 pt-4">
             <h3 class="text-2xl font-extrabold text-center mb-4 text-green-700">
                 🛠️ Стройматериалы Белоусовка
@@ -499,17 +407,14 @@
                 </div>
                 
                 <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                    <!-- WhatsApp (Запрос на материалы) -->
                     <a href="https://wa.me/77764764606?text=Здравствуйте!%20Интересуют%20стройматериалы%20в%20магазине%20%22Строй%20Дом%22%20по%20адресу%20Юбилейная%2010." target="_blank"
                        class="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fab fa-whatsapp mr-2"></i> WhatsApp
                     </a>
-                    <!-- Навигатор -->
                     <a href="https://yandex.kz/maps/-/CLgm7KK9" target="_blank"
                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
                     </a>
-                    <!-- Instagram -->
                     <a href="https://www.instagram.com/stroy_dom_bk" target="_blank"
                        class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fab fa-instagram mr-2"></i> Instagram
@@ -517,29 +422,23 @@
                 </div>
             </div>
         </div>
-        <!-- КОНЕЦ НОВОГО БЛОКА "СТРОЙ ДОМ" -->
         
-        
-        <!-- БЛОК 3 (БЫВШИЙ 2): НАШИ УСЛУГИ - ОБНОВЛЕНО ДЛЯ МОДАЛОВ -->
+        <!-- БЛОК 3: НАШИ УСЛУГИ -->
         <h3 class="text-2xl font-bold text-center mb-6 text-gray-700 border-t pt-8 mt-8">Дополнительные Услуги (Форма)</h3>
         
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
-            <!-- Доставка (MODAL TRIGGER) -->
             <button data-service="delivery"
                 class="service-btn service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500">
                 <i class="fas fa-box-open text-2xl mb-1 text-green-600"></i><span class="text-sm">Доставка</span>
             </button>
-            <!-- Грузоперевозки (MODAL TRIGGER) -->
             <button data-service="cargo"
                 class="service-btn service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
                 <i class="fas fa-truck-loading text-2xl mb-1 text-yellow-600"></i><span class="text-sm">Грузовой</span>
             </button>
-            <!-- Трезвый водитель (MODAL TRIGGER) -->
             <button data-service="soberDriver"
                 class="service-btn service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-red-500">
                 <i class="fas fa-cocktail text-2xl mb-1 text-red-600"></i><span class="text-sm">Трезвый водитель</span>
             </button>
-            <!-- Помощь на дороге (MODAL TRIGGER) -->
             <button data-service="assistance"
                 class="service-btn service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-indigo-500">
                 <i class="fas fa-life-ring text-2xl mb-1 text-indigo-600"></i><span class="text-sm">Помощь</span>
@@ -547,37 +446,31 @@
         </div>
 
 
-        <!-- БЛОК 4 (БЫВШИЙ 3): БЫСТРЫЕ ДЕЙСТВИЯ (КОМПАКТНАЯ СЕТКА) -->
+        <!-- БЛОК 4: БЫСТРЫЕ ДЕЙСТВИЯ (ОБНОВЛЕН: УБРАЛ ДУБЛЬ ПОДЕЛИТЬСЯ, ДОБАВИЛ PWA В СЕТКУ) -->
         <h3 class="text-xl font-bold text-center mb-4 text-gray-700 border-t pt-4">Быстрые Действия</h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
-            
-            <!-- 1. Оценка Сервиса -->
             <a href="https://wa.me/77770649648?text=Оцените%20работу%20такси%20%C2%ABУспех%C2%BB%20по%20шкале%20от%201%20(Плохо)%20до%205%20(Отлично)." target="_blank"
                 class="btn-hover bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-lg transition-all compact-util-btn">
                 <i class="fas fa-star text-xl mb-1"></i><span>Оценка</span>
             </a>
-            
-            <!-- 2. Обратный Звонок -->
             <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank"
                 class="btn-hover bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-lg transition-all compact-util-btn">
                 <i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span>
             </a>
             
-            <!-- 3. PWA (Сохранить на Главный Экран) -->
-            <button onclick="showPWAInstructions()" 
-                class="btn-hover bg-gray-700 hover:bg-gray-800 text-white rounded-xl shadow-lg transition-all compact-util-btn">
-                <i class="fas fa-mobile-alt text-xl mb-1"></i><span>На Главный Экран</span>
-            </button>
-            
-            <!-- 4. Партнеры (Реклама) -->
             <button onclick="showPartnerModal()" 
                 class="btn-hover bg-pink-600 hover:bg-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn">
                 <i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span>
             </button>
+            
+            <button onclick="showPWAInstructions()" 
+                class="btn-hover bg-gray-700 hover:bg-gray-800 text-white rounded-xl shadow-lg transition-all compact-util-btn">
+                <i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span>
+            </button>
         </div>
 
 
-        <!-- БЛОК 5 (БЫВШИЙ 4): ТехОсмотр (ПАРТНЕРСКАЯ РЕКЛАМА) -->
+        <!-- БЛОК 5: ТехОсмотр -->
         <div class="mt-8 border-t pt-6">
             <h3 class="text-xl font-bold text-center mb-4 text-gray-700">Нашим Партнерам: ТехОсмотр</h3>
             <div class="auction-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300 border-indigo-500 border-2">
@@ -594,12 +487,10 @@
                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fab fa-whatsapp mr-2"></i> WhatsApp
                     </a>
-                    <!-- НОВАЯ КНОТКА: НАВИГАТОР -->
                     <a href="https://yandex.kz/navi/-/CLGK5Sli" target="_blank"
                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
                     </a>
-                    <!-- ОБНОВЛЕННАЯ КНОТКА: ЗВОНОК -->
                     <a href="tel:+77771383856"
                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center">
                         <i class="fas fa-phone-alt mr-2"></i> Звонок
@@ -609,12 +500,11 @@
         </div>
 
         
-        <!-- БЛОК 6 (БЫВШИЙ 5): FAQ и ПРАЙС-ЛИСТ (АККОРДЕОН) -->
+        <!-- БЛОК 6: FAQ и ПРАЙС-ЛИСТ -->
         <div class="mt-10 border-t pt-6 max-w-lg mx-auto">
             <h3 class="text-2xl font-bold text-center text-gray-700 mb-6">Вопросы и Цены</h3>
             
             <div id="faq-accordion" class="space-y-4">
-                <!-- Вопрос 1: Минимальная стоимость -->
                 <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
                     <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-1')">
                         <span>💰 Какая минимальная стоимость поездки?</span>
@@ -625,7 +515,6 @@
                     </div>
                 </div>
                 
-                <!-- Вопрос 2: Стоимость доставки -->
                 <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
                     <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-4')">
                         <span>📦 Сколько стоит услуга Доставки?</span>
@@ -637,7 +526,6 @@
                     </div>
                 </div>
 
-                <!-- Вопрос 3: Время работы -->
                 <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
                     <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-2')">
                         <span>⏰ Какой у вас график работы?</span>
@@ -648,16 +536,13 @@
                     </div>
                 </div>
 
-                <!-- Вопрос 4: Примерные цены на популярные маршруты (ОБНОВЛЕННЫЙ БЛОК) -->
                 <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
                     <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-3')">
                         <span>📍 Примерные цены на Межгород и пригород</span>
                         <i id="icon-faq-3" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
                     <div id="faq-3" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
-                        <p class="font-bold text-red-600 mb-2">
-                            ⚠️ ВНИМАНИЕ: Цены ориентировочные!
-                        </p>
+                        <p class="font-bold text-red-600 mb-2">⚠️ ВНИМАНИЕ: Цены ориентировочные!</p>
                         <ul class="list-disc list-inside mt-2 space-y-1">
                             <li>**Базовый тариф:** **230 ₸** за 1 км.</li>
                             <li>Усть-Каменогорск: **4800—6210 ₸**</li>
@@ -678,53 +563,37 @@
                             <li>Предгорное: **8500—10000 ₸**</li>
                             <li>посёлок Алтайский: **6000—8000 ₸**</li>
                         </ul>
-                        <p class="mt-4 font-bold text-gray-700">Итоговая стоимость может измениться из-за следующих факторов:</p>
-                        <ul class="list-disc list-inside mt-2 space-y-1 text-sm text-gray-500">
-                            <li>**⏰ Время суток:** Ночные смены (после 00:00) дороже.</li>
-                            <li>**🌧️ Погодные условия:** Гололед, метель или плохая видимость.</li>
-                            <li>**🛣️ Состояние дороги:** Длительные участки бездорожья или ремонта.</li>
-                            <li>**🅿️ Дополнительные услуги:** Простой в пути, ожидание или заезд в другой населенный пункт.</li>
-                        </ul>
-                        <p class="mt-2 text-sm italic text-gray-600">Точная стоимость зависит от расстояния и времени в пути.</p>
                     </div>
                 </div>
-                
             </div>
         </div>
         
-        <!-- БЛОК 7 (БЫВШИЙ 6): РЕКЛАМА ДЛЯ ПАРТНЕРОВ -->
+        <!-- БЛОК 7: РЕКЛАМА ДЛЯ ПАРТНЕРОВ -->
         <div class="mt-10 border-t pt-6">
             <h3 class="text-xl font-bold text-pink-600 mb-6 text-center">📢 Реклама для Вашего Бизнеса</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
-                <!-- Слот 1: МАГАЗИН/ТОЧКА ПРОДАЖ -->
                 <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20магазина%20(Продукты/Одежда)." target="_blank"
                     class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-pink-500 flex flex-col items-center text-center">
                     <i class="fas fa-store text-4xl text-pink-500 mb-2"></i>
                     <p class="text-lg font-bold text-gray-800">Магазин или Точка Продаж</p>
                     <p class="text-sm text-gray-600">Привлекайте покупателей к вашему физическому объекту. **(WhatsApp)**</p>
                 </a>
-                
-                <!-- Слот 2: УСЛУГИ/СЕРВИС -->
                 <a href="https://wa.me/77770649648?text=Интересует%20реклама%20моих%20услуг%20(Сантехник/Ремонт).%20Пришлите%20условия." target="_blank"
                     class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-red-500 flex flex-col items-center text-center">
                     <i class="fas fa-tools text-4xl text-red-500 mb-2"></i>
                     <p class="text-lg font-bold text-gray-800">Услуги, Сервис или Мастер</p>
                     <p class="text-sm text-gray-600">Найдите клиентов на ремонт, доставку или бытовые услуги. **(Узнать цену)**</p>
                 </a>
-
-                <!-- Слот 3: СПЕЦИАЛЬНАЯ АКЦИЯ -->
                 <a href="https://wa.me/77770649648?text=Хочу%20забронировать%20место%20для%20рекламы%20горячих%20акций." target="_blank"
                     class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-yellow-600 flex flex-col items-center text-center">
                     <i class="fas fa-bullhorn text-4xl text-yellow-600 mb-2"></i>
                     <p class="text-lg font-bold text-gray-800">Горячая Акция / Объявление</p>
                     <p class="text-sm text-gray-600">Место для срочных или сезонных рекламных кампаний. **(Связаться)**</p>
                 </a>
-
             </div>
         </div>
         
-        <!-- БЛОК 8 (БЫВШИЙ 7): ПРИГЛАШЕНИЕ ВОДИТЕЛЕЙ -->
+        <!-- БЛОК 8: ПРИГЛАШЕНИЕ ВОДИТЕЛЕЙ -->
         <div class="mt-10 border-t pt-6 text-center">
             <h3 class="text-2xl font-bold text-gray-700 mb-4">Приглашаем Водителей в команду!</h3>
             <p class="text-gray-600 mb-4 max-w-md mx-auto">
@@ -739,7 +608,7 @@
             </p>
         </div>
         
-        <!-- БЛОК 9 (БЫВШИЙ 8): Вход для водителя -->
+        <!-- БЛОК 9: Вход для водителя -->
         <div class="mt-6 border-t pt-6 text-center">
             <h3 class="text-xl font-bold text-gray-700 mb-4">Для действующих водителей</h3>
             <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank"
@@ -765,25 +634,17 @@
     <!-- ФИКСИРОВАННЫЙ НИЖНИЙ БАР (ДЛЯ МОБИЛЬНЫХ) -->
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-40 sm:hidden">
         <div class="flex justify-around items-center h-16">
-            <!-- 1. Заказ (WhatsApp) -->
             <a href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." class="flex flex-col items-center text-green-600 hover:text-green-700">
-                <i class="fab fa-whatsapp text-2xl"></i>
-                <span class="text-xs mt-0.5">Заказ</span>
+                <i class="fab fa-whatsapp text-2xl"></i><span class="text-xs mt-0.5">Заказ</span>
             </a>
-            <!-- 2. Звонок -->
             <a href="tel:+77770649648" class="flex flex-col items-center text-red-600 hover:text-red-700">
-                <i class="fas fa-phone-alt text-2xl"></i>
-                <span class="text-xs mt-0.5">Звонок</span>
+                <i class="fas fa-phone-alt text-2xl"></i><span class="text-xs mt-0.5">Звонок</span>
             </a>
-            <!-- 3. Доставка -->
             <a data-service="delivery" class="service-btn flex flex-col items-center text-yellow-600 hover:text-yellow-700">
-                <i class="fas fa-box-open text-2xl"></i>
-                <span class="text-xs mt-0.5">Доставка</span>
+                <i class="fas fa-box-open text-2xl"></i><span class="text-xs mt-0.5">Доставка</span>
             </a>
-            <!-- 4. Водитель -->
             <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" class="flex flex-col items-center text-pink-600 hover:text-pink-700">
-                <i class="fas fa-user-shield text-2xl"></i>
-                <span class="text-xs mt-0.5">Водитель</span>
+                <i class="fas fa-user-shield text-2xl"></i><span class="text-xs mt-0.5">Водитель</span>
             </a>
         </div>
     </div>
@@ -791,22 +652,83 @@
 
     <!-- FOOTER -->
     <footer class="bg-gray-800 text-white text-center py-6 mt-10">
-        <!-- ОБНОВЛЕННЫЙ ТЕКСТ ФУТЕРА -->
         <p class="text-sm px-4">
             <span class="font-bold">© 2025 «Успех Такси»</span>. 
             «такси Успех» — информационный сервис. 
-            Транспортные и иные услуги оказываются партнёрами сервиса.
         </p>
         <p class="text-sm mt-2">
             Следите за новостями:
-            <a href="https://whatsapp.com/channel/0029VajWGmEI1rcfICmXlJ01"
-               class="text-green-400 hover:text-green-300 underline">WhatsApp-канал</a>
+            <a href="https://whatsapp.com/channel/0029VajWGmEI1rcfICmXlJ01" class="text-green-400 hover:text-green-300 underline">WhatsApp-канал</a>
         </p>
     </footer>
 
     <!-- ========================================================= -->
-    <!-- 1. МОДАЛЬНОЕ ОКНО: ТАКСИ (TAXI) -->
+    <!-- УНИВЕРСАЛЬНОЕ МЕНЮ УСЛУГ (ДЛЯ WHATSAPP И TELEGRAM) -->
     <!-- ========================================================= -->
+    <div id="servicesMenuModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">📋 Все услуги Taxi «Успех»</h3>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="servicesMenuModal">×</button>
+                </div>
+                
+                <p class="text-gray-600 mb-4 text-center">Выберите услугу для оформления заказа:</p>
+                
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <!-- Такси -->
+                    <button onclick="openServiceFromMenu('taxi')" 
+                        class="p-4 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 flex flex-col items-center text-center transition">
+                        <i class="fas fa-car-side text-2xl text-blue-600 mb-2"></i>
+                        <span class="font-bold text-gray-800 text-sm">Такси</span>
+                    </button>
+                    <!-- Аукцион -->
+                    <button onclick="openServiceFromMenu('auction')"
+                        class="p-4 bg-yellow-50 hover:bg-yellow-100 rounded-xl border border-yellow-200 flex flex-col items-center text-center transition">
+                        <i class="fas fa-gavel text-2xl text-yellow-600 mb-2"></i>
+                        <span class="font-bold text-gray-800 text-sm">Аукцион</span>
+                    </button>
+                    <!-- Доставка -->
+                    <button onclick="openServiceFromMenu('delivery')"
+                        class="p-4 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 flex flex-col items-center text-center transition">
+                        <i class="fas fa-box-open text-2xl text-green-600 mb-2"></i>
+                        <span class="font-bold text-gray-800 text-sm">Доставка</span>
+                    </button>
+                    <!-- Грузовой -->
+                    <button onclick="openServiceFromMenu('cargo')"
+                        class="p-4 bg-orange-50 hover:bg-orange-100 rounded-xl border border-orange-200 flex flex-col items-center text-center transition">
+                        <i class="fas fa-truck-loading text-2xl text-orange-600 mb-2"></i>
+                        <span class="font-bold text-gray-800 text-sm">Грузовой</span>
+                    </button>
+                    <!-- Трезвый водитель -->
+                    <button onclick="openServiceFromMenu('soberDriver')"
+                        class="p-4 bg-red-50 hover:bg-red-100 rounded-xl border border-red-200 flex flex-col items-center text-center transition">
+                        <i class="fas fa-cocktail text-2xl text-red-600 mb-2"></i>
+                        <span class="font-bold text-gray-800 text-sm">Трезвый водитель</span>
+                    </button>
+                    <!-- Помощь -->
+                    <button onclick="openServiceFromMenu('assistance')"
+                        class="p-4 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 flex flex-col items-center text-center transition">
+                        <i class="fas fa-life-ring text-2xl text-indigo-600 mb-2"></i>
+                        <span class="font-bold text-gray-800 text-sm">Помощь</span>
+                    </button>
+                </div>
+                
+                <!-- FOOTER: ТОЛЬКО ДЛЯ TELEGRAM РЕЖИМА -->
+                <div id="servicesMenuFooter" class="border-t pt-4 text-center hidden">
+                    <p class="text-sm text-gray-500 mb-2">Хотите перейти в канал?</p>
+                    <a href="https://t.me/TaxiUspehk" target="_blank" 
+                       class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg shadow transition">
+                        <i class="fab fa-telegram-plane mr-2"></i> Перейти в Telegram
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ========================================================= -->
+
+
+    <!-- 1. МОДАЛЬНОЕ ОКНО: ТАКСИ -->
     <div id="taxiModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
@@ -814,95 +736,82 @@
                     <h3 class="text-xl font-bold text-gray-800">🚕 Заказать Такси</h3>
                     <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="taxiModal">×</button>
                 </div>
-                
                 <form id="taxiForm" class="space-y-4">
-                    
                     <div id="addressInputsTaxi">
-                        <!-- АДРЕС ОТКУДА (с кнопкой геолокации) -->
                         <div class="flex flex-col">
                             <label for="taxiFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес) *</label>
                             <div class="input-with-plus-btn">
                                 <input id="taxiFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control" placeholder="Улица, дом (обязательно)" required oninput="updateTaxiPrice()">
                                 <datalist id="fromHistory"></datalist>
-                                <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
-                                <button type="button" onclick="getCurrentLocation('taxi')" 
-                                    class="geo-btn" 
-                                    title="Использовать мое местоположение">
-                                    <i id="taxiGeoIcon" class="fas fa-compass"></i>
-                                </button>
+                                <button type="button" onclick="getCurrentLocation('taxi')" class="geo-btn" title="Использовать мое местоположение"><i id="taxiGeoIcon" class="fas fa-compass"></i></button>
                             </div>
                         </div>
-                        <!-- АДРЕС КУДА (с кнопкой добавления) -->
+                        
+                        <!-- 1. НОВАЯ КНОПКА: ПОМЕНЯТЬ МЕСТАМИ -->
+                        <div class="relative flex justify-center -my-3 z-10">
+                             <button type="button" onclick="swapTaxiAddresses()" class="bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-full p-2 shadow-md border border-white transition transform hover:rotate-180 focus:outline-none" title="Поменять местами">
+                                <i class="fas fa-exchange-alt rotate-90"></i>
+                             </button>
+                        </div>
+                        
                         <div class="flex flex-col">
                             <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
                             <div class="input-with-plus-btn">
                                 <input id="taxiTo" name="to" type="text" list="toHistory" autocomplete="off" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required oninput="updateTaxiPrice()">
                                 <datalist id="toHistory"></datalist>
-                                <!-- КНОПКА ДОБАВЛЕНИЯ АДРЕСА (обновлено) -->
-                                <button type="button" onclick="addStop('additionalStops', 'taxi')" 
-                                    class="add-stop-btn" 
-                                    title="Добавить дополнительный адрес по пути">
-                                    <i class="fas fa-plus"></i>
-                                </button>
+                                <button type="button" onclick="addStop('additionalStops', 'taxi')" class="add-stop-btn" title="Добавить адрес"><i class="fas fa-plus"></i></button>
                             </div>
-                            <!-- Контейнер для дополнительных адресов. oninput добавлен для отслеживания изменения цены -->
                             <div id="additionalStops" class="mt-2 space-y-2" oninput="updateTaxiPrice()"></div>
                         </div>
                     </div>
                     
-                    <!-- БЛОК ПРЕДЗАКАЗА (Collapsible) -->
                     <div class="border border-blue-200 rounded-lg overflow-hidden">
                         <button type="button" onclick="togglePreorder()" class="w-full p-3 bg-blue-50 flex justify-between items-center text-left focus:outline-none">
-                            <span class="text-sm font-bold text-blue-700 flex items-center">
-                                <i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)
-                            </span>
+                            <span class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)</span>
                             <i id="preorderIcon" class="fas fa-chevron-down text-blue-500 transition-transform duration-300"></i>
                         </button>
-                        
                         <div id="preorderContent" class="hidden p-3 bg-white border-t border-blue-100 space-y-3">
-                            <!-- Дата и время -->
                             <div class="flex flex-col">
                                 <label for="taxiDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время поездки</label>
                                 <input id="taxiDateTime" name="dateTime" type="datetime-local" class="form-input-control">
                             </div>
-                            <!-- Пожелания -->
                             <div class="flex flex-col">
-                                <label for="taxiWishes" class="text-xs font-medium text-gray-600 mb-1">Пожелания (детское кресло, большой багажник)</label>
+                                <label for="taxiWishes" class="text-xs font-medium text-gray-600 mb-1">Пожелания</label>
                                 <textarea id="taxiWishes" name="wishes" rows="2" class="form-input-control" placeholder="Например: Нужно детское кресло, машина побольше."></textarea>
+                                
+                                <!-- 2. НОВЫЕ БЫСТРЫЕ ТЕГИ -->
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <button type="button" onclick="addWish('Детское кресло')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">👶 Детское кресло</button>
+                                    <button type="button" onclick="addWish('Пустой багажник')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">🧳 Пустой багажник</button>
+                                    <button type="button" onclick="addWish('С животным')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">🐕 С животным</button>
+                                    <button type="button" onclick="addWish('Кондиционер')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">❄️ Кондиционер</button>
+                                    <button type="button" onclick="addWish('Сдача с 5000/10000')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">💵 Сдача</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <!-- КОНЕЦ БЛОКА ПРЕДЗАКАЗА -->
 
-                    <!-- НОВОЕ ПОЛЕ: Номер Пассажира (единое поле) -->
                     <div class="flex flex-col">
-                        <label for="passengerPhone" class="text-sm font-medium text-gray-700 mb-1">Телефон для связи (пассажира, если заказываете другому)</label>
-                        <input id="passengerPhone" name="passengerPhone" type="tel" pattern="[0-9+]*" class="form-input-control" placeholder="+7...">
+                        <label for="passengerPhone" class="text-sm font-medium text-gray-700 mb-1">Телефон для связи (пассажира)</label>
+                        <input id="passengerPhone" name="passengerPhone" type="tel" pattern="[0-9+() -]*" class="form-input-control" placeholder="+7 (XXX) XXX-XX-XX">
                     </div>
-
 
                     <div id="taxiStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
 
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
                             <div class="price-note">Примерная стоимость:</div>
-                            <!-- Элемент для динамического обновления цены -->
                             <div id="taxiPriceEstimate" class="price-estimate">от 700–900 тг</div>
                             <div class="price-note text-red-600 font-semibold">Внимание: точная цена после подтверждения водителем.</div>
                         </div>
-                        <!-- ИСПРАВЛЕНИЕ: Замена на bg-blue-600 hover:bg-blue-700 -->
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
-                            Заказать
-                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">Заказать</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- ========================================================= -->
-    <!-- 2. МОДАЛЬНОЕ ОКНО: ДОСТАВКА (DELIVERY) - Добавлена кнопка ГЕО -->
-    <!-- ========================================================= -->
+    <!-- 2. МОДАЛЬНОЕ ОКНО: ДОСТАВКА -->
     <div id="deliveryModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
@@ -916,44 +825,30 @@
                         <textarea id="deliveryItems" name="items" rows="3" class="form-input-control" placeholder="Например: хлеб, пиво, огурцы 1 кг" required></textarea>
                     </div>
                     <div class="flex flex-col">
-                        <label for="deliveryStore" class="text-sm font-medium text-gray-700 mb-1">Пожелания по магазину (необязательно)</label>
+                        <label for="deliveryStore" class="text-sm font-medium text-gray-700 mb-1">Пожелания по магазину</label>
                         <input id="deliveryStore" name="store" type="text" class="form-input-control" placeholder="Например: Магазин №1, Супермаркет" />
                     </div>
-                    <!-- АДРЕС ДОСТАВКИ (с кнопкой геолокации) -->
                     <div class="flex flex-col">
                         <label for="deliveryAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес доставки *</label>
                         <div class="input-with-plus-btn">
-                            <input id="deliveryAddress" name="address" type="text" class="form-input-control" placeholder="Улица, дом, квартира (например: Ленина 12)" required />
-                            <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
-                            <button type="button" onclick="getCurrentLocation('delivery')" 
-                                class="geo-btn" 
-                                title="Использовать мое местоположение">
-                                <i id="deliveryGeoIcon" class="fas fa-compass"></i>
-                            </button>
+                            <input id="deliveryAddress" name="address" type="text" class="form-input-control" placeholder="Улица, дом, квартира" required />
+                            <button type="button" onclick="getCurrentLocation('delivery')" class="geo-btn" title="Использовать мое местоположение"><i id="deliveryGeoIcon" class="fas fa-compass"></i></button>
                         </div>
                     </div>
-
                     <div id="deliveryStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
-
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
                             <div class="price-note">Примерная стоимость:</div>
                             <div class="price-estimate">от 1200 тг</div>
-                            <div class="price-note font-semibold">Стоимость зависит от расстояния и объёма покупок.</div>
                         </div>
-                        <!-- ИСПРАВЛЕНИЕ: Замена на bg-blue-600 hover:bg-blue-700 -->
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
-                            Оформить заказ
-                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">Оформить заказ</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
     
-    <!-- ========================================================= -->
-    <!-- 3. МОДАЛЬНОЕ ОКНО: ГРУЗОВОЙ (CARGO) - Добавлена кнопка ГЕО -->
-    <!-- ========================================================= -->
+    <!-- 3. МОДАЛЬНОЕ ОКНО: ГРУЗОВОЙ -->
     <div id="cargoModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
@@ -962,17 +857,11 @@
                     <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="cargoModal">×</button>
                 </div>
                 <form id="cargoForm" class="space-y-4">
-                    <!-- АДРЕС ПОГРУЗКИ (с кнопкой геолокации) -->
                     <div class="flex flex-col">
                         <label for="cargoFrom" class="text-sm font-medium text-gray-700 mb-1">Адрес погрузки *</label>
                         <div class="input-with-plus-btn">
                             <input id="cargoFrom" name="from" type="text" class="form-input-control" placeholder="Откуда забрать груз" required>
-                            <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
-                            <button type="button" onclick="getCurrentLocation('cargo')" 
-                                class="geo-btn" 
-                                title="Использовать мое местоположение">
-                                <i id="cargoGeoIcon" class="fas fa-compass"></i>
-                            </button>
+                            <button type="button" onclick="getCurrentLocation('cargo')" class="geo-btn" title="Использовать мое местоположение"><i id="cargoGeoIcon" class="fas fa-compass"></i></button>
                         </div>
                     </div>
                     <div class="flex flex-col">
@@ -983,59 +872,41 @@
                         <label for="cargoDescription" class="text-sm font-medium text-gray-700 mb-1">Описание груза *</label>
                         <textarea id="cargoDescription" name="description" rows="2" class="form-input-control" placeholder="Например: 1 холодильник и 5 коробок" required></textarea>
                     </div>
-                    
-                    <!-- БЛОК ПРЕДЗАКАЗА (НОВЫЙ для CARGO) -->
                     <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
                         <p class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)</p>
-                        <!-- Дата и время -->
                         <div class="flex flex-col">
                             <label for="cargoDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время погрузки</label>
                             <input id="cargoDateTime" name="dateTime" type="datetime-local" class="form-input-control">
                         </div>
                     </div>
-                    <!-- КОНЕЦ БЛОКА ПРЕДЗАКАЗА -->
-                    
-                    <!-- ОБНОВЛЕННЫЙ БЛОК: КОЛИЧЕСТВО ГРУЗЧИКОВ (Select) -->
                     <div class="flex flex-col">
                         <label for="cargoMovers" class="text-sm font-medium text-gray-700 mb-1">Грузчики</label>
                         <div class="input-with-plus-btn">
-                            <!-- Добавлено onchange для обновления суммы -->
                             <select id="cargoMovers" name="movers" class="form-input-control" required onchange="updateCargoPrice()">
-                                <option value="0">Не требуются (0 человек)</option>
+                                <option value="0">Не требуются</option>
                                 <option value="1">1 человек</option>
                                 <option value="2">2 человека</option>
                                 <option value="3">3 человека</option>
-                                <option value="4">4 человека (Максимум)</option>
+                                <option value="4">4 человека</option>
                             </select>
-                            <span class="text-sm font-bold text-red-600">(Доплата: +3000 тг/час за каждого)</span>
+                            <span class="text-sm font-bold text-red-600">(+3000 тг/чел)</span>
                         </div>
-                        <p class="text-xs text-gray-500 mt-1">Выберите необходимое количество.</p>
                     </div>
-                    <!-- КОНЕЦ ОБНОВЛЕННОГО БЛОКА -->
-
                     <div id="cargoStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
-
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
                             <div class="price-note">Общая стоимость (за 1 час):</div>
-                            <!-- Итоговая сумма будет отображаться здесь -->
                             <div id="cargoTotalPrice" class="price-estimate">6000 тг</div>
-                            <!-- Здесь будет обновляться подсказка -->
                             <div id="cargoPriceNote" class="price-note font-semibold">Минимальный заказ - 1 час.</div>
                         </div>
-                        <!-- ИСПРАВЛЕНИЕ: Замена на bg-blue-600 hover:bg-blue-700 -->
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
-                            Заказать грузоперевозку
-                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">Заказать</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- ========================================================= -->
-    <!-- 4. МОДАЛЬНОЕ ОКНО: ТРЕЗВЫЙ ВОДИТЕЛЬ (SOBER DRIVER) - Добавлена кнопка ГЕО -->
-    <!-- ========================================================= -->
+    <!-- 4. МОДАЛЬНОЕ ОКНО: ТРЕЗВЫЙ ВОДИТЕЛЬ -->
     <div id="soberDriverModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
@@ -1044,53 +915,35 @@
                     <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="soberDriverModal">×</button>
                 </div>
                 <form id="soberDriverForm" class="space-y-4">
-                    <!-- ВАШ ТЕКУЩИЙ АДРЕС (с кнопкой геолокации) -->
                     <div class="flex flex-col">
                         <label for="soberDriverFrom" class="text-sm font-medium text-gray-700 mb-1">Ваш текущий адрес *</label>
                         <div class="input-with-plus-btn">
                             <input id="soberDriverFrom" name="from" type="text" class="form-input-control" placeholder="Адрес, где находится авто" required>
-                            <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
-                            <button type="button" onclick="getCurrentLocation('soberDriver')" 
-                                class="geo-btn" 
-                                title="Использовать мое местоположение">
-                                <i id="soberDriverGeoIcon" class="fas fa-compass"></i>
-                            </button>
+                            <button type="button" onclick="getCurrentLocation('soberDriver')" class="geo-btn" title="Использовать мое местоположение"><i id="soberDriverGeoIcon" class="fas fa-compass"></i></button>
                         </div>
                     </div>
-                    
-                    <!-- НОВОЕ ПОЛЕ: Марка и Модель Авто (ОБЯЗАТЕЛЬНО) -->
                     <div class="flex flex-col">
                         <label for="soberDriverCarModel" class="text-sm font-medium text-gray-700 mb-1">Марка и модель авто *</label>
-                        <input id="soberDriverCarModel" name="carModel" type="text" class="form-input-control" placeholder="Например: Toyota Camry, Lexus 570" required>
+                        <input id="soberDriverCarModel" name="carModel" type="text" class="form-input-control" placeholder="Например: Toyota Camry" required>
                     </div>
-                    <!-- КОНЕЦ НОВОГО ПОЛЯ -->
-                    
                     <div class="flex flex-col">
                         <label for="soberDriverTo" class="text-sm font-medium text-gray-700 mb-1">Куда доставить автомобиль *</label>
                         <input id="soberDriverTo" name="to" type="text" class="form-input-control" placeholder="Конечный адрес" required>
                     </div>
-
                     <div id="soberDriverStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
-
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
                             <div class="price-note">Примерная стоимость:</div>
                             <div class="price-estimate">от 3800 тг</div>
-                            <div class="price-note font-semibold">Цена зависит от расстояния.</div>
                         </div>
-                        <!-- ИСПРАВЛЕНИЕ: Замена на bg-blue-600 hover:bg-blue-700 -->
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
-                            Вызвать водителя
-                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">Вызвать водителя</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
     
-    <!-- ========================================================= -->
-    <!-- 5. МОДАЛЬНОЕ ОКНО: ПОМОЩЬ / ПОРУЧЕНИЯ (ASSISTANCE) - Добавлена кнопка ГЕО -->
-    <!-- ========================================================= -->
+    <!-- 5. МОДАЛЬНОЕ ОКНО: ПОМОЩЬ -->
     <div id="assistanceModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
@@ -1108,8 +961,6 @@
                             <option value="Прочее поручение/помощь">Прочее поручение/помощь</option>
                         </select>
                     </div>
-                    
-                    <!-- Детали авто: отображаются только для помощи на дороге -->
                     <div id="carDetails" class="space-y-4 p-3 bg-teal-50 rounded-lg border border-dashed border-teal-300 hidden">
                         <p class="font-semibold text-sm text-teal-700">Данные для помощи на дороге</p>
                         <div class="flex flex-col">
@@ -1117,50 +968,35 @@
                             <input id="carModel" name="carModel" type="text" class="form-input-control" placeholder="Например: Toyota Camry">
                         </div>
                         <div class="flex flex-col">
-                            <label for="licencePlate" class="text-sm font-medium text-gray-700 mb-1">Гос. номер (часть номера)</label>
+                            <label for="licencePlate" class="text-sm font-medium text-gray-700 mb-1">Гос. номер</label>
                             <input id="licencePlate" name="licencePlate" type="text" class="form-input-control" placeholder="Например: 123ABC">
                         </div>
                     </div>
-                    
                     <div class="flex flex-col">
                         <label for="assistanceTask" class="text-sm font-medium text-gray-700 mb-1">Детали и уточнения</label>
-                        <textarea id="assistanceTask" name="task" rows="3" class="form-input-control" placeholder="Например: Какое колесо спустило, или что именно нужно купить/передать"></textarea>
+                        <textarea id="assistanceTask" name="task" rows="3" class="form-input-control" placeholder="Например: Какое колесо спустило"></textarea>
                     </div>
-                    <!-- АДРЕС ПОМОЩИ (с кнопкой геолокации) -->
                     <div class="flex flex-col">
-                        <label for="assistanceAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес (где нужна помощь) *</label>
+                        <label for="assistanceAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес *</label>
                         <div class="input-with-plus-btn">
                             <input id="assistanceAddress" name="address" type="text" class="form-input-control" placeholder="Улица, дом или местоположение" required />
-                            <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
-                            <button type="button" onclick="getCurrentLocation('assistance')" 
-                                class="geo-btn" 
-                                title="Использовать мое местоположение">
-                                <i id="assistanceGeoIcon" class="fas fa-compass"></i>
-                            </button>
+                            <button type="button" onclick="getCurrentLocation('assistance')" class="geo-btn" title="Использовать мое местоположение"><i id="assistanceGeoIcon" class="fas fa-compass"></i></button>
                         </div>
                     </div>
-
                     <div id="assistanceStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
-
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
                             <div class="price-note">Примерная стоимость:</div>
                             <div class="price-estimate">от 1500 тг</div>
-                            <div class="price-note font-semibold">Цена зависит от характера требуемой помощи.</div>
                         </div>
-                        <!-- ИСПРАВЛЕНИЕ: Замена на bg-blue-600 hover:bg-blue-700 -->
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
-                            Оформить заявку
-                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">Оформить заявку</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
     
-    <!-- ========================================================= -->
-    <!-- 6. МОДАЛЬНОЕ ОКНО: АУКЦИОН (AUCTION) -->
-    <!-- ========================================================= -->
+    <!-- 6. МОДАЛЬНОЕ ОКНО: АУКЦИОН -->
     <div id="auctionModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
@@ -1168,60 +1004,35 @@
                     <h3 class="text-xl font-bold text-gray-800">🔨 Заказ-Аукцион</h3>
                     <button class="close-btn text-2xl text-gray-500 hover:text-gray-700" data-modal="auctionModal">×</button>
                 </div>
-                
                 <form id="auctionForm" class="space-y-4">
-                    
                     <div id="addressInputsAuction">
                         <div class="flex flex-col">
                             <label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес)</label>
                             <div class="input-with-plus-btn">
                                 <input id="auctionFrom" name="from" type="text" autocomplete="off" class="form-input-control" placeholder="Улица, дом (обязательно)" required>
-                                <!-- КНОПКА ГЕОЛОКАЦИИ (обновлено) -->
-                                <button type="button" onclick="getCurrentLocation('auction')" 
-                                    class="geo-btn" 
-                                    title="Использовать мое местоположение">
-                                    <i id="auctionGeoIcon" class="fas fa-compass"></i>
-                                </button>
+                                <button type="button" onclick="getCurrentLocation('auction')" class="geo-btn" title="Использовать мое местоположение"><i id="auctionGeoIcon" class="fas fa-compass"></i></button>
                             </div>
                         </div>
-                        <!-- ИЗМЕНЕНИЕ: Добавлена кнопка "+" для дополнительных адресов -->
                         <div class="flex flex-col">
                             <label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
                             <div class="input-with-plus-btn">
                                 <input id="auctionTo" name="to" type="text" autocomplete="off" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required>
-                                <!-- КНОПКА ДОБАВЛЕНИЯ АДРЕСА (обновлено) -->
-                                <button type="button" onclick="addStop('additionalStopsAuction', 'auction')" 
-                                    class="add-stop-btn" 
-                                    title="Добавить дополнительный адрес по пути">
-                                    <i class="fas fa-plus"></i>
-                                </button>
+                                <button type="button" onclick="addStop('additionalStopsAuction', 'auction')" class="add-stop-btn" title="Добавить адрес"><i class="fas fa-plus"></i></button>
                             </div>
-                            <!-- Контейнер для дополнительных адресов -->
-                            <div id="additionalStopsAuction" class="mt-2 space-y-2">
-                                <!-- Здесь будут добавляться дополнительные поля -->
-                            </div>
+                            <div id="additionalStopsAuction" class="mt-2 space-y-2"></div>
                         </div>
                     </div>
-                    
-                    
                     <div class="flex flex-col">
                         <label for="auctionPrice" class="text-sm font-medium text-gray-700 mb-1">Ваша цена в тенге</label>
-                        <input id="auctionPrice" name="price" type="number" inputmode="numeric" pattern="[0-9]*" min="500" class="form-input-control" placeholder="Минимум 500 KZT (обязательно)" required>
-                        <p class="text-xs text-gray-500 mt-1">
-                            ⚠️ Аукцион: Вы предлагаете свою цену, а водитель решает, брать заказ или нет.
-                        </p>
+                        <input id="auctionPrice" name="price" type="number" inputmode="numeric" pattern="[0-9]*" min="500" class="form-input-control" placeholder="Минимум 500 KZT" required>
+                        <p class="text-xs text-gray-500 mt-1">⚠️ Вы предлагаете свою цену, а водитель решает, брать заказ или нет.</p>
                     </div>
-
                     <div id="auctionStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
-
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
-                            <div class="price-note text-yellow-600 font-bold">Оплата по Вашей ставке.</div>
                             <div class="price-estimate text-yellow-600">Начните от 500 тг</div>
                         </div>
-                        <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">
-                            Предложить цену
-                        </button>
+                        <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200">Предложить цену</button>
                     </div>
                 </form>
             </div>
@@ -1229,64 +1040,41 @@
     </div>
 
 
-    <!-- Модальные окна PWA и Партнеры остаются без изменений -->
     <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
         <div class="modal">
             <div class="p-6">
                 <h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните «Такси Успех» как приложение!</h3>
-                
                 <p class="mb-4 text-gray-700">Чтобы вам не пришлось каждый раз искать ссылку, сохраните нашу промо-страницу прямо на главном экране телефона.</p>
-                
-                <!-- Инструкция для iPhone/iOS -->
                 <div class="border p-4 rounded-lg mb-4 bg-gray-50">
                     <h4 class="text-lg font-bold text-blue-600 mb-2 flex items-center"><i class="fab fa-apple mr-2"></i> Для iPhone (iOS)</h4>
                     <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
                         <li>Откройте эту страницу в браузере **Safari**.</li>
-                        <li>Нажмите на иконку **«Поделиться»** (<i class="fas fa-share-square"></i>) в нижней части экрана.</li>
-                        <li>Прокрутите меню и выберите **«На экран "Домой"»**.</li>
-                        <li>Подтвердите добавление.</li>
+                        <li>Нажмите на иконку **«Поделиться»** (<i class="fas fa-share-square"></i>).</li>
+                        <li>Выберите **«На экран "Домой"»**.</li>
                     </ol>
                 </div>
-                
-                <!-- Инструкция для Android/Chrome -->
                 <div class="border p-4 rounded-lg bg-gray-50">
                     <h4 class="text-lg font-bold text-green-600 mb-2 flex items-center"><i class="fab fa-android mr-2"></i> Для Android (Chrome)</h4>
                     <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                        <li>Нажмите на **три точки** (<i class="fas fa-ellipsis-v"></i>) в правом верхнем углу.</li>
+                        <li>Нажмите на **три точки** (<i class="fas fa-ellipsis-v"></i>).</li>
                         <li>Выберите **«Добавить на главный экран»**.</li>
-                        <li>Подтвердите добавление.</li>
                     </ol>
                 </div>
-                
-                <button onclick="document.getElementById('pwaModal').classList.add('hidden')" 
-                    class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
-                    Понятно
-                </button>
+                <button onclick="document.getElementById('pwaModal').classList.add('hidden')" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">Понятно</button>
             </div>
         </div>
     </div>
 
-    <!-- Модальное окно партнеров (заглушка) -->
     <div id="partnerModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
         <div class="modal">
             <div class="p-6">
-                <h3 class="text-2xl font-bold mb-4 text-pink-600 flex items-center justify-center">
-                    <i class="fas fa-handshake mr-2"></i> Партнерские Услуги
-                </h3>
-                <p class="mb-4 text-gray-800 font-semibold">
-                    Здесь будет размещаться реклама и специальные предложения наших партнеров!
-                </p>
+                <h3 class="text-2xl font-bold mb-4 text-pink-600 flex items-center justify-center"><i class="fas fa-handshake mr-2"></i> Партнерские Услуги</h3>
+                <p class="mb-4 text-gray-800 font-semibold">Здесь будет размещаться реклама и специальные предложения наших партнеров!</p>
                 <div class="border border-gray-200 p-4 rounded-lg mb-4 bg-gray-50">
                     <h4 class="text-lg font-bold text-gray-700">Хотите стать нашим Партнером?</h4>
-                    <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20обсудить%20размещение%20рекламы%20на%20вашей%20промо-странице%20такси." 
-                        target="_blank" class="w-full inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition">
-                        Связаться по рекламе
-                    </a>
+                    <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20обсудить%20размещение%20рекламы%20на%20вашей%20промо-странице%20такси." target="_blank" class="w-full inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition">Связаться по рекламе</a>
                 </div>
-                <button onclick="document.getElementById('partnerModal').classList.add('hidden')" 
-                    class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
-                    Закрыть
-                </button>
+                <button onclick="document.getElementById('partnerModal').classList.add('hidden')" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">Закрыть</button>
             </div>
         </div>
     </div>
@@ -1295,28 +1083,25 @@
     <!-- FIREBASE и JAVASCRIPT ЛОГИКА -->
     <!-- ========================================================= -->
     <script type="module">
-        // --- FIREBASE ИМПОРТЫ ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // setLogLevel('Debug'); // Активировать для отладки Firestore
-
-        // Глобальные переменные для Firebase
         let app = null;
         let db = null;
         let auth = null;
         let userId = null;
         
-        // Переменные окружения, предоставляемые Canvas
+        // Переменная для отслеживания режима отправки (whatsapp по умолчанию)
+        let orderDestination = 'whatsapp';
+        
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        // ИСПРАВЛЕНИЕ: Использовать __initial_auth_token
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
+        
+        // --- НОВОЕ: КЛЮЧ ДЛЯ LocalStorage ---
+        const LOCAL_STORAGE_HISTORY_KEY = 'taxi_address_history_v1';
 
-        /**
-         * Инициализирует Firebase и выполняет аутентификацию.
-         */
         async function initFirebaseAndAuth() {
             if (!firebaseConfig) {
                 console.error("Firebase configuration is missing.");
@@ -1328,95 +1113,97 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                // Ожидание аутентификации
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
-                    console.log("Firebase signed in with custom token.");
                 } else {
                     await signInAnonymously(auth);
-                    console.log("Firebase signed in anonymously.");
                 }
 
-                // Установка слушателя изменений состояния аутентификации
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        console.log("User authenticated. UID:", userId);
-                        // После успешной аутентификации загружаем историю
-                        setAddressHistory();
-                    } else {
-                        // Используем анонимный UUID, если аутентификация не прошла
-                        userId = crypto.randomUUID(); 
-                        console.log("User not authenticated, using random UUID:", userId);
-                        setAddressHistory();
-                    }
+                        // При авторизации синхронизируем данные из облака
+                        syncAddressHistory();
+                    } 
+                    // Сразу отображаем то, что есть в LS (даже до авторизации)
+                    setAddressHistory();
                 });
             } catch (error) {
                 console.error("Firebase initialization or authentication failed:", error);
+                // Даже если Firebase упал, показываем локальные данные
+                setAddressHistory();
             }
         }
         
-        // --- ЛОГИКА ИСТОРИИ АДРЕСОВ (Firestore) ---
         const ADDRESS_HISTORY_DOC_PATH = "settings";
         const ADDRESS_HISTORY_FIELD = "addressHistory";
 
-        /**
-         * Загружает историю адресов пользователя из Firestore.
-         */
+        // --- ОБНОВЛЕНО: СНАЧАЛА ГРУЗИМ ИЗ LS, ПОТОМ СИНХРОНИЗИРУЕМ ---
         async function loadAddresses() {
-            if (!db || !userId) {
-                 return [];
-            }
+            // 1. Мгновенная загрузка из LocalStorage
+            let localData = [];
+            try {
+                const stored = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
+                if (stored) localData = JSON.parse(stored);
+            } catch (e) { console.error("LS Error:", e); }
+            
+            return localData; // Возвращаем сразу для скорости
+        }
+        
+        // --- НОВАЯ ФУНКЦИЯ СИНХРОНИЗАЦИИ ---
+        async function syncAddressHistory() {
+            if (!db || !userId) return;
             try {
                 const docRef = doc(db, "artifacts", appId, "users", userId, "data", ADDRESS_HISTORY_DOC_PATH);
                 const docSnap = await getDoc(docRef);
-
                 if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    return data[ADDRESS_HISTORY_FIELD] || [];
-                } else {
-                    return [];
+                    const cloudData = docSnap.data()[ADDRESS_HISTORY_FIELD] || [];
+                    if (cloudData.length > 0) {
+                        // Обновляем LS данными из облака (облако главнее при старте)
+                        localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(cloudData));
+                        // Обновляем UI
+                        setAddressHistory();
+                    }
                 }
             } catch (e) {
-                console.error("Error loading address history from Firestore:", e);
-                return [];
+                console.warn("Sync failed (offline?):", e);
             }
         }
 
-        /**
-         * Сохраняет новый адрес в историю пользователя в Firestore.
-         */
         async function saveAddress(address) {
-            if (!db || !userId) {
-                console.warn("Firestore not ready. Cannot save address.");
-                return;
-            }
-            // Не сохраняем координаты или слишком короткие строки
-            if (!address || address.includes('[КООРДИНАТЫ]') || address.length < 5) return; 
+            if (!address || address.includes('[КООРДИНАТЫ]') || address.length < 5) return;
 
+            // 1. Сначала работаем с LocalStorage (быстро)
+            let history = [];
             try {
-                let history = await loadAddresses();
-                history = history.filter(item => item.toLowerCase() !== address.toLowerCase());
-                history.unshift(address);
-                history = history.slice(0, 10);
-                
-                const docRef = doc(db, "artifacts", appId, "users", userId, "data", ADDRESS_HISTORY_DOC_PATH);
-                await setDoc(docRef, { [ADDRESS_HISTORY_FIELD]: history }, { merge: true });
-            } catch (e) {
-                console.error("Error saving address history to Firestore:", e);
+                const stored = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
+                if (stored) history = JSON.parse(stored);
+            } catch(e) {}
+
+            // Убираем дубликаты и добавляем новый адрес в начало
+            history = history.filter(item => item.toLowerCase() !== address.toLowerCase());
+            history.unshift(address);
+            history = history.slice(0, 10);
+            
+            // Сохраняем локально
+            localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(history));
+
+            // 2. Отправляем в Firebase (асинхронно, не блокируя интерфейс)
+            if (db && userId) {
+                 const docRef = doc(db, "artifacts", appId, "users", userId, "data", ADDRESS_HISTORY_DOC_PATH);
+                 // Не ставим await, пусть летит в фоне
+                 setDoc(docRef, { [ADDRESS_HISTORY_FIELD]: history }, { merge: true }).catch(e => console.log("Firebase save error:", e));
             }
+            
+            // 3. Обновляем списки в интерфейсе
+            await setAddressHistory();
         }
 
-        /**
-         * Заполняет datalist'ы актуальной историей адресов.
-         */
         async function populateDatalist(datalistId) {
             const historyArray = await loadAddresses();
             const datalist = document.getElementById(datalistId);
             if (!datalist) return;
-            
             datalist.innerHTML = ''; 
-            
             historyArray.forEach(address => {
                 const option = document.createElement('option');
                 option.value = address;
@@ -1424,66 +1211,43 @@
             });
         }
         
-        /**
-         * Общая функция для установки истории адресов для всех datalist.
-         */
         window.setAddressHistory = async function() {
-            if (db) { // Выполняем только если Firebase инициализирован
-                 await populateDatalist('fromHistory');
-                 await populateDatalist('toHistory');
-            }
+             await populateDatalist('fromHistory');
+             await populateDatalist('toHistory');
         }
 
-        // Инициализация Firebase при загрузке скрипта
         initFirebaseAndAuth();
 
-        // КОНЕЦ БЛОКА FIREBASE
-        // =========================================================
-
-        
-        // --- ЛОГИКА АККОРДЕОНА (FAQ) ---
         window.toggleAccordion = function(id) {
             const content = document.getElementById(id);
             const icon = document.getElementById(`icon-${id}`);
-
             if (!content) return;
-
             if (content.classList.contains('hidden')) {
-                // Show content
                 content.classList.remove('hidden');
                 if (icon) icon.classList.add('rotate-180');
             } else {
-                // Hide content
                 content.classList.add('hidden');
                 if (icon) icon.classList.remove('rotate-180');
             }
         }
-        // --- КОНЕЦ ЛОГИКИ АККОРДЕОНА ---
 
-        
-        // Глобальные переменные из HTML/DOM
-        const whatsappLinkEl = document.getElementById('whatsappLink');
         const locationBtnTextEl = document.getElementById('locationBtnText');
         const locationResultEl = document.getElementById('locationResult');
         const locationAddressEl = document.getElementById('locationAddress');
         const announcementBar = document.getElementById('announcementBar');
         
-        const originalWhatsappText = 'https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D.';
-        
         let currentGeolocatedAddress = '';
         
-        // --- КОНФИГУРАЦИЯ ЦЕН И МОДАЛОВ ---
         const CARGO_BASE_PRICE = 6000; 
         const MOVER_PRICE_PER_HOUR = 3000; 
         
-        // СЛОВАРЬ ЦЕН ДЛЯ МЕЖГОРОДА / ПРИГОРОДА
         const INTERCITY_PRICES = {
             "усть-каменогорск": "от 4800–6210 тг",
             "глубокое": "от 4200 тг",
             "новая бухтарма": "от 24150 тг",
             "риддер": "от 25300 тг",
             "шемонаиха": "от 20700 тг",
-            "алтай": "от 45540 тг", // Алтай (Зыряновск)
+            "алтай": "от 45540 тг", 
             "усть-таловка": "от 19780 тг",
             "секисовка": "от 6440 тг",
             "белокаменка": "от 3500 тг",
@@ -1494,7 +1258,7 @@
             "планидовка": "от 2100–2500 тг",
             "тарханка": "от 11270–12200 тг",
             "предгорное": "от 8500–10000 тг",
-            "алтайский": "от 6000–8000 тг" // посёлок Алтайский
+            "алтайский": "от 6000–8000 тг"
         };
 
         const MODALS = {
@@ -1507,19 +1271,11 @@
         };
         
         const PHONE_NUMBER = '77770649648'; 
-        // -----------------------------
 
-        // =========================================================
-        // === ЛОГИКА ДЕНЬ/НОЧЬ (THEME TOGGLE) ===
-        // =========================================================
         const THEME_KEY = 'taxi_theme_preference';
         const body = document.body;
         const themeIcon = document.getElementById('themeIcon');
         
-        /**
-         * Устанавливает иконку в зависимости от текущей темы.
-         * @param {string} theme - 'light' или 'dark'
-         */
         function updateThemeIcon(theme) {
             if (themeIcon) {
                 if (theme === 'dark') {
@@ -1534,10 +1290,6 @@
             }
         }
 
-        /**
-         * Применяет выбранную тему к элементу body.
-         * @param {string} theme - 'light' или 'dark'
-         */
         function applyTheme(theme) {
             if (theme === 'dark') {
                 body.classList.add('dark');
@@ -1547,47 +1299,29 @@
             updateThemeIcon(theme);
         }
 
-        /**
-         * Переключает тему между светлой и темной.
-         */
         window.toggleTheme = function() {
             const isDark = body.classList.contains('dark');
             const newTheme = isDark ? 'light' : 'dark';
-            
             applyTheme(newTheme);
             localStorage.setItem(THEME_KEY, newTheme);
         }
         
-        /**
-         * Загружает сохраненную тему или использует системную/светлую по умолчанию.
-         */
         function loadTheme() {
             const savedTheme = localStorage.getItem(THEME_KEY);
-            
             if (savedTheme) {
                 applyTheme(savedTheme);
             } else {
-                // Проверяем системные предпочтения (если поддерживается)
                 const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                 const defaultTheme = prefersDark ? 'dark' : 'light';
                 applyTheme(defaultTheme);
-                // Не сохраняем в localStorage, чтобы дать возможность системным настройкам менять тему.
             }
         }
-        // =========================================================
-        // === КОНЕЦ ЛОГИКИ ДЕНЬ/НОЧЬ ===
-        // =========================================================
 
-
-        // --- ЛОГИКА ДЛЯ ДИНАМИЧЕСКОГО БАННЕРА-ОБЪЯВЛЕНИЯ ---
         function checkAndShowAnnouncement() {
             const dismissKey = 'announcement_dismissed_v1';
-            // Проверяем, был ли баннер закрыт. Если 'true', то добавляем класс 'hidden'.
-            // Баннер по умолчанию виден на мобильных (за счет lg:hidden в HTML).
             if (localStorage.getItem(dismissKey) === 'true') {
                 announcementBar.classList.add('hidden');
             } else {
-                // Если не закрыт, убеждаемся, что он виден
                 announcementBar.classList.remove('hidden');
             }
         }
@@ -1597,56 +1331,57 @@
             localStorage.setItem('announcement_dismissed_v1', 'true');
         }
 
-        // Общая функция для установки текущего времени + 15 минут (Local Time Fixed)
         function getFormattedCurrentTime() {
              const now = new Date();
-             now.setMinutes(now.getMinutes() + 15); // Add 15 mins buffer
-             
+             now.setMinutes(now.getMinutes() + 15); 
              const year = now.getFullYear();
              const month = String(now.getMonth() + 1).padStart(2, '0');
              const day = String(now.getDate()).padStart(2, '0');
              const hours = String(now.getHours()).padStart(2, '0');
              const minutes = String(now.getMinutes()).padStart(2, '0');
-             
              return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+        
+        // --- 1. АВТО-ФОРМАТИРОВАНИЕ НОМЕРА ТЕЛЕФОНА (MASK) ---
+        function initPhoneMask() {
+            const phoneInput = document.getElementById('passengerPhone');
+            if(phoneInput) {
+                phoneInput.addEventListener('input', function (e) {
+                    let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+                    if (!x[2]) {
+                         e.target.value = x[1] ? '+7' : '';
+                         return;
+                    }
+                    e.target.value = '+7 (' + x[2] + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+                });
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-             loadTheme(); // Загружаем тему при старте
+             loadTheme(); 
              checkAndShowAnnouncement();
+             initPhoneMask(); // Запуск маски
+             // --- ВАЖНО: Загружаем адреса сразу из LS при старте ---
+             setAddressHistory(); 
              
              const formattedNow = getFormattedCurrentTime();
-             
              const taxiDateTimeInput = document.getElementById('taxiDateTime');
              if (taxiDateTimeInput) {
                  taxiDateTimeInput.value = formattedNow;
+                 // --- 2. ЗАЩИТА ОТ ПРОШЛОГО (MIN DATE) ---
+                 taxiDateTimeInput.min = new Date().toISOString().slice(0, 16);
              }
-             
              const cargoDateTimeInput = document.getElementById('cargoDateTime');
              if (cargoDateTimeInput) {
                  cargoDateTimeInput.value = formattedNow;
+                 cargoDateTimeInput.min = new Date().toISOString().slice(0, 16);
              }
-             
              updateCargoPrice(); 
-             
-             // Инициализируем цену при загрузке страницы/открытии модального окна
              updateTaxiPrice(); 
         });
         
-        // =========================================================
-        // === ЛОГИКА ГЕОЛОКАЦИИ ===
-        // =========================================================
-
-        /**
-         * Устанавливает статус загрузки для кнопки.
-         * @param {string} mode - 'main' или название сервиса
-         * @param {boolean} isLoading - Флаг загрузки
-         * @param {boolean} isError - Флаг ошибки
-         */
         function setGeoButtonLoading(mode, isLoading, isError = false) {
             let buttonEl, iconEl, textEl;
-
-            // Для кнопки на главной странице
             if (mode === 'main') {
                 buttonEl = document.getElementById('locationBtn');
                 textEl = document.getElementById('locationBtnText');
@@ -1660,7 +1395,6 @@
                 return;
             } 
 
-            // Для кнопок в модальных окнах
             let iconId;
             switch(mode) {
                 case 'taxi': iconId = 'taxiGeoIcon'; break;
@@ -1687,11 +1421,6 @@
             }
         }
 
-
-        /**
-         * Основная функция для определения местоположения.
-         * @param {string} trigger - откуда была вызвана функция ('main', 'taxi', 'auction', 'delivery', 'cargo', 'soberDriver', 'assistance').
-         */
         window.getCurrentLocation = function(trigger) {
             if (!navigator.geolocation) {
                 displayMessageModal('Ошибка', 'Геолокация не поддерживается вашим браузером.', true);
@@ -1706,11 +1435,8 @@
                     setGeoButtonLoading(trigger, false, false);
                     const lat = position.coords.latitude.toFixed(5);
                     const lon = position.coords.longitude.toFixed(5);
-                    
                     const yandexMapUrl = `https://yandex.kz/maps/?pt=${lon},${lat}&z=16&l=map`;
-
                     currentGeolocatedAddress = `[КООРДИНАТЫ] ${lat}, ${lon}. Ссылка: ${yandexMapUrl}`; 
-                    
                     let inputId;
                     let message;
                     let placeholder;
@@ -1718,140 +1444,69 @@
 
                     switch (trigger) {
                         case 'main':
-                            // Обновление главного блока
                             locationResultEl.classList.remove('hidden');
                             locationAddressEl.textContent = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
                             locationAddressEl.href = yandexMapUrl; 
                             locationAddressEl.title = 'Открыть местоположение на карте';
-
                             setAllLocationFields(currentGeolocatedAddress);
-                            
-                            let whatsappMessage = `${currentGeolocatedAddress} - [Адрес КУДА]`;
-                            const encodedText = encodeURIComponent(whatsappMessage);
-                            whatsappLinkEl.href = `https://wa.me/${PHONE_NUMBER}?text=${encodedText}`;
-
                             displayMessageModal('Готово!', 'Ваше местоположение (координаты и ссылка на карту) автоматически добавлено во все формы заказа (Откуда/Адрес)! Нажмите кнопку "Заказать" в любой форме.', false);
                             return;
-
-                        case 'taxi': 
-                            inputId = 'taxiFrom'; 
-                            message = 'Откуда'; 
-                            placeholder = 'Откуда (Адрес определен)';
-                            break;
-                        case 'auction': 
-                            inputId = 'auctionFrom'; 
-                            message = 'Откуда'; 
-                            placeholder = 'Откуда (Адрес определен)';
-                            break;
-                        case 'delivery': 
-                            inputId = 'deliveryAddress'; 
-                            message = 'Адрес доставки'; 
-                            placeholder = 'Адрес доставки (Адрес определен)';
-                            successMessage = 'Ваше местоположение добавлено в поле "Адрес доставки".';
-                            break;
-                        case 'cargo': 
-                            inputId = 'cargoFrom'; 
-                            message = 'Адрес погрузки'; 
-                            placeholder = 'Адрес погрузки (Адрес определен)'; 
-                            successMessage = 'Ваше местоположение добавлено в поле "Адрес погрузки".';
-                            break;
-                        case 'soberDriver': 
-                            inputId = 'soberDriverFrom'; 
-                            message = 'Ваш текущий адрес'; 
-                            placeholder = 'Адрес авто (Адрес определен)'; 
-                            successMessage = 'Ваше местоположение добавлено в поле "Ваш текущий адрес".';
-                            break;
-                        case 'assistance': 
-                            inputId = 'assistanceAddress'; 
-                            message = 'Адрес помощи'; 
-                            placeholder = 'Адрес помощи (Адрес определен)'; 
-                            successMessage = 'Ваше местоположение добавлено в поле "Адрес (где нужна помощь)".';
-                            break;
-                        default:
-                            return;
+                        case 'taxi': inputId = 'taxiFrom'; message = 'Откуда'; placeholder = 'Откуда (Адрес определен)'; break;
+                        case 'auction': inputId = 'auctionFrom'; message = 'Откуда'; placeholder = 'Откуда (Адрес определен)'; break;
+                        case 'delivery': inputId = 'deliveryAddress'; message = 'Адрес доставки'; placeholder = 'Адрес доставки (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Адрес доставки".'; break;
+                        case 'cargo': inputId = 'cargoFrom'; message = 'Адрес погрузки'; placeholder = 'Адрес погрузки (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Адрес погрузки".'; break;
+                        case 'soberDriver': inputId = 'soberDriverFrom'; message = 'Ваш текущий адрес'; placeholder = 'Адрес авто (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Ваш текущий адрес".'; break;
+                        case 'assistance': inputId = 'assistanceAddress'; message = 'Адрес помощи'; placeholder = 'Адрес помощи (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Адрес (где нужна помощь)".'; break;
+                        default: return;
                     }
 
-                    // Обновление поля в модальном окне
                     const input = document.getElementById(inputId);
                     if (input) {
                         input.value = currentGeolocatedAddress;
                         input.placeholder = placeholder;
                     }
                     displayMessageModal('Адрес определен', successMessage, false);
-                    
-                    if (trigger === 'taxi') {
-                        updateTaxiPrice();
-                    }
+                    if (trigger === 'taxi') updateTaxiPrice();
 
                 },
                 (error) => {
                     setGeoButtonLoading(trigger, false, true);
                     let errorMessage = 'Ошибка определения местоположения.';
-                    if (error.code === error.PERMISSION_DENIED) {
-                        errorMessage = 'Доступ к геолокации запрещен. Пожалуйста, разрешите доступ в настройках браузера.';
-                    }
-                    
+                    if (error.code === error.PERMISSION_DENIED) errorMessage = 'Доступ к геолокации запрещен. Пожалуйста, разрешите доступ в настройках браузера.';
                     if (trigger === 'main') {
                          locationResultEl.classList.add('hidden');
-                         whatsappLinkEl.href = originalWhatsappText;
                     }
-                    
                     displayMessageModal('Ошибка', errorMessage, true);
-                    
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
         
-        // =========================================================
-        // === ЛОГИКА МОДАЛЬНЫХ ОКОН ===
-        // =========================================================
-
         let stopCounter = 0; 
 
-        /**
-         * Добавляет дополнительное поле адреса
-         * @param {string} containerId - ID контейнера ('additionalStops' или 'additionalStopsAuction')
-         * @param {string} mode - 'taxi' или 'auction'
-         */
         window.addStop = function(containerId, mode) {
             if (stopCounter >= 3) {
                 displayMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false);
                 return;
             }
-            
             stopCounter++;
             const stopsContainer = document.getElementById(containerId);
             const stopId = `${containerId}Input${stopCounter}`;
             const stopLabel = `Дополнительный адрес ${stopCounter}`;
-            
             const stopDiv = document.createElement('div');
-            // Используем класс input-with-plus-btn для выравнивания
             stopDiv.className = "flex space-x-2 additional-stop-item input-with-plus-btn"; 
             const divId = `stopDiv${containerId}${stopCounter}`;
             stopDiv.id = divId;
-            
-            // Если это окно такси, добавляем oninput для обновления цены
             const inputEvents = (mode === 'taxi') ? 'oninput="updateTaxiPrice()"' : '';
-
-            // Используем remove-stop-btn для кнопки удаления
             stopDiv.innerHTML = `
                 <input id="${stopId}" name="${stopId}" type="text" list="toHistory" autocomplete="off" class="form-input-control" placeholder="${stopLabel} (обязательно)" required ${inputEvents}>
-                <button type="button" onclick="removeStop('${divId}', '${mode}')" class="remove-stop-btn" title="Удалить адрес">
-                    <i class="fas fa-minus"></i>
-                </button>
+                <button type="button" onclick="removeStop('${divId}', '${mode}')" class="remove-stop-btn" title="Удалить адрес"><i class="fas fa-minus"></i></button>
             `;
-            
             stopsContainer.appendChild(stopDiv);
             setAddressHistory(); 
             if (mode === 'taxi') updateTaxiPrice();
         }
         
-        /**
-         * Удаляет дополнительное поле адреса
-         * @param {string} divId - ID элемента <div> для удаления
-         * @param {string} mode - 'taxi' или 'auction'
-         */
         window.removeStop = function(divId, mode) {
             const elementToRemove = document.getElementById(divId);
             if (elementToRemove) {
@@ -1862,118 +1517,79 @@
             if (mode === 'taxi') updateTaxiPrice();
         }
         
-        /**
-         * Подсчитывает количество заполненных полей адресов в модальном окне Такси
-         * (Откуда, Куда, и все Дополнительные)
-         */
         function countFilledAddresses() {
             let count = 0;
-            
             const fromInput = document.getElementById('taxiFrom');
             const toInput = document.getElementById('taxiTo');
             const stopsContainer = document.getElementById('additionalStops');
-
-            // Считаем только, если поле заполнено (длина больше 0)
-            if (fromInput && fromInput.value.trim().length > 0) {
-                count++; // Адрес "Откуда"
-            }
-            if (toInput && toInput.value.trim().length > 0) {
-                count++; // Адрес "Куда"
-            }
-
+            if (fromInput && fromInput.value.trim().length > 0) count++; 
+            if (toInput && toInput.value.trim().length > 0) count++;
             if (stopsContainer) {
                 stopsContainer.querySelectorAll('input.form-input-control').forEach(input => {
-                    if (input.value.trim().length > 0) {
-                        count++; // Дополнительные адреса
-                    }
+                    if (input.value.trim().length > 0) count++;
                 });
             }
             return count;
         }
         
-        /**
-         * Обновляет примерную цену в модальном окне Такси.
-         * Сначала проверяет на межгород, затем на количество остановок.
-         */
         window.updateTaxiPrice = function() {
             const priceEl = document.getElementById('taxiPriceEstimate');
             if (!priceEl) return;
-
             const toInput = document.getElementById('taxiTo');
-            // Приводим введенное значение к нижнему регистру для сравнения
             const destination = toInput ? toInput.value.trim().toLowerCase() : '';
+            
+            // --- 3. УМНЫЙ РАСЧЕТ ЦЕНЫ (Очистка от "г.", "город" и т.д.) ---
+            const cleanDestination = destination.replace(/^(г\.|город\s+|п\.|пос\.|поселок\s+|с\.|село\s+)/i, '').trim();
+            
             let priceText;
-
-            // 1. ПРИОРИТЕТ: Проверяем на Межгород / Пригород
             let isIntercity = false;
             for (const location in INTERCITY_PRICES) {
-                // Проверяем, начинается ли введенный текст с названия населенного пункта
-                // Это позволяет вводить "Усть-Каменогорск, ул. Бажова 10"
-                if (destination.startsWith(location)) {
+                // Сравнение с очищенным адресом
+                if (cleanDestination.startsWith(location)) {
                     priceText = INTERCITY_PRICES[location];
                     isIntercity = true;
                     break;
                 }
             }
-
             if (isIntercity) {
-                // Если это межгород, используем цену из словаря
                 priceEl.textContent = priceText;
                 return; 
             }
-
-            // 2. ВТОРИЧНЫЙ ПРИОРИТЕТ: Локальный маршрут по количеству остановок
             const addressCount = countFilledAddresses();
-            
-            // 2 адреса (Откуда + Куда)
-            if (addressCount <= 2) { 
-                priceText = 'от 700–900 тг';
-            } 
-            // 3 или более адресов (3 или 4 поля)
-            else if (addressCount >= 3) { 
-                priceText = 'от 1500–2000 тг';
-            } 
-            // Если адресов 0 или 1 (должно быть 2 полей, но на всякий случай)
-            else {
-                 priceText = 'от 700–900 тг';
-            }
-            
+            if (addressCount <= 2) priceText = 'от 700–900 тг';
+            else if (addressCount >= 3) priceText = 'от 1500–2000 тг';
+            else priceText = 'от 700–900 тг';
             priceEl.textContent = priceText;
         }
 
-
-        function openModal(modalId) {
+        window.openModal = function(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) {
                 document.querySelectorAll('.status-message').forEach(el => el.classList.remove('active'));
-                
-                if (modalId === 'taxiModal' || modalId === 'auctionModal') {
-                    setAddressHistory();
-                }
-                
+                if (modalId === 'taxiModal' || modalId === 'auctionModal') setAddressHistory();
                 modal.classList.add('active');
                 modal.setAttribute('aria-hidden', 'false');
-                
                 const formattedNow = getFormattedCurrentTime();
+                const minTime = new Date().toISOString().slice(0, 16);
                  if (modalId === 'taxiModal') {
-                     document.getElementById('taxiDateTime').value = formattedNow;
-                     // При открытии модального окна всегда обновляем цену
+                     const dtInput = document.getElementById('taxiDateTime');
+                     dtInput.value = formattedNow;
+                     dtInput.min = minTime; // Установка минимума
                      updateTaxiPrice(); 
                  }
                  if (modalId === 'cargoModal') {
-                     document.getElementById('cargoDateTime').value = formattedNow;
-                 }
-                 if (modalId === 'cargoModal') {
+                     const dtInput = document.getElementById('cargoDateTime');
+                     dtInput.value = formattedNow;
+                     dtInput.min = minTime; // Установка минимума
                      document.getElementById('cargoMovers').value = '0'; 
                      updateCargoPrice(); 
                  }
-                
                 const firstInput = modal.querySelector('input, textarea, select');
                 if (firstInput) firstInput.focus();
             }
         }
 
-        function closeModal(modalId) {
+        window.closeModal = function(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.classList.remove('active');
@@ -1982,14 +1598,13 @@
                 if (modalId === 'taxiModal' || modalId === 'auctionModal') {
                     const stopsContainerTaxi = document.getElementById('additionalStops');
                     const stopsContainerAuction = document.getElementById('additionalStopsAuction');
-                    
                     if (stopsContainerTaxi) stopsContainerTaxi.innerHTML = '';
                     if (stopsContainerAuction) stopsContainerAuction.innerHTML = '';
-                    
                     stopCounter = 0; 
-                    
                     const form = document.getElementById(modalId.replace('Modal', 'Form'));
                     if (form) form.reset();
+                } else if (modalId === 'servicesMenuModal') {
+                    // ничего не сбрасываем, просто закрываем
                 } else {
                     const form = document.getElementById(modalId.replace('Modal', 'Form'));
                     if (form) form.reset();
@@ -2000,20 +1615,15 @@
                     document.getElementById('assistanceType').value = '';
                 }
                 
-                // Сброс сворачивания предзаказа в такси
                 if (modalId === 'taxiModal') {
                      const content = document.getElementById('preorderContent');
                      const icon = document.getElementById('preorderIcon');
-                     if (content && !content.classList.contains('hidden')) {
-                         content.classList.add('hidden');
-                     }
-                     if (icon && icon.classList.contains('rotate-180')) {
-                         icon.classList.remove('rotate-180');
-                     }
+                     if (content && !content.classList.contains('hidden')) content.classList.add('hidden');
+                     if (icon && icon.classList.contains('rotate-180')) icon.classList.remove('rotate-180');
                      
                      const formattedNow = getFormattedCurrentTime();
                      document.getElementById('taxiDateTime').value = formattedNow;
-                     updateTaxiPrice(); // Сброс цены на базовую
+                     updateTaxiPrice(); 
                  }
                  if (modalId === 'cargoModal') {
                      const formattedNow = getFormattedCurrentTime();
@@ -2032,26 +1642,21 @@
             }
         }
         
-        // --- ДЕМОНСТРАЦИОННАЯ МОДАЛЬНОЕ ОКНО (для оповещений) ---
         function displayMessageModal(title, message, isError = false) {
             const existingModal = document.getElementById('alertModal');
             if (existingModal) existingModal.remove();
-
             const modalHtml = `
                 <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                     <div class="bg-white p-6 rounded-lg shadow-2xl w-full max-w-sm text-center">
                         <h3 class="text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}">${title}</h3>
                         <p class="mb-6">${message}</p>
-                        <button onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
-                            OK
-                        </button>
+                        <button onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">OK</button>
                     </div>
                 </div>
             `;
             document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
 
-        // --- Заполнение полей форм координатами ---
         function setAllLocationFields(locationText) {
             const fieldsToFill = [
                 { id: 'taxiFrom', placeholder: 'Откуда (Адрес определен)' }, 
@@ -2061,7 +1666,6 @@
                 { id: 'assistanceAddress', placeholder: 'Адрес помощи (Адрес определен)' }, 
                 { id: 'auctionFrom', placeholder: 'Откуда (Адрес определен)' }
             ];
-            
             fieldsToFill.forEach(field => {
                 const input = document.getElementById(field.id);
                 if (input) {
@@ -2072,60 +1676,134 @@
             updateTaxiPrice();
         }
         
-        // =========================================================
-        // === ЛОГИКА КАЛЬКУЛЯЦИИ ДЛЯ ГРУЗОВОГО ===
-        // =========================================================
         window.updateCargoPrice = function() {
             const cargoMoversSelect = document.getElementById('cargoMovers');
             const cargoTotalPriceEl = document.getElementById('cargoTotalPrice');
             const cargoPriceNoteEl = document.getElementById('cargoPriceNote');
-            
             if (!cargoMoversSelect || !cargoTotalPriceEl || !cargoPriceNoteEl) return;
-            
             const moversCount = parseInt(cargoMoversSelect.value) || 0;
             const totalPrice = CARGO_BASE_PRICE + (moversCount * MOVER_PRICE_PER_HOUR);
             const formattedPrice = totalPrice.toLocaleString('ru-RU');
-
             cargoTotalPriceEl.textContent = `${formattedPrice} тг`;
-            
-            if (moversCount > 0) {
-                cargoPriceNoteEl.innerHTML = `Базовая стоимость ${CARGO_BASE_PRICE.toLocaleString('ru-RU')} тг + доплата за ${moversCount} чел.`;
-            } else {
-                cargoPriceNoteEl.textContent = 'Минимальный заказ - 1 час.';
-            }
+            if (moversCount > 0) cargoPriceNoteEl.innerHTML = `Базовая стоимость ${CARGO_BASE_PRICE.toLocaleString('ru-RU')} тг + доплата за ${moversCount} чел.`;
+            else cargoPriceNoteEl.textContent = 'Минимальный заказ - 1 час.';
         }
-        // =========================================================
 
-        // --- ЛОГИКА СВОРАЧИВАНИЯ ПРЕДЗАКАЗА (НОВОЕ) ---
         window.togglePreorder = function() {
             const content = document.getElementById('preorderContent');
             const icon = document.getElementById('preorderIcon');
-            
             if (content.classList.contains('hidden')) {
-                // Раскрыть
                 content.classList.remove('hidden');
                 if (icon) icon.classList.add('rotate-180');
             } else {
-                // Свернуть
                 content.classList.add('hidden');
                 if (icon) icon.classList.remove('rotate-180');
             }
         }
+        
+        // --- ЛОГИКА УНИВЕРСАЛЬНОГО МЕНЮ (WHATSAPP И TELEGRAM) ---
+        window.openServicesMenu = function(mode) {
+            // Устанавливаем режим: 'whatsapp' или 'telegram'
+            orderDestination = mode;
+            
+            // Показываем/скрываем ссылку на канал Telegram в зависимости от режима
+            const footer = document.getElementById('servicesMenuFooter');
+            if (footer) {
+                if (mode === 'telegram') {
+                    footer.classList.remove('hidden');
+                } else {
+                    footer.classList.add('hidden');
+                }
+            }
 
+            openModal('servicesMenuModal');
+        }
 
-        // --- Event Listeners for Opening/Closing ---
+        window.openServiceFromMenu = function(serviceKey) {
+            // Закрываем меню и открываем нужный сервис
+            closeModal('servicesMenuModal');
+            setTimeout(() => {
+                if (MODALS[serviceKey]) {
+                    openModal(MODALS[serviceKey].id);
+                }
+            }, 100);
+        }
+        
+        // Вспомогательная функция для копирования текста в буфер обмена
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'absolute';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Failed to copy', err);
+            }
+            
+            document.body.removeChild(textarea);
+        }
+
+        // --- НОВЫЕ ФУНКЦИИ: ПОМЕНЯТЬ МЕСТАМИ, ДОБАВИТЬ ПОЖЕЛАНИЕ, ПОДЕЛИТЬСЯ ---
+
+        window.swapTaxiAddresses = function() {
+            const fromEl = document.getElementById('taxiFrom');
+            const toEl = document.getElementById('taxiTo');
+            const temp = fromEl.value;
+            fromEl.value = toEl.value;
+            toEl.value = temp;
+            
+            // Запускаем пересчет цены
+            updateTaxiPrice();
+        }
+
+        window.addWish = function(text) {
+            const wishEl = document.getElementById('taxiWishes');
+            let currentText = wishEl.value.trim();
+            
+            // Простая логика: если текста нет, ставим. Если есть, добавляем через запятую.
+            if (!currentText) {
+                wishEl.value = text;
+            } else if (!currentText.includes(text)) {
+                wishEl.value = currentText + ', ' + text;
+            }
+        }
+        
+        window.shareApp = async function() {
+            const shareData = {
+                title: 'Такси «Успех»',
+                text: 'Заказывай такси в Белоусовке быстро и удобно!',
+                url: window.location.href
+            };
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    // Fallback
+                    copyToClipboard(window.location.href);
+                    displayMessageModal('Ссылка скопирована', 'Ссылка на приложение скопирована в буфер обмена. Отправьте её друзьям!', false);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        
         document.querySelectorAll('.service-btn').forEach(button => {
             button.addEventListener('click', () => {
+                // Если кликнули на кнопку с классом service-btn, но без явного вызова меню
+                // (например, плитки внизу "Доставка" и т.д.), сбрасываем в WhatsApp по умолчанию
+                orderDestination = 'whatsapp';
                 const service = button.getAttribute('data-service');
-                if (MODALS[service]) {
-                    openModal(MODALS[service].id);
-                }
+                if (MODALS[service]) openModal(MODALS[service].id);
             });
         });
 
         document.querySelectorAll('.close-btn').forEach(button => {
             button.addEventListener('click', (e) => {
-                // Ensure we get the correct modal ID from the data attribute
                 const modalId = button.getAttribute('data-modal');
                 closeModal(modalId);
             });
@@ -2133,69 +1811,46 @@
 
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
-                    closeModal(overlay.id);
-                }
+                if (e.target === overlay) closeModal(overlay.id);
             });
         });
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const openModal = document.querySelector('.modal-overlay.active');
-                if (openModal) {
-                    closeModal(openModal.id);
-                }
+                if (openModal) closeModal(openModal.id);
             }
         });
         
-        // --- Specific Assistance Modal Logic (for Подкачать/Прикурить) ---
         const assistanceTypeSelect = document.getElementById('assistanceType');
         const carDetailsDiv = document.getElementById('carDetails');
-
         if (assistanceTypeSelect && carDetailsDiv) {
             assistanceTypeSelect.addEventListener('change', (e) => {
                 const selectedType = e.target.value;
-                if (selectedType === 'Подкачать колесо' || selectedType === 'Прикурить автомобиль') {
-                    carDetailsDiv.classList.remove('hidden');
-                } else {
-                    carDetailsDiv.classList.add('hidden');
-                }
+                if (selectedType === 'Подкачать колесо' || selectedType === 'Прикурить автомобиль') carDetailsDiv.classList.remove('hidden');
+                else carDetailsDiv.classList.add('hidden');
             });
         }
 
-
-        // --- Form Submission Handlers ---
         const forms = document.querySelectorAll('form');
-        
         forms.forEach(form => {
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                
                 const formId = this.id;
                 const modalKey = Object.keys(MODALS).find(key => MODALS[key].formId === formId);
                 const modalConfig = MODALS[modalKey];
-                
                 if (!modalConfig) return;
-
                 const modalId = modalConfig.id;
                 const statusEl = document.getElementById(modalId.replace('Modal', 'Status'));
                 if (statusEl) statusEl.classList.remove('active');
-                
                 let message = `${modalConfig.prefix}\n\n`;
                 let requiredFieldsMissing = false;
 
                 const getVal = (id, label, isRequired = false) => {
                     const input = document.getElementById(id);
                     let value = input ? input.value.trim() : '';
-
-                    if (isRequired && !value) {
-                        requiredFieldsMissing = true;
-                    }
-                    
-                    if (input && input.type === 'checkbox') {
-                        value = input.checked ? 'Да' : 'Нет';
-                    }
-
+                    if (isRequired && !value) requiredFieldsMissing = true;
+                    if (input && input.type === 'checkbox') value = input.checked ? 'Да' : 'Нет';
                     return `*${label}*:\n${value || '—'}\n\n`;
                 };
 
@@ -2216,26 +1871,19 @@
                 const handlePreorder = (dateTimeId, basePrefix) => {
                     const dateTimeInput = document.getElementById(dateTimeId).value;
                     let prefixMessage = basePrefix;
-                    
                     if (dateTimeInput) {
                         const selectedTime = new Date(dateTimeInput);
                         const currentTime = new Date();
-                        
                         if (selectedTime > currentTime) {
-                            const formattedDate = selectedTime.toLocaleString('ru-RU', { 
-                                year: 'numeric', month: '2-digit', day: '2-digit', 
-                                hour: '2-digit', minute: '2-digit' 
-                            });
+                            const formattedDate = selectedTime.toLocaleString('ru-RU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
                             prefixMessage = `⏰ ПРЕДЗАКАЗ (${modalConfig.title}) ⏰\n\n`;
                             prefixMessage += `*Время поездки*:\n${formattedDate}\n\n`;
                         }
                     }
-                    
                     return prefixMessage;
                 };
 
                 let addressesToSave = [];
-
 
                 switch (modalKey) {
                     case 'taxi':
@@ -2243,46 +1891,36 @@
                         const toAddress = document.getElementById('taxiTo').value.trim();
                         const wishes = document.getElementById('taxiWishes').value.trim();
                         const passengerPhone = document.getElementById('passengerPhone').value.trim(); 
-                        
-                        // Check if preorder content is visible
                         const preorderContent = document.getElementById('preorderContent');
                         const isPreorderOpen = preorderContent && !preorderContent.classList.contains('hidden');
                         
-                        if (isPreorderOpen) {
-                            message = handlePreorder('taxiDateTime', modalConfig.prefix);
-                        } else {
-                            message = `${modalConfig.prefix}\n\n`;
-                        }
+                        if (isPreorderOpen) message = handlePreorder('taxiDateTime', modalConfig.prefix);
+                        else message = `${modalConfig.prefix}\n\n`;
                         
-                        message += getVal('taxiFrom', 'Откуда', true);
-                        message += getVal('taxiTo', 'Куда', true);
+                        // --- ИЗМЕНЕНИЕ: Возврат формата с "Откуда" и "Куда" ---
+                        if (!fromAddress) requiredFieldsMissing = true;
+                        if (!toAddress) requiredFieldsMissing = true;
                         
-                        if (wishes) {
-                            message += `*Пожелания*:\n${wishes}\n\n`;
-                        }
-
+                        message += `Откуда:\n${fromAddress}\n\n`;
+                        message += `Куда:\n${toAddress}\n\n`;
+                        // ----------------------------------------------------------------------
+                        
+                        if (wishes) message += `*Пожелания*:\n${wishes}\n\n`;
                         let stopMessage = collectStops('additionalStops');
-
                         if (stopMessage) {
                             message += '\n--- ДОП. АДРЕСА ПО ПУТИ ---\n\n';
                             message += stopMessage;
                             message += '---------------------------\n\n';
                         }
-                        
                         if (passengerPhone) {
                             message += '📞 КОНТАКТЫ:\n';
                             message += `*Телефон для связи*:\n${passengerPhone}\n\n`;
                         }
-                        
-                        // Определяем цену для отправки в WhatsApp
                         const currentPriceText = document.getElementById('taxiPriceEstimate').textContent;
                         message += `💰 Примерная цена: ${currentPriceText} (уточнит водитель)`;
-                        
                         if (fromAddress) addressesToSave.push(fromAddress);
                         if (toAddress) addressesToSave.push(toAddress);
-
                         break;
-                        
                     case 'auction':
                         const auctionPrice = document.getElementById('auctionPrice').value;
                         if (!auctionPrice || parseInt(auctionPrice) < 500) {
@@ -2295,79 +1933,56 @@
                         message += collectStops('additionalStopsAuction');
                         message += `*Предлагаемая цена*:\n${auctionPrice} KZT\n\n`;
                         message += '⚠️ ПРИМЕЧАНИЕ: Это цена клиента. Примите решение по заказу самостоятельно.';
-                        
                         const auctionFromAddress = document.getElementById('auctionFrom').value.trim();
                         const auctionToAddress = document.getElementById('auctionTo').value.trim();
                         if (auctionFromAddress) addressesToSave.push(auctionFromAddress);
                         if (auctionToAddress) addressesToSave.push(auctionToAddress);
-
                         break;
-                        
                     case 'delivery':
                         message += getVal('deliveryItems', 'Список товаров', true);
                         message += getVal('deliveryAddress', 'Адрес доставки', true);
                         message += getVal('deliveryStore', 'Пожелания по магазину');
                         message += '💰 Примерная цена: от 1200 тг (зависит от расстояния/объема)';
-                        
                         const deliveryAddress = document.getElementById('deliveryAddress').value.trim();
                         if (deliveryAddress) addressesToSave.push(deliveryAddress);
                         break;
-                        
                     case 'cargo':
                         const cargoMoversSelect = document.getElementById('cargoMovers');
                         const moversCount = parseInt(cargoMoversSelect.value);
                         const totalPrice = CARGO_BASE_PRICE + (moversCount * MOVER_PRICE_PER_HOUR);
                         const formattedPrice = totalPrice.toLocaleString('ru-RU');
-                        
-                        const moversText = (moversCount > 0) 
-                            ? `${moversCount} чел. (Доплата: ${moversCount * MOVER_PRICE_PER_HOUR} тг/час)` 
-                            : 'Не требуются';
-                        
+                        const moversText = (moversCount > 0) ? `${moversCount} чел. (Доплата: ${moversCount * MOVER_PRICE_PER_HOUR} тг/час)` : 'Не требуются';
                         message = handlePreorder('cargoDateTime', modalConfig.prefix);
-                        
                         message += getVal('cargoFrom', 'Адрес погрузки', true);
                         message += getVal('cargoTo', 'Адрес выгрузки', true);
                         message += getVal('cargoDescription', 'Описание груза', true);
-                        
                         message += `*Количество грузчиков*:\n${moversText}\n\n`;
                         message += `*ИТОГОВАЯ СУММА (за 1 час)*:\n${formattedPrice} тг\n\n`;
-
                         message += `💰 Базовая цена: ${CARGO_BASE_PRICE.toLocaleString('ru-RU')} тг/час`;
-                        
                         const cargoFromAddress = document.getElementById('cargoFrom').value.trim();
                         const cargoToAddress = document.getElementById('cargoTo').value.trim();
                         if (cargoFromAddress) addressesToSave.push(cargoFromAddress);
                         if (cargoToAddress) addressesToSave.push(cargoToAddress);
                         break;
-
                     case 'soberDriver':
                         message += getVal('soberDriverFrom', 'Текущий адрес (Авто)', true);
                         message += getVal('soberDriverCarModel', 'Марка и модель авто', true); 
                         message += getVal('soberDriverTo', 'Адрес доставки авто', true);
                         message += '💰 Примерная цена: от 3800 тг (зависит от расстояния)';
-                        
                         const soberDriverFromAddress = document.getElementById('soberDriverFrom').value.trim();
                         if (soberDriverFromAddress) addressesToSave.push(soberDriverFromAddress);
                         break;
-                        
                     case 'assistance':
                         const type = document.getElementById('assistanceType').value;
-                        if (!type) {
-                            requiredFieldsMissing = true;
-                            break;
-                        }
-
+                        if (!type) { requiredFieldsMissing = true; break; }
                         message += getVal('assistanceType', 'Тип помощи');
-                        
                         if (type === 'Подкачать колесо' || type === 'Прикурить автомобиль') {
                             message += getVal('carModel', 'Марка и модель авто');
                             message += getVal('licencePlate', 'Гос. номер');
                         }
-                        
                         message += getVal('assistanceTask', 'Детали и уточнения');
                         message += getVal('assistanceAddress', 'Адрес (где нужна помощь)', true);
                         message += '💰 Примерная цена: от 1500 тг (зависит от характера требуемой помощи)';
-                        
                         const assistanceAddress = document.getElementById('assistanceAddress').value.trim();
                         if (assistanceAddress) addressesToSave.push(assistanceAddress);
                         break;
@@ -2382,8 +1997,25 @@
                     await saveAddress(address);
                 }
 
-                const waLink = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
-                window.open(waLink, '_blank');
+                // Логика перенаправления
+                if (orderDestination === 'telegram') {
+                    copyToClipboard(message);
+                    
+                    // --- 4. ВИБРАЦИЯ (HAPTIC FEEDBACK) ---
+                    if (navigator.vibrate) {
+                        navigator.vibrate(200); 
+                    }
+
+                    displayMessageModal('Заказ сформирован!', 'Текст заказа скопирован. Сейчас откроется Telegram — просто вставьте текст в чат.', false);
+                    setTimeout(() => {
+                        window.open('https://t.me/TaxiUspehk', '_blank');
+                    }, 500);
+
+                } else {
+                    // Стандартный WhatsApp
+                    const waLink = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
+                    window.open(waLink, '_blank');
+                }
 
                 closeModal(modalId);
                 this.reset();

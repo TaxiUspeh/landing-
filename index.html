@@ -77,10 +77,6 @@
             0% { stroke-dashoffset: 480px; }
             100% { stroke-dashoffset: 960px; }
         }
-        @keyframes colored-circle { 
-            0% { opacity:0; }
-            100% { opacity:100; }
-        }
         .success-checkmark { width: 80px; height: 80px; margin: 0 auto; }
         .success-checkmark circle { 
             fill: none; stroke-width: 4; stroke-miterlimit: 10; stroke: #10b981; 
@@ -115,7 +111,7 @@
             justify-content: center; font-size: 0.875rem; font-weight: 700; 
         }
         
-        /* === MODALS === */
+        /* === MODALS (Базовые стили) === */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center;
@@ -123,11 +119,45 @@
             backdrop-filter: blur(4px); 
         }
         .modal-overlay.active { opacity: 1; visibility: visible; }
+        
+        /* Десктопная версия модалки (по центру) */
         .modal {
             background: white; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; 
             overflow-y: auto; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); transform: scale(0.95);
             transition: transform 0.3s ease, background-color 0.3s;
         }
+
+        /* === BOTTOM SHEET STYLE FOR MOBILE (NEW!) === */
+        /* Только для экранов шириной до 640px (мобильные) */
+        @media (max-width: 640px) {
+            .modal-overlay {
+                align-items: flex-end; /* Прижимаем к низу */
+            }
+            .modal {
+                width: 100%;
+                max-width: 100%;
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+                border-top-left-radius: 20px;
+                border-top-right-radius: 20px;
+                max-height: 85vh; /* Не на весь экран, чтобы видно было затемнение */
+                transform: translateY(100%); /* Спрятано внизу */
+                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            .modal-overlay.active .modal {
+                transform: translateY(0); /* Выезжает вверх */
+            }
+        }
+
+        /* Ручка для шторки */
+        .modal-handle {
+            width: 40px; height: 5px; background: #e5e7eb; border-radius: 10px; margin: 12px auto 8px auto;
+            display: none; /* Скрыто на ПК */
+        }
+        @media (max-width: 640px) {
+            .modal-handle { display: block; } /* Показываем на мобильных */
+        }
+        .dark .modal-handle { background: #4b5563; }
         
         .form-input-control {
              padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; width: 100%;
@@ -611,6 +641,7 @@
     <!-- ========================================================= -->
     <div id="servicesMenuModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
+            <div class="modal-handle"></div> <!-- Ручка для мобильных -->
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">📋 Все услуги Taxi «Успех»</h3>
@@ -675,6 +706,7 @@
     <!-- 1. МОДАЛЬНОЕ ОКНО: ТАКСИ -->
     <div id="taxiModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
+            <div class="modal-handle"></div> <!-- Ручка для мобильных -->
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🚕 Заказать Такси</h3>
@@ -760,6 +792,7 @@
     <!-- 2. МОДАЛЬНОЕ ОКНО: ДОСТАВКА -->
     <div id="deliveryModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
+            <div class="modal-handle"></div> <!-- Ручка для мобильных -->
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🛍️ Доставка Товаров</h3>
@@ -797,6 +830,7 @@
     <!-- 3. МОДАЛЬНОЕ ОКНО: ГРУЗОВОЙ -->
     <div id="cargoModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
+            <div class="modal-handle"></div> <!-- Ручка для мобильных -->
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🚚 Грузовые Перевозки</h3>
@@ -855,6 +889,7 @@
     <!-- 4. МОДАЛЬНОЕ ОКНО: ТРЕЗВЫЙ ВОДИТЕЛЬ -->
     <div id="soberDriverModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
+            <div class="modal-handle"></div> <!-- Ручка для мобильных -->
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🔑 Трезвый Водитель</h3>
@@ -892,6 +927,7 @@
     <!-- 5. МОДАЛЬНОЕ ОКНО: ПОМОЩЬ -->
     <div id="assistanceModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
+            <div class="modal-handle"></div> <!-- Ручка для мобильных -->
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🙋 Помощь / Помощь на дороге</h3>
@@ -945,6 +981,7 @@
     <!-- 6. МОДАЛЬНОЕ ОКНО: АУКЦИОН -->
     <div id="auctionModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
+            <div class="modal-handle"></div> <!-- Ручка для мобильных -->
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🔨 Заказ-Аукцион</h3>
@@ -988,6 +1025,7 @@
 
     <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
         <div class="modal">
+            <div class="modal-handle"></div> <!-- Ручка для мобильных -->
             <div class="p-6">
                 <h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните «Такси Успех» как приложение!</h3>
                 <p class="mb-4 text-gray-700">Чтобы вам не пришлось каждый раз искать ссылку, сохраните нашу промо-страницу прямо на главном экране телефона.</p>
@@ -1013,6 +1051,7 @@
 
     <div id="partnerModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
         <div class="modal">
+            <div class="modal-handle"></div> <!-- Ручка для мобильных -->
             <div class="p-6">
                 <h3 class="text-2xl font-bold mb-4 text-pink-600 flex items-center justify-center"><i class="fas fa-handshake mr-2"></i> Партнерские Услуги</h3>
                 <p class="mb-4 text-gray-800 font-semibold">Здесь будет размещаться реклама и специальные предложения наших партнеров!</p>

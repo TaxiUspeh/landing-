@@ -112,50 +112,64 @@
         }
         
         /* === MODALS (Базовые стили) === */
+        /* Используем единый класс modal-overlay для всех модалок */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center;
             z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
             backdrop-filter: blur(4px); 
         }
+        /* Класс active включает видимость */
         .modal-overlay.active { opacity: 1; visibility: visible; }
         
         /* Десктопная версия модалки (по центру) */
         .modal {
             background: white; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; 
-            overflow-y: auto; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); transform: scale(0.95);
+            overflow-y: auto; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            /* Десктопная анимация масштаба */
+            transform: scale(0.95); 
             transition: transform 0.3s ease, background-color 0.3s;
         }
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
 
-        /* === BOTTOM SHEET STYLE FOR MOBILE (NEW!) === */
-        /* Только для экранов шириной до 640px (мобильные) */
-        @media (max-width: 640px) {
+        /* === BOTTOM SHEET STYLE FOR MOBILE (FORCE APPLY) === */
+        @media (max-width: 768px) {
             .modal-overlay {
-                align-items: flex-end; /* Прижимаем к низу */
+                align-items: flex-end !important; /* Принудительно прижимаем к низу */
             }
             .modal {
-                width: 100%;
-                max-width: 100%;
-                border-bottom-left-radius: 0;
-                border-bottom-right-radius: 0;
-                border-top-left-radius: 20px;
-                border-top-right-radius: 20px;
-                max-height: 85vh; /* Не на весь экран, чтобы видно было затемнение */
-                transform: translateY(100%); /* Спрятано внизу */
-                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                border-bottom-left-radius: 0 !important;
+                border-bottom-right-radius: 0 !important;
+                border-top-left-radius: 20px !important;
+                border-top-right-radius: 20px !important;
+                max-height: 85vh !important;
+                padding-bottom: env(safe-area-inset-bottom, 20px); /* Учет зоны "домой" на iPhone */
+                
+                /* Начальное состояние: спрятано внизу */
+                transform: translateY(100%) !important; 
+                opacity: 1 !important; 
+                transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
             }
+            
             .modal-overlay.active .modal {
-                transform: translateY(0); /* Выезжает вверх */
+                /* Конечное состояние: выехало вверх */
+                transform: translateY(0) !important; 
             }
         }
 
         /* Ручка для шторки */
         .modal-handle {
-            width: 40px; height: 5px; background: #e5e7eb; border-radius: 10px; margin: 12px auto 8px auto;
+            width: 48px; height: 5px; background: #9ca3af; /* Чуть темнее для видимости */
+            border-radius: 10px; margin: 12px auto 8px auto;
             display: none; /* Скрыто на ПК */
         }
-        @media (max-width: 640px) {
-            .modal-handle { display: block; } /* Показываем на мобильных */
+        @media (max-width: 768px) {
+            .modal-handle { display: block !important; } /* Показываем на мобильных */
         }
         .dark .modal-handle { background: #4b5563; }
         
@@ -1023,9 +1037,10 @@
     </div>
 
 
-    <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
+    <!-- PWA MODAL (ОБНОВЛЕН ДЛЯ ШТОРКИ) -->
+    <div id="pwaModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
-            <div class="modal-handle"></div> <!-- Ручка для мобильных -->
+            <div class="modal-handle"></div> 
             <div class="p-6">
                 <h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните «Такси Успех» как приложение!</h3>
                 <p class="mb-4 text-gray-700">Чтобы вам не пришлось каждый раз искать ссылку, сохраните нашу промо-страницу прямо на главном экране телефона.</p>
@@ -1044,14 +1059,15 @@
                         <li>Выберите **«Добавить на главный экран»**.</li>
                     </ol>
                 </div>
-                <button onclick="document.getElementById('pwaModal').classList.add('hidden')" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">Понятно</button>
+                <button onclick="closeModal('pwaModal')" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">Понятно</button>
             </div>
         </div>
     </div>
 
-    <div id="partnerModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
+    <!-- PARTNER MODAL (ОБНОВЛЕН ДЛЯ ШТОРКИ) -->
+    <div id="partnerModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
-            <div class="modal-handle"></div> <!-- Ручка для мобильных -->
+            <div class="modal-handle"></div> 
             <div class="p-6">
                 <h3 class="text-2xl font-bold mb-4 text-pink-600 flex items-center justify-center"><i class="fas fa-handshake mr-2"></i> Партнерские Услуги</h3>
                 <p class="mb-4 text-gray-800 font-semibold">Здесь будет размещаться реклама и специальные предложения наших партнеров!</p>
@@ -1059,7 +1075,7 @@
                     <h4 class="text-lg font-bold text-gray-700">Хотите стать нашим Партнером?</h4>
                     <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20обсудить%20размещение%20рекламы%20на%20вашей%20промо-странице%20такси." target="_blank" class="w-full inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition btn-active">Связаться по рекламе</a>
                 </div>
-                <button onclick="document.getElementById('partnerModal').classList.add('hidden')" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">Закрыть</button>
+                <button onclick="closeModal('partnerModal')" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">Закрыть</button>
             </div>
         </div>
     </div>
@@ -1679,17 +1695,20 @@
             // Если это УСПЕХ, показываем красивую анимацию
             if (!isError && (title === 'Заказ сформирован!' || title === 'Готово!')) {
                  const modalHtml = `
-                    <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-60 z-[2000] flex items-center justify-center p-4">
-                        <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center transform transition-all scale-100">
-                            <div class="success-checkmark mb-4">
-                                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130.2 130.2">
-                                  <circle class="path circle" fill="none" stroke="#10b981" stroke-width="6" stroke-miterlimit="10" cx="65.1" cy="65.1" r="62.1"/>
-                                  <polyline class="path check" fill="none" stroke="#10b981" stroke-width="6" stroke-linecap="round" stroke-miterlimit="10" points="100.2,40.2 51.5,88.8 29.8,67.5 "/>
-                                </svg>
+                    <div id="alertModal" class="modal-overlay active" aria-hidden="false" role="dialog">
+                        <div class="modal">
+                            <div class="modal-handle"></div>
+                            <div class="p-8 text-center">
+                                <div class="success-checkmark mb-4">
+                                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130.2 130.2">
+                                      <circle class="path circle" fill="none" stroke="#10b981" stroke-width="6" stroke-miterlimit="10" cx="65.1" cy="65.1" r="62.1"/>
+                                      <polyline class="path check" fill="none" stroke="#10b981" stroke-width="6" stroke-linecap="round" stroke-miterlimit="10" points="100.2,40.2 51.5,88.8 29.8,67.5 "/>
+                                    </svg>
+                                </div>
+                                <h3 class="text-2xl font-bold mb-2 text-gray-800 dark:text-gray-200">${title}</h3>
+                                <p class="mb-6 text-gray-600 dark:text-gray-300 text-sm">${message}</p>
+                                <button onclick="document.getElementById('alertModal').remove()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition transform hover:scale-105 btn-active">Отлично</button>
                             </div>
-                            <h3 class="text-2xl font-bold mb-2 text-gray-800 dark:text-white">${title}</h3>
-                            <p class="mb-6 text-gray-600 dark:text-gray-300 text-sm">${message}</p>
-                            <button onclick="document.getElementById('alertModal').remove()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition transform hover:scale-105 btn-active">Отлично</button>
                         </div>
                     </div>
                 `;
@@ -1698,11 +1717,14 @@
             }
 
             const modalHtml = `
-                <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-sm text-center">
-                        <h3 class="text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}">${title}</h3>
-                        <p class="mb-6 text-gray-700 dark:text-gray-300">${message}</p>
-                        <button onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">OK</button>
+                <div id="alertModal" class="modal-overlay active" aria-hidden="false" role="dialog">
+                    <div class="modal">
+                         <div class="modal-handle"></div>
+                         <div class="p-6 text-center">
+                            <h3 class="text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}">${title}</h3>
+                            <p class="mb-6 text-gray-700 dark:text-gray-300">${message}</p>
+                            <button onclick="document.getElementById('alertModal').remove()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">OK</button>
+                         </div>
                     </div>
                 </div>
             `;
@@ -2080,9 +2102,21 @@
 
         window.showPWAInstructions = function() {
             document.getElementById('pwaModal').classList.remove('hidden');
+            // Manual activation for PWA modal since it doesn't use openModal
+             const pwaModal = document.getElementById('pwaModal');
+             if (pwaModal) {
+                 pwaModal.classList.add('active');
+                 pwaModal.setAttribute('aria-hidden', 'false');
+             }
         }
         window.showPartnerModal = function() {
             document.getElementById('partnerModal').classList.remove('hidden');
+             // Manual activation for Partner modal since it doesn't use openModal
+             const partnerModal = document.getElementById('partnerModal');
+             if (partnerModal) {
+                 partnerModal.classList.add('active');
+                 partnerModal.setAttribute('aria-hidden', 'false');
+             }
         }
 
     </script>

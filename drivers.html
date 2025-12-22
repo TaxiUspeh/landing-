@@ -56,12 +56,78 @@
         .rotate-icon.rotated {
             transform: rotate(180deg);
         }
+
+        /* Анимация появления */
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+            will-change: opacity, visibility;
+        }
+        .fade-in-section.is-visible {
+            opacity: 1;
+            transform: none;
+        }
+        
+        /* Стили ползунка калькулятора (ИСПРАВЛЕНО) */
+        input[type=range] {
+            -webkit-appearance: none; /* Убираем дефолтный стиль */
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb; /* Светлый фон полоски (gray-200) */
+            border-radius: 5px;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .dark input[type=range] {
+            background: #374151; /* Темный фон полоски (gray-700) */
+        }
+        
+        /* Стиль "бегунка" для Chrome, Safari, Edge */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #2563eb; /* Синий цвет (blue-600) */
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.1); /* Увеличение при наведении */
+        }
+
+        /* Стиль "бегунка" для Firefox */
+        input[type=range]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-moz-range-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        /* Отступ для плавающей кнопки на мобильных */
+        body { padding-bottom: 80px; }
+        @media (min-width: 768px) {
+            body { padding-bottom: 0; }
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors-custom">
 
     <!-- HEADER -->
-    <header class="header-bg text-white py-8 rounded-b-2xl shadow-xl relative">
+    <header class="header-bg text-white py-8 rounded-b-2xl shadow-xl relative fade-in-section is-visible">
         <!-- Кнопка переключения темы -->
         <button onclick="toggleTheme()" class="absolute top-4 right-4 bg-white/20 hover:bg-white/30 p-2 rounded-full backdrop-blur-sm transition">
             <i id="theme-icon" class="fas fa-moon text-yellow-300 text-xl"></i>
@@ -81,7 +147,7 @@
     <main class="max-w-3xl mx-auto px-4 py-8 flex-grow w-full">
 
         <!-- Основные действия -->
-        <div class="flex flex-col gap-4 mb-12">
+        <div class="flex flex-col gap-4 mb-12 fade-in-section">
             <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md border-l-4 border-green-500">
                 <h2 class="text-xl font-bold mb-2">Хочешь зарабатывать?</h2>
                 <p class="text-gray-600 dark:text-gray-300 mb-4">Нажми кнопку ниже, чтобы отправить заявку диспетчеру в WhatsApp.</p>
@@ -93,7 +159,6 @@
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <!-- НОВАЯ КНОПКА: Режим Пассажира -->
                 <a href="https://taxiuspeh.github.io/landing-/" target="_blank"
                    class="btn-hover bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
                     <i class="fas fa-street-view"></i>
@@ -113,10 +178,40 @@
             </div>
         </div>
 
+        <!-- NEW: Интерактивный калькулятор заработка -->
+        <div class="mb-12 fade-in-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+            <h3 class="text-2xl font-bold text-center mb-6">Калькулятор дохода</h3>
+            
+            <div class="mb-8">
+                <div class="flex justify-between mb-2">
+                    <span class="text-gray-500 dark:text-gray-400 font-medium">Часов на линии в день:</span>
+                    <span class="text-blue-600 dark:text-blue-400 font-bold text-xl" id="hours-display">4 часа</span>
+                </div>
+                <input type="range" min="1" max="12" value="4" id="hours-range" 
+                       class="w-full">
+                <div class="flex justify-between text-xs text-gray-400 mt-2">
+                    <span>1 час</span>
+                    <span>12 часов</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl text-center">
+                    <p class="text-gray-500 dark:text-gray-400 text-sm mb-1">Доход в день</p>
+                    <p class="text-2xl font-black text-gray-800 dark:text-white" id="daily-income">~6 000 ₸</p>
+                </div>
+                <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl text-center border border-blue-100 dark:border-blue-800/30">
+                    <p class="text-blue-600 dark:text-blue-300 text-sm mb-1">Доход в месяц</p>
+                    <p class="text-2xl font-black text-blue-600 dark:text-blue-400" id="monthly-income">~150 000 ₸</p>
+                    <p class="text-[10px] text-gray-400 mt-1">*при графике 6/1</p>
+                </div>
+            </div>
+            <p class="text-center text-xs text-gray-400 mt-4">*Расчет примерный, зависит от количества заказов</p>
+        </div>
+
         <!-- Как начать (Steps) -->
-        <h3 class="text-2xl font-bold text-center mb-6">Как начать работу?</h3>
-        <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-12 relative">
-            <!-- Линия соединения для десктопа -->
+        <h3 class="text-2xl font-bold text-center mb-6 fade-in-section">Как начать работу?</h3>
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-12 relative fade-in-section">
             <div class="hidden md:block absolute top-1/2 left-0 w-full h-1 bg-gray-200 dark:bg-gray-700 -z-10 transform -translate-y-1/2"></div>
 
             <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm text-center w-full md:w-1/3 relative">
@@ -138,49 +233,8 @@
             </div>
         </div>
 
-        <!-- FAQ (Аккордеон) -->
-        <h3 class="text-2xl font-bold text-center mb-6">Частые вопросы</h3>
-        <div class="space-y-3 mb-10">
-            <!-- Вопрос 1 -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-                <button onclick="toggleFaq(this)" class="w-full px-6 py-4 text-left flex justify-between items-center font-bold focus:outline-none">
-                    <span>Какой график работы?</span>
-                    <i class="fas fa-chevron-down text-gray-400 rotate-icon"></i>
-                </button>
-                <div class="faq-content bg-gray-50 dark:bg-gray-700/30">
-                    <div class="px-6 py-4 text-gray-600 dark:text-gray-300 text-sm">
-                        График абсолютно свободный. Вы выходите на линию тогда, когда вам удобно. Никаких обязательных смен.
-                    </div>
-                </div>
-            </div>
-            <!-- Вопрос 2 -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-                <button onclick="toggleFaq(this)" class="w-full px-6 py-4 text-left flex justify-between items-center font-bold focus:outline-none">
-                    <span>Как получать заказы?</span>
-                    <i class="fas fa-chevron-down text-gray-400 rotate-icon"></i>
-                </button>
-                <div class="faq-content bg-gray-50 dark:bg-gray-700/30">
-                    <div class="px-6 py-4 text-gray-600 dark:text-gray-300 text-sm">
-                        Все заказы публикуются в нашей закрытой группе WhatsApp. Вы видите маршрут и цену, и если заказ вам подходит — берете его.
-                    </div>
-                </div>
-            </div>
-            <!-- Вопрос 3 -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-                <button onclick="toggleFaq(this)" class="w-full px-6 py-4 text-left flex justify-between items-center font-bold focus:outline-none">
-                    <span>Какие требования к авто?</span>
-                    <i class="fas fa-chevron-down text-gray-400 rotate-icon"></i>
-                </button>
-                <div class="faq-content bg-gray-50 dark:bg-gray-700/30">
-                    <div class="px-6 py-4 text-gray-600 dark:text-gray-300 text-sm">
-                        Автомобиль должен быть в технически исправном состоянии, чистым внутри и снаружи. Марка и год выпуска обсуждаются индивидуально.
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Преимущества -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12 fade-in-section">
             <div class="advantage-card bg-white dark:bg-gray-800 shadow p-5 rounded-2xl text-center">
                 <i class="fas fa-wallet text-3xl mb-2 text-green-500"></i>
                 <p class="font-bold">Выплаты сразу</p>
@@ -194,30 +248,136 @@
                 <p class="font-bold">Поддержка 24/7</p>
             </div>
         </div>
+        
+        <!-- NEW: Блок "Приведи друга" -->
+        <div class="mb-12 fade-in-section bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 bg-white/10 w-40 h-40 rounded-full blur-2xl"></div>
+            <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="text-center md:text-left">
+                    <h3 class="text-2xl font-bold mb-2">Приведи друга — получи бонус!</h3>
+                    <p class="text-purple-100">Если ваш друг устроится к нам водителем по вашей рекомендации, вы получите приятный денежный бонус.</p>
+                </div>
+                <div class="flex-shrink-0">
+                    <a href="https://wa.me/77770649648?text=Хочу%20узнать%20про%20акцию%20«Приведи%20друга»" target="_blank"
+                       class="inline-block bg-white text-purple-700 hover:bg-purple-50 font-bold py-3 px-6 rounded-xl shadow transition-transform transform hover:scale-105">
+                        Узнать подробнее
+                    </a>
+                </div>
+            </div>
+        </div>
 
-        <p class="text-center mt-12 text-gray-500 dark:text-gray-400 font-medium">
+        <!-- Отзывы водителей -->
+        <div class="mb-12 fade-in-section">
+            <h3 class="text-2xl font-bold text-center mb-6">Отзывы наших водителей</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-gray-500 dark:text-gray-400"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-sm">Александр</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Стаж 2 года</p>
+                        </div>
+                        <div class="ml-auto text-yellow-400 text-xs">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 italic">"Отличный вариант для подработки. Нравится, что график полностью мой — выхожу после основной работы на пару часов."</p>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-gray-500 dark:text-gray-400"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-sm">Сергей</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Стаж 5 лет</p>
+                        </div>
+                        <div class="ml-auto text-yellow-400 text-xs">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 italic">"Работаю постоянно. Главный плюс — живые деньги сразу на руки. Диспетчеры всегда на связи, помогают если что."</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ (Аккордеон) -->
+        <h3 class="text-2xl font-bold text-center mb-6 fade-in-section">Частые вопросы</h3>
+        <div class="space-y-3 mb-10 fade-in-section">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                <button onclick="toggleFaq(this)" class="w-full px-6 py-4 text-left flex justify-between items-center font-bold focus:outline-none">
+                    <span>Какой график работы?</span>
+                    <i class="fas fa-chevron-down text-gray-400 rotate-icon"></i>
+                </button>
+                <div class="faq-content bg-gray-50 dark:bg-gray-700/30">
+                    <div class="px-6 py-4 text-gray-600 dark:text-gray-300 text-sm">
+                        График абсолютно свободный. Вы выходите на линию тогда, когда вам удобно. Никаких обязательных смен.
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                <button onclick="toggleFaq(this)" class="w-full px-6 py-4 text-left flex justify-between items-center font-bold focus:outline-none">
+                    <span>Как получать заказы?</span>
+                    <i class="fas fa-chevron-down text-gray-400 rotate-icon"></i>
+                </button>
+                <div class="faq-content bg-gray-50 dark:bg-gray-700/30">
+                    <div class="px-6 py-4 text-gray-600 dark:text-gray-300 text-sm">
+                        Все заказы публикуются в нашей закрытой группе WhatsApp. Вы видите маршрут и цену, и если заказ вам подходит — берете его.
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                <button onclick="toggleFaq(this)" class="w-full px-6 py-4 text-left flex justify-between items-center font-bold focus:outline-none">
+                    <span>Какие требования к авто?</span>
+                    <i class="fas fa-chevron-down text-gray-400 rotate-icon"></i>
+                </button>
+                <div class="faq-content bg-gray-50 dark:bg-gray-700/30">
+                    <div class="px-6 py-4 text-gray-600 dark:text-gray-300 text-sm">
+                        Автомобиль должен быть в технически исправном состоянии, чистым внутри и снаружи. Марка и год выпуска обсуждаются индивидуально.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-center mt-12 text-gray-500 dark:text-gray-400 font-medium fade-in-section">
             Остались вопросы? <br>
             <a href="tel:+77770649648" class="text-blue-600 dark:text-blue-400 hover:underline font-bold text-lg">+7 777 064 96 48</a>
         </p>
     </main>
 
     <!-- FOOTER -->
-    <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-6 mt-auto">
+    <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-6 mt-auto fade-in-section">
         <div class="text-center">
             <p class="text-sm text-gray-500 mb-2">Такси «Успех» © 2025</p>
-            <!-- Ссылка ведет на эту же страницу (как главную для водителей) -->
             <a href="https://taxiuspeh.github.io/landing-/drivers.html" class="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline font-medium">
                 <i class="fas fa-home mr-2"></i> Главная (Водители)
             </a>
         </div>
     </footer>
 
+    <!-- NEW: Sticky CTA Button (Visible mainly on mobile via CSS handling) -->
+    <div class="fixed bottom-0 left-0 w-full p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-[0_-5px_15px_rgba(0,0,0,0.1)] md:hidden z-50">
+        <div class="flex gap-2">
+            <a href="tel:+77770649648" 
+               class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-800 dark:text-white p-3 rounded-xl shadow-md flex items-center justify-center w-14">
+                <i class="fas fa-phone-alt"></i>
+            </a>
+            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20работать%20в%20Такси%20«Успех»." target="_blank"
+               class="bg-green-600 hover:bg-green-700 text-white flex-grow py-3 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
+                <i class="fab fa-whatsapp text-2xl"></i>
+                <span>Стать водителем</span>
+            </a>
+        </div>
+    </div>
+
     <script>
         // Логика переключения темы
         const html = document.documentElement;
         const themeIcon = document.getElementById('theme-icon');
 
-        // Проверка сохраненной темы
         if (localStorage.getItem('theme') === 'dark' || 
            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             html.classList.add('dark');
@@ -245,15 +405,62 @@
         function toggleFaq(button) {
             const content = button.nextElementSibling;
             const icon = button.querySelector('.rotate-icon');
-            
-            // Закрываем другие открытые элементы (опционально)
-            // document.querySelectorAll('.faq-content').forEach(el => {
-            //     if (el !== content) el.classList.remove('open');
-            // });
-
             content.classList.toggle('open');
             icon.classList.toggle('rotated');
         }
+
+        // Логика анимации при прокрутке
+        document.addEventListener('DOMContentLoaded', () => {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.fade-in-section').forEach(section => {
+                observer.observe(section);
+            });
+            
+            // Логика Калькулятора
+            const slider = document.getElementById('hours-range');
+            const hoursDisplay = document.getElementById('hours-display');
+            const dailyIncomeDisplay = document.getElementById('daily-income');
+            const monthlyIncomeDisplay = document.getElementById('monthly-income');
+            
+            // Базовая ставка в час (примерная, для расчета)
+            const hourlyRate = 1500; 
+
+            function updateCalculator() {
+                const hours = slider.value;
+                const daily = hours * hourlyRate;
+                const monthly = daily * 26; // 26 рабочих дней
+                
+                // Форматирование с пробелами (например 1 500)
+                const formatNum = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+                
+                hoursDisplay.textContent = `${hours} ч.`;
+                // Окончания для слова "час"
+                if(hours == 1) hoursDisplay.textContent = `${hours} час`;
+                else if(hours >= 2 && hours <= 4) hoursDisplay.textContent = `${hours} часа`;
+                else hoursDisplay.textContent = `${hours} часов`;
+
+                dailyIncomeDisplay.textContent = `~${formatNum(daily)} ₸`;
+                monthlyIncomeDisplay.textContent = `~${formatNum(monthly)} ₸`;
+            }
+
+            slider.addEventListener('input', updateCalculator);
+            // Инициализация
+            updateCalculator();
+        });
     </script>
 </body>
 </html>

@@ -229,17 +229,19 @@
 
 <body class="text-gray-900 min-h-screen flex flex-col">
 
-    <!-- HEADER -->
-    <header class="header-bg text-white py-10 rounded-b-xl shadow-xl relative">
-        <div class="absolute top-4 right-4">
+    <!-- HEADER (УМЕНЬШЕННЫЙ) -->
+    <header class="header-bg text-white py-4 rounded-b-lg shadow-lg relative">
+        <div class="absolute top-2 right-2">
             <button id="themeToggle" onclick="toggleTheme()" class="text-white p-2 rounded-full bg-black bg-opacity-10 hover:bg-opacity-30 transition-all focus:outline-none z-50 btn-active">
-                <i id="themeIcon" class="fas fa-moon text-xl"></i>
+                <i id="themeIcon" class="fas fa-moon text-lg"></i>
             </button>
         </div>
         <div class="max-w-md mx-auto px-4 text-center">
-            <i class="fas fa-taxi text-4xl text-yellow-300 mb-2"></i>
-            <h1 class="text-4xl font-extrabold tracking-tight mb-1">Такси «Успех»</h1>
-            <p class="text-white text-lg">Ваш комфорт в посёлке Белоусовка.</p>
+            <div class="flex items-center justify-center gap-2 mb-1">
+                <i class="fas fa-taxi text-2xl text-yellow-300"></i>
+                <h1 class="text-2xl font-extrabold tracking-tight">Такси «Успех»</h1>
+            </div>
+            <p class="text-white text-sm opacity-90">Ваш комфорт в посёлке Белоусовка.</p>
         </div>
     </header>
 
@@ -678,7 +680,13 @@
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🚕 Заказать Такси</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="taxiModal">×</button>
+                    <div class="flex gap-2">
+                         <!-- BUTTON FOR ORDER HISTORY (IN MODAL) -->
+                        <button onclick="window.openModal('historyModal'); window.renderOrderHistory();" class="text-gray-400 hover:text-blue-600 text-2xl" title="Полная история">
+                            <i class="fas fa-list-alt"></i>
+                        </button>
+                        <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="taxiModal">×</button>
+                    </div>
                 </div>
                 <form id="taxiForm" class="space-y-4">
                     <div id="addressInputsTaxi">
@@ -984,6 +992,22 @@
             </div>
         </div>
     </div>
+    
+    <!-- HISTORY MODAL (ДЛЯ ПОЛНОЙ ИСТОРИИ) -->
+    <div id="historyModal" class="modal-overlay" aria-hidden="true">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-black text-gray-800 dark:text-white uppercase tracking-tighter">📜 ИСТОРИЯ ЗАКАЗОВ</h3>
+                    <button onclick="window.closeModal('historyModal')" class="text-2xl text-gray-400 hover:text-gray-600 btn-active">&times;</button>
+                </div>
+                <div id="fullHistoryContainer" class="space-y-4 max-h-[60vh] overflow-y-auto">
+                    <!-- Заказы будут здесь -->
+                    <div class="text-center text-gray-400 py-10">Пока нет истории поездок</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
@@ -1047,6 +1071,7 @@
         
         // --- НОВОЕ: КЛЮЧ ДЛЯ LocalStorage ---
         const LOCAL_STORAGE_HISTORY_KEY = 'taxi_address_history_v1';
+        const FULL_HISTORY_KEY = 'taxi_full_orders_history';
 
         async function initFirebaseAndAuth() {
             if (!firebaseConfig) {
@@ -1132,6 +1157,28 @@
             await setAddressHistory();
         }
 
+        // --- ЛОГИКА СОХРАНЕНИЯ ПОЛНОГО ЗАКАЗА ---
+        window.saveOrderToFullHistory = function(from, to, price) {
+            const now = new Date();
+            const order = {
+                id: Date.now(),
+                date: now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
+                time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+                from: from,
+                to: to,
+                price: price
+            };
+            
+            let orders = JSON.parse(localStorage.getItem(FULL_HISTORY_KEY) || '[]');
+            orders.unshift(order); // Add to beginning
+            if(orders.length > 50) orders = orders.slice(0, 50); // Keep last 50
+            localStorage.setItem(FULL_HISTORY_KEY, JSON.stringify(orders));
+            
+            // Если есть виджет на главной странице, обновляем его? 
+            // В данной версии виджет истории удален с главной по просьбе "шапку поменьше", 
+            // но функция осталась для модального окна истории.
+        };
+
         async function populateDatalist(datalistId) {
             const historyArray = await loadAddresses();
             const datalist = document.getElementById(datalistId);
@@ -1197,6 +1244,47 @@
              await populateDatalist('toHistory');
              await renderHistoryChips();
         }
+        
+        // --- РЕНДЕРИНГ ИСТОРИИ В МОДАЛЬНОМ ОКНЕ ---
+        window.renderOrderHistory = function() {
+            const container = document.getElementById('fullHistoryContainer');
+            const orders = JSON.parse(localStorage.getItem(FULL_HISTORY_KEY) || '[]');
+            
+            if(orders.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-10">История поездок пуста</div>';
+                return;
+            }
+
+            container.innerHTML = orders.map(order => `
+                <div class="p-3 border-b flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700" onclick="window.repeatOrder('${order.from}', '${order.to}')">
+                    <div class="flex-grow">
+                        <div class="text-xs text-gray-400 font-bold mb-1">${order.date} в ${order.time}</div>
+                        <div class="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                            <i class="far fa-dot-circle text-blue-500 text-xs"></i> ${order.from}
+                        </div>
+                        <div class="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2 mt-1">
+                            <i class="fas fa-map-marker-alt text-red-500 text-xs"></i> ${order.to}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-bold text-gray-900 dark:text-green-400">${order.price}</div>
+                        <div class="text-[10px] text-blue-500 uppercase mt-1">Повторить</div>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.repeatOrder = function(from, to, openModalFlag = false) {
+            document.getElementById('taxiFrom').value = from;
+            document.getElementById('taxiTo').value = to;
+            updateTaxiPrice();
+            
+            if(openModalFlag) {
+                window.openModal('taxiModal');
+            } else {
+                window.closeModal('historyModal');
+            }
+        };
 
         initFirebaseAndAuth();
 
@@ -1324,7 +1412,6 @@
              return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
         
-        // --- 1. АВТО-ФОРМАТИРОВАНИЕ НОМЕРА ТЕЛЕФОНА (MASK) ---
         function initPhoneMask() {
             const phoneInput = document.getElementById('passengerPhone');
             if(phoneInput) {
@@ -1339,11 +1426,10 @@
             }
         }
         
-        // Добавляем глобальный слушатель для вибрации при клике
         document.addEventListener('click', (e) => {
             if (e.target.closest('button') || e.target.closest('a')) {
                  if (navigator.vibrate) {
-                     navigator.vibrate(5); // Очень короткая вибрация
+                     navigator.vibrate(5); 
                  }
             }
         });
@@ -1351,15 +1437,13 @@
         document.addEventListener('DOMContentLoaded', () => {
              loadTheme(); 
              checkAndShowAnnouncement();
-             initPhoneMask(); // Запуск маски
-             // --- ВАЖНО: Загружаем адреса сразу из LS при старте ---
+             initPhoneMask(); 
              setAddressHistory(); 
              
              const formattedNow = getFormattedCurrentTime();
              const taxiDateTimeInput = document.getElementById('taxiDateTime');
              if (taxiDateTimeInput) {
                  taxiDateTimeInput.value = formattedNow;
-                 // --- 2. ЗАЩИТА ОТ ПРОШЛОГО (MIN DATE) ---
                  taxiDateTimeInput.min = new Date().toISOString().slice(0, 16);
              }
              const cargoDateTimeInput = document.getElementById('cargoDateTime');
@@ -1529,13 +1613,11 @@
             const toInput = document.getElementById('taxiTo');
             const destination = toInput ? toInput.value.trim().toLowerCase() : '';
             
-            // --- 3. УМНЫЙ РАСЧЕТ ЦЕНЫ (Очистка от "г.", "город" и т.д.) ---
             const cleanDestination = destination.replace(/^(г\.|город\s+|п\.|пос\.|поселок\s+|с\.|село\s+)/i, '').trim();
             
             let priceText;
             let isIntercity = false;
             for (const location in INTERCITY_PRICES) {
-                // Сравнение с очищенным адресом
                 if (cleanDestination.startsWith(location)) {
                     priceText = INTERCITY_PRICES[location];
                     isIntercity = true;
@@ -1595,7 +1677,6 @@
                     const form = document.getElementById(modalId.replace('Modal', 'Form'));
                     if (form) form.reset();
                 } else if (modalId === 'servicesMenuModal') {
-                    // ничего не сбрасываем, просто закрываем
                 } else {
                     const form = document.getElementById(modalId.replace('Modal', 'Form'));
                     if (form) form.reset();
@@ -1637,7 +1718,6 @@
             const existingModal = document.getElementById('alertModal');
             if (existingModal) existingModal.remove();
             
-            // Если это УСПЕХ, показываем красивую анимацию
             if (!isError && (title === 'Заказ сформирован!' || title === 'Готово!')) {
                  const modalHtml = `
                     <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-60 z-[2000] flex items-center justify-center p-4">
@@ -1714,12 +1794,8 @@
             }
         }
         
-        // --- ЛОГИКА УНИВЕРСАЛЬНОГО МЕНЮ (WHATSAPP И TELEGRAM) ---
         window.openServicesMenu = function(mode) {
-            // Устанавливаем режим: 'whatsapp' или 'telegram'
             orderDestination = mode;
-            
-            // Показываем/скрываем ссылку на канал Telegram в зависимости от режима
             const footer = document.getElementById('servicesMenuFooter');
             if (footer) {
                 if (mode === 'telegram') {
@@ -1728,12 +1804,10 @@
                     footer.classList.add('hidden');
                 }
             }
-
             openModal('servicesMenuModal');
         }
 
         window.openServiceFromMenu = function(serviceKey) {
-            // Закрываем меню и открываем нужный сервис
             closeModal('servicesMenuModal');
             setTimeout(() => {
                 if (MODALS[serviceKey]) {
@@ -1742,7 +1816,6 @@
             }, 100);
         }
         
-        // Вспомогательная функция для копирования текста в буфер обмена
         function copyToClipboard(text) {
             const textarea = document.createElement('textarea');
             textarea.value = text;
@@ -1751,17 +1824,13 @@
             textarea.style.left = '-9999px';
             document.body.appendChild(textarea);
             textarea.select();
-            
             try {
                 document.execCommand('copy');
             } catch (err) {
                 console.error('Failed to copy', err);
             }
-            
             document.body.removeChild(textarea);
         }
-
-        // --- НОВЫЕ ФУНКЦИИ: ПОМЕНЯТЬ МЕСТАМИ, ДОБАВИТЬ ПОЖЕЛАНИЕ, ПОДЕЛИТЬСЯ ---
 
         window.swapTaxiAddresses = function() {
             const fromEl = document.getElementById('taxiFrom');
@@ -1770,7 +1839,6 @@
             fromEl.value = toEl.value;
             toEl.value = temp;
             
-            // Запускаем пересчет цены
             updateTaxiPrice();
         }
 
@@ -1778,7 +1846,6 @@
             const wishEl = document.getElementById('taxiWishes');
             let currentText = wishEl.value.trim();
             
-            // Простая логика: если текста нет, ставим. Если есть, добавляем через запятую.
             if (!currentText) {
                 wishEl.value = text;
             } else if (!currentText.includes(text)) {
@@ -1796,7 +1863,6 @@
                 if (navigator.share) {
                     await navigator.share(shareData);
                 } else {
-                    // Fallback
                     copyToClipboard(window.location.href);
                     displayMessageModal('Ссылка скопирована', 'Ссылка на приложение скопирована в буфер обмена. Отправьте её друзьям!', false);
                 }
@@ -1807,8 +1873,6 @@
         
         document.querySelectorAll('.service-btn').forEach(button => {
             button.addEventListener('click', () => {
-                // Если кликнули на кнопку с классом service-btn, но без явного вызова меню
-                // (например, плитки внизу "Доставка" и т.д.), сбрасываем в WhatsApp по умолчанию
                 orderDestination = 'whatsapp';
                 const service = button.getAttribute('data-service');
                 if (MODALS[service]) openModal(MODALS[service].id);
@@ -1910,13 +1974,11 @@
                         if (isPreorderOpen) message = handlePreorder('taxiDateTime', modalConfig.prefix);
                         else message = `${modalConfig.prefix}\n\n`;
                         
-                        // --- ИЗМЕНЕНИЕ: Возврат формата с "Откуда" и "Куда" ---
                         if (!fromAddress) requiredFieldsMissing = true;
                         if (!toAddress) requiredFieldsMissing = true;
                         
                         message += `Откуда:\n${fromAddress}\n\n`;
                         message += `Куда:\n${toAddress}\n\n`;
-                        // ----------------------------------------------------------------------
                         
                         if (wishes) message += `*Пожелания*:\n${wishes}\n\n`;
                         let stopMessage = collectStops('additionalStops');
@@ -1933,6 +1995,11 @@
                         message += `💰 Примерная цена: ${currentPriceText} (уточнит водитель)`;
                         if (fromAddress) addressesToSave.push(fromAddress);
                         if (toAddress) addressesToSave.push(toAddress);
+                        
+                        // Сохраняем в полную историю заказа
+                        if (fromAddress && toAddress) {
+                            saveOrderToFullHistory(fromAddress, toAddress, currentPriceText);
+                        }
                         break;
                     case 'auction':
                         const auctionPrice = document.getElementById('auctionPrice').value;
@@ -2010,28 +2077,25 @@
                     await saveAddress(address);
                 }
 
-                // VIBRATION FOR EVERYONE (ПЕРЕНЕСЕНО СЮДА)
                 if (navigator.vibrate) {
                     navigator.vibrate(200); 
                 }
 
-                // Логика перенаправления
                 if (orderDestination === 'telegram') {
                     copyToClipboard(message);
                     
                     displayMessageModal('Заказ сформирован!', 'Текст заказа скопирован. Сейчас откроется Telegram — просто вставьте текст в чат.', false);
                     setTimeout(() => {
                         window.open('https://t.me/TaxiUspehk', '_blank');
-                    }, 1500); // 1.5 секунды задержки для Telegram
+                    }, 1500); 
 
                 } else {
-                    // Стандартный WhatsApp (ТЕПЕРЬ ТОЖЕ С АНИМАЦИЕЙ)
                     displayMessageModal('Заказ сформирован!', 'Переходим в WhatsApp для отправки сообщения...', false);
                     
                     setTimeout(() => {
                          const waLink = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
                          window.open(waLink, '_blank');
-                    }, 1000); // 1 секунда задержки для WhatsApp, чтобы увидеть галочку
+                    }, 1000); 
                 }
 
                 closeModal(modalId);

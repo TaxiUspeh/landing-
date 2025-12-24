@@ -565,7 +565,6 @@
             { id: 'lavash_firm', category: 'garnishes', name: 'Лаваш фирменный', price: 300, desc: 'Армянский лаваш, обжаренный с паприкой и зеленью.', img: 'https://placehold.co/500x350/F5DEB3/000000?text=ЛАВАШ' }
         ];
 
-        // ... (Data Maps - SAME) ...
         const menuCategories = {
             hits: { name: "Хиты", icon: "⭐" },
             hot_dishes: { name: "Горячие блюда", icon: "🍲" }, 
@@ -595,7 +594,6 @@
         const apiKey = ""; 
         const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
         
-        // ... (Gemini API Functions - SAME) ...
         async function callGeminiAPI(payload, maxRetries = 5) {
             let attempt = 0;
             while (attempt < maxRetries) {
@@ -698,20 +696,14 @@
             if(!dateInput.value) dateInput.value = today;
         }
 
-        // ФУНКЦИЯ ДЛЯ ЗАКАЗА БАНКЕТА ИЗ МОДАЛЬНОГО ОКНА (ВОЗВРАЩЕНА)
         function openBanquetBooking() {
             hideBanquetModal();
             showModal('booking-modal');
-            
-            // Автозаполнение формы для банкета
             const typeSelect = document.getElementById('book-type');
             const guestsSelect = document.getElementById('book-guests');
             const dateInput = document.getElementById('book-date');
-            
             if(typeSelect) typeSelect.value = 'Банкет';
             if(guestsSelect) guestsSelect.value = '10+';
-            
-            // Ставим текущую дату, если пусто
             const today = new Date().toISOString().split('T')[0];
             if(dateInput && !dateInput.value) dateInput.value = today;
         }
@@ -754,6 +746,28 @@
             const url = `https://wa.me/77055071640?text=${encodeURIComponent(message)}`;
             window.open(url, '_blank');
             hideCallbackModal();
+        }
+
+        // --- Sharing Logic ---
+        function shareApp() {
+            const shareData = {
+                title: 'Шашлычный Двор | Доставка по Белоусовке',
+                text: 'Заказывайте вкусный шашлык на углях с доставкой!',
+                url: 'https://taxiuspeh.github.io/landing-/SHASHDVOR.html'
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData).catch(err => console.log('Error sharing:', err));
+            } else {
+                // Fallback: Copy to clipboard
+                const dummy = document.createElement('input');
+                document.body.appendChild(dummy);
+                dummy.value = shareData.url;
+                dummy.select();
+                document.execCommand('copy');
+                document.body.removeChild(dummy);
+                showNotification('Ссылка скопирована в буфер обмена!');
+            }
         }
 
         // --- Cart Logic ---
@@ -879,11 +893,9 @@
 
         function placeOrder() {
             if (cart.length === 0) return;
-            
             const name = document.getElementById('order-name').value.trim();
             const address = document.getElementById('order-address').value.trim();
             const comment = document.getElementById('order-comment').value.trim();
-            
             if (!address) {
                 showNotification('❗ Пожалуйста, укажите адрес доставки!');
                 const addressInput = document.getElementById('order-address');
@@ -892,7 +904,6 @@
                 setTimeout(() => addressInput.classList.remove('border-red-500'), 2000);
                 return;
             }
-
             let orderDetails = "Здравствуйте! Хочу заказать шашлык 🍢:\n\n";
             let total = 0;
             cart.forEach(item => {
@@ -904,25 +915,20 @@
                 }
             });
             orderDetails += `\n💰 *Итого: ${total} ₸*`;
-            
             if (name) orderDetails += `\n👤 Имя: ${name}`;
             orderDetails += `\n📍 Адрес доставки: ${address}`;
             if (comment) orderDetails += `\n💬 Комментарий: ${comment}`;
-
             const url = `https://wa.me/77055071640?text=${encodeURIComponent(orderDetails)}`;
             window.open(url, '_blank');
-            
             cart = [];
             localStorage.removeItem('shashlyk_cart');
             document.getElementById('order-address').value = '';
             document.getElementById('order-comment').value = '';
-            
             renderCartUI();
             hideCartModal();
             showNotification('Переходим в WhatsApp...');
         }
 
-        // ... (createMenuCard & renderFullMenu - Optimized) ...
         function createMenuCard(product) {
             const count = getCartCount(product.id);
             const buttonState = count > 0 
@@ -958,10 +964,8 @@
              const element = document.getElementById(`cat-${catId}`);
              const scrollContainer = document.getElementById('full-menu-scroll-area');
              if(element && scrollContainer) {
-                 // Using simple offset top calculation for better compatibility inside flex container
                  const offset = element.offsetTop - scrollContainer.offsetTop;
                  scrollContainer.scrollTo({ top: offset, behavior: 'smooth' });
-                 
                  document.querySelectorAll('.cat-nav-btn').forEach(btn => {
                      btn.classList.remove('bg-grill-accent', 'text-black');
                      btn.classList.add('bg-gray-700', 'text-white');
@@ -978,17 +982,13 @@
             const container = document.getElementById('full-menu-container');
             const navContainer = document.getElementById('modal-category-nav');
             if (!container || !navContainer) return;
-
             let contentHTML = '';
             let navHTML = '';
-            
             const categoryKeys = menuGroups[activeMenuTab] || menuGroups['grill'];
-            
             let isFirst = true;
             categoryKeys.forEach(key => {
                 const categoryProducts = productsData.filter(p => p.category === key);
                 if (categoryProducts.length === 0) return;
-
                 const catName = menuCategories[key].name;
                 const catIcon = menuCategories[key].icon;
                 const activeClass = isFirst ? 'bg-grill-accent text-black' : 'bg-gray-700 text-white';
@@ -998,7 +998,6 @@
                     </button>
                 `;
                 isFirst = false;
-
                 contentHTML += `
                     <div id="cat-${key}" class="pt-2">
                         <h3 class="text-xl font-bold text-white mb-3 flex items-center sticky top-0 bg-stone-900/95 py-2 z-10">
@@ -1040,7 +1039,7 @@
         });
     </script>
     
-    <!-- Hero Section -->
+    <!-- Header -->
     <header class="bg-grill-dark/90 sticky top-0 z-50 shadow-lg backdrop-blur-sm">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-3xl font-bold text-grill-accent">Шашлычный Двор</h1>
@@ -1059,7 +1058,6 @@
             <h2 class="text-4xl sm:text-6xl md:text-7xl font-extrabold text-white mb-4 leading-tight shadow-xl">Шашлычный Двор</h2>
             <p class="text-xl sm:text-2xl md:text-3xl font-light text-grill-accent mb-8 italic">«Настоящий шашлык с дымком — доставка по Белоусовке»</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl mb-8">
-                <!-- Кнопка с мигающей анимацией -->
                 <button onclick="openMenuCategory('grill')" class="primary-btn bg-grill-red text-white text-lg font-bold py-4 rounded-xl shadow-2xl hover:brightness-110 animate-blink">Заказать шашлык 🍢</button>
                 <button onclick="openMenuCategory('salads')" class="primary-btn bg-white text-grill-dark text-lg font-bold py-4 rounded-xl shadow-2xl hover:bg-gray-100">Заказать салаты 🥗</button>
                 <button onclick="openMenuCategory('hot')" class="primary-btn bg-grill-accent text-grill-dark text-lg font-bold py-4 rounded-xl shadow-2xl hover:bg-orange-600 hover:text-white">Заказать горячее 🍲</button>
@@ -1068,7 +1066,6 @@
                 <h3 class="text-xl md:text-2xl font-bold text-grill-accent mb-3 leading-tight">Шашлычный Двор приглашает провести корпоративы, банкеты и торжества!</h3>
                 <p class="text-gray-300 text-sm mb-5">Мы возьмем на себя все заботы о вкусном столе.</p>
                 
-                <!-- БЛОК КОНТАКТОВ С ОБНОВЛЕННОЙ ССЫЛКОЙ НА КАРТУ -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 text-sm">
                     <div class="space-y-2">
                         <p class="flex items-center text-white">
@@ -1098,8 +1095,7 @@
         </div>
     </section>
 
-    <!-- ... (Other sections) ... -->
-     <section class="py-16 md:py-24 bg-stone-900">
+    <section class="py-16 md:py-24 bg-stone-900">
         <div class="max-w-7xl mx-auto px-4">
             <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Почему выбирают нас?</h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
@@ -1129,29 +1125,34 @@
         </div>
     </section>
 
-    <!-- Optimized Bottom Navigation (Safe Area + Larger Text) -->
+    <!-- Optimized Bottom Navigation -->
     <nav class="fixed bottom-0 left-0 right-0 bg-grill-dark border-t border-gray-700 shadow-2xl py-2 md:hidden z-50 pb-safe">
         <div class="flex justify-around items-center max-w-lg mx-auto h-full">
-            <button onclick="openMenuCategory('grill')" class="flex flex-col items-center text-xs text-gray-400 hover:text-grill-accent transition p-2 active:scale-95">
+            <button onclick="openMenuCategory('grill')" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1 active:scale-95">
                 <svg class="nav-icon mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                 <span>Заказ</span>
             </button>
             
-            <a href="tel:+77055071640" class="flex flex-col items-center text-xs text-gray-400 hover:text-grill-accent transition p-2 active:scale-95">
+            <a href="tel:+77055071640" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1 active:scale-95">
                 <svg class="nav-icon mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                 <span>Звонок</span>
             </a>
 
-            <a onclick="showCartModal()" id="mobile-cart-btn" class="transform -translate-y-6 flex flex-col items-center justify-center bg-grill-accent w-16 h-16 rounded-full shadow-lg border-4 border-grill-dark text-grill-dark transition duration-300 cursor-pointer active:scale-90">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <a onclick="showCartModal()" id="mobile-cart-btn" class="transform -translate-y-6 flex flex-col items-center justify-center bg-grill-accent w-14 h-14 rounded-full shadow-lg border-4 border-grill-dark text-grill-dark transition duration-300 cursor-pointer active:scale-90">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
             </a>
             
-            <a href="https://taxiuspeh.github.io/landing-/" target="_blank" class="flex flex-col items-center text-xs text-gray-400 hover:text-grill-accent transition p-2 active:scale-95">
+            <button onclick="shareApp()" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1 active:scale-95">
+                <svg class="nav-icon mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                <span>Поделиться</span>
+            </button>
+            
+            <a href="https://taxiuspeh.github.io/landing-/" target="_blank" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1 active:scale-95">
                 <svg class="nav-icon mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M14 10l2 1m-2-1l-2-1m2 1V7.5m0 3.5h.01M12 4v0m.01 0l.01.01M12 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM12 12a2 2 0 100-4 2 2 0 000 4z"></path></svg>
                 <span>Такси</span>
             </a>
             
-            <a href="https://wa.me/77055071640" target="_blank" class="flex flex-col items-center text-xs text-gray-400 hover:text-grill-green transition p-2 active:scale-95">
+            <a href="https://wa.me/77055071640" target="_blank" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-green transition p-1 active:scale-95">
                 <svg class="nav-icon mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12.039 2C6.541 2 2 6.541 2 12.039c0 1.972.585 3.844 1.76 5.438L2.015 22l4.63-1.503A10.048 10.048 0 0012.039 22c5.498 0 10.039-4.541 10.039-10.039C22.078 6.541 17.537 2 12.039 2zm4.845 13.906c-.198.342-.81.603-1.39.81-.58.207-1.28.324-1.91.324-.63 0-1.26-.117-1.89-.324-.63-.207-1.242-.468-1.44-.81-.198-.342-.315-1.026-.117-1.39.198-.36.432-.612.63-.81.198-.198.324-.315.396-.468.072-.153.036-.585-.117-.81-.153-.225-.918-1.116-1.053-1.44-.135-.324-.27-.27-.468-.27-.198 0-.468-.027-.738.036-.27.063-.513.117-.756.396-.243.279-.693.684-.693 1.62 0 .936.729 1.836.837 1.989.108.153 1.413 2.16 3.483 3.096 2.07.936 2.07.693 2.457.657.387-.036 1.188-.486 1.35-1.008.162-.522.162-.972.117-1.143-.045-.171-.243-.27-.486-.36z"/></svg>
                 <span>WhatsApp</span>
             </a>

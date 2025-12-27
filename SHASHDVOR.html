@@ -44,7 +44,12 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0c0a09;
+            /* Реальное фото углей на фоне с меньшим затемнением */
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.85)), url('https://images.unsplash.com/photo-1526016650746-15590928d22e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+            background-attachment: fixed;
+            background-position: center;
+            background-size: cover;
+            
             color: #f7f7f7;
             /* Большой отступ снизу для навигации + безопасной зоны */
             padding-bottom: calc(140px + env(safe-area-inset-bottom));
@@ -82,7 +87,8 @@
             box-shadow: 0 10px 15px -3px rgba(255, 140, 0, 0.5), 0 4px 6px -2px rgba(255, 140, 0, 0.5);
         }
         .hero-background {
-            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.8)), url('https://placehold.co/1200x800/2E1E1E/F7F7F7?text=ГОРЯЧИЙ+ШАШЛЫК');
+            /* Реальное фото шашлыка для главного баннера */
+            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
             background-size: cover;
             background-position: center;
         }
@@ -1202,29 +1208,31 @@
         </div>
     </section>
 
-    <section class="py-16 md:py-24 bg-stone-900">
+    <!-- Сделал фон секции прозрачным для отображения фоновой картинки -->
+    <section class="py-16 md:py-24 bg-transparent backdrop-blur-sm">
         <div class="max-w-7xl mx-auto px-4">
             <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Почему выбирают нас?</h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                <div class="p-6 bg-grill-dark rounded-xl shadow-xl border-b-4 border-grill-accent"><div class="text-5xl mb-3 text-grill-accent">🔥</div><h4 class="text-xl font-semibold text-white mb-2">На углях</h4></div>
-                <div class="p-6 bg-grill-dark rounded-xl shadow-xl border-b-4 border-grill-accent"><div class="text-5xl mb-3 text-grill-accent">🥩</div><h4 class="text-xl font-semibold text-white mb-2">Свежее мясо</h4></div>
-                <div class="p-6 bg-grill-dark rounded-xl shadow-xl border-b-4 border-grill-accent"><div class="text-5xl mb-3 text-grill-accent">🚖</div><h4 class="text-xl font-semibold text-white mb-2">Быстрая доставка</h4></div>
-                <div class="p-6 bg-grill-dark rounded-xl shadow-xl border-b-4 border-grill-accent"><div class="text-5xl mb-3 text-grill-accent">👨‍🍳</div><h4 class="text-xl font-semibold text-white mb-2">Выездной мангал</h4></div>
+                <div class="p-6 bg-grill-dark/80 rounded-xl shadow-xl border-b-4 border-grill-accent backdrop-blur-md"><div class="text-5xl mb-3 text-grill-accent">🔥</div><h4 class="text-xl font-semibold text-white mb-2">На углях</h4></div>
+                <div class="p-6 bg-grill-dark/80 rounded-xl shadow-xl border-b-4 border-grill-accent backdrop-blur-md"><div class="text-5xl mb-3 text-grill-accent">🥩</div><h4 class="text-xl font-semibold text-white mb-2">Свежее мясо</h4></div>
+                <div class="p-6 bg-grill-dark/80 rounded-xl shadow-xl border-b-4 border-grill-accent backdrop-blur-md"><div class="text-5xl mb-3 text-grill-accent">🚖</div><h4 class="text-xl font-semibold text-white mb-2">Быстрая доставка</h4></div>
+                <div class="p-6 bg-grill-dark/80 rounded-xl shadow-xl border-b-4 border-grill-accent backdrop-blur-md"><div class="text-5xl mb-3 text-grill-accent">👨‍🍳</div><h4 class="text-xl font-semibold text-white mb-2">Выездной мангал</h4></div>
             </div>
         </div>
     </section>
 
-    <section id="contacts" class="py-16 md:py-24 bg-stone-900">
+    <!-- Сделал фон секции прозрачным для отображения фоновой картинки -->
+    <section id="contacts" class="py-16 md:py-24 bg-transparent backdrop-blur-sm">
         <div class="max-w-7xl mx-auto px-4">
              <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Контакты и заказ</h3>
              <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-                 <div class="bg-gray-800 p-8 rounded-xl shadow-2xl">
+                 <div class="bg-gray-800/90 p-8 rounded-xl shadow-2xl backdrop-blur-md">
                     <h4 class="text-2xl font-bold text-grill-accent mb-4">Свяжитесь с нами</h4>
                     <p class="text-white mb-2">📞 <a href="tel:+77055071640">+7 705 507 1640</a></p>
                     <p class="text-white mb-2">📍 Белоусовка</p>
                     <a href="https://wa.me/77055071640" target="_blank" class="mt-8 primary-btn flex items-center justify-center bg-[#25D366] text-white text-xl font-bold px-6 py-3 rounded-full transition duration-300 shadow-lg hover:bg-[#1EBE57]">Написать в WhatsApp</a>
                  </div>
-                 <div class="bg-gray-800 p-8 rounded-xl shadow-2xl flex flex-col justify-center text-center">
+                 <div class="bg-gray-800/90 p-8 rounded-xl shadow-2xl flex flex-col justify-center text-center backdrop-blur-md">
                     <h4 class="text-3xl font-bold text-white mb-4">Остались вопросы?</h4>
                     <button onclick="showCallbackModal()" class="w-full primary-btn bg-grill-red text-white text-xl font-bold px-6 py-4 rounded-full transition duration-300 shadow-lg">Заказать звонок</button>
                 </div>

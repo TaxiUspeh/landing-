@@ -37,11 +37,20 @@
 
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #f5f5f5; /* light mode bg */
+            
+            /* ТЕМАТИЧЕСКИЙ ФОН (РЕАЛЬНОЕ ФОТО) */
+            background-color: #1f2937; /* Цвет подложки пока грузится фото */
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                              url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=1920&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            
             padding-bottom: 90px; /* Увеличено из-за нижнего бара */
-            transition: background-color 0.3s, color 0.3s;
+            transition: color 0.3s;
             color: #1f2937; 
-            -webkit-tap-highlight-color: transparent; /* Убирает синюю подсветку при тапе на Android */
+            -webkit-tap-highlight-color: transparent;
         }
         
         /* Glassmorphism Header */
@@ -115,6 +124,11 @@
             justify-content: center; font-size: 0.875rem; font-weight: 700; 
         }
         
+        /* Тень для текста на фоне фото */
+        .text-shadow-md {
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
         /* === MODALS === */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -171,6 +185,7 @@
 
         /* Dark Mode */
         .dark { background-color: #111827; color: #f3f4f6; }
+        /* В темном режиме делаем подложку фото еще темнее, если нужно, или оставляем как есть */
         .dark .header-bg { background: linear-gradient(135deg, rgba(76, 29, 149, 0.95) 0%, rgba(16, 185, 129, 0.95) 100%); }
         .dark .main-card, .dark .service-card, .dark .auction-cta, .dark .stroy-dom-cta, 
         .dark .modal, .dark #faq-accordion > div, .dark .faq-item-content {
@@ -335,7 +350,7 @@
         
         <!-- БЛОК 2: МАГАЗИН "СТРОЙ ДОМ" -->
         <div class="mt-8 pt-4">
-            <h3 class="text-2xl font-extrabold text-center mb-4 text-green-700">
+            <h3 class="text-2xl font-extrabold text-center mb-4 text-white text-shadow-md">
                 🛠️ Стройматериалы Белоусовка
             </h3>
             <div class="stroy-dom-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300">
@@ -368,7 +383,7 @@
         </div>
         
         <!-- БЛОК 3: НАШИ УСЛУГИ -->
-        <h3 class="text-2xl font-bold text-center mb-6 text-gray-700 border-t pt-8 mt-8">Дополнительные Услуги (Форма)</h3>
+        <h3 class="text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-8 border-gray-400 border-opacity-30">Дополнительные Услуги (Форма)</h3>
         
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
             <button data-service="delivery"
@@ -391,9 +406,9 @@
 
 
         <!-- БЛОК 4: БЫСТРЫЕ ДЕЙСТВИЯ (ОБНОВЛЕН: УБРАЛ ДУБЛЬ ПОДЕЛИТЬСЯ, ДОБАВИЛ PWA В СЕТКУ) -->
-        <h3 class="text-xl font-bold text-center mb-4 text-gray-700 border-t pt-4">Быстрые Действия</h3>
+        <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md border-t pt-4 border-gray-400 border-opacity-30">Быстрые Действия</h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
-            <a href="https://yandex.kz/maps/org/uspekh/160238038805/reviews/?ll=82.530695%2C50.137112&utm_source=my_review&z=16" target="_blank"
+            <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank"
                 class="btn-hover btn-active bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-lg transition-all compact-util-btn">
                 <i class="fas fa-star text-xl mb-1"></i><span>Оценка</span>
             </a>
@@ -415,8 +430,8 @@
 
 
         <!-- БЛОК 5: ТехОсмотр -->
-        <div class="mt-8 border-t pt-6">
-            <h3 class="text-xl font-bold text-center mb-4 text-gray-700">Нашим Партнерам: ТехОсмотр</h3>
+        <div class="mt-8 border-t pt-6 border-gray-400 border-opacity-30">
+            <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Нашим Партнерам: ТехОсмотр</h3>
             <div class="auction-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300 border-indigo-500 border-2">
                 <div class="flex flex-col items-center sm:items-start text-center sm:text-left mb-3 sm:mb-0">
                     <i class="fas fa-wrench text-3xl mb-1 text-red-600"></i>
@@ -445,8 +460,8 @@
 
         
         <!-- БЛОК 6: FAQ и ПРАЙС-ЛИСТ -->
-        <div class="mt-10 border-t pt-6 max-w-lg mx-auto">
-            <h3 class="text-2xl font-bold text-center text-gray-700 mb-6">Вопросы и Цены</h3>
+        <div class="mt-10 border-t pt-6 max-w-lg mx-auto border-gray-400 border-opacity-30">
+            <h3 class="text-2xl font-bold text-center text-white text-shadow-md mb-6">Вопросы и Цены</h3>
             
             <div id="faq-accordion" class="space-y-4">
                 <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
@@ -513,8 +528,8 @@
         </div>
         
         <!-- БЛОК 7: РЕКЛАМА ДЛЯ ПАРТНЕРОВ -->
-        <div class="mt-10 border-t pt-6">
-            <h3 class="text-xl font-bold text-pink-600 mb-6 text-center">📢 Реклама для Вашего Бизнеса</h3>
+        <div class="mt-10 border-t pt-6 border-gray-400 border-opacity-30">
+            <h3 class="text-xl font-bold text-white text-shadow-md mb-6 text-center">📢 Реклама для Вашего Бизнеса</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20магазина%20(Продукты/Одежда)." target="_blank"
                     class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-pink-500 flex flex-col items-center text-center">
@@ -538,28 +553,28 @@
         </div>
         
         <!-- БЛОК 8: ПРИГЛАШЕНИЕ ВОДИТЕЛЕЙ -->
-        <div class="mt-10 border-t pt-6 text-center">
-            <h3 class="text-2xl font-bold text-gray-700 mb-4">Приглашаем Водителей в команду!</h3>
-            <p class="text-gray-600 mb-4 max-w-md mx-auto">
+        <div class="mt-10 border-t pt-6 text-center border-gray-400 border-opacity-30">
+            <h3 class="text-2xl font-bold text-white text-shadow-md mb-4">Приглашаем Водителей в команду!</h3>
+            <p class="text-gray-200 mb-4 max-w-md mx-auto text-shadow-md">
                 Хотите зарабатывать в удобное время и быть частью успешной команды в Белоусовке?
             </p>
             <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20стать%20водителем%20такси%20%C2%ABУспех%C2%BB.%20Укажите%2C%20пожалуйста%2C%20условия%20и%20требования." target="_blank"
                class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover btn-active">
                 <i class="fas fa-car-side mr-2"></i> Отправить Заявку Водителя
             </a>
-            <p class="text-sm text-gray-500 mt-4">
+            <p class="text-sm text-gray-300 mt-4 text-shadow-md">
                 Просто отправьте нам сообщение в WhatsApp, чтобы узнать все условия.
             </p>
         </div>
         
         <!-- БЛОК 9: Вход для водителя -->
-        <div class="mt-6 border-t pt-6 text-center">
-            <h3 class="text-xl font-bold text-gray-700 mb-4">Для действующих водителей</h3>
+        <div class="mt-6 border-t pt-6 text-center border-gray-400 border-opacity-30">
+            <h3 class="text-xl font-bold text-white text-shadow-md mb-4">Для действующих водителей</h3>
             <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank"
                class="inline-block bg-pink-600 hover:bg-pink-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-lg transition-all btn-active">
                 <i class="fas fa-user-shield mr-2"></i> Вход в режим Водителя
             </a>
-            <p class="text-sm text-gray-500 mt-2">
+            <p class="text-sm text-gray-300 mt-2 text-shadow-md">
                 Переход в закрытую группу для принятия заказов.
             </p>
         </div>
@@ -596,7 +611,7 @@
 
 
     <!-- FOOTER -->
-    <footer class="bg-gray-800 text-white text-center py-6 mt-10">
+    <footer class="bg-gray-900 text-white text-center py-6 mt-10 shadow-inner">
         <p class="text-sm px-4">
             <span class="font-bold">© 2025 «Успех Такси»</span>. 
             «такси Успех» — информационный сервис. 

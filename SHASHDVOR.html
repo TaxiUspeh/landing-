@@ -220,6 +220,71 @@
             background-color: rgba(255,255,255,0.1);
             border-radius: 9999px;
         }
+
+        /* --- Success Checkmark Animation --- */
+        .success-checkmark {
+            width: 80px;
+            height: 115px;
+            margin: 0 auto;
+        }
+        .check-icon {
+            width: 80px;
+            height: 80px;
+            position: relative;
+            border-radius: 50%;
+            box-sizing: content-box;
+            border: 4px solid #25D366;
+        }
+        .check-icon::before {
+            top: 3px;
+            left: -2px;
+            width: 30px;
+            transform-origin: 100% 50%;
+            border-radius: 100px 0 0 100px;
+        }
+        .check-icon::after {
+            top: 0;
+            left: 30px;
+            width: 60px;
+            transform-origin: 0 50%;
+            border-radius: 0 100px 100px 0;
+            animation: rotate-circle 4.25s ease-in;
+        }
+        .icon-line {
+            height: 5px;
+            background-color: #25D366;
+            display: block;
+            border-radius: 2px;
+            position: absolute;
+            z-index: 10;
+        }
+        .line-tip {
+            top: 46px;
+            left: 14px;
+            width: 25px;
+            transform: rotate(45deg);
+            animation: icon-line-tip 0.75s;
+        }
+        .line-long {
+            top: 38px;
+            right: 8px;
+            width: 47px;
+            transform: rotate(-45deg);
+            animation: icon-line-long 0.75s;
+        }
+        @keyframes icon-line-tip {
+            0% { width: 0; left: 1px; top: 19px; }
+            54% { width: 0; left: 1px; top: 19px; }
+            70% { width: 50px; left: -8px; top: 37px; }
+            84% { width: 17px; left: 21px; top: 48px; }
+            100% { width: 25px; left: 14px; top: 46px; }
+        }
+        @keyframes icon-line-long {
+            0% { width: 0; right: 46px; top: 54px; }
+            65% { width: 0; right: 46px; top: 54px; }
+            84% { width: 55px; right: 0px; top: 35px; }
+            100% { width: 47px; right: 8px; top: 38px; }
+        }
     </style>
 </head>
 <body class="antialiased selection:bg-grill-accent selection:text-black">
@@ -248,64 +313,83 @@
     <div id="cart-modal" class="modal-backdrop fixed inset-0 hidden items-end sm:items-center justify-center sm:p-4" onclick="hideCartModal()">
         <!-- Используем modal-content-sm для мобильных (выезжает снизу) -->
         <div class="bg-[#1a1a1a] modal-content-sm w-full sm:max-w-lg sm:rounded-xl shadow-2xl overflow-hidden border-t sm:border border-gray-700 flex flex-col max-h-[85vh]" onclick="event.stopPropagation()">
-            <div class="p-4 bg-grill-dark border-b border-gray-700 flex justify-between items-center sticky top-0 z-10">
-                <h4 class="text-2xl font-bold text-white">Ваш заказ</h4>
-                <button onclick="hideCartModal()" class="close-btn text-3xl leading-none">&times;</button>
-            </div>
-
-            <div class="p-4 flex-grow overflow-y-auto overscroll-contain">
-                <div id="cart-items-container" class="space-y-4">
-                    <!-- Items -->
-                </div>
-                
-                <div id="cart-empty-message" class="text-center py-10 text-gray-500 hidden">
-                    <div class="text-6xl mb-4">🍖</div>
-                    <p class="text-xl text-white">Корзина пуста</p>
-                    <button onclick="hideCartModal(); openMenuCategory('grill');" class="mt-4 text-grill-accent underline font-bold py-2 px-4">Открыть меню</button>
-                </div>
-                
-                <div id="order-details-form" class="mt-6 pt-4 border-t border-gray-700 space-y-4 hidden pb-safe">
-                    <h5 class="text-white text-lg font-bold flex items-center"><span class="mr-2">📝</span> Детали доставки</h5>
-                    
-                    <div>
-                        <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Ваше имя</label>
-                        <!-- text-base added to prevent iOS zoom -->
-                        <input type="text" id="order-name" placeholder="Как к вам обращаться?" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
-                    </div>
-
-                    <div>
-                        <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Адрес доставки <span class="text-red-500">*</span></label>
-                        <input type="text" id="order-address" placeholder="Улица, дом, квартира" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
-                    </div>
-
-                    <div>
-                        <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Комментарий к заказу</label>
-                        <textarea id="order-comment" rows="2" placeholder="Например: 'Поострее', 'Не звонить в домофон'" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent"></textarea>
-                    </div>
-                </div>
-
-                <!-- AI Recommendation -->
-                <div class="mt-6 pt-4 border-t border-gray-700 pb-4">
-                    <h5 class="text-white text-lg font-bold mb-3 flex items-center">
-                        <span class="mr-2">✨</span> Что добавить?
-                    </h5>
-                    <button id="ai-recommendation-btn" onclick="generateRecommendation()" class="w-full bg-gray-700 text-white font-bold py-3 rounded-lg hover:bg-gray-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-base">
-                        ✨ Рекомендация от Шефа
-                    </button>
-                    <div id="ai-recommendation-result" class="mt-3 min-h-[40px]"></div>
-                </div>
-            </div>
             
-            <div class="p-4 bg-gray-900 border-t border-gray-700 space-y-4 pb-safe">
-                <div class="flex justify-between items-center text-xl font-bold text-white">
-                    <span>Итого:</span>
-                    <span id="cart-total-price" class="text-grill-accent text-2xl">0 ₸</span>
+            <!-- Default Cart Content -->
+            <div id="cart-main-content" class="flex flex-col h-full overflow-hidden">
+                <div class="p-4 bg-grill-dark border-b border-gray-700 flex justify-between items-center sticky top-0 z-10">
+                    <h4 class="text-2xl font-bold text-white">Ваш заказ</h4>
+                    <button onclick="hideCartModal()" class="close-btn text-3xl leading-none">&times;</button>
                 </div>
-                <button onclick="placeOrder()" id="place-order-btn" class="w-full bg-grill-green hover:bg-[#1DA851] text-white text-lg font-bold px-6 py-4 rounded-xl shadow-lg transition duration-300 flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed active:scale-95" disabled>
-                    <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                    Заказать в WhatsApp
-                </button>
+
+                <div class="p-4 flex-grow overflow-y-auto overscroll-contain">
+                    <div id="cart-items-container" class="space-y-4">
+                        <!-- Items -->
+                    </div>
+                    
+                    <div id="cart-empty-message" class="text-center py-10 text-gray-500 hidden">
+                        <div class="text-6xl mb-4">🍖</div>
+                        <p class="text-xl text-white">Корзина пуста</p>
+                        <button onclick="hideCartModal(); openMenuCategory('grill');" class="mt-4 text-grill-accent underline font-bold py-2 px-4">Открыть меню</button>
+                    </div>
+                    
+                    <div id="order-details-form" class="mt-6 pt-4 border-t border-gray-700 space-y-4 hidden pb-safe">
+                        <h5 class="text-white text-lg font-bold flex items-center"><span class="mr-2">📝</span> Детали доставки</h5>
+                        
+                        <div>
+                            <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Ваше имя</label>
+                            <!-- text-base added to prevent iOS zoom -->
+                            <input type="text" id="order-name" placeholder="Как к вам обращаться?" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Адрес доставки <span class="text-red-500">*</span></label>
+                            <input type="text" id="order-address" placeholder="Улица, дом, квартира" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Комментарий к заказу</label>
+                            <textarea id="order-comment" rows="2" placeholder="Например: 'Поострее', 'Не звонить в домофон'" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- AI Recommendation -->
+                    <div class="mt-6 pt-4 border-t border-gray-700 pb-4">
+                        <h5 class="text-white text-lg font-bold mb-3 flex items-center">
+                            <span class="mr-2">✨</span> Что добавить?
+                        </h5>
+                        <button id="ai-recommendation-btn" onclick="generateRecommendation()" class="w-full bg-gray-700 text-white font-bold py-3 rounded-lg hover:bg-gray-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-base">
+                            ✨ Рекомендация от Шефа
+                        </button>
+                        <div id="ai-recommendation-result" class="mt-3 min-h-[40px]"></div>
+                    </div>
+                </div>
+                
+                <div class="p-4 bg-gray-900 border-t border-gray-700 space-y-4 pb-safe">
+                    <div class="flex justify-between items-center text-xl font-bold text-white">
+                        <span>Итого:</span>
+                        <span id="cart-total-price" class="text-grill-accent text-2xl">0 ₸</span>
+                    </div>
+                    <!-- ИЗМЕНЕНА КНОПКА ЗАКАЗА -->
+                    <button onclick="placeOrder()" id="place-order-btn" class="w-full bg-grill-green hover:bg-[#1DA851] text-white text-lg font-bold px-6 py-4 rounded-xl shadow-lg transition duration-300 flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed active:scale-95" disabled>
+                        Оформить заказ
+                    </button>
+                </div>
             </div>
+
+            <!-- Success Content (Hidden by default) -->
+            <div id="cart-success-content" class="hidden flex-col items-center justify-center h-full p-8 py-20 text-center space-y-6">
+                <div class="success-checkmark">
+                    <div class="check-icon">
+                        <span class="icon-line line-tip"></span>
+                        <span class="icon-line line-long"></span>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-3xl font-extrabold text-grill-green mb-2">Заказ оформлен!</h4>
+                    <p class="text-gray-300">Перенаправляем вас в WhatsApp для подтверждения...</p>
+                </div>
+            </div>
+
         </div>
     </div>
     
@@ -885,11 +969,20 @@
 
         function showCartModal() {
             hideFullMenuModal();
-            showModal('cart-modal');
             renderCartModal();
+            showModal('cart-modal');
         }
 
-        function hideCartModal() { hideModal('cart-modal'); }
+        function hideCartModal() { 
+            hideModal('cart-modal'); 
+            // Reset success state after closing if needed
+            setTimeout(() => {
+                document.getElementById('cart-main-content').classList.remove('hidden');
+                document.getElementById('cart-main-content').classList.add('flex');
+                document.getElementById('cart-success-content').classList.add('hidden');
+                document.getElementById('cart-success-content').classList.remove('flex');
+            }, 300); // small delay to match animation
+        }
 
         function placeOrder() {
             if (cart.length === 0) return;
@@ -904,6 +997,18 @@
                 setTimeout(() => addressInput.classList.remove('border-red-500'), 2000);
                 return;
             }
+            
+            // 1. Показать анимацию успеха (Скрываем контент корзины, показываем галочку)
+            const mainContent = document.getElementById('cart-main-content');
+            const successContent = document.getElementById('cart-success-content');
+            
+            mainContent.classList.remove('flex');
+            mainContent.classList.add('hidden');
+            
+            successContent.classList.remove('hidden');
+            successContent.classList.add('flex');
+
+            // 2. Подготовка сообщения для WhatsApp
             let orderDetails = "Здравствуйте! Хочу заказать шашлык 🍢:\n\n";
             let total = 0;
             cart.forEach(item => {
@@ -919,14 +1024,19 @@
             orderDetails += `\n📍 Адрес доставки: ${address}`;
             if (comment) orderDetails += `\n💬 Комментарий: ${comment}`;
             const url = `https://wa.me/77055071640?text=${encodeURIComponent(orderDetails)}`;
-            window.open(url, '_blank');
-            cart = [];
-            localStorage.removeItem('shashlyk_cart');
-            document.getElementById('order-address').value = '';
-            document.getElementById('order-comment').value = '';
-            renderCartUI();
-            hideCartModal();
-            showNotification('Переходим в WhatsApp...');
+
+            // 3. Задержка перед открытием WhatsApp и очисткой корзины
+            setTimeout(() => {
+                window.open(url, '_blank');
+                
+                // Очистка и сброс
+                cart = [];
+                localStorage.removeItem('shashlyk_cart');
+                document.getElementById('order-address').value = '';
+                document.getElementById('order-comment').value = '';
+                renderCartUI();
+                hideCartModal(); // Закроет модальное окно и сбросит вид на "основной"
+            }, 2500); // 2.5 секунды на анимацию
         }
 
         function createMenuCard(product) {
@@ -1043,13 +1153,6 @@
     <header class="bg-grill-dark/90 sticky top-0 z-50 shadow-lg backdrop-blur-sm">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-3xl font-bold text-grill-accent">Шашлычный Двор</h1>
-            <nav class="hidden md:flex space-x-6 text-sm">
-                <button onclick="openMenuCategory('grill')" class="text-white hover:text-grill-accent transition duration-300">Меню</button>
-                <a href="#visit" class="text-white hover:text-grill-accent transition duration-300">Посетить нас</a>
-                <a href="#catering" class="text-white hover:text-grill-accent transition duration-300">Кейтеринг</a>
-                <a href="#contacts" class="text-white hover:text-grill-accent transition duration-300">Контакты</a>
-            </nav>
-            <a href="tel:+77055071640" class="text-white text-lg font-semibold hover:text-grill-accent transition duration-300 hidden sm:block">+7 705 507 1640</a>
         </div>
     </header>
 

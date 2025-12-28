@@ -2,9 +2,22 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- === НАСТРОЙКИ PWA (КАК ПРИЛОЖЕНИЕ) === -->
+    <!-- 1. Заголовок приложения при добавлении на экран -->
+    <meta name="apple-mobile-web-app-title" content="Такси Успех">
+    <meta name="application-name" content="Такси Успех">
+    
+    <!-- 2. Режим "Без браузера" (Standalone) для iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <!-- 3. Цвет статус-бара в iOS (сделал под цвет хедера) -->
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- 4. Цвет темы для Android (Chrome) -->
+    <meta name="theme-color" content="#1e3a8a">
+
     <title>Такси «Успех» — Белоусовка</title>
 
     <!-- Google Analytics (КОД АКТИВИРОВАН: G-NMCTD2Q8R2) -->
@@ -16,11 +29,13 @@
     </script>
     <!-- КОНЕЦ Google Analytics -->
 
-    <!-- Favicon и иконки для Apple/Android -->
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=12">
-    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png?v=12">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=12">
-    <link rel="manifest" href="site.webmanifest?v=12">
+    <!-- Иконки (Предполагаем, что файлы лежат рядом, но добавим запасной вариант через CDN для надежности в примере) -->
+    <!-- Если у вас есть свои файлы favicon, они приоритетнее. Если нет - раскомментируйте CDN ссылки ниже -->
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    
+    <!-- ВСТРОЕННЫЙ МАНИФЕСТ PWA (Чтобы работало без отдельного файла) -->
+    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%D0%A2%D0%B0%D0%BA%D1%81%D0%B8%20%D0%A3%D1%81%D0%BF%D0%B5%D1%85%22%2C%22short_name%22%3A%22%D0%A2%D0%B0%D0%BA%D1%81%D0%B8%20%D0%A3%D1%81%D0%BF%D0%B5%D1%85%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%231f2937%22%2C%22theme_color%22%3A%22%231e3a8a%22%2C%22orientation%22%3A%22portrait-primary%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3097%2F3097144.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3097%2F3097144.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D'>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -30,15 +45,24 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
-        /* Улучшение для PWA: отключение "резиновой" прокрутки */
+        /* Улучшение для PWA: отключение "резиновой" прокрутки и выделения */
         html, body {
             overscroll-behavior-y: none;
+            user-select: none; /* Чтобы ощущалось как приложение, а не текст */
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Разрешаем выделять текст только в полях ввода */
+        input, textarea {
+            user-select: text !important;
+            -webkit-user-select: text !important;
         }
 
         body { 
             font-family: 'Inter', sans-serif; 
             
-            /* ТЕМАТИЧЕСКИЙ ФОН (РЕАЛЬНОЕ ФОТО) */
+            /* ТЕМАТИЧЕСКИЙ ФОН (РЕАЛЬНОЕ ФОТО) - ВОССТАНОВЛЕНО */
             background-color: #1f2937; /* Цвет подложки пока грузится фото */
             background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
                               url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=1920&auto=format&fit=crop');
@@ -50,14 +74,14 @@
             padding-bottom: 90px; /* Увеличено из-за нижнего бара */
             transition: color 0.3s;
             color: #1f2937; 
-            -webkit-tap-highlight-color: transparent;
         }
         
-        /* Glassmorphism Header */
+        /* Glassmorphism Header - ВОССТАНОВЛЕНО */
         .header-bg { 
             background: linear-gradient(135deg, rgba(245, 158, 11, 0.95) 0%, rgba(29, 78, 216, 0.95) 100%); 
             backdrop-filter: blur(10px);
             transition: background 0.3s;
+            padding-top: env(safe-area-inset-top); /* Отступ для "челки" iPhone */
         }
 
         .btn-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
@@ -102,7 +126,7 @@
             animation: checkmark 0.4s ease-in-out 0.3s backwards;
         }
 
-        /* АНИМАЦИЯ МОРГАНИЯ */
+        /* АНИМАЦИЯ МОРГАНИЯ - ВОССТАНОВЛЕНО */
         @keyframes blink-custom {
             0%, 100% { transform: scale(1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); filter: brightness(1); }
             50% { transform: scale(1.03); box-shadow: 0 0 20px rgba(59, 130, 246, 0.9); filter: brightness(1.2); }
@@ -112,19 +136,22 @@
         #locationBtn {
             padding: 10px 12px; font-size: 1rem; background-color: #e5e7eb; color: #374151; font-weight: 600;
             border-radius: 8px; transition: background-color 0.2s, color 0.2s;
+            border: none;
         }
         #locationBtn:hover { background-color: #d1d5db; }
 
         .compact-util-btn {
             padding: 12px 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
             font-size: 0.8rem; font-weight: 600; line-height: 1.2;
+            border: none; /* Убираем бордер из "чистого" дизайна */
         }
         .quick-order-btn {
             padding-top: 12px; padding-bottom: 12px; display: flex; flex-direction: column; align-items: center;
             justify-content: center; font-size: 0.875rem; font-weight: 700; 
+            border: none;
         }
         
-        /* Тень для текста на фоне фото */
+        /* Тень для текста на фоне фото - ВОССТАНОВЛЕНО */
         .text-shadow-md {
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
@@ -146,6 +173,7 @@
         .form-input-control {
              padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; width: 100%;
              transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; font-size: 16px; 
+             background-color: white;
         }
         .form-input-control:focus {
             border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); outline: none;
@@ -178,6 +206,7 @@
             white-space: nowrap; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
             background-color: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; cursor: pointer;
             transition: all 0.2s; display: flex; align-items: center;
+            box-shadow: none;
         }
         .history-chip:hover { background-color: #e5e7eb; }
         .history-chip:active { transform: scale(0.95); background-color: #d1d5db; }
@@ -233,6 +262,7 @@
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-top: 1px solid rgba(229, 231, 235, 0.5);
+            padding-bottom: env(safe-area-inset-bottom); /* Отступ для полоски управления iPhone */
         }
         .dark .bottom-bar-glass {
             background-color: rgba(17, 24, 39, 0.9);
@@ -255,7 +285,7 @@
 
     <!-- HEADER (УМЕНЬШЕННЫЙ) -->
     <header class="header-bg text-white py-4 rounded-b-lg shadow-lg relative">
-        <div class="absolute top-2 right-2">
+        <div class="absolute top-2 right-2 mt-2"> <!-- Добавил отступ сверху для челки -->
             <button id="themeToggle" onclick="toggleTheme()" class="text-white p-2 rounded-full bg-black bg-opacity-10 hover:bg-opacity-30 transition-all focus:outline-none z-50 btn-active">
                 <i id="themeIcon" class="fas fa-moon text-lg"></i>
             </button>

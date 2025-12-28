@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Добавлено viewport-fit=cover для корректного отображения на iPhone с "челкой" -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Такси «Успех» — Белоусовка</title>
 
     <!-- Google Analytics (КОД АКТИВИРОВАН: G-NMCTD2Q8R2) -->
@@ -19,17 +20,17 @@
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1048/1048315.png">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1048/1048315.png">
 
-    <!-- Настройки для iOS -->
+    <!-- Настройки для iOS (Native App Feel) -->
     <meta name="apple-mobile-web-app-title" content="Такси Успех">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- Настройки для Android (Цвет темы) -->
-    <meta name="theme-color" content="#f59e0b">
+    <!-- Настройки для Android (Цвет темы и статус бара) -->
+    <meta name="theme-color" content="#1f2937">
 
-    <!-- ВСТРОЕННЫЙ MANIFEST.JSON (Data URI) -->
-    <!-- Это позволяет Android распознавать сайт как приложение без отдельного файла manifest.json -->
-    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Такси Успех","short_name":"Такси Успех","start_url":".","display":"standalone","theme_color":"#f59e0b","background_color":"#1f2937","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1048/1048315.png","sizes":"192x192","type":"image/png"},{"src":"https://cdn-icons-png.flaticon.com/512/1048/1048315.png","sizes":"512x512","type":"image/png"}]}'>
+    <!-- ВСТРОЕННЫЙ MANIFEST.JSON (Обновлен для "Native Feel") -->
+    <!-- Здесь прописано название "Такси Успех" и иконка желтого такси для установки -->
+    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Такси Успех","short_name":"Такси Успех","start_url":".","display":"standalone","orientation":"portrait","theme_color":"#1f2937","background_color":"#1f2937","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1048/1048315.png","sizes":"192x192","type":"image/png"},{"src":"https://cdn-icons-png.flaticon.com/512/1048/1048315.png","sizes":"512x512","type":"image/png"}]}'>
     <!-- === КОНЕЦ PWA === -->
 
     <!-- Tailwind CSS -->
@@ -40,16 +41,24 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
-        /* Улучшение для PWA: отключение "резиновой" прокрутки */
+        /* Улучшение для PWA: отключение "резиновой" прокрутки и выделения при тапе */
         html, body {
             overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Для iOS PWA: отступ сверху, чтобы контент не наезжал на статус-бар */
+        @supports (-webkit-touch-callout: none) {
+            .header-bg {
+                padding-top: env(safe-area-inset-top);
+            }
         }
 
         body { 
             font-family: 'Inter', sans-serif; 
             
             /* ТЕМАТИЧЕСКИЙ ФОН (РЕАЛЬНОЕ ФОТО) */
-            background-color: #1f2937; /* Цвет подложки пока грузится фото */
+            background-color: #1f2937;
             background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
                               url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=1920&auto=format&fit=crop');
             background-size: cover;
@@ -57,10 +66,9 @@
             background-attachment: fixed;
             background-repeat: no-repeat;
             
-            padding-bottom: 90px; /* Увеличено из-за нижнего бара */
+            padding-bottom: 90px;
             transition: color 0.3s;
             color: #1f2937; 
-            -webkit-tap-highlight-color: transparent;
         }
         
         /* Glassmorphism Header */
@@ -71,7 +79,7 @@
         }
 
         .btn-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
-        .btn-active:active { transform: scale(0.97); } /* Эффект нажатия */
+        .btn-active:active { transform: scale(0.97); }
 
         .service-card, .main-card, .auction-cta, .stroy-dom-cta, .faq-item { 
             transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, border-color 0.3s, color 0.3s;
@@ -95,10 +103,6 @@
         @keyframes checkmark-circle {
             0% { stroke-dashoffset: 480px; }
             100% { stroke-dashoffset: 960px; }
-        }
-        @keyframes colored-circle { 
-            0% { opacity:0; }
-            100% { opacity:100; }
         }
         .success-checkmark { width: 80px; height: 80px; margin: 0 auto; }
         .success-checkmark circle { 
@@ -137,7 +141,6 @@
             border: none;
         }
         
-        /* Тень для текста на фоне фото */
         .text-shadow-md {
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
@@ -183,8 +186,8 @@
         /* Стили для чипсов истории адресов */
         .history-chips-container {
             display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; padding-top: 4px;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none;  /* IE 10+ */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
         .history-chips-container::-webkit-scrollbar { width: 0; height: 0; display: none; }
         
@@ -200,7 +203,6 @@
 
         /* Dark Mode */
         .dark { background-color: #111827; color: #f3f4f6; }
-        /* В темном режиме делаем подложку фото еще темнее, если нужно, или оставляем как есть */
         .dark .header-bg { background: linear-gradient(135deg, rgba(76, 29, 149, 0.95) 0%, rgba(16, 185, 129, 0.95) 100%); }
         .dark .main-card, .dark .service-card, .dark .auction-cta, .dark .stroy-dom-cta, 
         .dark .modal, .dark #faq-accordion > div, .dark .faq-item-content {
@@ -224,7 +226,6 @@
         .dark .border-blue-100, .dark .border-blue-200 { border-color: #1e40af !important; }
         .dark .text-blue-700 { color: #bfdbfe !important; }
         
-        /* Dark Mode Chips */
         .dark .history-chip { background-color: #374151; color: #d1d5db; border-color: #4b5563; }
         .dark .history-chip i { color: #6b7280; }
         .dark .history-chip:hover { background-color: #4b5563; }
@@ -312,36 +313,30 @@
                 <i class="fas fa-car-side text-lg"></i><span>Заказать Taxi</span>
             </button>
             
-            <!-- 1. РАЗДЕЛЕННАЯ КНОПКА (ТЕПЕРЬ ЗЕЛЕНАЯ КНОПКА ТОЖЕ ОТКРЫВАЕТ МЕНЮ) -->
+            <!-- 1. РАЗДЕЛЕННАЯ КНОПКА -->
             <div class="split-btn mb-3">
-                <!-- ЗЕЛЕНАЯ КНОПКА: ОТКРЫВАЕТ МЕНЮ В РЕЖИМЕ WHATSAPP -->
                 <button onclick="openServicesMenu('whatsapp')"
                     class="btn-hover btn-active split-btn-part split-btn-taxi">
                     <span>Меню услуг</span>
                 </button>
-                
-                <!-- КНОПКА ЕДА: ВНЕШНЯЯ ССЫЛКА -->
                 <a href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html" target="_blank"
                     class="btn-hover btn-active split-btn-part split-btn-food">
                     <span>Заказ Еды</span>
                 </a>
             </div>
             
-            <!-- 2. БЛОК БЫСТРЫХ ДЕЙСТВИЙ (ОБНОВЛЕН: ПОДЕЛИТЬСЯ ВМЕСТО ЗВОНКА) -->
+            <!-- 2. БЛОК БЫСТРЫХ ДЕЙСТВИЙ -->
             <div class="grid grid-cols-3 gap-2 mb-4">
-                <!-- Кнопка Поделиться (ВМЕСТО ЗВОНКА) -->
                 <button onclick="shareApp()" 
                     class="btn-hover btn-active bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
                     <i class="fas fa-share-alt mb-0.5"></i><span>Поделиться</span>
                 </button>
                 
-                <!-- TELEGRAM: ОТКРЫВАЕТ МЕНЮ В РЕЖИМЕ TELEGRAM -->
                 <button onclick="openServicesMenu('telegram')"
                     class="btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
                     <i class="fab fa-telegram-plane mb-0.5"></i><span>Telegram</span>
                 </button>
                 
-                <!-- Аукцион -->
                 <button data-service="auction"
                     class="service-btn btn-hover btn-active bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
                     <i class="fas fa-gavel mb-0.5"></i><span>Аукцион</span>
@@ -429,7 +424,7 @@
         </div>
 
 
-        <!-- БЛОК 4: БЫСТРЫЕ ДЕЙСТВИЯ (ОБНОВЛЕН: УБРАЛ ДУБЛЬ ПОДЕЛИТЬСЯ, ДОБАВИЛ PWA В СЕТКУ) -->
+        <!-- БЛОК 4: БЫСТРЫЕ ДЕЙСТВИЯ (ОБНОВЛЕН: PWA LOGIC) -->
         <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md border-t pt-4 border-gray-400 border-opacity-30">Быстрые Действия</h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
             <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank"
@@ -446,7 +441,8 @@
                 <i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span>
             </button>
             
-            <button onclick="showPWAInstructions()" 
+            <!-- КНОПКА УСТАНОВКИ ПРИЛОЖЕНИЯ -->
+            <button onclick="installApp()" 
                 class="btn-hover btn-active bg-gray-700 hover:bg-gray-800 text-white rounded-xl shadow-lg transition-all compact-util-btn">
                 <i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span>
             </button>
@@ -615,7 +611,6 @@
     </section>
 
     <!-- ФИКСИРОВАННЫЙ НИЖНИЙ БАР (ДЛЯ МОБИЛЬНЫХ) -->
-    <!-- ДОБАВЛЕН КЛАСС bottom-bar-glass ДЛЯ ЭФФЕКТА СТЕКЛА -->
     <div class="fixed bottom-0 left-0 right-0 bottom-bar-glass shadow-2xl z-40 sm:hidden">
         <div class="flex justify-around items-center h-16">
             <a href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." class="flex flex-col items-center text-green-600 hover:text-green-700 btn-active p-1 rounded-lg">
@@ -624,9 +619,10 @@
             <a href="tel:+77770649648" class="flex flex-col items-center text-red-600 hover:text-red-700 btn-active p-1 rounded-lg">
                 <i class="fas fa-phone-alt text-2xl"></i><span class="text-xs mt-0.5">Звонок</span>
             </a>
-            <a data-service="delivery" class="service-btn flex flex-col items-center text-yellow-600 hover:text-yellow-700 btn-active p-1 rounded-lg">
-                <i class="fas fa-box-open text-2xl"></i><span class="text-xs mt-0.5">Доставка</span>
-            </a>
+            <!-- ИКОНКА "НА ЭКРАН" ДЛЯ УСТАНОВКИ В НИЖНЕМ МЕНЮ -->
+            <button onclick="installApp()" class="flex flex-col items-center text-yellow-600 hover:text-yellow-700 btn-active p-1 rounded-lg">
+                <i class="fas fa-mobile-alt text-2xl"></i><span class="text-xs mt-0.5">На экран</span>
+            </button>
             <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" class="flex flex-col items-center text-pink-600 hover:text-pink-700 btn-active p-1 rounded-lg">
                 <i class="fas fa-user-shield text-2xl"></i><span class="text-xs mt-0.5">Водитель</span>
             </a>
@@ -1065,7 +1061,7 @@
                     <h4 class="text-lg font-bold text-green-600 mb-2 flex items-center"><i class="fab fa-android mr-2"></i> Для Android (Chrome)</h4>
                     <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
                         <li>Нажмите на **три точки** (<i class="fas fa-ellipsis-v"></i>).</li>
-                        <li>Выберите **«Добавить на главный экран»**.</li>
+                        <li>Выберите **«Добавить на главный экран»** (или "Установить приложение").</li>
                     </ol>
                 </div>
                 <button onclick="document.getElementById('pwaModal').classList.add('hidden')" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">Понятно</button>
@@ -1100,14 +1096,12 @@
         let auth = null;
         let userId = null;
         
-        // Переменная для отслеживания режима отправки (whatsapp по умолчанию)
         let orderDestination = 'whatsapp';
         
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
         
-        // --- НОВОЕ: КЛЮЧ ДЛЯ LocalStorage ---
         const LOCAL_STORAGE_HISTORY_KEY = 'taxi_address_history_v1';
         const FULL_HISTORY_KEY = 'taxi_full_orders_history';
 
@@ -1144,7 +1138,6 @@
         const ADDRESS_HISTORY_DOC_PATH = "settings";
         const ADDRESS_HISTORY_FIELD = "addressHistory";
 
-        // --- ОБНОВЛЕНО: СНАЧАЛА ГРУЗИМ ИЗ LS, ПОТОМ СИНХРОНИЗИРУЕМ ---
         async function loadAddresses() {
             let localData = [];
             try {
@@ -1154,7 +1147,6 @@
             return localData; 
         }
         
-        // --- НОВАЯ ФУНКЦИЯ СИНХРОНИЗАЦИИ ---
         async function syncAddressHistory() {
             if (!db || !userId) return;
             try {
@@ -1195,7 +1187,6 @@
             await setAddressHistory();
         }
 
-        // --- ЛОГИКА СОХРАНЕНИЯ ПОЛНОГО ЗАКАЗА ---
         window.saveOrderToFullHistory = function(from, to, price) {
             const now = new Date();
             const order = {
@@ -1225,14 +1216,12 @@
             });
         }
         
-        // НОВАЯ ФУНКЦИЯ ДЛЯ ОТРИСОВКИ "ЧИПСОВ" ИСТОРИИ
         async function renderHistoryChips() {
             const historyArray = await loadAddresses();
             const container = document.getElementById('taxiHistoryChips');
             if (!container) return;
             container.innerHTML = '';
 
-            // Показываем только первые 5
             const recent = historyArray.slice(0, 5);
             
             if (recent.length === 0) {
@@ -1246,7 +1235,6 @@
                 const chip = document.createElement('button');
                 chip.type = 'button';
                 chip.className = 'history-chip btn-active';
-                // Урезаем слишком длинные адреса для чипса
                 const displayAddr = addr.length > 20 ? addr.substring(0, 20) + '...' : addr;
                 chip.innerHTML = `<i class="fas fa-history"></i> ${displayAddr}`;
                 chip.onclick = () => fillAddressFromChip(addr);
@@ -1254,7 +1242,6 @@
             });
         }
         
-        // Логика автозаполнения из чипса
         window.fillAddressFromChip = function(address) {
             const fromInput = document.getElementById('taxiFrom');
             const toInput = document.getElementById('taxiTo');
@@ -1264,12 +1251,9 @@
             } else if (!toInput.value) {
                 toInput.value = address;
             } else {
-                // Если оба заполнены, перезаписываем "Куда"
                 toInput.value = address;
             }
             updateTaxiPrice();
-            
-            // Вибрация
             if (navigator.vibrate) navigator.vibrate(10);
         }
         
@@ -1279,7 +1263,6 @@
              await renderHistoryChips();
         }
         
-        // --- РЕНДЕРИНГ ИСТОРИИ В МОДАЛЬНОМ ОКНЕ ---
         window.renderOrderHistory = function() {
             const container = document.getElementById('fullHistoryContainer');
             const orders = JSON.parse(localStorage.getItem(FULL_HISTORY_KEY) || '[]');
@@ -1467,6 +1450,30 @@
                  }
             }
         });
+
+        // === PWA LOGIC: INSTALL PROMPT ===
+        let deferredPrompt;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Предотвращаем автоматический показ (на всякий случай)
+            e.preventDefault();
+            // Сохраняем событие, чтобы вызвать его позже по клику
+            deferredPrompt = e;
+            console.log("PWA install prompt intercepted");
+        });
+
+        window.installApp = async function() {
+            if (deferredPrompt) {
+                // Если есть системное событие (Android), показываем его
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to install prompt: ${outcome}`);
+                deferredPrompt = null;
+            } else {
+                // Если события нет (iOS или уже установлено), показываем нашу инструкцию
+                showPWAInstructions();
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
              loadTheme(); 

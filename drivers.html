@@ -2,9 +2,23 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- PWA Settings start -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Такси Успех">
+    <meta name="theme-color" content="#1d4ed8" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
+    
+    <!-- Иконка приложения (используем внешнюю ссылку на иконку такси) -->
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/512/taxi.png">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/color/512/taxi.png">
+    
+    <!-- Манифест для Android (встроенный) -->
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%D0%A2%D0%B0%D0%BA%D1%81%D0%B8%20%D0%A3%D1%81%D0%BF%D0%B5%D1%85%22%2C%22short_name%22%3A%22%D0%A3%D1%81%D0%BF%D0%B5%D1%85%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23ffffff%22%2C%22theme_color%22%3A%22%231d4ed8%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fimg.icons8.com%2Fcolor%2F512%2Ftaxi.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+    <!-- PWA Settings end -->
+
     <title>Работа в Такси «Успех» — для водителей</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -15,15 +29,40 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        
+        /* Настройка фона для всего сайта (body).
+           Используем фото ночного города с наложением цвета для читаемости.
+        */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            /* Светлая тема: фото + светлый полупрозрачный слой */
+            background: linear-gradient(rgba(243, 244, 246, 0.85), rgba(243, 244, 246, 0.85)), url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed; /* Фон зафиксирован при прокрутке */
+            /* Предотвращение "резиновой" прокрутки на iOS в PWA режиме */
+            overscroll-behavior-y: none;
+        }
+
+        /* Темная тема: фото + темный полупрозрачный слой */
+        .dark body {
+            background: linear-gradient(rgba(17, 24, 39, 0.9), rgba(17, 24, 39, 0.9)), url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
         
         /* Плавные переходы для темной темы */
         .transition-colors-custom {
             transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
 
+        /* Обновленный фон шапки с фото */
         .header-bg {
-            background: linear-gradient(135deg, #1d4ed8 0%, #0d2a70 100%);
+            /* Градиент + Фото */
+            background: linear-gradient(to bottom, rgba(29, 78, 216, 0.85), rgba(15, 23, 42, 0.95)), url('https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
         }
         
         .btn-hover:hover {
@@ -69,19 +108,19 @@
             transform: none;
         }
         
-        /* Стили ползунка калькулятора (ИСПРАВЛЕНО) */
+        /* Стили ползунка калькулятора */
         input[type=range] {
-            -webkit-appearance: none; /* Убираем дефолтный стиль */
+            -webkit-appearance: none; 
             width: 100%;
             height: 8px;
-            background: #e5e7eb; /* Светлый фон полоски (gray-200) */
+            background: #e5e7eb; 
             border-radius: 5px;
             outline: none;
             cursor: pointer;
         }
         
         .dark input[type=range] {
-            background: #374151; /* Темный фон полоски (gray-700) */
+            background: #374151;
         }
         
         /* Стиль "бегунка" для Chrome, Safari, Edge */
@@ -91,14 +130,14 @@
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            background: #2563eb; /* Синий цвет (blue-600) */
+            background: #2563eb; 
             cursor: pointer;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             transition: transform 0.1s;
         }
 
         input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.1); /* Увеличение при наведении */
+            transform: scale(1.1); 
         }
 
         /* Стиль "бегунка" для Firefox */
@@ -124,35 +163,37 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors-custom">
+<body class="text-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors-custom">
 
-    <!-- HEADER -->
-    <header class="header-bg text-white py-8 rounded-b-2xl shadow-xl relative fade-in-section is-visible">
+    <!-- HEADER (Измененный компактный дизайн с фото) -->
+    <header class="header-bg text-white py-5 rounded-b-2xl shadow-xl relative fade-in-section is-visible">
         <!-- Кнопка переключения темы -->
-        <button onclick="toggleTheme()" class="absolute top-4 right-4 bg-white/20 hover:bg-white/30 p-2 rounded-full backdrop-blur-sm transition">
-            <i id="theme-icon" class="fas fa-moon text-yellow-300 text-xl"></i>
+        <button onclick="toggleTheme()" class="absolute top-3 right-3 bg-white/20 hover:bg-white/30 p-2 rounded-full backdrop-blur-sm transition">
+            <i id="theme-icon" class="fas fa-moon text-yellow-300 text-lg"></i>
         </button>
 
         <div class="max-w-md mx-auto px-4 text-center">
-            <div class="inline-block p-3 bg-white/10 rounded-full mb-3 backdrop-blur-sm">
-                <i class="fas fa-taxi text-4xl text-yellow-400"></i>
+            <!-- Компактная верстка: Иконка и заголовок в одну строку -->
+            <div class="flex items-center justify-center gap-3 mb-1">
+                <i class="fas fa-taxi text-3xl text-yellow-400 drop-shadow-md"></i>
+                <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight drop-shadow-md">Такси «Успех»</h1>
             </div>
-            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">Такси «Успех»</h1>
-            <p class="text-indigo-100 text-lg font-medium">Работа для водителей</p>
-            <p class="text-indigo-200 text-sm mt-1">Белоусовка • Глубокое • Усть-Каменогорск</p>
+            
+            <p class="text-indigo-100 text-sm font-medium drop-shadow-sm">Работа для водителей</p>
+            <p class="text-indigo-200 text-xs mt-1 opacity-90 drop-shadow-sm">Белоусовка • Глубокое • Усть-Каменогорск</p>
         </div>
     </header>
 
     <!-- MAIN -->
-    <main class="max-w-3xl mx-auto px-4 py-8 flex-grow w-full">
+    <main class="max-w-3xl mx-auto px-4 py-6 flex-grow w-full">
 
         <!-- Основные действия -->
-        <div class="flex flex-col gap-4 mb-12 fade-in-section">
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md border-l-4 border-green-500">
-                <h2 class="text-xl font-bold mb-2">Хочешь зарабатывать?</h2>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">Нажми кнопку ниже, чтобы отправить заявку диспетчеру в WhatsApp.</p>
+        <div class="flex flex-col gap-4 mb-10 fade-in-section">
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-md border-l-4 border-green-500">
+                <h2 class="text-lg font-bold mb-1">Хочешь зарабатывать?</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Нажми кнопку ниже, чтобы отправить заявку диспетчеру в WhatsApp.</p>
                 <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20работать%20в%20Такси%20«Успех»." target="_blank"
-                   class="btn-hover bg-green-600 hover:bg-green-700 text-white w-full py-4 rounded-xl text-lg font-bold shadow-lg flex items-center justify-center gap-3">
+                   class="btn-hover bg-green-600 hover:bg-green-700 text-white w-full py-3.5 rounded-xl text-lg font-bold shadow-lg flex items-center justify-center gap-3">
                     <i class="fab fa-whatsapp text-2xl"></i>
                     <span>Стать водителем</span>
                 </a>
@@ -160,106 +201,106 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <a href="https://taxiuspeh.github.io/landing-/" target="_blank"
-                   class="btn-hover bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
+                   class="btn-hover bg-blue-500 hover:bg-blue-600 text-white py-3.5 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
                     <i class="fas fa-street-view"></i>
                     <span>Режим Пассажира</span>
                 </a>
 
                 <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank"
-                   class="btn-hover bg-yellow-400 hover:bg-yellow-500 text-blue-900 py-4 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
+                   class="btn-hover bg-yellow-400 hover:bg-yellow-500 text-blue-900 py-3.5 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
                     <i class="fas fa-users"></i>
                     <span>Чат заказов</span>
                 </a>
                 <a href="https://yandex.ru/navi" target="_blank"
-                   class="btn-hover bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white py-4 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
+                   class="btn-hover bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white py-3.5 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
                     <i class="fas fa-location-arrow text-blue-600"></i>
                     <span>Навигатор</span>
                 </a>
             </div>
         </div>
 
-        <!-- NEW: Интерактивный калькулятор заработка -->
-        <div class="mb-12 fade-in-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
-            <h3 class="text-2xl font-bold text-center mb-6">Калькулятор дохода</h3>
+        <!-- Калькулятор заработка -->
+        <div class="mb-10 fade-in-section bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-100 dark:border-gray-700">
+            <h3 class="text-xl font-bold text-center mb-5">Калькулятор дохода</h3>
             
-            <div class="mb-8">
+            <div class="mb-6">
                 <div class="flex justify-between mb-2">
-                    <span class="text-gray-500 dark:text-gray-400 font-medium">Часов на линии в день:</span>
-                    <span class="text-blue-600 dark:text-blue-400 font-bold text-xl" id="hours-display">4 часа</span>
+                    <span class="text-gray-500 dark:text-gray-400 font-medium text-sm">Часов на линии в день:</span>
+                    <span class="text-blue-600 dark:text-blue-400 font-bold text-lg" id="hours-display">4 часа</span>
                 </div>
                 <input type="range" min="1" max="12" value="4" id="hours-range" 
                        class="w-full">
-                <div class="flex justify-between text-xs text-gray-400 mt-2">
+                <div class="flex justify-between text-[10px] text-gray-400 mt-2">
                     <span>1 час</span>
                     <span>12 часов</span>
                 </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-                <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl text-center">
-                    <p class="text-gray-500 dark:text-gray-400 text-sm mb-1">Доход в день</p>
-                    <p class="text-2xl font-black text-gray-800 dark:text-white" id="daily-income">~6 000 ₸</p>
+                <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl text-center">
+                    <p class="text-gray-500 dark:text-gray-400 text-xs mb-1">Доход в день</p>
+                    <p class="text-xl font-black text-gray-800 dark:text-white" id="daily-income">~6 000 ₸</p>
                 </div>
-                <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl text-center border border-blue-100 dark:border-blue-800/30">
-                    <p class="text-blue-600 dark:text-blue-300 text-sm mb-1">Доход в месяц</p>
-                    <p class="text-2xl font-black text-blue-600 dark:text-blue-400" id="monthly-income">~150 000 ₸</p>
-                    <p class="text-[10px] text-gray-400 mt-1">*при графике 6/1</p>
+                <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl text-center border border-blue-100 dark:border-blue-800/30">
+                    <p class="text-blue-600 dark:text-blue-300 text-xs mb-1">Доход в месяц</p>
+                    <p class="text-xl font-black text-blue-600 dark:text-blue-400" id="monthly-income">~150 000 ₸</p>
+                    <p class="text-[9px] text-gray-400 mt-1">*при графике 6/1</p>
                 </div>
             </div>
-            <p class="text-center text-xs text-gray-400 mt-4">*Расчет примерный, зависит от количества заказов</p>
+            <p class="text-center text-[10px] text-gray-400 mt-3">*Расчет примерный, зависит от количества заказов</p>
         </div>
 
         <!-- Как начать (Steps) -->
-        <h3 class="text-2xl font-bold text-center mb-6 fade-in-section">Как начать работу?</h3>
-        <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-12 relative fade-in-section">
+        <h3 class="text-xl font-bold text-center mb-5 fade-in-section drop-shadow-sm">Как начать работу?</h3>
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-10 relative fade-in-section">
             <div class="hidden md:block absolute top-1/2 left-0 w-full h-1 bg-gray-200 dark:bg-gray-700 -z-10 transform -translate-y-1/2"></div>
 
             <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm text-center w-full md:w-1/3 relative">
-                <div class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3 shadow-lg">1</div>
-                <h4 class="font-bold mb-1">Заявка</h4>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Напишите нам в WhatsApp</p>
+                <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-lg font-bold mx-auto mb-2 shadow-lg">1</div>
+                <h4 class="font-bold text-sm mb-1">Заявка</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Напишите нам в WhatsApp</p>
             </div>
             
             <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm text-center w-full md:w-1/3 relative">
-                <div class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3 shadow-lg">2</div>
-                <h4 class="font-bold mb-1">Документы</h4>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Фото прав и техпаспорта</p>
+                <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-lg font-bold mx-auto mb-2 shadow-lg">2</div>
+                <h4 class="font-bold text-sm mb-1">Документы</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Фото прав и техпаспорта</p>
             </div>
 
             <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm text-center w-full md:w-1/3 relative">
-                <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3 shadow-lg"><i class="fas fa-check"></i></div>
-                <h4 class="font-bold mb-1">На линию</h4>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Принимайте заказы</p>
+                <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-lg font-bold mx-auto mb-2 shadow-lg"><i class="fas fa-check"></i></div>
+                <h4 class="font-bold text-sm mb-1">На линию</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Принимайте заказы</p>
             </div>
         </div>
 
         <!-- Преимущества -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12 fade-in-section">
-            <div class="advantage-card bg-white dark:bg-gray-800 shadow p-5 rounded-2xl text-center">
-                <i class="fas fa-wallet text-3xl mb-2 text-green-500"></i>
-                <p class="font-bold">Выплаты сразу</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 fade-in-section">
+            <div class="advantage-card bg-white dark:bg-gray-800 shadow p-4 rounded-2xl text-center">
+                <i class="fas fa-wallet text-2xl mb-2 text-green-500"></i>
+                <p class="font-bold text-sm">Выплаты сразу</p>
             </div>
-            <div class="advantage-card bg-white dark:bg-gray-800 shadow p-5 rounded-2xl text-center">
-                <i class="fas fa-ban text-3xl mb-2 text-red-500"></i>
-                <p class="font-bold">Без оклейки</p>
+            <div class="advantage-card bg-white dark:bg-gray-800 shadow p-4 rounded-2xl text-center">
+                <i class="fas fa-ban text-2xl mb-2 text-red-500"></i>
+                <p class="font-bold text-sm">Без оклейки</p>
             </div>
-            <div class="advantage-card bg-white dark:bg-gray-800 shadow p-5 rounded-2xl text-center">
-                <i class="fas fa-headset text-3xl mb-2 text-blue-500"></i>
-                <p class="font-bold">Поддержка 24/7</p>
+            <div class="advantage-card bg-white dark:bg-gray-800 shadow p-4 rounded-2xl text-center">
+                <i class="fas fa-headset text-2xl mb-2 text-blue-500"></i>
+                <p class="font-bold text-sm">Поддержка 24/7</p>
             </div>
         </div>
         
-        <!-- NEW: Блок "Приведи друга" -->
-        <div class="mb-12 fade-in-section bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden">
+        <!-- Блок "Приведи друга" -->
+        <div class="mb-10 fade-in-section bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl shadow-lg p-5 text-white relative overflow-hidden">
             <div class="absolute -right-10 -top-10 bg-white/10 w-40 h-40 rounded-full blur-2xl"></div>
-            <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-5">
                 <div class="text-center md:text-left">
-                    <h3 class="text-2xl font-bold mb-2">Приведи друга — получи бонус!</h3>
-                    <p class="text-purple-100">Если ваш друг устроится к нам водителем по вашей рекомендации, вы получите приятный денежный бонус.</p>
+                    <h3 class="text-xl font-bold mb-2">Приведи друга — получи бонус!</h3>
+                    <p class="text-sm text-purple-100">Если ваш друг устроится к нам водителем по вашей рекомендации, вы получите приятный денежный бонус.</p>
                 </div>
                 <div class="flex-shrink-0">
                     <a href="https://wa.me/77770649648?text=Хочу%20узнать%20про%20акцию%20«Приведи%20друга»" target="_blank"
-                       class="inline-block bg-white text-purple-700 hover:bg-purple-50 font-bold py-3 px-6 rounded-xl shadow transition-transform transform hover:scale-105">
+                       class="inline-block bg-white text-purple-700 hover:bg-purple-50 font-bold py-2.5 px-5 rounded-xl shadow text-sm transition-transform transform hover:scale-105">
                         Узнать подробнее
                     </a>
                 </div>
@@ -267,102 +308,102 @@
         </div>
 
         <!-- Отзывы водителей -->
-        <div class="mb-12 fade-in-section">
-            <h3 class="text-2xl font-bold text-center mb-6">Отзывы наших водителей</h3>
+        <div class="mb-10 fade-in-section">
+            <h3 class="text-xl font-bold text-center mb-5 drop-shadow-sm">Отзывы наших водителей</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                            <i class="fas fa-user text-gray-500 dark:text-gray-400"></i>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-gray-500 dark:text-gray-400 text-sm"></i>
                         </div>
                         <div>
                             <p class="font-bold text-sm">Александр</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Стаж 2 года</p>
+                            <p class="text-[10px] text-gray-500 dark:text-gray-400">Стаж 2 года</p>
                         </div>
-                        <div class="ml-auto text-yellow-400 text-xs">
+                        <div class="ml-auto text-yellow-400 text-[10px]">
                             <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
                         </div>
                     </div>
-                    <p class="text-sm text-gray-600 dark:text-gray-300 italic">"Отличный вариант для подработки. Нравится, что график полностью мой — выхожу после основной работы на пару часов."</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-300 italic">"Отличный вариант для подработки. Нравится, что график полностью мой — выхожу после основной работы на пару часов."</p>
                 </div>
                 
-                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                            <i class="fas fa-user text-gray-500 dark:text-gray-400"></i>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-gray-500 dark:text-gray-400 text-sm"></i>
                         </div>
                         <div>
                             <p class="font-bold text-sm">Сергей</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Стаж 5 лет</p>
+                            <p class="text-[10px] text-gray-500 dark:text-gray-400">Стаж 5 лет</p>
                         </div>
-                        <div class="ml-auto text-yellow-400 text-xs">
+                        <div class="ml-auto text-yellow-400 text-[10px]">
                             <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
                         </div>
                     </div>
-                    <p class="text-sm text-gray-600 dark:text-gray-300 italic">"Работаю постоянно. Главный плюс — живые деньги сразу на руки. Диспетчеры всегда на связи, помогают если что."</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-300 italic">"Работаю постоянно. Главный плюс — живые деньги сразу на руки. Диспетчеры всегда на связи, помогают если что."</p>
                 </div>
             </div>
         </div>
 
         <!-- FAQ (Аккордеон) -->
-        <h3 class="text-2xl font-bold text-center mb-6 fade-in-section">Частые вопросы</h3>
+        <h3 class="text-xl font-bold text-center mb-5 fade-in-section drop-shadow-sm">Частые вопросы</h3>
         <div class="space-y-3 mb-10 fade-in-section">
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-                <button onclick="toggleFaq(this)" class="w-full px-6 py-4 text-left flex justify-between items-center font-bold focus:outline-none">
+                <button onclick="toggleFaq(this)" class="w-full px-5 py-3 text-left flex justify-between items-center font-bold text-sm focus:outline-none">
                     <span>Какой график работы?</span>
                     <i class="fas fa-chevron-down text-gray-400 rotate-icon"></i>
                 </button>
                 <div class="faq-content bg-gray-50 dark:bg-gray-700/30">
-                    <div class="px-6 py-4 text-gray-600 dark:text-gray-300 text-sm">
+                    <div class="px-5 py-3 text-gray-600 dark:text-gray-300 text-xs">
                         График абсолютно свободный. Вы выходите на линию тогда, когда вам удобно. Никаких обязательных смен.
                     </div>
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-                <button onclick="toggleFaq(this)" class="w-full px-6 py-4 text-left flex justify-between items-center font-bold focus:outline-none">
+                <button onclick="toggleFaq(this)" class="w-full px-5 py-3 text-left flex justify-between items-center font-bold text-sm focus:outline-none">
                     <span>Как получать заказы?</span>
                     <i class="fas fa-chevron-down text-gray-400 rotate-icon"></i>
                 </button>
                 <div class="faq-content bg-gray-50 dark:bg-gray-700/30">
-                    <div class="px-6 py-4 text-gray-600 dark:text-gray-300 text-sm">
+                    <div class="px-5 py-3 text-gray-600 dark:text-gray-300 text-xs">
                         Все заказы публикуются в нашей закрытой группе WhatsApp. Вы видите маршрут и цену, и если заказ вам подходит — берете его.
                     </div>
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-                <button onclick="toggleFaq(this)" class="w-full px-6 py-4 text-left flex justify-between items-center font-bold focus:outline-none">
+                <button onclick="toggleFaq(this)" class="w-full px-5 py-3 text-left flex justify-between items-center font-bold text-sm focus:outline-none">
                     <span>Какие требования к авто?</span>
                     <i class="fas fa-chevron-down text-gray-400 rotate-icon"></i>
                 </button>
                 <div class="faq-content bg-gray-50 dark:bg-gray-700/30">
-                    <div class="px-6 py-4 text-gray-600 dark:text-gray-300 text-sm">
+                    <div class="px-5 py-3 text-gray-600 dark:text-gray-300 text-xs">
                         Автомобиль должен быть в технически исправном состоянии, чистым внутри и снаружи. Марка и год выпуска обсуждаются индивидуально.
                     </div>
                 </div>
             </div>
         </div>
 
-        <p class="text-center mt-12 text-gray-500 dark:text-gray-400 font-medium fade-in-section">
+        <p class="text-center mt-10 text-gray-500 dark:text-gray-400 font-medium fade-in-section text-sm drop-shadow-sm">
             Остались вопросы? <br>
             <a href="tel:+77770649648" class="text-blue-600 dark:text-blue-400 hover:underline font-bold text-lg">+7 777 064 96 48</a>
         </p>
     </main>
 
     <!-- FOOTER -->
-    <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-6 mt-auto fade-in-section">
+    <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-5 mt-auto fade-in-section">
         <div class="text-center">
-            <p class="text-sm text-gray-500 mb-2">Такси «Успех» © 2025</p>
-            <a href="https://taxiuspeh.github.io/landing-/drivers.html" class="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline font-medium">
+            <p class="text-xs text-gray-500 mb-2">Такси «Успех» © 2025</p>
+            <a href="https://taxiuspeh.github.io/landing-/drivers.html" class="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline font-medium text-sm">
                 <i class="fas fa-home mr-2"></i> Главная (Водители)
             </a>
         </div>
     </footer>
 
-    <!-- NEW: Sticky CTA Button (Visible mainly on mobile via CSS handling) -->
-    <div class="fixed bottom-0 left-0 w-full p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-[0_-5px_15px_rgba(0,0,0,0.1)] md:hidden z-50">
+    <!-- Sticky CTA Button -->
+    <div class="fixed bottom-0 left-0 w-full p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-[0_-5px_15px_rgba(0,0,0,0.1)] md:hidden z-50">
         <div class="flex gap-2">
             <a href="tel:+77770649648" 
-               class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-800 dark:text-white p-3 rounded-xl shadow-md flex items-center justify-center w-14">
+               class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-800 dark:text-white p-3 rounded-xl shadow-md flex items-center justify-center w-12">
                 <i class="fas fa-phone-alt"></i>
             </a>
             <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20работать%20в%20Такси%20«Успех»." target="_blank"
@@ -436,19 +477,16 @@
             const dailyIncomeDisplay = document.getElementById('daily-income');
             const monthlyIncomeDisplay = document.getElementById('monthly-income');
             
-            // Базовая ставка в час (примерная, для расчета)
             const hourlyRate = 1500; 
 
             function updateCalculator() {
                 const hours = slider.value;
                 const daily = hours * hourlyRate;
-                const monthly = daily * 26; // 26 рабочих дней
+                const monthly = daily * 26; 
                 
-                // Форматирование с пробелами (например 1 500)
                 const formatNum = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
                 
                 hoursDisplay.textContent = `${hours} ч.`;
-                // Окончания для слова "час"
                 if(hours == 1) hoursDisplay.textContent = `${hours} час`;
                 else if(hours >= 2 && hours <= 4) hoursDisplay.textContent = `${hours} часа`;
                 else hoursDisplay.textContent = `${hours} часов`;
@@ -458,7 +496,6 @@
             }
 
             slider.addEventListener('input', updateCalculator);
-            // Инициализация
             updateCalculator();
         });
     </script>

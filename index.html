@@ -239,6 +239,15 @@
             border-top: 1px solid rgba(55, 65, 81, 0.5);
         }
 
+        /* НОВОГОДНИЙ СТИЛЬ БАННЕРА */
+        .ny-banner {
+            background: linear-gradient(90deg, #1e3a8a 0%, #7e22ce 50%, #1e3a8a 100%);
+            background-size: 200% auto;
+            animation: ny-shine 5s linear infinite;
+        }
+        @keyframes ny-shine {
+            to { background-position: 200% center; }
+        }
     </style>
 </head>
 
@@ -260,13 +269,13 @@
         </div>
     </header>
 
-    <!-- НОВЫЙ БАННЕР: ОБЪЯВЛЕНИЕ -->
-    <div id="announcementBar" class="bg-red-500 text-white p-3 shadow-lg lg:hidden">
+    <!-- НОВЫЙ БАННЕР: НОВОГОДНИЙ -->
+    <div id="announcementBar" class="ny-banner text-white p-3 shadow-lg lg:hidden">
         <div class="max-w-3xl mx-auto flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <i class="fas fa-exclamation-triangle text-xl"></i>
-                <p id="announcementText" class="text-sm font-semibold">
-                    Внимание! Из-за повышенного спроса на такси или погодных условий время подачи от 15-20 минут.
+                <i class="fas fa-snowflake animate-pulse text-xl text-cyan-200"></i>
+                <p id="announcementText" class="text-sm font-bold tracking-wide">
+                    🎄 С наступающим Новым 2026 годом! Пусть каждая поездка в новом году приносит только удачу и успех! 🎁
                 </p>
             </div>
             <button onclick="dismissAnnouncement()" class="text-sm opacity-80 hover:opacity-100 transition btn-active">
@@ -678,7 +687,7 @@
                 <div id="servicesMenuFooter" class="border-t pt-4 text-center hidden">
                     <p class="text-sm text-gray-500 mb-2">Хотите перейти в канал?</p>
                     <a href="https://t.me/TaxiUspehk" target="_blank" 
-                       class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg shadow transition btn-active">
+                        class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg shadow transition btn-active">
                         <i class="fab fa-telegram-plane mr-2"></i> Перейти в Telegram
                     </a>
                 </div>
@@ -1187,10 +1196,6 @@
             orders.unshift(order); // Add to beginning
             if(orders.length > 50) orders = orders.slice(0, 50); // Keep last 50
             localStorage.setItem(FULL_HISTORY_KEY, JSON.stringify(orders));
-            
-            // Если есть виджет на главной странице, обновляем его? 
-            // В данной версии виджет истории удален с главной по просьбе "шапку поменьше", 
-            // но функция осталась для модального окна истории.
         };
 
         async function populateDatalist(datalistId) {
@@ -1402,7 +1407,7 @@
         }
 
         function checkAndShowAnnouncement() {
-            const dismissKey = 'announcement_dismissed_v1';
+            const dismissKey = 'announcement_dismissed_ny';
             if (localStorage.getItem(dismissKey) === 'true') {
                 announcementBar.classList.add('hidden');
             } else {
@@ -1412,7 +1417,7 @@
 
         window.dismissAnnouncement = function() {
             announcementBar.classList.add('hidden');
-            localStorage.setItem('announcement_dismissed_v1', 'true');
+            localStorage.setItem('announcement_dismissed_ny', 'true');
         }
 
         function getFormattedCurrentTime() {

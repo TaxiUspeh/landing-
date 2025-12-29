@@ -2,2155 +2,306 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <!-- Добавлено viewport-fit=cover для корректного отображения на iPhone с "челкой" -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Такси «Успех» — Белоусовка</title>
 
-    <!-- Google Analytics (КОД АКТИВИРОВАН: G-NMCTD2Q8R2) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NMCTD2Q8R2"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('config', 'G-NMCTD2Q8R2');
     </script>
-    <!-- КОНЕЦ Google Analytics -->
 
-    <!-- === PWA НАСТРОЙКИ (APP) === -->
-    <!-- Иконка приложения (Желтое такси) -->
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1048/1048315.png">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1048/1048315.png">
 
-    <!-- Настройки для iOS (Native App Feel) -->
     <meta name="apple-mobile-web-app-title" content="Такси Успех">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-    <!-- Настройки для Android (Цвет темы и статус бара) -->
     <meta name="theme-color" content="#1f2937">
 
-    <!-- ВСТРОЕННЫЙ MANIFEST.JSON (Обновлен для "Native Feel") -->
-    <!-- Здесь прописано название "Такси Успех" и иконка желтого такси для установки -->
-    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Такси Успех","short_name":"Такси Успех","start_url":".","display":"standalone","orientation":"portrait","theme_color":"#1f2937","background_color":"#1f2937","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1048/1048315.png","sizes":"192x192","type":"image/png"},{"src":"https://cdn-icons-png.flaticon.com/512/1048/1048315.png","sizes":"512x512","type":"image/png"}]}'>
-    <!-- === КОНЕЦ PWA === -->
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogItCi0LDQutGB0Lgg0KP0L/QtdGFIiwKICAic2hvcnRfbmFtZSI6ICLQotCw0LrRgdC4IiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdCIsCiAgImJhY2tncm91bmRfY29sb3ciOiAiIzFmMjkzNyIsCiAgInRoZW1lX2NvbG9yIjogIiMxZjI5MzciLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZmxhdGljb24uY29tLzUxMi8xMDQ4LzEwNDgzMTUucG5nIiwKICAgICAgInNpemVzIjogIjE5MngxOTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9wbmciLAogICAgICAicHVycG9zZSI6ICJhbnkgbWFza2FibGUiCiAgICB9LAogICAgewogICAgICAic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzEwNDgvMTA0ODMxNS5wbmciLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
-        /* Улучшение для PWA: отключение "резиновой" прокрутки и выделения при тапе */
         html, body {
             overscroll-behavior-y: none;
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* Для iOS PWA: отступ сверху, чтобы контент не наезжал на статус-бар */
         @supports (-webkit-touch-callout: none) {
-            .header-bg {
-                padding-top: env(safe-area-inset-top);
-            }
+            .header-bg { padding-top: env(safe-area-inset-top); }
         }
 
         body { 
             font-family: 'Inter', sans-serif; 
-            
-            /* ТЕМАТИЧЕСКИЙ ФОН (РЕАЛЬНОЕ ФОТО) */
             background-color: #1f2937;
             background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
                               url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=1920&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            background-repeat: no-repeat;
-            
             padding-bottom: 90px;
-            transition: color 0.3s;
             color: #1f2937; 
         }
         
-        /* Glassmorphism Header */
         .header-bg { 
             background: linear-gradient(135deg, rgba(245, 158, 11, 0.95) 0%, rgba(29, 78, 216, 0.95) 100%); 
             backdrop-filter: blur(10px);
-            transition: background 0.3s;
         }
 
         .btn-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
         .btn-active:active { transform: scale(0.97); }
 
         .service-card, .main-card, .auction-cta, .stroy-dom-cta, .faq-item { 
-            transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, border-color 0.3s, color 0.3s;
+            transition: transform 0.2s, box-shadow 0.2s;
             border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-        .service-card:hover { transform: scale(1.03); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
-        .auction-cta { background-color: #fff; border: 2px solid #f59e0b; }
-        .stroy-dom-cta { background-color: #ecfdf5; border: 3px solid #059669; animation: pulse-green 4s infinite; }
-        
-        @keyframes pulse-green {
-            0%, 100% { border-color: #059669; } 
-            50% { border-color: #34d399; } 
+            background: white;
         }
 
-        /* Анимация галочки успеха */
-        @keyframes checkmark {
-            0% { stroke-dashoffset: 100px; }
-            100% { stroke-dashoffset: 0; }
-        }
-        @keyframes checkmark-circle {
-            0% { stroke-dashoffset: 480px; }
-            100% { stroke-dashoffset: 960px; }
-        }
-        .success-checkmark { width: 80px; height: 80px; margin: 0 auto; }
-        .success-checkmark circle { 
-            fill: none; stroke-width: 4; stroke-miterlimit: 10; stroke: #10b981; 
-            stroke-dasharray: 480px; stroke-dashoffset: 480px;
-            animation: checkmark-circle 0.6s ease-in-out backwards;
-        }
-        .success-checkmark path { 
-            fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke: #10b981;
-            stroke-dasharray: 100px; stroke-dashoffset: 100px;
-            animation: checkmark 0.4s ease-in-out 0.3s backwards;
-        }
-
-        /* АНИМАЦИЯ МОРГАНИЯ */
-        @keyframes blink-custom {
-            0%, 100% { transform: scale(1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); filter: brightness(1); }
-            50% { transform: scale(1.03); box-shadow: 0 0 20px rgba(59, 130, 246, 0.9); filter: brightness(1.2); }
-        }
         .blink-btn { animation: blink-custom 1.5s infinite ease-in-out; }
-        
-        #locationBtn {
-            padding: 10px 12px; font-size: 1rem; background-color: #e5e7eb; color: #374151; font-weight: 600;
-            border-radius: 8px; transition: background-color 0.2s, color 0.2s;
-            border: none;
-        }
-        #locationBtn:hover { background-color: #d1d5db; }
-
-        .compact-util-btn {
-            padding: 12px 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 0.8rem; font-weight: 600; line-height: 1.2;
-            border: none;
-        }
-        .quick-order-btn {
-            padding-top: 12px; padding-bottom: 12px; display: flex; flex-direction: column; align-items: center;
-            justify-content: center; font-size: 0.875rem; font-weight: 700; 
-            border: none;
-        }
-        
-        .text-shadow-md {
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        @keyframes blink-custom {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.03); filter: brightness(1.2); }
         }
 
-        /* === MODALS === */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center;
-            z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
-            backdrop-filter: blur(4px); 
+            background: rgba(0, 0, 0, 0.6); display: none; align-items: center; justify-content: center;
+            z-index: 1000; backdrop-filter: blur(4px);
         }
-        .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal {
-            background: white; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; 
-            overflow-y: auto; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); transform: scale(0.95);
-            transition: transform 0.3s ease, background-color 0.3s;
-        }
-        
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; border-radius: 12px; width: 95%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+
         .form-input-control {
-             padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; width: 100%;
-             transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; font-size: 16px; 
-             background-color: white;
-        }
-        .form-input-control:focus {
-            border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); outline: none;
-        }
-        
-        .input-with-plus-btn { display: flex; align-items: center; gap: 8px; }
-        .input-with-plus-btn .form-input-control { flex-grow: 1; min-width: 0; }
-        
-        .geo-btn, .add-stop-btn, .remove-stop-btn {
-            flex-shrink: 0; width: 44px; height: 44px; color: white; border-radius: 8px;
-            transition: background-color 0.2s, transform 0.2s; display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; cursor: pointer;
-        }
-        .geo-btn { background-color: #f59e0b; box-shadow: 0 2px 5px rgba(245, 158, 11, 0.5); }
-        .add-stop-btn { background-color: #10b981; box-shadow: 0 2px 5px rgba(16, 185, 129, 0.5); }
-        .remove-stop-btn { background-color: #ef4444; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.5); }
-        
-        .wish-tag { transition: all 0.2s ease; user-select: none; }
-        .wish-tag:active { transform: scale(0.95); }
-        
-        /* Стили для чипсов истории адресов */
-        .history-chips-container {
-            display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; padding-top: 4px;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-        .history-chips-container::-webkit-scrollbar { width: 0; height: 0; display: none; }
-        
-        .history-chip {
-            white-space: nowrap; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
-            background-color: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; cursor: pointer;
-            transition: all 0.2s; display: flex; align-items: center;
-            box-shadow: none;
-        }
-        .history-chip:hover { background-color: #e5e7eb; }
-        .history-chip:active { transform: scale(0.95); background-color: #d1d5db; }
-        .history-chip i { margin-right: 4px; color: #9ca3af; }
-
-        /* Dark Mode */
-        .dark { background-color: #111827; color: #f3f4f6; }
-        .dark .header-bg { background: linear-gradient(135deg, rgba(76, 29, 149, 0.95) 0%, rgba(16, 185, 129, 0.95) 100%); }
-        .dark .main-card, .dark .service-card, .dark .auction-cta, .dark .stroy-dom-cta, 
-        .dark .modal, .dark #faq-accordion > div, .dark .faq-item-content {
-            background-color: #1f2937 !important; color: #e5e7eb !important; 
-        }
-        .dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700 { color: #d1d5db !important; }
-        .dark .text-gray-600 { color: #9ca3af !important; }
-        .dark .text-gray-500 { color: #6b7280 !important; }
-        .dark .text-blue-900 { color: #93c5fd !important; }
-        .dark .border-t, .dark .border, .dark .border-b { border-color: #374151 !important; }
-        .dark .main-card { border-color: #059669 !important; }
-        .dark .stroy-dom-cta { border-color: #34d399 !important; background-color: #064e3b !important; color: #d1fae5 !important; }
-        .dark .form-input-control { background-color: #374151; border-color: #4b5563; color: #f3f4f6; }
-        .dark .form-input-control:focus { border-color: #60a5fa; }
-        .dark .geo-btn { background-color: #b45309; }
-        .dark #locationBtn { background-color: #374151; color: #f3f4f6; border: 1px solid #4b5563; }
-        .dark #locationBtn:hover { background-color: #4b5563; }
-        .dark .bg-red-100 { background-color: #7f1d1d !important; border-color: #991b1b !important; }
-        .dark .text-red-700, .dark .text-red-600 { color: #fca5a5 !important; }
-        .dark .bg-blue-50 { background-color: #1e3a8a !important; border-color: #1e40af !important; }
-        .dark .border-blue-100, .dark .border-blue-200 { border-color: #1e40af !important; }
-        .dark .text-blue-700 { color: #bfdbfe !important; }
-        
-        .dark .history-chip { background-color: #374151; color: #d1d5db; border-color: #4b5563; }
-        .dark .history-chip i { color: #6b7280; }
-        .dark .history-chip:hover { background-color: #4b5563; }
-
-        /* Split Button */
-        .split-btn { display: flex; width: 100%; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .split-btn-part {
-            flex: 1; padding: 0.75rem 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 1.125rem; transition: background-color 0.2s, transform 0.2s; text-align: center;
-            line-height: 1.3; cursor: pointer; border: none;
-        }
-        .split-btn-part:hover { transform: scale(1.02); }
-        .split-btn-taxi { background-color: #10b981; color: white; border-right: 1px solid rgba(255, 255, 255, 0.3); }
-        .split-btn-food { background-color: #ef4444; color: white; }
-        .dark .split-btn-taxi { background-color: #047857; border-right: 1px solid rgba(255, 255, 255, 0.1); }
-        .dark .split-btn-food { background-color: #b91c1c; }
-
-        /* GLASSMORPHISM BOTTOM BAR */
-        .bottom-bar-glass {
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-top: 1px solid rgba(229, 231, 235, 0.5);
-        }
-        .dark .bottom-bar-glass {
-            background-color: rgba(17, 24, 39, 0.9);
-            border-top: 1px solid rgba(55, 65, 81, 0.5);
+             padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; width: 100%; font-size: 16px;
         }
 
-        /* НОВОГОДНИЙ СТИЛЬ БАННЕРА */
         .ny-banner {
             background: linear-gradient(90deg, #1e3a8a 0%, #7e22ce 50%, #1e3a8a 100%);
             background-size: 200% auto;
             animation: ny-shine 5s linear infinite;
         }
-        @keyframes ny-shine {
-            to { background-position: 200% center; }
+        @keyframes ny-shine { to { background-position: 200% center; } }
+
+        /* Dark Mode */
+        .dark body { background-color: #111827; color: #f3f4f6; }
+        .dark .main-card, .dark .modal, .dark .service-card { background-color: #1f2937 !important; color: #e5e7eb !important; }
+        .dark .form-input-control { background-color: #374151; color: white; border-color: #4b5563; }
+        .dark .text-gray-600 { color: #9ca3af; }
+        
+        .bottom-bar-glass {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
+        .dark .bottom-bar-glass { background-color: rgba(17, 24, 39, 0.9); }
     </style>
 </head>
 
-<body class="text-gray-900 min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col">
 
-    <!-- HEADER (УМЕНЬШЕННЫЙ) -->
     <header class="header-bg text-white py-4 rounded-b-lg shadow-lg relative">
         <div class="absolute top-2 right-2">
-            <button id="themeToggle" onclick="toggleTheme()" class="text-white p-2 rounded-full bg-black bg-opacity-10 hover:bg-opacity-30 transition-all focus:outline-none z-50 btn-active">
-                <i id="themeIcon" class="fas fa-moon text-lg"></i>
+            <button onclick="toggleTheme()" class="text-white p-2 rounded-full bg-black bg-opacity-10 btn-active">
+                <i id="themeIcon" class="fas fa-moon"></i>
             </button>
         </div>
         <div class="max-w-md mx-auto px-4 text-center">
             <div class="flex items-center justify-center gap-2 mb-1">
                 <i class="fas fa-taxi text-2xl text-yellow-300"></i>
-                <h1 class="text-2xl font-extrabold tracking-tight">Такси «Успех»</h1>
+                <h1 class="text-2xl font-extrabold">Такси «Успех»</h1>
             </div>
-            <p class="text-white text-sm opacity-90">Ваш комфорт в посёлке Белоусовка.</p>
+            <p class="text-sm opacity-90">Посёлок Белоусовка — 24/7</p>
         </div>
     </header>
 
-    <!-- НОВЫЙ БАННЕР: НОВОГОДНИЙ -->
-    <div id="announcementBar" class="ny-banner text-white p-3 shadow-lg lg:hidden">
+    <div id="announcementBar" class="ny-banner text-white p-3 shadow-lg">
         <div class="max-w-3xl mx-auto flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <i class="fas fa-snowflake animate-pulse text-xl text-cyan-200"></i>
-                <p id="announcementText" class="text-sm font-bold tracking-wide">
-                    🎄 С наступающим Новым 2026 годом! Пусть каждая поездка в новом году приносит только удачу и успех! 🎁
-                </p>
-            </div>
-            <button onclick="dismissAnnouncement()" class="text-sm opacity-80 hover:opacity-100 transition btn-active">
-                <i class="fas fa-times"></i>
-            </button>
+            <p class="text-xs font-bold">🎄 С наступающим 2026 годом! Успешных поездок! 🎁</p>
+            <button onclick="dismissAnnouncement()"><i class="fas fa-times"></i></button>
         </div>
     </div>
-    
-    <!-- MAIN -->
-    <main class="max-w-3xl mx-auto px-4 py-8 flex-grow">
-        
-        <!-- БЛОК 1: ОСНОВНОЙ ЗАКАЗ -->
-        
-        <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6 main-card">
-            
-            <!-- КНОПКА 1 (СИНЯЯ): БЫСТРЫЙ ЗАКАЗ (МОДАЛ TAXI) -->
-            <button data-service="taxi"
-                class="service-btn btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3 blink-btn">
-                <i class="fas fa-car-side text-lg"></i><span>Заказать Taxi</span>
+
+    <main class="max-w-3xl mx-auto px-4 py-6 flex-grow">
+        <div class="p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6 main-card">
+            <button onclick="openModal('taxiModal')" class="bg-blue-500 text-white rounded-xl font-bold w-full py-4 text-lg mb-3 blink-btn shadow-lg btn-active">
+                <i class="fas fa-car-side mr-2"></i>ЗАКАЗАТЬ ТАКСИ
             </button>
-            
-            <!-- 1. РАЗДЕЛЕННАЯ КНОПКА -->
-            <div class="split-btn mb-3">
-                <button onclick="openServicesMenu('whatsapp')"
-                    class="btn-hover btn-active split-btn-part split-btn-taxi">
-                    <span>Меню услуг</span>
+
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <button onclick="openServicesMenu('whatsapp')" class="bg-emerald-600 text-white py-3 rounded-xl font-bold btn-active">Меню услуг</button>
+                <a href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html" class="bg-red-600 text-white py-3 rounded-xl font-bold flex items-center justify-center btn-active">Заказ еды</a>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+                <button onclick="shareApp()" class="bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 p-2 rounded-lg text-xs font-bold btn-active"><i class="fas fa-share-alt block text-lg mb-1 text-blue-500"></i>Друзьям</button>
+                <button onclick="openServicesMenu('telegram')" class="bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 p-2 rounded-lg text-xs font-bold btn-active"><i class="fab fa-telegram block text-lg mb-1 text-sky-500"></i>Telegram</button>
+                <button onclick="openModal('auctionModal')" class="bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 p-2 rounded-lg text-xs font-bold btn-active"><i class="fas fa-gavel block text-lg mb-1 text-orange-500"></i>Аукцион</button>
+            </div>
+        </div>
+
+        <div class="stroy-dom-cta p-4 mb-6 border-l-4 border-emerald-500 shadow-md">
+            <h4 class="font-black text-emerald-800 dark:text-emerald-400">МАГАЗИН «СТРОЙ ДОМ»</h4>
+            <p class="text-sm text-gray-600 dark:text-gray-300">Юбилейная, 10. Всё для ремонта и стройки!</p>
+            <div class="flex gap-2 mt-2">
+                <a href="tel:+77764764606" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold btn-active">Позвонить</a>
+                <a href="https://yandex.kz/maps/-/CLgm7KK9" class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold btn-active">Карта</a>
+            </div>
+        </div>
+
+        <div class="mt-8">
+            <h3 class="text-white text-center font-bold mb-4">Вопросы и цены</h3>
+            <div class="bg-white rounded-xl overflow-hidden main-card shadow-lg">
+                <button onclick="toggleAccordion('faq1')" class="w-full p-4 text-left border-b border-gray-100 flex justify-between btn-active">
+                    <span class="font-bold">💰 Стоимость поездки?</span><i class="fas fa-chevron-down"></i>
                 </button>
-                <a href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html" target="_blank"
-                    class="btn-hover btn-active split-btn-part split-btn-food">
-                    <span>Заказ Еды</span>
-                </a>
-            </div>
-            
-            <!-- 2. БЛОК БЫСТРЫХ ДЕЙСТВИЙ -->
-            <div class="grid grid-cols-3 gap-2 mb-4">
-                <button onclick="shareApp()" 
-                    class="btn-hover btn-active bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
-                    <i class="fas fa-share-alt mb-0.5"></i><span>Поделиться</span>
-                </button>
-                
-                <button onclick="openServicesMenu('telegram')"
-                    class="btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
-                    <i class="fab fa-telegram-plane mb-0.5"></i><span>Telegram</span>
-                </button>
-                
-                <button data-service="auction"
-                    class="service-btn btn-hover btn-active bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
-                    <i class="fas fa-gavel mb-0.5"></i><span>Аукцион</span>
-                </button>
-            </div>
-            
-            <!-- БЛОК ГЕОЛОКАЦИИ -->
-            <button type="button" onclick="getCurrentLocation('main')" id="locationBtn"
-                class="w-full text-gray-700 font-semibold transition flex items-center justify-center space-x-3 shadow-inner btn-active">
-                <i class="fas fa-location-arrow"></i>
-                <span id="locationBtnText">Использовать мое местоположение</span>
-            </button>
-            <p id="locationResult" class="text-xs text-center text-gray-500 mt-2 hidden">
-                <a id="locationAddress" href="#" target="_blank" class="coord-link"></a>
-            </p>
-            
-            <!-- СПОСОБЫ ОПЛАТЫ -->
-            <div class="mt-4 pt-3 border-t border-gray-100 flex justify-center space-x-6 text-gray-600">
-                <div class="flex items-center space-x-1">
-                    <i class="fas fa-money-bill-wave text-xl text-green-500"></i>
-                    <span class="font-semibold text-xs">Наличные</span>
-                </div>
-                <div class="flex items-center space-x-1">
-                    <i class="fas fa-exchange-alt text-xl text-blue-500"></i>
-                    <span class="font-semibold text-xs">Перевод (Kaspi)</span>
-                </div>
-            </div>
-            
-        </div>
-        
-        <!-- БЛОК 2: МАГАЗИН "СТРОЙ ДОМ" -->
-        <div class="mt-8 pt-4">
-            <h3 class="text-2xl font-extrabold text-center mb-4 text-white text-shadow-md">
-                🛠️ Стройматериалы Белоусовка
-            </h3>
-            <div class="stroy-dom-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300">
-                <div class="flex flex-col items-center sm:items-start text-center sm:text-left mb-3 sm:mb-0">
-                    <i class="fas fa-building text-4xl mb-1 text-emerald-600"></i>
-                    <span class="text-2xl block leading-tight font-black text-emerald-800">СТРОЙ ДОМ</span>
-                    <span class="text-base text-gray-700 block mt-1">
-                        Магазин стройматериалов: <span class="font-bold">ул. Юбилейная, 10</span>
-                    </span>
-                    <span class="text-sm text-gray-700 block mt-1">
-                        Телефон: <a href="tel:+77764764606" class="text-blue-600 hover:text-blue-800 font-bold">+7 776 476 4606</a>
-                    </span>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                    <a href="https://wa.me/77764764606?text=Здравствуйте!%20Интересуют%20стройматериалы%20в%20магазине%20%22Строй%20Дом%22%20по%20адресу%20Юбилейная%2010." target="_blank"
-                       class="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
-                        <i class="fab fa-whatsapp mr-2"></i> WhatsApp
-                    </a>
-                    <a href="https://yandex.kz/maps/-/CLgm7KK9" target="_blank"
-                       class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
-                        <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
-                    </a>
-                    <a href="https://www.instagram.com/stroy_dom_bk" target="_blank"
-                       class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
-                        <i class="fab fa-instagram mr-2"></i> Instagram
-                    </a>
-                </div>
+                <div id="faq1" class="hidden p-4 text-sm text-gray-600">От 700 тенге по Белоусовке. Межгород — по тарифу.</div>
             </div>
         </div>
-        
-        <!-- БЛОК 3: НАШИ УСЛУГИ -->
-        <h3 class="text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-8 border-gray-400 border-opacity-30">Дополнительные Услуги (Форма)</h3>
-        
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
-            <button data-service="delivery"
-                class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500">
-                <i class="fas fa-box-open text-2xl mb-1 text-green-600"></i><span class="text-sm">Доставка</span>
-            </button>
-            <button data-service="cargo"
-                class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
-                <i class="fas fa-truck-loading text-2xl mb-1 text-yellow-600"></i><span class="text-sm">Грузовой</span>
-            </button>
-            <button data-service="soberDriver"
-                class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-red-500">
-                <i class="fas fa-cocktail text-2xl mb-1 text-red-600"></i><span class="text-sm">Трезвый водитель</span>
-            </button>
-            <button data-service="assistance"
-                class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-indigo-500">
-                <i class="fas fa-life-ring text-2xl mb-1 text-indigo-600"></i><span class="text-sm">Помощь</span>
-            </button>
-        </div>
-
-
-        <!-- БЛОК 4: БЫСТРЫЕ ДЕЙСТВИЯ (ОБНОВЛЕН: PWA LOGIC) -->
-        <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md border-t pt-4 border-gray-400 border-opacity-30">Быстрые Действия</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
-            <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank"
-                class="btn-hover btn-active bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-lg transition-all compact-util-btn">
-                <i class="fas fa-star text-xl mb-1"></i><span>Оценка</span>
-            </a>
-            <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank"
-                class="btn-hover btn-active bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-lg transition-all compact-util-btn">
-                <i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span>
-            </a>
-            
-            <button onclick="showPartnerModal()" 
-                class="btn-hover btn-active bg-pink-600 hover:bg-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn">
-                <i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span>
-            </button>
-            
-            <!-- КНОПКА УСТАНОВКИ ПРИЛОЖЕНИЯ -->
-            <button onclick="installApp()" 
-                class="btn-hover btn-active bg-gray-700 hover:bg-gray-800 text-white rounded-xl shadow-lg transition-all compact-util-btn">
-                <i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span>
-            </button>
-        </div>
-
-
-        <!-- БЛОК 5: ТехОсмотр -->
-        <div class="mt-8 border-t pt-6 border-gray-400 border-opacity-30">
-            <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Нашим Партнерам: ТехОсмотр</h3>
-            <div class="auction-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300 border-indigo-500 border-2">
-                <div class="flex flex-col items-center sm:items-start text-center sm:text-left mb-3 sm:mb-0">
-                    <i class="fas fa-wrench text-3xl mb-1 text-red-600"></i>
-                    <span class="text-xl block leading-tight font-black text-red-600">ТЕХОСМОТР В БЕЛОУСОВКЕ!</span>
-                    <span class="text-sm text-gray-700 block mt-1">
-                        Официальный ТО: <span class="font-bold">ул. Молодежная, 37</span>
-                    </span>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                    <a href="https://wa.me/77771383856?text=Здравствуйте!%20Хочу%20записаться%20на%20Технический%20Осмотр%20по%20адресу%20Молодежная%2037." target="_blank"
-                       class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
-                        <i class="fab fa-whatsapp mr-2"></i> WhatsApp
-                    </a>
-                    <a href="https://yandex.kz/navi/-/CLGK5Sli" target="_blank"
-                       class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
-                        <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
-                    </a>
-                    <a href="tel:+77771383856"
-                       class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
-                        <i class="fas fa-phone-alt mr-2"></i> Звонок
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        
-        <!-- БЛОК 6: FAQ и ПРАЙС-ЛИСТ -->
-        <div class="mt-10 border-t pt-6 max-w-lg mx-auto border-gray-400 border-opacity-30">
-            <h3 class="text-2xl font-bold text-center text-white text-shadow-md mb-6">Вопросы и Цены</h3>
-            
-            <div id="faq-accordion" class="space-y-4">
-                <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
-                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-1')">
-                        <span>💰 Какая минимальная стоимость поездки?</span>
-                        <i id="icon-faq-1" class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                    </button>
-                    <div id="faq-1" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
-                        <p>Минимальная стоимость поездки по Белоусовке составляет **700 тенге**. Окончательная цена зависит от расстояния и текущей дорожной ситуации.</p>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
-                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-4')">
-                        <span>📦 Сколько стоит услуга Доставки?</span>
-                        <i id="icon-faq-4" class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                    </button>
-                    <div id="faq-4" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
-                        <p>Стоимость услуги доставки начинается **от 1200 KZT**.</p>
-                        <p class="mt-2 text-sm italic">Окончательная цена зависит от общего расстояния и объёма покупок.</p>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
-                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-2')">
-                        <span>⏰ Какой у вас график работы?</span>
-                        <i id="icon-faq-2" class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                    </button>
-                    <div id="faq-2" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
-                        <p>**Мы работаем круглосуточно (24/7)**, чтобы вы могли уехать в любое время дня и ночи.</p>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
-                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-3')">
-                        <span>📍 Примерные цены на Межгород и пригород</span>
-                        <i id="icon-faq-3" class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                    </button>
-                    <div id="faq-3" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
-                        <p class="font-bold text-red-600 mb-2">⚠️ ВНИМАНИЕ: Цены ориентировочные!</p>
-                        <ul class="list-disc list-inside mt-2 space-y-1">
-                            <li>**Базовый тариф:** **230 ₸** за 1 км.</li>
-                            <li>Усть-Каменогорск: **4800—6210 ₸**</li>
-                            <li>Глубокое: **от 4200 ₸**</li>
-                            <li>Новая Бухтарма: **от 24150 ₸**</li>
-                            <li>Риддер: **от 25300 ₸**</li>
-                            <li>Шемонаиха: **от 20700 ₸**</li>
-                            <li>Алтай (Зыряновск): **от 45540 ₸**</li>
-                            <li>Усть-Таловка: **от 19780 ₸**</li>
-                            <li>Секисовка: **от 6440 ₸**</li>
-                            <li>Белокаменка: **от 3500 ₸**</li>
-                            <li>Михайловка: **от 4000 ₸**</li>
-                            <li>Прогресс: **2990—3500 ₸**</li>
-                            <li>Черногорка: **2100—3000 ₸**</li>
-                            <li>Красный Партизан: **1800—2500 ₸**</li>
-                            <li>Планидовка: **2100—2500 ₸**</li>
-                            <li>Тарханка: **11270—12200 ₸**</li>
-                            <li>Предгорное: **8500—10000 ₸**</li>
-                            <li>посёлок Алтайский: **6000—8000 ₸**</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- БЛОК 7: РЕКЛАМА ДЛЯ ПАРТНЕРОВ -->
-        <div class="mt-10 border-t pt-6 border-gray-400 border-opacity-30">
-            <h3 class="text-xl font-bold text-white text-shadow-md mb-6 text-center">📢 Реклама для Вашего Бизнеса</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20магазина%20(Продукты/Одежда)." target="_blank"
-                    class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-pink-500 flex flex-col items-center text-center">
-                    <i class="fas fa-store text-4xl text-pink-500 mb-2"></i>
-                    <p class="text-lg font-bold text-gray-800">Магазин или Точка Продаж</p>
-                    <p class="text-sm text-gray-600">Привлекайте покупателей к вашему физическому объекту. **(WhatsApp)**</p>
-                </a>
-                <a href="https://wa.me/77770649648?text=Интересует%20реклама%20моих%20услуг%20(Сантехник/Ремонт).%20Пришлите%20условия." target="_blank"
-                    class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-red-500 flex flex-col items-center text-center">
-                    <i class="fas fa-tools text-4xl text-red-500 mb-2"></i>
-                    <p class="text-lg font-bold text-gray-800">Услуги, Сервис или Мастер</p>
-                    <p class="text-sm text-gray-600">Найдите клиентов на ремонт, доставку или бытовые услуги. **(Узнать цену)**</p>
-                </a>
-                <a href="https://wa.me/77770649648?text=Хочу%20забронировать%20место%20для%20рекламы%20горячих%20акций." target="_blank"
-                    class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-yellow-600 flex flex-col items-center text-center">
-                    <i class="fas fa-bullhorn text-4xl text-yellow-600 mb-2"></i>
-                    <p class="text-lg font-bold text-gray-800">Горячая Акция / Объявление</p>
-                    <p class="text-sm text-gray-600">Место для срочных или сезонных рекламных кампаний. **(Связаться)**</p>
-                </a>
-            </div>
-        </div>
-        
-        <!-- БЛОК 8: ПРИГЛАШЕНИЕ ВОДИТЕЛЕЙ -->
-        <div class="mt-10 border-t pt-6 text-center border-gray-400 border-opacity-30">
-            <h3 class="text-2xl font-bold text-white text-shadow-md mb-4">Приглашаем Водителей в команду!</h3>
-            <p class="text-gray-200 mb-4 max-w-md mx-auto text-shadow-md">
-                Хотите зарабатывать в удобное время и быть частью успешной команды в Белоусовке?
-            </p>
-            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20стать%20водителем%20такси%20%C2%ABУспех%C2%BB.%20Укажите%2C%20пожалуйста%2C%20условия%20и%20требования." target="_blank"
-               class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover btn-active">
-                <i class="fas fa-car-side mr-2"></i> Отправить Заявку Водителя
-            </a>
-            <p class="text-sm text-gray-300 mt-4 text-shadow-md">
-                Просто отправьте нам сообщение в WhatsApp, чтобы узнать все условия.
-            </p>
-        </div>
-        
-        <!-- БЛОК 9: Вход для водителя -->
-        <div class="mt-6 border-t pt-6 text-center border-gray-400 border-opacity-30">
-            <h3 class="text-xl font-bold text-white text-shadow-md mb-4">Для действующих водителей</h3>
-            <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank"
-               class="inline-block bg-pink-600 hover:bg-pink-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-lg transition-all btn-active">
-                <i class="fas fa-user-shield mr-2"></i> Вход в режим Водителя
-            </a>
-            <p class="text-sm text-gray-300 mt-2 text-shadow-md">
-                Переход в закрытую группу для принятия заказов.
-            </p>
-        </div>
-        
     </main>
 
-    <!-- Навигатор -->
-    <section class="bg-blue-700 py-6 text-center mt-10 shadow-inner">
-        <h3 class="text-xl font-bold text-white mb-3">🗺 Откройте Яндекс.Навигатор</h3>
-        <a href="https://yandex.kz/navi" target="_blank"
-            class="inline-block bg-yellow-400 hover:bg-yellow-500 text-blue-900 px-8 py-3 rounded-xl text-lg font-semibold shadow-lg transition-all btn-active">
-            <i class="fas fa-location-arrow mr-2"></i> Открыть Навигатор
-        </a>
-    </section>
-
-    <!-- ФИКСИРОВАННЫЙ НИЖНИЙ БАР (ДЛЯ МОБИЛЬНЫХ) -->
-    <div class="fixed bottom-0 left-0 right-0 bottom-bar-glass shadow-2xl z-40 sm:hidden">
-        <div class="flex justify-around items-center h-16">
-            <a href="https://wa.me/77770649648?text=%5BАдрес%20ОТКУДА%5D%20-%20%5BАдрес%20КУДА%5D." class="flex flex-col items-center text-green-600 hover:text-green-700 btn-active p-1 rounded-lg">
-                <i class="fab fa-whatsapp text-2xl"></i><span class="text-xs mt-0.5">Заказ</span>
-            </a>
-            <a href="tel:+77770649648" class="flex flex-col items-center text-red-600 hover:text-red-700 btn-active p-1 rounded-lg">
-                <i class="fas fa-phone-alt text-2xl"></i><span class="text-xs mt-0.5">Звонок</span>
-            </a>
-            <!-- ИКОНКА "НА ЭКРАН" ДЛЯ УСТАНОВКИ В НИЖНЕМ МЕНЮ -->
-            <button onclick="installApp()" class="flex flex-col items-center text-yellow-600 hover:text-yellow-700 btn-active p-1 rounded-lg">
-                <i class="fas fa-mobile-alt text-2xl"></i><span class="text-xs mt-0.5">На экран</span>
-            </button>
-            <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" class="flex flex-col items-center text-pink-600 hover:text-pink-700 btn-active p-1 rounded-lg">
-                <i class="fas fa-user-shield text-2xl"></i><span class="text-xs mt-0.5">Водитель</span>
-            </a>
-        </div>
+    <div class="fixed bottom-0 left-0 right-0 bottom-bar-glass shadow-2xl z-40 sm:hidden h-16 flex justify-around items-center border-t border-gray-200 dark:border-gray-800">
+        <button onclick="openModal('taxiModal')" class="text-blue-600 flex flex-col items-center btn-active"><i class="fas fa-car text-xl"></i><span class="text-[10px]">Заказ</span></button>
+        <a href="tel:+77770649648" class="text-red-600 flex flex-col items-center btn-active"><i class="fas fa-phone text-xl"></i><span class="text-[10px]">Звонок</span></a>
+        <button onclick="installApp()" class="text-yellow-600 flex flex-col items-center btn-active"><i class="fas fa-download text-xl"></i><span class="text-[10px]">Приложение</span></button>
+        <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" class="text-pink-600 flex flex-col items-center btn-active"><i class="fas fa-user-shield text-xl"></i><span class="text-[10px]">Водитель</span></a>
     </div>
 
-
-    <!-- FOOTER -->
-    <footer class="bg-gray-900 text-white text-center py-6 mt-10 shadow-inner">
-        <p class="text-sm px-4">
-            <span class="font-bold">© 2025 «Успех Такси»</span>. 
-            «такси Успех» — информационный сервис. 
-        </p>
-        <p class="text-sm mt-2">
-            Следите за новостями:
-            <a href="https://whatsapp.com/channel/0029VajWGmEI1rcfICmXlJ01" class="text-green-400 hover:text-green-300 underline">WhatsApp-канал</a>
-        </p>
-    </footer>
-
-    <!-- ========================================================= -->
-    <!-- УНИВЕРСАЛЬНОЕ МЕНЮ УСЛУГ (ДЛЯ WHATSAPP И TELEGRAM) -->
-    <!-- ========================================================= -->
-    <div id="servicesMenuModal" class="modal-overlay" aria-hidden="true" role="dialog">
-        <div class="modal">
-            <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-4 mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">📋 Все услуги Taxi «Успех»</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="servicesMenuModal">×</button>
-                </div>
-                
-                <p class="text-gray-600 mb-4 text-center">Выберите услугу для оформления заказа:</p>
-                
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <!-- Такси -->
-                    <button onclick="openServiceFromMenu('taxi')" 
-                        class="p-4 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 flex flex-col items-center text-center transition btn-active">
-                        <i class="fas fa-car-side text-2xl text-blue-600 mb-2"></i>
-                        <span class="font-bold text-gray-800 text-sm">Такси</span>
-                    </button>
-                    <!-- Аукцион -->
-                    <button onclick="openServiceFromMenu('auction')"
-                        class="p-4 bg-yellow-50 hover:bg-yellow-100 rounded-xl border border-yellow-200 flex flex-col items-center text-center transition btn-active">
-                        <i class="fas fa-gavel text-2xl text-yellow-600 mb-2"></i>
-                        <span class="font-bold text-gray-800 text-sm">Аукцион</span>
-                    </button>
-                    <!-- Доставка -->
-                    <button onclick="openServiceFromMenu('delivery')"
-                        class="p-4 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 flex flex-col items-center text-center transition btn-active">
-                        <i class="fas fa-box-open text-2xl text-green-600 mb-2"></i>
-                        <span class="font-bold text-gray-800 text-sm">Доставка</span>
-                    </button>
-                    <!-- Грузовой -->
-                    <button onclick="openServiceFromMenu('cargo')"
-                        class="p-4 bg-orange-50 hover:bg-orange-100 rounded-xl border border-orange-200 flex flex-col items-center text-center transition btn-active">
-                        <i class="fas fa-truck-loading text-2xl text-orange-600 mb-2"></i>
-                        <span class="font-bold text-gray-800 text-sm">Грузовой</span>
-                    </button>
-                    <!-- Трезвый водитель -->
-                    <button onclick="openServiceFromMenu('soberDriver')"
-                        class="p-4 bg-red-50 hover:bg-red-100 rounded-xl border border-red-200 flex flex-col items-center text-center transition btn-active">
-                        <i class="fas fa-cocktail text-2xl text-red-600 mb-2"></i>
-                        <span class="font-bold text-gray-800 text-sm">Трезвый водитель</span>
-                    </button>
-                    <!-- Помощь -->
-                    <button onclick="openServiceFromMenu('assistance')"
-                        class="p-4 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 flex flex-col items-center text-center transition btn-active">
-                        <i class="fas fa-life-ring text-2xl text-indigo-600 mb-2"></i>
-                        <span class="font-bold text-gray-800 text-sm">Помощь</span>
-                    </button>
-                </div>
-                
-                <!-- FOOTER: ТОЛЬКО ДЛЯ TELEGRAM РЕЖИМА -->
-                <div id="servicesMenuFooter" class="border-t pt-4 text-center hidden">
-                    <p class="text-sm text-gray-500 mb-2">Хотите перейти в канал?</p>
-                    <a href="https://t.me/TaxiUspehk" target="_blank" 
-                        class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg shadow transition btn-active">
-                        <i class="fab fa-telegram-plane mr-2"></i> Перейти в Telegram
-                    </a>
-                </div>
+    <div id="taxiModal" class="modal-overlay">
+        <div class="modal p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-xl">🚕 Заказать Такси</h3>
+                <button onclick="closeModal('taxiModal')" class="text-3xl text-gray-400 hover:text-gray-600">&times;</button>
             </div>
-        </div>
-    </div>
-    <!-- ========================================================= -->
-
-
-    <!-- 1. МОДАЛЬНОЕ ОКНО: ТАКСИ -->
-    <div id="taxiModal" class="modal-overlay" aria-hidden="true" role="dialog">
-        <div class="modal">
-            <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-4 mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">🚕 Заказать Такси</h3>
+            <form id="taxiForm" class="space-y-4">
+                <div class="flex flex-col">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-1">ОТКУДА</label>
                     <div class="flex gap-2">
-                         <!-- BUTTON FOR ORDER HISTORY (IN MODAL) -->
-                        <button onclick="window.openModal('historyModal'); window.renderOrderHistory();" class="text-gray-400 hover:text-blue-600 text-2xl" title="Полная история">
-                            <i class="fas fa-list-alt"></i>
+                        <input id="taxiFrom" type="text" placeholder="Улица, дом" class="form-input-control" required>
+                        <button type="button" onclick="getCurrentLocation('taxi')" class="bg-yellow-400 text-white p-3 rounded-lg flex-shrink-0 btn-active">
+                            <i class="fas fa-compass"></i>
                         </button>
-                        <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="taxiModal">×</button>
                     </div>
                 </div>
-                <form id="taxiForm" class="space-y-4">
-                    <div id="addressInputsTaxi">
-                        <div class="flex flex-col">
-                            <label for="taxiFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес) *</label>
-                            <div class="input-with-plus-btn">
-                                <input id="taxiFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control" placeholder="Улица, дом (обязательно)" required oninput="updateTaxiPrice()">
-                                <datalist id="fromHistory"></datalist>
-                                <button type="button" onclick="getCurrentLocation('taxi')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="taxiGeoIcon" class="fas fa-compass"></i></button>
-                            </div>
-                            <!-- НОВОЕ: Контейнер для чипсов истории -->
-                            <div id="taxiHistoryChips" class="history-chips-container mt-2"></div>
-                        </div>
-                        
-                        <!-- 1. НОВАЯ КНОПКА: ПОМЕНЯТЬ МЕСТАМИ -->
-                        <div class="relative flex justify-center -my-3 z-10">
-                             <button type="button" onclick="swapTaxiAddresses()" class="bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-full p-2 shadow-md border border-white transition transform hover:rotate-180 focus:outline-none btn-active" title="Поменять местами">
-                                <i class="fas fa-exchange-alt rotate-90"></i>
-                             </button>
-                        </div>
-                        
-                        <div class="flex flex-col">
-                            <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
-                            <div class="input-with-plus-btn">
-                                <input id="taxiTo" name="to" type="text" list="toHistory" autocomplete="off" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required oninput="updateTaxiPrice()">
-                                <datalist id="toHistory"></datalist>
-                                <button type="button" onclick="addStop('additionalStops', 'taxi')" class="add-stop-btn btn-active" title="Добавить адрес"><i class="fas fa-plus"></i></button>
-                            </div>
-                            <div id="additionalStops" class="mt-2 space-y-2" oninput="updateTaxiPrice()"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="border border-blue-200 rounded-lg overflow-hidden">
-                        <button type="button" onclick="togglePreorder()" class="w-full p-3 bg-blue-50 flex justify-between items-center text-left focus:outline-none btn-active">
-                            <span class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)</span>
-                            <i id="preorderIcon" class="fas fa-chevron-down text-blue-500 transition-transform duration-300"></i>
-                        </button>
-                        <div id="preorderContent" class="hidden p-3 bg-white border-t border-blue-100 space-y-3">
-                            <div class="flex flex-col">
-                                <label for="taxiDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время поездки</label>
-                                <input id="taxiDateTime" name="dateTime" type="datetime-local" class="form-input-control">
-                            </div>
-                            <div class="flex flex-col">
-                                <label for="taxiWishes" class="text-xs font-medium text-gray-600 mb-1">Пожелания</label>
-                                <textarea id="taxiWishes" name="wishes" rows="2" class="form-input-control" placeholder="Например: Нужно детское кресло, машина побольше."></textarea>
-                                
-                                <!-- 2. НОВЫЕ БЫСТРЫЕ ТЕГИ -->
-                                <div class="flex flex-wrap gap-2 mt-2">
-                                    <button type="button" onclick="addWish('Детское кресло')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">👶 Детское кресло</button>
-                                    <button type="button" onclick="addWish('Пустой багажник')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">🧳 Пустой багажник</button>
-                                    <button type="button" onclick="addWish('С животным')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">🐕 С животным</button>
-                                    <button type="button" onclick="addWish('Кондиционер')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">❄️ Кондиционер</button>
-                                    <button type="button" onclick="addWish('Сдача с 5000/10000')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">💵 Сдача</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col">
-                        <label for="passengerPhone" class="text-sm font-medium text-gray-700 mb-1">Телефон для связи (пассажира)</label>
-                        <input id="passengerPhone" name="passengerPhone" type="tel" pattern="[0-9+() -]*" class="form-input-control" placeholder="+7 (XXX) XXX-XX-XX">
-                    </div>
-
-                    <div id="taxiStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
-
-                    <div class="pt-4 border-t mt-6 flex justify-between items-center">
-                        <div>
-                            <div class="price-note">Примерная стоимость:</div>
-                            <div id="taxiPriceEstimate" class="price-estimate">от 700–900 тг</div>
-                            <div class="price-note text-red-600 font-semibold">Внимание: точная цена после подтверждения водителем.</div>
-                        </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Заказать</button>
-                    </div>
-                </form>
-            </div>
+                <div class="flex flex-col">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-1">КУДА</label>
+                    <input id="taxiTo" type="text" placeholder="Адрес или место" class="form-input-control" required>
+                </div>
+                <div class="flex flex-col">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-1">НОМЕР ТЕЛЕФОНА</label>
+                    <input id="passengerPhone" type="tel" placeholder="+7 (7xx) xxx-xx-xx" class="form-input-control">
+                </div>
+                <div class="flex flex-col">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-1">ДОПОЛНИТЕЛЬНО</label>
+                    <textarea id="taxiWishes" rows="2" placeholder="Сдача с 5000, детское кресло и т.д." class="form-input-control"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold shadow-lg transition btn-active">ОТПРАВИТЬ ЗАКАЗ В WHATSAPP</button>
+            </form>
         </div>
     </div>
 
-    <!-- 2. МОДАЛЬНОЕ ОКНО: ДОСТАВКА -->
-    <div id="deliveryModal" class="modal-overlay" aria-hidden="true" role="dialog">
-        <div class="modal">
-            <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-4 mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">🛍️ Доставка Товаров</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="deliveryModal">×</button>
-                </div>
-                <form id="deliveryForm" class="space-y-4">
-                    <div class="flex flex-col">
-                        <label for="deliveryItems" class="text-sm font-medium text-gray-700 mb-1">Список товаров *</label>
-                        <textarea id="deliveryItems" name="items" rows="3" class="form-input-control" placeholder="Например: хлеб, пиво, огурцы 1 кг" required></textarea>
-                    </div>
-                    <div class="flex flex-col">
-                        <label for="deliveryStore" class="text-sm font-medium text-gray-700 mb-1">Пожелания по магазину</label>
-                        <input id="deliveryStore" name="store" type="text" class="form-input-control" placeholder="Например: Магазин №1, Супермаркет" />
-                    </div>
-                    <div class="flex flex-col">
-                        <label for="deliveryAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес доставки *</label>
-                        <div class="input-with-plus-btn">
-                            <input id="deliveryAddress" name="address" type="text" class="form-input-control" placeholder="Улица, дом, квартира" required />
-                            <button type="button" onclick="getCurrentLocation('delivery')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="deliveryGeoIcon" class="fas fa-compass"></i></button>
-                        </div>
-                    </div>
-                    <div id="deliveryStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
-                    <div class="pt-4 border-t mt-6 flex justify-between items-center">
-                        <div>
-                            <div class="price-note">Примерная стоимость:</div>
-                            <div class="price-estimate">от 1200 тг</div>
-                        </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Оформить заказ</button>
-                    </div>
-                </form>
+    <div id="pwaModal" class="modal-overlay">
+        <div class="modal p-6 text-center">
+            <div class="bg-yellow-100 text-yellow-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-mobile-alt text-3xl"></i>
             </div>
-        </div>
-    </div>
-    
-    <!-- 3. МОДАЛЬНОЕ ОКНО: ГРУЗОВОЙ -->
-    <div id="cargoModal" class="modal-overlay" aria-hidden="true" role="dialog">
-        <div class="modal">
-            <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-4 mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">🚚 Грузовые Перевозки</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="cargoModal">×</button>
-                </div>
-                <form id="cargoForm" class="space-y-4">
-                    <div class="flex flex-col">
-                        <label for="cargoFrom" class="text-sm font-medium text-gray-700 mb-1">Адрес погрузки *</label>
-                        <div class="input-with-plus-btn">
-                            <input id="cargoFrom" name="from" type="text" class="form-input-control" placeholder="Откуда забрать груз" required>
-                            <button type="button" onclick="getCurrentLocation('cargo')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="cargoGeoIcon" class="fas fa-compass"></i></button>
-                        </div>
-                    </div>
-                    <div class="flex flex-col">
-                        <label for="cargoTo" class="text-sm font-medium text-gray-700 mb-1">Адрес выгрузки *</label>
-                        <input id="cargoTo" name="to" type="text" class="form-input-control" placeholder="Куда доставить груз" required>
-                    </div>
-                    <div class="flex flex-col">
-                        <label for="cargoDescription" class="text-sm font-medium text-gray-700 mb-1">Описание груза *</label>
-                        <textarea id="cargoDescription" name="description" rows="2" class="form-input-control" placeholder="Например: 1 холодильник и 5 коробок" required></textarea>
-                    </div>
-                    <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
-                        <p class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)</p>
-                        <div class="flex flex-col">
-                            <label for="cargoDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время погрузки</label>
-                            <input id="cargoDateTime" name="dateTime" type="datetime-local" class="form-input-control">
-                        </div>
-                    </div>
-                    <div class="flex flex-col">
-                        <label for="cargoMovers" class="text-sm font-medium text-gray-700 mb-1">Грузчики</label>
-                        <div class="input-with-plus-btn">
-                            <select id="cargoMovers" name="movers" class="form-input-control" required onchange="updateCargoPrice()">
-                                <option value="0">Не требуются</option>
-                                <option value="1">1 человек</option>
-                                <option value="2">2 человека</option>
-                                <option value="3">3 человека</option>
-                                <option value="4">4 человека</option>
-                            </select>
-                            <span class="text-sm font-bold text-red-600">(+3000 тг/чел)</span>
-                        </div>
-                    </div>
-                    <div id="cargoStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
-                    <div class="pt-4 border-t mt-6 flex justify-between items-center">
-                        <div>
-                            <div class="price-note">Общая стоимость (за 1 час):</div>
-                            <div id="cargoTotalPrice" class="price-estimate">6000 тг</div>
-                            <div id="cargoPriceNote" class="price-note font-semibold">Минимальный заказ - 1 час.</div>
-                        </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Заказать</button>
-                    </div>
-                </form>
-            </div>
+            <h3 class="font-bold text-xl mb-2">Установить как приложение</h3>
+            <p class="text-sm text-gray-600 mb-6">Чтобы открывать такси одним нажатием без браузера:<br><b>Нажмите «Поделиться» и выберите «На экран Домой»</b></p>
+            <button onclick="closeModal('pwaModal')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold btn-active">ПОНЯТНО</button>
         </div>
     </div>
 
-    <!-- 4. МОДАЛЬНОЕ ОКНО: ТРЕЗВЫЙ ВОДИТЕЛЬ -->
-    <div id="soberDriverModal" class="modal-overlay" aria-hidden="true" role="dialog">
-        <div class="modal">
-            <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-4 mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">🔑 Трезвый Водитель</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="soberDriverModal">×</button>
-                </div>
-                <form id="soberDriverForm" class="space-y-4">
-                    <div class="flex flex-col">
-                        <label for="soberDriverFrom" class="text-sm font-medium text-gray-700 mb-1">Ваш текущий адрес *</label>
-                        <div class="input-with-plus-btn">
-                            <input id="soberDriverFrom" name="from" type="text" class="form-input-control" placeholder="Адрес, где находится авто" required>
-                            <button type="button" onclick="getCurrentLocation('soberDriver')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="soberDriverGeoIcon" class="fas fa-compass"></i></button>
-                        </div>
-                    </div>
-                    <div class="flex flex-col">
-                        <label for="soberDriverCarModel" class="text-sm font-medium text-gray-700 mb-1">Марка и модель авто *</label>
-                        <input id="soberDriverCarModel" name="carModel" type="text" class="form-input-control" placeholder="Например: Toyota Camry" required>
-                    </div>
-                    <div class="flex flex-col">
-                        <label for="soberDriverTo" class="text-sm font-medium text-gray-700 mb-1">Куда доставить автомобиль *</label>
-                        <input id="soberDriverTo" name="to" type="text" class="form-input-control" placeholder="Конечный адрес" required>
-                    </div>
-                    <div id="soberDriverStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
-                    <div class="pt-4 border-t mt-6 flex justify-between items-center">
-                        <div>
-                            <div class="price-note">Примерная стоимость:</div>
-                            <div class="price-estimate">от 3800 тг</div>
-                        </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Вызвать водителя</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 5. МОДАЛЬНОЕ ОКНО: ПОМОЩЬ -->
-    <div id="assistanceModal" class="modal-overlay" aria-hidden="true" role="dialog">
-        <div class="modal">
-            <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-4 mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">🙋 Помощь / Помощь на дороге</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="assistanceModal">×</button>
-                </div>
-                <form id="assistanceForm" class="space-y-4">
-                    <div class="flex flex-col">
-                        <label for="assistanceType" class="text-sm font-medium text-gray-700 mb-1">Тип требуемой помощи *</label>
-                        <select id="assistanceType" name="type" class="form-input-control" required>
-                            <option value="">Выберите тип помощи...</option>
-                            <option value="Подкачать колесо">Подкачать колесо</option>
-                            <option value="Прикурить автомобиль">Прикурить автомобиль</option>
-                            <option value="Прочее поручение/помощь">Прочее поручение/помощь</option>
-                        </select>
-                    </div>
-                    <div id="carDetails" class="space-y-4 p-3 bg-teal-50 rounded-lg border border-dashed border-teal-300 hidden">
-                        <p class="font-semibold text-sm text-teal-700">Данные для помощи на дороге</p>
-                        <div class="flex flex-col">
-                            <label for="carModel" class="text-sm font-medium text-gray-700 mb-1">Марка и модель авто</label>
-                            <input id="carModel" name="carModel" type="text" class="form-input-control" placeholder="Например: Toyota Camry">
-                        </div>
-                        <div class="flex flex-col">
-                            <label for="licencePlate" class="text-sm font-medium text-gray-700 mb-1">Гос. номер</label>
-                            <input id="licencePlate" name="licencePlate" type="text" class="form-input-control" placeholder="Например: 123ABC">
-                        </div>
-                    </div>
-                    <div class="flex flex-col">
-                        <label for="assistanceTask" class="text-sm font-medium text-gray-700 mb-1">Детали и уточнения</label>
-                        <textarea id="assistanceTask" name="task" rows="3" class="form-input-control" placeholder="Например: Какое колесо спустило"></textarea>
-                    </div>
-                    <div class="flex flex-col">
-                        <label for="assistanceAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес *</label>
-                        <div class="input-with-plus-btn">
-                            <input id="assistanceAddress" name="address" type="text" class="form-input-control" placeholder="Улица, дом или местоположение" required />
-                            <button type="button" onclick="getCurrentLocation('assistance')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="assistanceGeoIcon" class="fas fa-compass"></i></button>
-                        </div>
-                    </div>
-                    <div id="assistanceStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
-                    <div class="pt-4 border-t mt-6 flex justify-between items-center">
-                        <div>
-                            <div class="price-note">Примерная стоимость:</div>
-                            <div class="price-estimate">от 1500 тг</div>
-                        </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Оформить заявку</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 6. МОДАЛЬНОЕ ОКНО: АУКЦИОН -->
-    <div id="auctionModal" class="modal-overlay" aria-hidden="true" role="dialog">
-        <div class="modal">
-            <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-4 mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">🔨 Заказ-Аукцион</h3>
-                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="auctionModal">×</button>
-                </div>
-                <form id="auctionForm" class="space-y-4">
-                    <div id="addressInputsAuction">
-                        <div class="flex flex-col">
-                            <label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес)</label>
-                            <div class="input-with-plus-btn">
-                                <input id="auctionFrom" name="from" type="text" autocomplete="off" class="form-input-control" placeholder="Улица, дом (обязательно)" required>
-                                <button type="button" onclick="getCurrentLocation('auction')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="auctionGeoIcon" class="fas fa-compass"></i></button>
-                            </div>
-                        </div>
-                        <div class="flex flex-col">
-                            <label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
-                            <div class="input-with-plus-btn">
-                                <input id="auctionTo" name="to" type="text" autocomplete="off" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required>
-                                <button type="button" onclick="addStop('additionalStopsAuction', 'auction')" class="add-stop-btn btn-active" title="Добавить адрес"><i class="fas fa-plus"></i></button>
-                            </div>
-                            <div id="additionalStopsAuction" class="mt-2 space-y-2"></div>
-                        </div>
-                    </div>
-                    <div class="flex flex-col">
-                        <label for="auctionPrice" class="text-sm font-medium text-gray-700 mb-1">Ваша цена в тенге</label>
-                        <input id="auctionPrice" name="price" type="number" inputmode="numeric" pattern="[0-9]*" min="500" class="form-input-control" placeholder="Минимум 500 KZT" required>
-                        <p class="text-xs text-gray-500 mt-1">⚠️ Вы предлагаете свою цену, а водитель решает, брать заказ или нет.</p>
-                    </div>
-                    <div id="auctionStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
-                    <div class="pt-4 border-t mt-6 flex justify-between items-center">
-                        <div>
-                            <div class="price-estimate text-yellow-600">Начните от 500 тг</div>
-                        </div>
-                        <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Предложить цену</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <!-- HISTORY MODAL (ДЛЯ ПОЛНОЙ ИСТОРИИ) -->
-    <div id="historyModal" class="modal-overlay" aria-hidden="true">
-        <div class="modal">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-black text-gray-800 dark:text-white uppercase tracking-tighter">📜 ИСТОРИЯ ЗАКАЗОВ</h3>
-                    <button onclick="window.closeModal('historyModal')" class="text-2xl text-gray-400 hover:text-gray-600 btn-active">&times;</button>
-                </div>
-                <div id="fullHistoryContainer" class="space-y-4 max-h-[60vh] overflow-y-auto">
-                    <!-- Заказы будут здесь -->
-                    <div class="text-center text-gray-400 py-10">Пока нет истории поездок</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
-        <div class="modal">
-            <div class="p-6">
-                <h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните «Такси Успех» как приложение!</h3>
-                <p class="mb-4 text-gray-700">Чтобы вам не пришлось каждый раз искать ссылку, сохраните нашу промо-страницу прямо на главном экране телефона.</p>
-                <div class="border p-4 rounded-lg mb-4 bg-gray-50">
-                    <h4 class="text-lg font-bold text-blue-600 mb-2 flex items-center"><i class="fab fa-apple mr-2"></i> Для iPhone (iOS)</h4>
-                    <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                        <li>Откройте эту страницу в браузере **Safari**.</li>
-                        <li>Нажмите на иконку **«Поделиться»** (<i class="fas fa-share-square"></i>).</li>
-                        <li>Выберите **«На экран "Домой"»**.</li>
-                    </ol>
-                </div>
-                <div class="border p-4 rounded-lg bg-gray-50">
-                    <h4 class="text-lg font-bold text-green-600 mb-2 flex items-center"><i class="fab fa-android mr-2"></i> Для Android (Chrome)</h4>
-                    <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                        <li>Нажмите на **три точки** (<i class="fas fa-ellipsis-v"></i>).</li>
-                        <li>Выберите **«Добавить на главный экран»** (или "Установить приложение").</li>
-                    </ol>
-                </div>
-                <button onclick="document.getElementById('pwaModal').classList.add('hidden')" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">Понятно</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="partnerModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
-        <div class="modal">
-            <div class="p-6">
-                <h3 class="text-2xl font-bold mb-4 text-pink-600 flex items-center justify-center"><i class="fas fa-handshake mr-2"></i> Партнерские Услуги</h3>
-                <p class="mb-4 text-gray-800 font-semibold">Здесь будет размещаться реклама и специальные предложения наших партнеров!</p>
-                <div class="border border-gray-200 p-4 rounded-lg mb-4 bg-gray-50">
-                    <h4 class="text-lg font-bold text-gray-700">Хотите стать нашим Партнером?</h4>
-                    <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20обсудить%20размещение%20рекламы%20на%20вашей%20промо-странице%20такси." target="_blank" class="w-full inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition btn-active">Связаться по рекламе</a>
-                </div>
-                <button onclick="document.getElementById('partnerModal').classList.add('hidden')" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">Закрыть</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================================= -->
-    <!-- FIREBASE и JAVASCRIPT ЛОГИКА -->
-    <!-- ========================================================= -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        let app = null;
-        let db = null;
-        let auth = null;
-        let userId = null;
-        
-        let orderDestination = 'whatsapp';
-        
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
-        
-        const LOCAL_STORAGE_HISTORY_KEY = 'taxi_address_history_v1';
-        const FULL_HISTORY_KEY = 'taxi_full_orders_history';
-
-        async function initFirebaseAndAuth() {
-            if (!firebaseConfig) {
-                console.error("Firebase configuration is missing.");
-                return;
-            }
-
-            try {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        syncAddressHistory();
-                    } 
-                    setAddressHistory();
-                });
-            } catch (error) {
-                console.error("Firebase initialization or authentication failed:", error);
-                setAddressHistory();
-            }
-        }
-        
-        const ADDRESS_HISTORY_DOC_PATH = "settings";
-        const ADDRESS_HISTORY_FIELD = "addressHistory";
-
-        async function loadAddresses() {
-            let localData = [];
-            try {
-                const stored = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
-                if (stored) localData = JSON.parse(stored);
-            } catch (e) { console.error("LS Error:", e); }
-            return localData; 
-        }
-        
-        async function syncAddressHistory() {
-            if (!db || !userId) return;
-            try {
-                const docRef = doc(db, "artifacts", appId, "users", userId, "data", ADDRESS_HISTORY_DOC_PATH);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const cloudData = docSnap.data()[ADDRESS_HISTORY_FIELD] || [];
-                    if (cloudData.length > 0) {
-                        localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(cloudData));
-                        setAddressHistory();
-                    }
-                }
-            } catch (e) {
-                console.warn("Sync failed (offline?):", e);
-            }
+    <script>
+        // Регистрация Service Worker (Обязательно для PWA)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:application/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsIGV2ZW50ID0+IHt9KTs=');
         }
 
-        async function saveAddress(address) {
-            if (!address || address.includes('[КООРДИНАТЫ]') || address.length < 3) return;
+        // --- ТЕМА ---
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            document.getElementById('themeIcon').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            localStorage.setItem('taxi_theme', isDark ? 'dark' : 'light');
+        }
+        
+        // Инициализация темы
+        if(localStorage.getItem('taxi_theme') === 'dark') {
+            document.body.classList.add('dark');
+            document.getElementById('themeIcon').className = 'fas fa-sun';
+        }
 
-            let history = [];
-            try {
-                const stored = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
-                if (stored) history = JSON.parse(stored);
-            } catch(e) {}
-
-            history = history.filter(item => item.toLowerCase() !== address.toLowerCase());
-            history.unshift(address);
-            history = history.slice(0, 10);
+        // --- МОДАЛКИ ---
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        
+        // --- ГЕОЛОКАЦИЯ ---
+        function getCurrentLocation(mode) {
+            const btn = event.currentTarget;
+            btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i>';
+            if (!navigator.geolocation) return alert("Геолокация не поддерживается вашим устройством");
             
-            localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(history));
-
-            if (db && userId) {
-                 const docRef = doc(db, "artifacts", appId, "users", userId, "data", ADDRESS_HISTORY_DOC_PATH);
-                 setDoc(docRef, { [ADDRESS_HISTORY_FIELD]: history }, { merge: true }).catch(e => console.log("Firebase save error:", e));
-            }
-            
-            await setAddressHistory();
-        }
-
-        window.saveOrderToFullHistory = function(from, to, price) {
-            const now = new Date();
-            const order = {
-                id: Date.now(),
-                date: now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
-                time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-                from: from,
-                to: to,
-                price: price
-            };
-            
-            let orders = JSON.parse(localStorage.getItem(FULL_HISTORY_KEY) || '[]');
-            orders.unshift(order); // Add to beginning
-            if(orders.length > 50) orders = orders.slice(0, 50); // Keep last 50
-            localStorage.setItem(FULL_HISTORY_KEY, JSON.stringify(orders));
-        };
-
-        async function populateDatalist(datalistId) {
-            const historyArray = await loadAddresses();
-            const datalist = document.getElementById(datalistId);
-            if (!datalist) return;
-            datalist.innerHTML = ''; 
-            historyArray.forEach(address => {
-                const option = document.createElement('option');
-                option.value = address;
-                datalist.appendChild(option);
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const lat = pos.coords.latitude.toFixed(5);
+                const lon = pos.coords.longitude.toFixed(5);
+                const loc = `[ГЕО] https://yandex.kz/maps/?pt=${lon},${lat}&z=16`;
+                if(mode === 'taxi') document.getElementById('taxiFrom').value = loc;
+                btn.innerHTML = '<i class="fas fa-check text-green-600"></i>';
+                setTimeout(() => btn.innerHTML = '<i class="fas fa-compass"></i>', 2000);
+            }, () => {
+                alert("Не удалось определить местоположение. Проверьте доступ в настройках.");
+                btn.innerHTML = '<i class="fas fa-compass"></i>';
             });
         }
-        
-        async function renderHistoryChips() {
-            const historyArray = await loadAddresses();
-            const container = document.getElementById('taxiHistoryChips');
-            if (!container) return;
-            container.innerHTML = '';
 
-            const recent = historyArray.slice(0, 5);
-            
-            if (recent.length === 0) {
-                 container.style.display = 'none';
-                 return;
-            } else {
-                 container.style.display = 'flex';
-            }
-
-            recent.forEach(addr => {
-                const chip = document.createElement('button');
-                chip.type = 'button';
-                chip.className = 'history-chip btn-active';
-                const displayAddr = addr.length > 20 ? addr.substring(0, 20) + '...' : addr;
-                chip.innerHTML = `<i class="fas fa-history"></i> ${displayAddr}`;
-                chip.onclick = () => fillAddressFromChip(addr);
-                container.appendChild(chip);
-            });
-        }
-        
-        window.fillAddressFromChip = function(address) {
-            const fromInput = document.getElementById('taxiFrom');
-            const toInput = document.getElementById('taxiTo');
-            
-            if (!fromInput.value) {
-                fromInput.value = address;
-            } else if (!toInput.value) {
-                toInput.value = address;
-            } else {
-                toInput.value = address;
-            }
-            updateTaxiPrice();
-            if (navigator.vibrate) navigator.vibrate(10);
-        }
-        
-        window.setAddressHistory = async function() {
-             await populateDatalist('fromHistory');
-             await populateDatalist('toHistory');
-             await renderHistoryChips();
-        }
-        
-        window.renderOrderHistory = function() {
-            const container = document.getElementById('fullHistoryContainer');
-            const orders = JSON.parse(localStorage.getItem(FULL_HISTORY_KEY) || '[]');
-            
-            if(orders.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-400 py-10">История поездок пуста</div>';
-                return;
-            }
-
-            container.innerHTML = orders.map(order => `
-                <div class="p-3 border-b flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700" onclick="window.repeatOrder('${order.from}', '${order.to}')">
-                    <div class="flex-grow">
-                        <div class="text-xs text-gray-400 font-bold mb-1">${order.date} в ${order.time}</div>
-                        <div class="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                            <i class="far fa-dot-circle text-blue-500 text-xs"></i> ${order.from}
-                        </div>
-                        <div class="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2 mt-1">
-                            <i class="fas fa-map-marker-alt text-red-500 text-xs"></i> ${order.to}
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-sm font-bold text-gray-900 dark:text-green-400">${order.price}</div>
-                        <div class="text-[10px] text-blue-500 uppercase mt-1">Повторить</div>
-                    </div>
-                </div>
-            `).join('');
-        };
-
-        window.repeatOrder = function(from, to, openModalFlag = false) {
-            document.getElementById('taxiFrom').value = from;
-            document.getElementById('taxiTo').value = to;
-            updateTaxiPrice();
-            
-            if(openModalFlag) {
-                window.openModal('taxiModal');
-            } else {
-                window.closeModal('historyModal');
-            }
-        };
-
-        initFirebaseAndAuth();
-
-        window.toggleAccordion = function(id) {
-            const content = document.getElementById(id);
-            const icon = document.getElementById(`icon-${id}`);
-            if (!content) return;
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                if (icon) icon.classList.add('rotate-180');
-            } else {
-                content.classList.add('hidden');
-                if (icon) icon.classList.remove('rotate-180');
-            }
-        }
-
-        const locationBtnTextEl = document.getElementById('locationBtnText');
-        const locationResultEl = document.getElementById('locationResult');
-        const locationAddressEl = document.getElementById('locationAddress');
-        const announcementBar = document.getElementById('announcementBar');
-        
-        let currentGeolocatedAddress = '';
-        
-        const CARGO_BASE_PRICE = 6000; 
-        const MOVER_PRICE_PER_HOUR = 3000; 
-        
-        const INTERCITY_PRICES = {
-            "усть-каменогорск": "от 4800–6210 тг",
-            "глубокое": "от 4200 тг",
-            "новая бухтарма": "от 24150 тг",
-            "риддер": "от 25300 тг",
-            "шемонаиха": "от 20700 тг",
-            "алтай": "от 45540 тг", 
-            "усть-таловка": "от 19780 тг",
-            "секисовка": "от 6440 тг",
-            "белокаменка": "от 3500 тг",
-            "михайловка": "от 4000 тг",
-            "прогресс": "от 2990–3500 тг",
-            "черногорка": "от 2100–3000 тг",
-            "красный партизан": "от 1800–2500 тг",
-            "планидовка": "от 2100–2500 тг",
-            "тарханка": "от 11270–12200 тг",
-            "предгорное": "от 8500–10000 тг",
-            "алтайский": "от 6000–8000 тг"
-        };
-
-        const MODALS = {
-            'taxi': { id: 'taxiModal', formId: 'taxiForm', title: 'ТАКСИ', prefix: '🚕 НОВЫЙ ЗАКАЗ: ТАКСИ' },
-            'delivery': { id: 'deliveryModal', formId: 'deliveryForm', title: 'ДОСТАВКА', prefix: '🛍️ НОВЫЙ ЗАКАЗ: ДОСТАВКА' },
-            'cargo': { id: 'cargoModal', formId: 'cargoForm', title: 'ГРУЗОВОЙ', prefix: '🚚 НОВЫЙ ЗАКАЗ: ГРУЗОВОЙ' },
-            'soberDriver': { id: 'soberDriverModal', formId: 'soberDriverForm', title: 'ТРЕЗВЫЙ ВОДИТЕЛЬ', prefix: '🔑 НОВЫЙ ЗАКАЗ: ТРЕЗВЫЙ ВОДИТЕЛЬ' },
-            'assistance': { id: 'assistanceModal', formId: 'assistanceForm', title: 'ПОМОЩЬ', prefix: '🙋 НОВЫЙ ЗАКАЗ: ПОМОЩЬ' },
-            'auction': { id: 'auctionModal', formId: 'auctionForm', title: 'АУКЦИОН', prefix: '🔨 ЗАКАЗ: АУКЦИОН (ЦЕНА КЛИЕНТА)' },
-        };
-        
-        const PHONE_NUMBER = '77770649648'; 
-
-        const THEME_KEY = 'taxi_theme_preference';
-        const body = document.body;
-        const themeIcon = document.getElementById('themeIcon');
-        
-        function updateThemeIcon(theme) {
-            if (themeIcon) {
-                if (theme === 'dark') {
-                    themeIcon.classList.remove('fa-moon');
-                    themeIcon.classList.add('fa-sun');
-                    themeIcon.title = 'Переключить на светлую тему';
-                } else {
-                    themeIcon.classList.remove('fa-sun');
-                    themeIcon.classList.add('fa-moon');
-                    themeIcon.title = 'Переключить на темную тему';
-                }
-            }
-        }
-
-        function applyTheme(theme) {
-            if (theme === 'dark') {
-                body.classList.add('dark');
-            } else {
-                body.classList.remove('dark');
-            }
-            updateThemeIcon(theme);
-        }
-
-        window.toggleTheme = function() {
-            const isDark = body.classList.contains('dark');
-            const newTheme = isDark ? 'light' : 'dark';
-            applyTheme(newTheme);
-            localStorage.setItem(THEME_KEY, newTheme);
-        }
-        
-        function loadTheme() {
-            const savedTheme = localStorage.getItem(THEME_KEY);
-            if (savedTheme) {
-                applyTheme(savedTheme);
-            } else {
-                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                const defaultTheme = prefersDark ? 'dark' : 'light';
-                applyTheme(defaultTheme);
-            }
-        }
-
-        function checkAndShowAnnouncement() {
-            const dismissKey = 'announcement_dismissed_ny';
-            if (localStorage.getItem(dismissKey) === 'true') {
-                announcementBar.classList.add('hidden');
-            } else {
-                announcementBar.classList.remove('hidden');
-            }
-        }
-
-        window.dismissAnnouncement = function() {
-            announcementBar.classList.add('hidden');
-            localStorage.setItem('announcement_dismissed_ny', 'true');
-        }
-
-        function getFormattedCurrentTime() {
-             const now = new Date();
-             now.setMinutes(now.getMinutes() + 15); 
-             const year = now.getFullYear();
-             const month = String(now.getMonth() + 1).padStart(2, '0');
-             const day = String(now.getDate()).padStart(2, '0');
-             const hours = String(now.getHours()).padStart(2, '0');
-             const minutes = String(now.getMinutes()).padStart(2, '0');
-             return `${year}-${month}-${day}T${hours}:${minutes}`;
-        }
-        
-        function initPhoneMask() {
-            const phoneInput = document.getElementById('passengerPhone');
-            if(phoneInput) {
-                phoneInput.addEventListener('input', function (e) {
-                    let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
-                    if (!x[2]) {
-                         e.target.value = x[1] ? '+7' : '';
-                         return;
-                    }
-                    e.target.value = '+7 (' + x[2] + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
-                });
-            }
-        }
-        
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('button') || e.target.closest('a')) {
-                 if (navigator.vibrate) {
-                     navigator.vibrate(5); 
-                 }
-            }
-        });
-
-        // === PWA LOGIC: INSTALL PROMPT ===
-        let deferredPrompt;
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            // Предотвращаем автоматический показ (на всякий случай)
+        // --- ЗАКАЗ В WHATSAPP ---
+        document.getElementById('taxiForm').onsubmit = function(e) {
             e.preventDefault();
-            // Сохраняем событие, чтобы вызвать его позже по клику
+            const from = document.getElementById('taxiFrom').value;
+            const to = document.getElementById('taxiTo').value;
+            const phone = document.getElementById('passengerPhone').value;
+            const wishes = document.getElementById('taxiWishes').value;
+            
+            const text = `🚕 *НОВЫЙ ЗАКАЗ*\n📍 *Откуда:* ${from}\n🏁 *Куда:* ${to}\n📞 *Тел:* ${phone}\n💬 *Пожелания:* ${wishes}`;
+            window.open(`https://wa.me/77770649648?text=${encodeURIComponent(text)}`);
+            closeModal('taxiModal');
+        };
+
+        // --- PWA INSTALL ---
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
             deferredPrompt = e;
-            console.log("PWA install prompt intercepted");
         });
 
-        window.installApp = async function() {
+        async function installApp() {
             if (deferredPrompt) {
-                // Если есть системное событие (Android), показываем его
                 deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`User response to install prompt: ${outcome}`);
                 deferredPrompt = null;
             } else {
-                // Если события нет (iOS или уже установлено), показываем нашу инструкцию
-                showPWAInstructions();
+                openModal('pwaModal');
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-             loadTheme(); 
-             checkAndShowAnnouncement();
-             initPhoneMask(); 
-             setAddressHistory(); 
-             
-             const formattedNow = getFormattedCurrentTime();
-             const taxiDateTimeInput = document.getElementById('taxiDateTime');
-             if (taxiDateTimeInput) {
-                 taxiDateTimeInput.value = formattedNow;
-                 taxiDateTimeInput.min = new Date().toISOString().slice(0, 16);
-             }
-             const cargoDateTimeInput = document.getElementById('cargoDateTime');
-             if (cargoDateTimeInput) {
-                 cargoDateTimeInput.value = formattedNow;
-                 cargoDateTimeInput.min = new Date().toISOString().slice(0, 16);
-             }
-             updateCargoPrice(); 
-             updateTaxiPrice(); 
-        });
+        function toggleAccordion(id) { document.getElementById(id).classList.toggle('hidden'); }
+        function dismissAnnouncement() { document.getElementById('announcementBar').remove(); }
         
-        function setGeoButtonLoading(mode, isLoading, isError = false) {
-            let buttonEl, iconEl, textEl;
-            if (mode === 'main') {
-                buttonEl = document.getElementById('locationBtn');
-                textEl = document.getElementById('locationBtnText');
-                if (isLoading) {
-                    textEl.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Определяем...';
-                    buttonEl.disabled = true;
-                } else {
-                    buttonEl.disabled = false;
-                    textEl.innerHTML = isError ? '<i class="fas fa-times"></i> Ошибка определения' : '<i class="fas fa-check"></i> Адрес определен';
-                }
-                return;
-            } 
-
-            let iconId;
-            switch(mode) {
-                case 'taxi': iconId = 'taxiGeoIcon'; break;
-                case 'auction': iconId = 'auctionGeoIcon'; break;
-                case 'delivery': iconId = 'deliveryGeoIcon'; break;      
-                case 'cargo': iconId = 'cargoGeoIcon'; break;           
-                case 'soberDriver': iconId = 'soberDriverGeoIcon'; break; 
-                case 'assistance': iconId = 'assistanceGeoIcon'; break; 
-                default: return;
-            }
-
-            iconEl = document.getElementById(iconId);
-            buttonEl = iconEl ? iconEl.closest('button') : null;
-
-            if (buttonEl && iconEl) {
-                buttonEl.disabled = isLoading;
-                if (isLoading) {
-                    iconEl.className = 'fas fa-spinner animate-spin';
-                    buttonEl.title = 'Определяем местоположение...';
-                } else {
-                    iconEl.className = isError ? 'fas fa-exclamation-triangle' : 'fas fa-compass';
-                    buttonEl.title = 'Использовать мое местоположение';
-                }
-            }
-        }
-
-        window.getCurrentLocation = function(trigger) {
-            if (!navigator.geolocation) {
-                displayMessageModal('Ошибка', 'Геолокация не поддерживается вашим браузером.', true);
-                setGeoButtonLoading(trigger, false, true);
-                return;
-            }
-
-            setGeoButtonLoading(trigger, true);
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    setGeoButtonLoading(trigger, false, false);
-                    const lat = position.coords.latitude.toFixed(5);
-                    const lon = position.coords.longitude.toFixed(5);
-                    const yandexMapUrl = `https://yandex.kz/maps/?pt=${lon},${lat}&z=16&l=map`;
-                    currentGeolocatedAddress = `[КООРДИНАТЫ] ${lat}, ${lon}. Ссылка: ${yandexMapUrl}`; 
-                    let inputId;
-                    let message;
-                    let placeholder;
-                    let successMessage = 'Ваше местоположение добавлено в поле "Откуда".';
-
-                    switch (trigger) {
-                        case 'main':
-                            locationResultEl.classList.remove('hidden');
-                            locationAddressEl.textContent = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
-                            locationAddressEl.href = yandexMapUrl; 
-                            locationAddressEl.title = 'Открыть местоположение на карте';
-                            setAllLocationFields(currentGeolocatedAddress);
-                            displayMessageModal('Готово!', 'Ваше местоположение (координаты и ссылка на карту) автоматически добавлено во все формы заказа (Откуда/Адрес)! Нажмите кнопку "Заказать" в любой форме.', false);
-                            return;
-                        case 'taxi': inputId = 'taxiFrom'; message = 'Откуда'; placeholder = 'Откуда (Адрес определен)'; break;
-                        case 'auction': inputId = 'auctionFrom'; message = 'Откуда'; placeholder = 'Откуда (Адрес определен)'; break;
-                        case 'delivery': inputId = 'deliveryAddress'; message = 'Адрес доставки'; placeholder = 'Адрес доставки (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Адрес доставки".'; break;
-                        case 'cargo': inputId = 'cargoFrom'; message = 'Адрес погрузки'; placeholder = 'Адрес погрузки (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Адрес погрузки".'; break;
-                        case 'soberDriver': inputId = 'soberDriverFrom'; message = 'Ваш текущий адрес'; placeholder = 'Адрес авто (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Ваш текущий адрес".'; break;
-                        case 'assistance': inputId = 'assistanceAddress'; message = 'Адрес помощи'; placeholder = 'Адрес помощи (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Адрес (где нужна помощь)".'; break;
-                        default: return;
-                    }
-
-                    const input = document.getElementById(inputId);
-                    if (input) {
-                        input.value = currentGeolocatedAddress;
-                        input.placeholder = placeholder;
-                    }
-                    displayMessageModal('Адрес определен', successMessage, false);
-                    if (trigger === 'taxi') updateTaxiPrice();
-
-                },
-                (error) => {
-                    setGeoButtonLoading(trigger, false, true);
-                    let errorMessage = 'Ошибка определения местоположения.';
-                    if (error.code === error.PERMISSION_DENIED) errorMessage = 'Доступ к геолокации запрещен. Пожалуйста, разрешите доступ в настройках браузера.';
-                    if (trigger === 'main') {
-                         locationResultEl.classList.add('hidden');
-                    }
-                    displayMessageModal('Ошибка', errorMessage, true);
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        }
-        
-        let stopCounter = 0; 
-
-        window.addStop = function(containerId, mode) {
-            if (stopCounter >= 3) {
-                displayMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false);
-                return;
-            }
-            stopCounter++;
-            const stopsContainer = document.getElementById(containerId);
-            const stopId = `${containerId}Input${stopCounter}`;
-            const stopLabel = `Дополнительный адрес ${stopCounter}`;
-            const stopDiv = document.createElement('div');
-            stopDiv.className = "flex space-x-2 additional-stop-item input-with-plus-btn"; 
-            const divId = `stopDiv${containerId}${stopCounter}`;
-            stopDiv.id = divId;
-            const inputEvents = (mode === 'taxi') ? 'oninput="updateTaxiPrice()"' : '';
-            stopDiv.innerHTML = `
-                <input id="${stopId}" name="${stopId}" type="text" list="toHistory" autocomplete="off" class="form-input-control" placeholder="${stopLabel} (обязательно)" required ${inputEvents}>
-                <button type="button" onclick="removeStop('${divId}', '${mode}')" class="remove-stop-btn btn-active" title="Удалить адрес"><i class="fas fa-minus"></i></button>
-            `;
-            stopsContainer.appendChild(stopDiv);
-            setAddressHistory(); 
-            if (mode === 'taxi') updateTaxiPrice();
-        }
-        
-        window.removeStop = function(divId, mode) {
-            const elementToRemove = document.getElementById(divId);
-            if (elementToRemove) {
-                elementToRemove.remove();
-                stopCounter--;
-                if (stopCounter < 0) stopCounter = 0;
-            }
-            if (mode === 'taxi') updateTaxiPrice();
-        }
-        
-        function countFilledAddresses() {
-            let count = 0;
-            const fromInput = document.getElementById('taxiFrom');
-            const toInput = document.getElementById('taxiTo');
-            const stopsContainer = document.getElementById('additionalStops');
-            if (fromInput && fromInput.value.trim().length > 0) count++; 
-            if (toInput && toInput.value.trim().length > 0) count++;
-            if (stopsContainer) {
-                stopsContainer.querySelectorAll('input.form-input-control').forEach(input => {
-                    if (input.value.trim().length > 0) count++;
-                });
-            }
-            return count;
-        }
-        
-        window.updateTaxiPrice = function() {
-            const priceEl = document.getElementById('taxiPriceEstimate');
-            if (!priceEl) return;
-            const toInput = document.getElementById('taxiTo');
-            const destination = toInput ? toInput.value.trim().toLowerCase() : '';
-            
-            const cleanDestination = destination.replace(/^(г\.|город\s+|п\.|пос\.|поселок\s+|с\.|село\s+)/i, '').trim();
-            
-            let priceText;
-            let isIntercity = false;
-            for (const location in INTERCITY_PRICES) {
-                if (cleanDestination.startsWith(location)) {
-                    priceText = INTERCITY_PRICES[location];
-                    isIntercity = true;
-                    break;
-                }
-            }
-            if (isIntercity) {
-                priceEl.textContent = priceText;
-                return; 
-            }
-            const addressCount = countFilledAddresses();
-            if (addressCount <= 2) priceText = 'от 700–900 тг';
-            else if (addressCount >= 3) priceText = 'от 1500–2000 тг';
-            else priceText = 'от 700–900 тг';
-            priceEl.textContent = priceText;
-        }
-
-        window.openModal = function(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                document.querySelectorAll('.status-message').forEach(el => el.classList.remove('active'));
-                if (modalId === 'taxiModal' || modalId === 'auctionModal') setAddressHistory();
-                modal.classList.add('active');
-                modal.setAttribute('aria-hidden', 'false');
-                const formattedNow = getFormattedCurrentTime();
-                const minTime = new Date().toISOString().slice(0, 16);
-                 if (modalId === 'taxiModal') {
-                     const dtInput = document.getElementById('taxiDateTime');
-                     dtInput.value = formattedNow;
-                     dtInput.min = minTime; // Установка минимума
-                     updateTaxiPrice(); 
-                 }
-                 if (modalId === 'cargoModal') {
-                     const dtInput = document.getElementById('cargoDateTime');
-                     dtInput.value = formattedNow;
-                     dtInput.min = minTime; // Установка минимума
-                     document.getElementById('cargoMovers').value = '0'; 
-                     updateCargoPrice(); 
-                 }
-                const firstInput = modal.querySelector('input, textarea, select');
-                if (firstInput) firstInput.focus();
-            }
-        }
-
-        window.closeModal = function(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.remove('active');
-                modal.setAttribute('aria-hidden', 'true');
-                
-                if (modalId === 'taxiModal' || modalId === 'auctionModal') {
-                    const stopsContainerTaxi = document.getElementById('additionalStops');
-                    const stopsContainerAuction = document.getElementById('additionalStopsAuction');
-                    if (stopsContainerTaxi) stopsContainerTaxi.innerHTML = '';
-                    if (stopsContainerAuction) stopsContainerAuction.innerHTML = '';
-                    stopCounter = 0; 
-                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
-                    if (form) form.reset();
-                } else if (modalId === 'servicesMenuModal') {
-                } else {
-                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
-                    if (form) form.reset();
-                }
-                
-                if (modalId === 'assistanceModal') {
-                    document.getElementById('carDetails').classList.add('hidden');
-                    document.getElementById('assistanceType').value = '';
-                }
-                
-                if (modalId === 'taxiModal') {
-                     const content = document.getElementById('preorderContent');
-                     const icon = document.getElementById('preorderIcon');
-                     if (content && !content.classList.contains('hidden')) content.classList.add('hidden');
-                     if (icon && icon.classList.contains('rotate-180')) icon.classList.remove('rotate-180');
-                     
-                     const formattedNow = getFormattedCurrentTime();
-                     document.getElementById('taxiDateTime').value = formattedNow;
-                     updateTaxiPrice(); 
-                 }
-                 if (modalId === 'cargoModal') {
-                     const formattedNow = getFormattedCurrentTime();
-                     document.getElementById('cargoDateTime').value = formattedNow;
-                     document.getElementById('cargoMovers').value = '0'; 
-                     updateCargoPrice(); 
-                 }
-            }
-        }
-
-        function showStatus(modalId, message) {
-            const statusEl = document.getElementById(modalId.replace('Modal', 'Status'));
-            if (statusEl) {
-                statusEl.textContent = message;
-                statusEl.classList.add('active');
-            }
-        }
-        
-        function displayMessageModal(title, message, isError = false) {
-            const existingModal = document.getElementById('alertModal');
-            if (existingModal) existingModal.remove();
-            
-            if (!isError && (title === 'Заказ сформирован!' || title === 'Готово!')) {
-                 const modalHtml = `
-                    <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-60 z-[2000] flex items-center justify-center p-4">
-                        <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center transform transition-all scale-100">
-                            <div class="success-checkmark mb-4">
-                                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130.2 130.2">
-                                  <circle class="path circle" fill="none" stroke="#10b981" stroke-width="6" stroke-miterlimit="10" cx="65.1" cy="65.1" r="62.1"/>
-                                  <polyline class="path check" fill="none" stroke="#10b981" stroke-width="6" stroke-linecap="round" stroke-miterlimit="10" points="100.2,40.2 51.5,88.8 29.8,67.5 "/>
-                                </svg>
-                            </div>
-                            <h3 class="text-2xl font-bold mb-2 text-gray-800 dark:text-white">${title}</h3>
-                            <p class="mb-6 text-gray-600 dark:text-gray-300 text-sm">${message}</p>
-                            <button onclick="document.getElementById('alertModal').remove()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition transform hover:scale-105 btn-active">Отлично</button>
-                        </div>
-                    </div>
-                `;
-                document.body.insertAdjacentHTML('beforeend', modalHtml);
-                return;
-            }
-
-            const modalHtml = `
-                <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-sm text-center">
-                        <h3 class="text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}">${title}</h3>
-                        <p class="mb-6 text-gray-700 dark:text-gray-300">${message}</p>
-                        <button onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">OK</button>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-        }
-
-        function setAllLocationFields(locationText) {
-            const fieldsToFill = [
-                { id: 'taxiFrom', placeholder: 'Откуда (Адрес определен)' }, 
-                { id: 'deliveryAddress', placeholder: 'Адрес доставки (Адрес определен)' }, 
-                { id: 'cargoFrom', placeholder: 'Адрес погрузки (Адрес определен)' }, 
-                { id: 'soberDriverFrom', placeholder: 'Адрес авто (Адрес определен)' }, 
-                { id: 'assistanceAddress', placeholder: 'Адрес помощи (Адрес определен)' }, 
-                { id: 'auctionFrom', placeholder: 'Откуда (Адрес определен)' }
-            ];
-            fieldsToFill.forEach(field => {
-                const input = document.getElementById(field.id);
-                if (input) {
-                    input.value = locationText;
-                    input.placeholder = field.placeholder; 
-                }
-            });
-            updateTaxiPrice();
-        }
-        
-        window.updateCargoPrice = function() {
-            const cargoMoversSelect = document.getElementById('cargoMovers');
-            const cargoTotalPriceEl = document.getElementById('cargoTotalPrice');
-            const cargoPriceNoteEl = document.getElementById('cargoPriceNote');
-            if (!cargoMoversSelect || !cargoTotalPriceEl || !cargoPriceNoteEl) return;
-            const moversCount = parseInt(cargoMoversSelect.value) || 0;
-            const totalPrice = CARGO_BASE_PRICE + (moversCount * MOVER_PRICE_PER_HOUR);
-            const formattedPrice = totalPrice.toLocaleString('ru-RU');
-            cargoTotalPriceEl.textContent = `${formattedPrice} тг`;
-            if (moversCount > 0) cargoPriceNoteEl.innerHTML = `Базовая стоимость ${CARGO_BASE_PRICE.toLocaleString('ru-RU')} тг + доплата за ${moversCount} чел.`;
-            else cargoPriceNoteEl.textContent = 'Минимальный заказ - 1 час.';
-        }
-
-        window.togglePreorder = function() {
-            const content = document.getElementById('preorderContent');
-            const icon = document.getElementById('preorderIcon');
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                if (icon) icon.classList.add('rotate-180');
+        function shareApp() {
+            if (navigator.share) {
+                navigator.share({ title: 'Такси Успех', url: window.location.href });
             } else {
-                content.classList.add('hidden');
-                if (icon) icon.classList.remove('rotate-180');
+                alert("Скопируйте ссылку в браузере и отправьте друзьям!");
             }
         }
         
-        window.openServicesMenu = function(mode) {
-            orderDestination = mode;
-            const footer = document.getElementById('servicesMenuFooter');
-            if (footer) {
-                if (mode === 'telegram') {
-                    footer.classList.remove('hidden');
-                } else {
-                    footer.classList.add('hidden');
-                }
-            }
-            openModal('servicesMenuModal');
+        function openServicesMenu(mode) {
+            alert("Меню дополнительных услуг временно доступно только через диспетчера.");
         }
-
-        window.openServiceFromMenu = function(serviceKey) {
-            closeModal('servicesMenuModal');
-            setTimeout(() => {
-                if (MODALS[serviceKey]) {
-                    openModal(MODALS[serviceKey].id);
-                }
-            }, 100);
-        }
-        
-        function copyToClipboard(text) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.setAttribute('readonly', '');
-            textarea.style.position = 'absolute';
-            textarea.style.left = '-9999px';
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-            } catch (err) {
-                console.error('Failed to copy', err);
-            }
-            document.body.removeChild(textarea);
-        }
-
-        window.swapTaxiAddresses = function() {
-            const fromEl = document.getElementById('taxiFrom');
-            const toEl = document.getElementById('taxiTo');
-            const temp = fromEl.value;
-            fromEl.value = toEl.value;
-            toEl.value = temp;
-            
-            updateTaxiPrice();
-        }
-
-        window.addWish = function(text) {
-            const wishEl = document.getElementById('taxiWishes');
-            let currentText = wishEl.value.trim();
-            
-            if (!currentText) {
-                wishEl.value = text;
-            } else if (!currentText.includes(text)) {
-                wishEl.value = currentText + ', ' + text;
-            }
-        }
-        
-        window.shareApp = async function() {
-            const shareData = {
-                title: 'Такси «Успех»',
-                text: 'Заказывай такси в Белоусовке быстро и удобно!',
-                url: window.location.href
-            };
-            try {
-                if (navigator.share) {
-                    await navigator.share(shareData);
-                } else {
-                    copyToClipboard(window.location.href);
-                    displayMessageModal('Ссылка скопирована', 'Ссылка на приложение скопирована в буфер обмена. Отправьте её друзьям!', false);
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
-        
-        document.querySelectorAll('.service-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                orderDestination = 'whatsapp';
-                const service = button.getAttribute('data-service');
-                if (MODALS[service]) openModal(MODALS[service].id);
-            });
-        });
-
-        document.querySelectorAll('.close-btn').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const modalId = button.getAttribute('data-modal');
-                closeModal(modalId);
-            });
-        });
-
-        document.querySelectorAll('.modal-overlay').forEach(overlay => {
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) closeModal(overlay.id);
-            });
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                const openModal = document.querySelector('.modal-overlay.active');
-                if (openModal) closeModal(openModal.id);
-            }
-        });
-        
-        const assistanceTypeSelect = document.getElementById('assistanceType');
-        const carDetailsDiv = document.getElementById('carDetails');
-        if (assistanceTypeSelect && carDetailsDiv) {
-            assistanceTypeSelect.addEventListener('change', (e) => {
-                const selectedType = e.target.value;
-                if (selectedType === 'Подкачать колесо' || selectedType === 'Прикурить автомобиль') carDetailsDiv.classList.remove('hidden');
-                else carDetailsDiv.classList.add('hidden');
-            });
-        }
-
-        const forms = document.querySelectorAll('form');
-        forms.forEach(form => {
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const formId = this.id;
-                const modalKey = Object.keys(MODALS).find(key => MODALS[key].formId === formId);
-                const modalConfig = MODALS[modalKey];
-                if (!modalConfig) return;
-                const modalId = modalConfig.id;
-                const statusEl = document.getElementById(modalId.replace('Modal', 'Status'));
-                if (statusEl) statusEl.classList.remove('active');
-                let message = `${modalConfig.prefix}\n\n`;
-                let requiredFieldsMissing = false;
-
-                const getVal = (id, label, isRequired = false) => {
-                    const input = document.getElementById(id);
-                    let value = input ? input.value.trim() : '';
-                    if (isRequired && !value) requiredFieldsMissing = true;
-                    if (input && input.type === 'checkbox') value = input.checked ? 'Да' : 'Нет';
-                    return `*${label}*:\n${value || '—'}\n\n`;
-                };
-
-                const collectStops = (containerId) => {
-                    let stops = '';
-                    const container = document.getElementById(containerId);
-                    if (container) {
-                        container.querySelectorAll('input').forEach((input, index) => {
-                            if (input.value.trim()) {
-                                const stopLabel = `Доп. адрес ${index + 1}`;
-                                stops += `*${stopLabel}*:\n${input.value.trim()}\n\n`;
-                            }
-                        });
-                    }
-                    return stops;
-                };
-                
-                const handlePreorder = (dateTimeId, basePrefix) => {
-                    const dateTimeInput = document.getElementById(dateTimeId).value;
-                    let prefixMessage = basePrefix;
-                    if (dateTimeInput) {
-                        const selectedTime = new Date(dateTimeInput);
-                        const currentTime = new Date();
-                        if (selectedTime > currentTime) {
-                            const formattedDate = selectedTime.toLocaleString('ru-RU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-                            prefixMessage = `⏰ ПРЕДЗАКАЗ (${modalConfig.title}) ⏰\n\n`;
-                            prefixMessage += `*Время поездки*:\n${formattedDate}\n\n`;
-                        }
-                    }
-                    return prefixMessage;
-                };
-
-                let addressesToSave = [];
-
-                switch (modalKey) {
-                    case 'taxi':
-                        const fromAddress = document.getElementById('taxiFrom').value.trim();
-                        const toAddress = document.getElementById('taxiTo').value.trim();
-                        const wishes = document.getElementById('taxiWishes').value.trim();
-                        const passengerPhone = document.getElementById('passengerPhone').value.trim(); 
-                        const preorderContent = document.getElementById('preorderContent');
-                        const isPreorderOpen = preorderContent && !preorderContent.classList.contains('hidden');
-                        
-                        if (isPreorderOpen) message = handlePreorder('taxiDateTime', modalConfig.prefix);
-                        else message = `${modalConfig.prefix}\n\n`;
-                        
-                        if (!fromAddress) requiredFieldsMissing = true;
-                        if (!toAddress) requiredFieldsMissing = true;
-                        
-                        message += `Откуда:\n${fromAddress}\n\n`;
-                        message += `Куда:\n${toAddress}\n\n`;
-                        
-                        if (wishes) message += `*Пожелания*:\n${wishes}\n\n`;
-                        let stopMessage = collectStops('additionalStops');
-                        if (stopMessage) {
-                            message += '\n--- ДОП. АДРЕСА ПО ПУТИ ---\n\n';
-                            message += stopMessage;
-                            message += '---------------------------\n\n';
-                        }
-                        if (passengerPhone) {
-                            message += '📞 КОНТАКТЫ:\n';
-                            message += `*Телефон для связи*:\n${passengerPhone}\n\n`;
-                        }
-                        const currentPriceText = document.getElementById('taxiPriceEstimate').textContent;
-                        message += `💰 Примерная цена: ${currentPriceText} (уточнит водитель)`;
-                        if (fromAddress) addressesToSave.push(fromAddress);
-                        if (toAddress) addressesToSave.push(toAddress);
-                        
-                        // Сохраняем в полную историю заказа
-                        if (fromAddress && toAddress) {
-                            saveOrderToFullHistory(fromAddress, toAddress, currentPriceText);
-                        }
-                        break;
-                    case 'auction':
-                        const auctionPrice = document.getElementById('auctionPrice').value;
-                        if (!auctionPrice || parseInt(auctionPrice) < 500) {
-                            requiredFieldsMissing = true;
-                            showStatus(modalId, 'Пожалуйста, введите корректную цену (минимум 500 KZT).');
-                            return;
-                        }
-                        message += getVal('auctionFrom', 'Откуда', true);
-                        message += getVal('auctionTo', 'Куда', true);
-                        message += collectStops('additionalStopsAuction');
-                        message += `*Предлагаемая цена*:\n${auctionPrice} KZT\n\n`;
-                        message += '⚠️ ПРИМЕЧАНИЕ: Это цена клиента. Примите решение по заказу самостоятельно.';
-                        const auctionFromAddress = document.getElementById('auctionFrom').value.trim();
-                        const auctionToAddress = document.getElementById('auctionTo').value.trim();
-                        if (auctionFromAddress) addressesToSave.push(auctionFromAddress);
-                        if (auctionToAddress) addressesToSave.push(auctionToAddress);
-                        break;
-                    case 'delivery':
-                        message += getVal('deliveryItems', 'Список товаров', true);
-                        message += getVal('deliveryAddress', 'Адрес доставки', true);
-                        message += getVal('deliveryStore', 'Пожелания по магазину');
-                        message += '💰 Примерная цена: от 1200 тг (зависит от расстояния/объема)';
-                        const deliveryAddress = document.getElementById('deliveryAddress').value.trim();
-                        if (deliveryAddress) addressesToSave.push(deliveryAddress);
-                        break;
-                    case 'cargo':
-                        const cargoMoversSelect = document.getElementById('cargoMovers');
-                        const moversCount = parseInt(cargoMoversSelect.value);
-                        const totalPrice = CARGO_BASE_PRICE + (moversCount * MOVER_PRICE_PER_HOUR);
-                        const formattedPrice = totalPrice.toLocaleString('ru-RU');
-                        const moversText = (moversCount > 0) ? `${moversCount} чел. (Доплата: ${moversCount * MOVER_PRICE_PER_HOUR} тг/час)` : 'Не требуются';
-                        message = handlePreorder('cargoDateTime', modalConfig.prefix);
-                        message += getVal('cargoFrom', 'Адрес погрузки', true);
-                        message += getVal('cargoTo', 'Адрес выгрузки', true);
-                        message += getVal('cargoDescription', 'Описание груза', true);
-                        message += `*Количество грузчиков*:\n${moversText}\n\n`;
-                        message += `*ИТОГОВАЯ СУММА (за 1 час)*:\n${formattedPrice} тг\n\n`;
-                        message += `💰 Базовая цена: ${CARGO_BASE_PRICE.toLocaleString('ru-RU')} тг/час`;
-                        const cargoFromAddress = document.getElementById('cargoFrom').value.trim();
-                        const cargoToAddress = document.getElementById('cargoTo').value.trim();
-                        if (cargoFromAddress) addressesToSave.push(cargoFromAddress);
-                        if (cargoToAddress) addressesToSave.push(cargoToAddress);
-                        break;
-                    case 'soberDriver':
-                        message += getVal('soberDriverFrom', 'Текущий адрес (Авто)', true);
-                        message += getVal('soberDriverCarModel', 'Марка и модель авто', true); 
-                        message += getVal('soberDriverTo', 'Адрес доставки авто', true);
-                        message += '💰 Примерная цена: от 3800 тг (зависит от расстояния)';
-                        const soberDriverFromAddress = document.getElementById('soberDriverFrom').value.trim();
-                        if (soberDriverFromAddress) addressesToSave.push(soberDriverFromAddress);
-                        break;
-                    case 'assistance':
-                        const type = document.getElementById('assistanceType').value;
-                        if (!type) { requiredFieldsMissing = true; break; }
-                        message += getVal('assistanceType', 'Тип помощи');
-                        if (type === 'Подкачать колесо' || type === 'Прикурить автомобиль') {
-                            message += getVal('carModel', 'Марка и модель авто');
-                            message += getVal('licencePlate', 'Гос. номер');
-                        }
-                        message += getVal('assistanceTask', 'Детали и уточнения');
-                        message += getVal('assistanceAddress', 'Адрес (где нужна помощь)', true);
-                        message += '💰 Примерная цена: от 1500 тг (зависит от характера требуемой помощи)';
-                        const assistanceAddress = document.getElementById('assistanceAddress').value.trim();
-                        if (assistanceAddress) addressesToSave.push(assistanceAddress);
-                        break;
-                } 
-
-                if (requiredFieldsMissing) {
-                    showStatus(modalId, 'Пожалуйста, заполните все обязательные поля.');
-                    return;
-                }
-                
-                for (const address of addressesToSave) {
-                    await saveAddress(address);
-                }
-
-                if (navigator.vibrate) {
-                    navigator.vibrate(200); 
-                }
-
-                if (orderDestination === 'telegram') {
-                    copyToClipboard(message);
-                    
-                    displayMessageModal('Заказ сформирован!', 'Текст заказа скопирован. Сейчас откроется Telegram — просто вставьте текст в чат.', false);
-                    setTimeout(() => {
-                        window.open('https://t.me/TaxiUspehk', '_blank');
-                    }, 1500); 
-
-                } else {
-                    displayMessageModal('Заказ сформирован!', 'Переходим в WhatsApp для отправки сообщения...', false);
-                    
-                    setTimeout(() => {
-                         const waLink = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
-                         window.open(waLink, '_blank');
-                    }, 1000); 
-                }
-
-                closeModal(modalId);
-                this.reset();
-            }); 
-        }); 
-
-        window.showPWAInstructions = function() {
-            document.getElementById('pwaModal').classList.remove('hidden');
-        }
-        window.showPartnerModal = function() {
-            document.getElementById('partnerModal').classList.remove('hidden');
-        }
-
     </script>
 </body>
 </html>

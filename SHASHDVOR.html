@@ -2,13 +2,15 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Добавлено viewport-fit=cover для корректного отображения на iPhone с "челкой" -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Шашлычный Двор | Доставка по Белоусовке</title>
     
     <!-- PWA Settings start -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Шашлычный">
+    <!-- Цвета темы под стиль гриль-кафе -->
     <meta name="theme-color" content="#2E1E1E" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     
@@ -21,6 +23,9 @@
     <!-- PWA Settings end -->
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
     <script>
         // Безопасная проверка загрузки Tailwind перед применением конфига
         if (typeof tailwind !== 'undefined') {
@@ -45,6 +50,14 @@
         }
     </script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+        /* Улучшение для PWA: отключение "резиновой" прокрутки и выделения при тапе */
+        html, body {
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         /* Поддержка безопасных зон для iPhone X+ */
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
             .pb-safe {
@@ -55,6 +68,17 @@
             }
             .bottom-safe {
                 bottom: env(safe-area-inset-bottom);
+            }
+        }
+        
+        /* Для iOS PWA: отступ сверху, чтобы контент не наезжал на статус-бар */
+        @supports (-webkit-touch-callout: none) {
+            header {
+                padding-top: env(safe-area-inset-top);
+                height: calc(64px + env(safe-area-inset-top)); /* Примерная высота хедера */
+            }
+            .pt-safe {
+                padding-top: env(safe-area-inset-top);
             }
         }
 
@@ -69,7 +93,6 @@
             color: #f7f7f7;
             /* Большой отступ снизу для навигации + безопасной зоны */
             padding-bottom: calc(140px + env(safe-area-inset-bottom));
-            -webkit-tap-highlight-color: transparent; /* Убирает синюю подсветку при клике на Android */
         }
         
         /* Анимация мигания для кнопки */
@@ -327,7 +350,26 @@
         <p id="notification-text">Товар добавлен!</p>
     </div>
 
-    <!-- Global Success Overlay (New) -->
+    <!-- PWA Instructions Modal (iOS) -->
+    <div id="pwa-instructions-modal" class="modal-backdrop fixed inset-0 hidden items-end sm:items-center justify-center sm:p-4 z-[2000]" onclick="hidePWAInstructions()">
+        <div class="bg-[#1a1a1a] modal-content-sm w-full sm:max-w-md sm:rounded-xl shadow-2xl border-t border-grill-accent flex flex-col p-6" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-start mb-4">
+                <h4 class="text-xl font-bold text-white">📲 Установка приложения</h4>
+                <button onclick="hidePWAInstructions()" class="close-btn text-2xl leading-none">&times;</button>
+            </div>
+            <div class="space-y-4 text-gray-300">
+                <p>Чтобы установить <span class="text-grill-accent font-bold">Шашлычный Двор</span> на iPhone:</p>
+                <ol class="list-decimal list-inside space-y-2 text-sm">
+                    <li>Нажмите кнопку <strong>"Поделиться"</strong> <img src="https://img.icons8.com/ios-glyphs/30/ffffff/share-rounded.png" class="inline w-5 h-5 mx-1" alt="share"> внизу браузера.</li>
+                    <li>Прокрутите вниз и выберите <span class="text-white font-bold">"На экран «Домой»"</span> (Add to Home Screen).</li>
+                    <li>Нажмите <strong>"Добавить"</strong> в верхнем углу.</li>
+                </ol>
+            </div>
+            <button onclick="hidePWAInstructions()" class="mt-6 w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl">Понятно</button>
+        </div>
+    </div>
+
+    <!-- Global Success Overlay -->
     <div id="global-success-overlay" class="fixed inset-0 z-[2000] bg-black/95 hidden flex-col items-center justify-center transition-opacity duration-300 opacity-0 backdrop-blur-sm">
         <div class="success-checkmark scale-150 transform">
             <div class="check-icon">
@@ -335,7 +377,6 @@
                 <span class="icon-line line-long"></span>
             </div>
         </div>
-        <!-- Added ID here to change text dynamically -->
         <h2 id="success-title" class="text-3xl md:text-4xl font-extrabold text-grill-green mt-10 animate-bounce text-center px-4">Заказ успешно оформлен!</h2>
         <p class="text-gray-300 mt-4 text-lg text-center px-4">Перенаправляем в WhatsApp для подтверждения...</p>
     </div>
@@ -467,7 +508,7 @@
         </div>
     </div>
 
-    <!-- Banquet Modal (ВОЗВРАЩЕНА ЛОГИКА С openBanquetBooking) -->
+    <!-- Banquet Modal -->
     <div id="banquet-modal" class="modal-backdrop fixed inset-0 hidden items-end sm:items-center justify-center sm:p-4 z-[110]" onclick="hideBanquetModal()">
         <div class="bg-[#1a1a1a] modal-content-sm w-full sm:max-w-2xl sm:rounded-xl shadow-2xl overflow-y-auto border-t sm:border-2 border-grill-accent flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
             <div class="p-6 bg-gradient-to-r from-grill-dark to-black border-b border-grill-accent sticky top-0 z-10 flex justify-between items-start pt-safe">
@@ -588,6 +629,7 @@
 
     <!-- Scripts -->
     <script>
+        // ... (data and gemini logic remains same)
         /*
         * ВНИМАНИЕ: Если вы хотите использовать свое фото шашлыка "Баранина",
         * замените URL-адрес в поле 'img' для продуктов 'lamb_meat' и 'lamb_ribs' 
@@ -707,6 +749,8 @@
 
         const apiKey = ""; 
         const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+        
+        // ... (API calls and other logic same as before)
         
         async function callGeminiAPI(payload, maxRetries = 5) {
             let attempt = 0;
@@ -828,6 +872,33 @@
         function showBanquetModal() { showModal('banquet-modal'); }
         function hideBanquetModal() { hideModal('banquet-modal'); }
 
+        // --- PWA Logic ---
+        function showPWAInstructions() {
+             showModal('pwa-instructions-modal');
+        }
+        function hidePWAInstructions() {
+             hideModal('pwa-instructions-modal');
+        }
+        
+        let deferredPrompt;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log("PWA install prompt intercepted");
+        });
+
+        async function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to install prompt: ${outcome}`);
+                deferredPrompt = null;
+            } else {
+                showPWAInstructions();
+            }
+        }
+
         // --- Universal Success Animation ---
         function showSuccessAnimation(titleText, callback) {
             const overlay = document.getElementById('global-success-overlay');
@@ -855,6 +926,8 @@
                 }, 300);
             }, 2500); // Wait 2.5s
         }
+        
+        // ... (rest of the functions: sendBooking, sendCallbackRequest, shareApp, cart logic)
 
         function sendBooking() {
             const date = document.getElementById('book-date').value;
@@ -900,7 +973,6 @@
             });
         }
 
-        // --- Sharing Logic ---
         function shareApp() {
             const shareData = {
                 title: 'Шашлычный Двор | Доставка по Белоусовке',
@@ -911,7 +983,6 @@
             if (navigator.share) {
                 navigator.share(shareData).catch(err => console.log('Error sharing:', err));
             } else {
-                // Fallback: Copy to clipboard
                 const dummy = document.createElement('input');
                 document.body.appendChild(dummy);
                 dummy.value = shareData.url;
@@ -922,7 +993,6 @@
             }
         }
 
-        // --- Cart Logic ---
         function saveCart() { localStorage.setItem('shashlyk_cart', JSON.stringify(cart)); }
         function loadCart() { try { cart = JSON.parse(localStorage.getItem('shashlyk_cart')) || []; } catch (e) { cart = []; } }
 
@@ -1121,6 +1191,8 @@
                 </div>
             `;
         }
+        
+        // ... (scrollToCategory, renderFullMenu, modal functions)
 
         function scrollToCategory(catId) {
              const element = document.getElementById(`cat-${catId}`);
@@ -1246,9 +1318,14 @@
                         <button onclick="bookTable()" class="flex-1 bg-[#25D366] hover:bg-[#1EBE57] text-white font-bold py-3 px-4 rounded-lg text-center flex items-center justify-center transition shadow-lg">Написать в WhatsApp</button>
                         <button onclick="showCallbackModal()" class="flex-1 bg-grill-red hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg">Оставить заявку</button>
                     </div>
-                    <button onclick="shareApp()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg flex items-center justify-center active:scale-[0.98]">
-                        <span class="mr-2 text-xl">🔗</span> Поделиться ссылкой на сайт
-                    </button>
+                    <div class="flex flex-row gap-3">
+                        <button onclick="shareApp()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg flex items-center justify-center active:scale-[0.98]">
+                            <span class="mr-2 text-xl">🔗</span> Поделиться
+                        </button>
+                        <button onclick="installApp()" class="flex-1 bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg flex items-center justify-center active:scale-[0.98]">
+                            <i class="fas fa-mobile-alt text-xl mr-2"></i><span>На экран</span>
+                        </button>
+                    </div>
                 </div>
                  <div class="mt-4 text-center"><button onclick="showBanquetModal()" class="text-grill-accent text-sm underline hover:text-white">Посмотреть варианты банкетного меню</button></div>
             </div>

@@ -1102,6 +1102,105 @@
         const LOCAL_STORAGE_HISTORY_KEY = 'taxi_address_history_v1';
         const FULL_HISTORY_KEY = 'taxi_full_orders_history';
 
+        // --- УТИЛИТЫ ДЛЯ OSRM (РАСЧЕТ ЦЕНЫ) ---
+
+        // Helper to delay API calls
+        function debounce(func, timeout = 1000){
+            let timer;
+            return (...args) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => { func.apply(this, args); }, timeout);
+            };
+        }
+
+        // 1. Поиск координат по тексту (Nominatim)
+        async function getCoordinates(query) {
+            // Если это уже координаты в формате [ГЕО] lat, lon (или [КООРДИНАТЫ])
+            if (query.includes('[ГЕО]') || query.includes('[КООРДИНАТЫ]')) {
+                const parts = query.match(/([\d\.]+),\s*([\d\.]+)/);
+                if (parts && parts.length === 3) {
+                    return { lat: parseFloat(parts[1]), lon: parseFloat(parts[2]) };
+                }
+            }
+            
+            // Если текст - ищем через API
+            try {
+                // Добавляем контекст поиска
+                const searchQuery = `${query}, Белоусовка, Восточно-Казахстанская область`;
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`;
+                
+                const response = await fetch(url, { headers: { 'User-Agent': 'TaxiUspehApp/1.0' } });
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+                }
+            } catch (e) {
+                console.warn("Geocoding failed:", e);
+            }
+            return null;
+        }
+
+        // 2. Расчет маршрута (OSRM)
+        async function getRouteDistance(coord1, coord2) {
+            try {
+                // OSRM url: lon,lat;lon,lat
+                const url = `https://router.project-osrm.org/route/v1/driving/${coord1.lon},${coord1.lat};${coord2.lon},${coord2.lat}?overview=false`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.code === 'Ok' && data.routes.length > 0) {
+                    return data.routes[0].distance; // в метрах
+                }
+            } catch (e) {
+                console.warn("Routing failed:", e);
+            }
+            return null;
+        }
+
+        // 3. Главная функция обновления цены (OSRM Logic)
+        async function calculateTaxiPriceOSRM() {
+            const fromInput = document.getElementById('taxiFrom').value.trim();
+            const toInput = document.getElementById('taxiTo').value.trim();
+            const priceEl = document.getElementById('taxiPriceEstimate');
+            
+            // Если адреса короткие, не считаем
+            if (fromInput.length < 3 || toInput.length < 3) return;
+
+            // Показываем спиннер
+            priceEl.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Считаем...';
+            
+            const coordFrom = await getCoordinates(fromInput);
+            const coordTo = await getCoordinates(toInput);
+            
+            if (coordFrom && coordTo) {
+                const distMeters = await getRouteDistance(coordFrom, coordTo);
+                
+                if (distMeters !== null) {
+                    const distKm = (distMeters / 1000).toFixed(1);
+                    
+                    // ФОРМУЛА ЦЕНЫ:
+                    // База 700 тг (включено 2 км). Далее 120 тг/км.
+                    let price = 700;
+                    if (distKm > 2) {
+                        price += (distKm - 2) * 120;
+                    }
+                    // Округляем до десятков
+                    price = Math.ceil(price / 10) * 10;
+                    
+                    priceEl.innerText = `~${distKm} км • ${price} ₸`;
+                    return;
+                }
+            }
+            // Если не удалось - возвращаем дефолт
+            const addressCount = countFilledAddresses();
+            priceEl.innerText = (addressCount >= 3) ? 'от 1500–2000 тг' : 'от 700–900 тг';
+        }
+
+        // Создаем debounced версию
+        const debouncedOSRM = debounce(calculateTaxiPriceOSRM, 1500);
+
+
         async function initFirebaseAndAuth() {
             if (!firebaseConfig) {
                 console.error("Firebase configuration is missing.");
@@ -1443,7 +1542,7 @@
         document.addEventListener('click', (e) => {
             if (e.target.closest('button') || e.target.closest('a')) {
                  if (navigator.vibrate) {
-                     navigator.vibrate(5); 
+                      navigator.vibrate(5); 
                  }
             }
         });
@@ -1513,7 +1612,7 @@
                 case 'taxi': iconId = 'taxiGeoIcon'; break;
                 case 'auction': iconId = 'auctionGeoIcon'; break;
                 case 'delivery': iconId = 'deliveryGeoIcon'; break;      
-                case 'cargo': iconId = 'cargoGeoIcon'; break;           
+                case 'cargo': iconId = 'cargoGeoIcon'; break;            
                 case 'soberDriver': iconId = 'soberDriverGeoIcon'; break; 
                 case 'assistance': iconId = 'assistanceGeoIcon'; break; 
                 default: return;
@@ -1671,6 +1770,11 @@
             else if (addressCount >= 3) priceText = 'от 1500–2000 тг';
             else priceText = 'от 700–900 тг';
             priceEl.textContent = priceText;
+
+            // Если не межгород, запускаем OSRM (debounced)
+            if (!isIntercity) {
+                debouncedOSRM();
+            }
         }
 
         window.openModal = function(modalId) {

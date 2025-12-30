@@ -5,30 +5,43 @@
     <title>Такси Успех — Белоусовка</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Tailwind CSS для дизайна -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Firebase Compat SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-
-    <!-- Leaflet для карт -->
+    <!-- Предзагрузка критических стилей -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
         #map { height: 350px; border-radius: 1.5rem; z-index: 1; cursor: crosshair; }
+        
         .order-card { transition: all 0.3s ease; }
         .order-card:active { transform: scale(0.98); }
+        
         .status-pending { color: #f59e0b; }
         .status-accepted { color: #10b981; }
         .status-in_progress { color: #3b82f6; }
         .status-completed { color: #64748b; }
+        
         .hidden { display: none !important; }
         
+        /* Легкая анимация загрузки */
+        .loader-ring {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(59, 130, 246, 0.1);
+            border-left-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         .gps-indicator {
             width: 12px;
             height: 12px;
@@ -54,35 +67,36 @@
             <h1 class="text-3xl font-black italic uppercase tracking-tighter text-blue-600 dark:text-blue-400 leading-none">Успех</h1>
             <p class="text-[10px] font-bold uppercase opacity-50 tracking-widest mt-1">Белоусовка • Такси</p>
         </div>
-        <button onclick="location.reload()" class="p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+        <button onclick="location.reload()" class="p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border dark:border-slate-700">
+            <i data-lucide="rotate-cw" class="w-5 h-5"></i>
         </button>
     </header>
 
-    <div id="loadingOverlay" class="flex flex-col items-center justify-center py-20 italic font-bold text-slate-400">
+    <div id="loadingOverlay" class="flex flex-col items-center justify-center py-32 italic font-bold text-slate-400">
+        <div class="loader-ring mb-4"></div>
         <p class="animate-pulse">Загрузка системы...</p>
     </div>
 
     <!-- Сообщение об ошибке GPS / Подсказка о ручном вводе -->
     <div id="gpsErrorMsg" class="hidden mb-4 p-4 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-2xl text-[11px] font-bold border border-blue-200 dark:border-blue-800">
         <div class="flex items-start gap-3">
-            <svg class="mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            <i data-lucide="info" class="w-4 h-4 mt-0.5 shrink-0"></i>
             <div>
-                <p id="gpsStatusText">GPS заблокирован политикой браузера.</p>
+                <p id="gpsStatusText">GPS заблокирован или недоступен.</p>
                 <p class="mt-1 opacity-80" id="manualInstruction">Нажмите на карту, чтобы указать своё местоположение вручную.</p>
             </div>
         </div>
     </div>
 
     <!-- Выбор роли -->
-    <div id="roleSelect" class="hidden space-y-4">
-        <button onclick="setRole('client')" class="w-full p-6 bg-blue-600 text-white rounded-[2rem] shadow-xl shadow-blue-500/20 flex items-center justify-between group">
-            <span class="text-xl font-black italic uppercase">Заказать</span>
-            <div class="bg-white/20 p-3 rounded-2xl"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg></div>
+    <div id="roleSelect" class="hidden space-y-4 animate-in fade-in duration-500">
+        <button onclick="setRole('client')" class="w-full p-6 bg-blue-600 text-white rounded-[2rem] shadow-xl shadow-blue-500/20 flex items-center justify-between group active:scale-95 transition-all">
+            <span class="text-xl font-black italic uppercase">Заказать такси</span>
+            <div class="bg-white/20 p-3 rounded-2xl"><i data-lucide="user-plus" class="w-6 h-6"></i></div>
         </button>
-        <button onclick="showDriverAuth()" class="w-full p-6 bg-slate-900 text-white rounded-[2rem] shadow-xl flex items-center justify-between border border-slate-800">
+        <button onclick="showDriverAuth()" class="w-full p-6 bg-slate-900 text-white rounded-[2rem] shadow-xl flex items-center justify-between border border-slate-800 active:scale-95 transition-all">
             <span class="text-xl font-black italic uppercase">Работать</span>
-            <div class="bg-orange-500 p-3 rounded-2xl text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+            <div class="bg-orange-500 p-3 rounded-2xl text-white"><i data-lucide="steering-wheel" class="w-6 h-6"></i></div>
         </button>
     </div>
 
@@ -103,13 +117,13 @@
             <h3 class="font-black text-lg mb-4 uppercase italic text-blue-600">Куда едем?</h3>
             <input id="from" placeholder="Откуда (адрес)" class="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl outline-none font-bold mb-3 border-2 border-transparent focus:border-blue-500 transition-all shadow-inner">
             <input id="to" placeholder="Куда (адрес)" class="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl outline-none font-bold mb-4 border-2 border-transparent focus:border-blue-500 transition-all shadow-inner">
-            <button onclick="sendOrder()" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase italic shadow-xl active:scale-95 transition-all">Заказать такси</button>
+            <button onclick="sendOrder()" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase italic shadow-xl active:scale-95 transition-all">Вызвать машину</button>
         </div>
 
         <div id="map" class="shadow-2xl border-4 border-white dark:border-slate-800"></div>
 
         <div class="space-y-4">
-            <h4 class="font-black text-slate-400 uppercase text-xs tracking-widest px-2">Ваши активные заказы</h4>
+            <h4 class="font-black text-slate-400 uppercase text-xs tracking-widest px-2">Активные заказы</h4>
             <div id="clientOrders" class="space-y-3"></div>
         </div>
     </div>
@@ -121,7 +135,7 @@
                 <h3 class="text-2xl font-black italic uppercase tracking-tighter">На линии</h3>
                 <p id="driverStatusLabel" class="text-[10px] font-bold opacity-70 uppercase tracking-widest">Ожидание заказов...</p>
             </div>
-            <svg class="absolute right-[-10px] top-[-10px] opacity-10" width="120" height="120" viewBox="0 0 24 24" fill="white"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+            <i data-lucide="car" class="absolute right-[-10px] top-[-10px] opacity-10 w-32 h-32"></i>
         </div>
 
         <div class="space-y-4">
@@ -136,58 +150,69 @@
     </div>
 </div>
 
+<!-- Скрипты загружаются в конце для ускорения отрисовки (defer) -->
+<script src="https://cdn.tailwindcss.com" defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" defer></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js" defer></script>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js" defer></script>
+
 <script>
-// --- КОНФИГУРАЦИЯ ---
-const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
-const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'taxi-uspeh-live';
-const customToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
+// Глобальные переменные и функции
+let db, auth, map, carMarker, isAuthReady = false, currentRole = null;
 const DEFAULT_COORDS = [50.395, 82.593]; 
-
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-
-const db = firebase.firestore();
-const auth = firebase.auth();
-
 const SOUNDS = {
     NEW_ORDER: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
     ACCEPTED: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3',
     ARRIVED: 'https://assets.mixkit.co/active_storage/sfx/1353/1353-preview.mp3'
 };
 
-const getOrdersCol = () => db.collection('artifacts').doc(appId).collection('public').doc('data').collection('orders');
-const getDriversCol = () => db.collection('artifacts').doc(appId).collection('public').doc('data').collection('drivers');
-
-let map, carMarker, isAuthReady = false, currentRole = null;
-
-// --- АВТОРИЗАЦИЯ ---
-const initAuth = async () => {
-    try {
-        if (customToken) {
-            await auth.signInWithCustomToken(customToken);
-        } else {
-            await auth.signInAnonymously();
-        }
-    } catch (err) {
-        console.error("Auth failed:", err);
-    }
+// Ждем полной загрузки скриптов
+window.onload = function() {
+    initApp();
 };
 
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        isAuthReady = true;
-        document.getElementById("loadingOverlay").classList.add("hidden");
-        document.getElementById("roleSelect").classList.remove("hidden");
+function initApp() {
+    const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
+    const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'taxi-uspeh-live';
+    const customToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
     }
-});
 
-initAuth();
+    db = firebase.firestore();
+    auth = firebase.auth();
 
-// --- КАРТА ---
+    // Инициализация иконок Lucide
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    const initAuth = async () => {
+        try {
+            if (customToken) {
+                await auth.signInWithCustomToken(customToken);
+            } else {
+                await auth.signInAnonymously();
+            }
+        } catch (err) {
+            console.error("Auth failed:", err);
+        }
+    };
+
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            isAuthReady = true;
+            document.getElementById("loadingOverlay").classList.add("hidden");
+            document.getElementById("roleSelect").classList.remove("hidden");
+        }
+    });
+
+    initAuth();
+}
+
 function initMap() {
-    if (map) return;
+    if (map || typeof L === 'undefined') return;
     map = L.map('map').setView(DEFAULT_COORDS, 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
@@ -204,7 +229,6 @@ function initMap() {
     
     carMarker = L.marker(DEFAULT_COORDS, {icon: taxiIcon});
 
-    // Обработка клика по карте для ручного выбора локации (для водителей)
     map.on('click', (e) => {
         if (currentRole === 'driver') {
             updateDriverLocation(e.latlng.lat, e.latlng.lng);
@@ -212,7 +236,9 @@ function initMap() {
     });
 }
 
-// --- РОЛИ ---
+const getOrdersCol = () => db.collection('artifacts').doc(typeof window.__app_id !== 'undefined' ? window.__app_id : 'taxi-uspeh-live').collection('public').doc('data').collection('orders');
+const getDriversCol = () => db.collection('artifacts').doc(typeof window.__app_id !== 'undefined' ? window.__app_id : 'taxi-uspeh-live').collection('public').doc('data').collection('drivers');
+
 async function setRole(r) {
     if (!isAuthReady) return;
     currentRole = r;
@@ -240,7 +266,6 @@ async function loginDriver() {
     document.getElementById("driverAuth").classList.add("hidden");
     document.getElementById("driver").classList.remove("hidden");
     
-    // В режиме водителя карта тоже нужна для ручного выбора координат
     const driverMapContainer = document.createElement('div');
     driverMapContainer.id = "map";
     driverMapContainer.className = "shadow-2xl border-4 border-white dark:border-slate-800 mt-6";
@@ -252,7 +277,6 @@ async function loginDriver() {
     watchDriverLocation();
 }
 
-// --- ЛОКАЦИЯ ---
 async function updateDriverLocation(lat, lng) {
     if (!auth.currentUser) return;
     try {
@@ -262,11 +286,9 @@ async function updateDriverLocation(lat, lng) {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
         
-        // Показываем подтверждение
-        if (currentRole === 'driver') {
+        if (currentRole === 'driver' && map) {
             if (!map.hasLayer(carMarker)) carMarker.addTo(map);
             carMarker.setLatLng([lat, lng]);
-            console.log("Местоположение обновлено вручную");
         }
     } catch (err) {
         console.error("Location update failed:", err);
@@ -275,7 +297,7 @@ async function updateDriverLocation(lat, lng) {
 
 function watchDriverLocation() {
     if (!navigator.geolocation) {
-        showGpsError("Геолокация не поддерживается вашим браузером.");
+        showGpsError("GPS не поддерживается.");
         return;
     }
 
@@ -285,20 +307,18 @@ function watchDriverLocation() {
             updateDriverLocation(pos.coords.latitude, pos.coords.longitude);
         }, 
         (err) => {
-            console.error("GPS Error:", err.code, err.message);
-            if (err.code === 1) {
-                showGpsError("Доступ к GPS заблокирован политикой безопасности.");
-            } else {
-                showGpsError("Не удалось получить координаты GPS автоматически.");
-            }
+            showGpsError("Проблема с доступом к GPS.");
         }, 
         { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
     );
 }
 
 function showGpsError(text) {
-    document.getElementById("gpsErrorMsg").classList.remove("hidden");
-    document.getElementById("gpsStatusText").innerText = text;
+    const el = document.getElementById("gpsErrorMsg");
+    if (el) {
+        el.classList.remove("hidden");
+        document.getElementById("gpsStatusText").innerText = text;
+    }
 }
 
 function trackDriverOnMap(dId) {
@@ -314,7 +334,6 @@ function trackDriverOnMap(dId) {
     });
 }
 
-// --- ЗАКАЗЫ ---
 async function sendOrder() {
     if (!auth.currentUser) return;
     const fromVal = document.getElementById("from").value;
@@ -342,6 +361,7 @@ function listenClientOrders() {
         .where("clientId", "==", auth.currentUser.uid)
         .onSnapshot(snap => {
             const box = document.getElementById("clientOrders");
+            if (!box) return;
             box.innerHTML = "";
             const sorted = snap.docs.sort((a,b) => (b.data().createdAt?.seconds || 0) - (a.data().createdAt?.seconds || 0));
             sorted.forEach(doc => {
@@ -362,6 +382,7 @@ function listenClientOrders() {
 function listenFreeOrders() {
     getOrdersCol().where("status", "==", "pending").onSnapshot(snap => {
         const box = document.getElementById("freeOrders");
+        if (!box) return;
         box.innerHTML = "";
         snap.forEach(doc => {
             const o = doc.data();
@@ -382,6 +403,7 @@ function listenDriverOrders() {
     if (!auth.currentUser) return;
     getOrdersCol().where("driverId", "==", auth.currentUser.uid).onSnapshot(snap => {
         const box = document.getElementById("activeOrders");
+        if (!box) return;
         box.innerHTML = "";
         snap.forEach(doc => {
             const o = doc.data();

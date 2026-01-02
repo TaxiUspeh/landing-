@@ -251,14 +251,15 @@
             border-top: 1px solid rgba(55, 65, 81, 0.5);
         }
 
-        /* НОВОГОДНИЙ СТИЛЬ БАННЕРА */
-        .ny-banner {
-            background: linear-gradient(90deg, #1e3a8a 0%, #7e22ce 50%, #1e3a8a 100%);
+        /* БАННЕР ПОВЫШЕННОГО СПРОСА */
+        .demand-banner {
+            background: linear-gradient(90deg, #f59e0b 0%, #ef4444 100%);
             background-size: 200% auto;
-            animation: ny-shine 5s linear infinite;
+            animation: demand-pulse 2s infinite alternate;
         }
-        @keyframes ny-shine {
-            to { background-position: 200% center; }
+        @keyframes demand-pulse {
+            from { filter: brightness(1); }
+            to { filter: brightness(1.1); }
         }
     </style>
 </head>
@@ -282,13 +283,13 @@
         </div>
     </header>
 
-    <!-- НОВЫЙ БАННЕР: НОВОГОДНИЙ -->
-    <div id="announcementBar" class="ny-banner text-white p-3 shadow-lg lg:hidden">
+    <!-- БАННЕР: ПОВЫШЕННЫЙ СПРОС -->
+    <div id="announcementBar" class="demand-banner text-white p-3 shadow-lg lg:hidden">
         <div class="max-w-3xl mx-auto flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <i class="fas fa-snowflake animate-pulse text-xl text-cyan-200"></i>
+                <i class="fas fa-exclamation-circle animate-pulse text-xl text-yellow-100"></i>
                 <p id="announcementText" class="text-sm font-bold tracking-wide">
-                    🎄 С наступающим Новым 2026 годом! Пусть каждая поездка в новом году приносит только удачу и успех! 🎁
+                    ⚠️ Повышенный спрос! Ожидание машины 15-20 мин.
                 </p>
             </div>
             <button onclick="dismissAnnouncement()" class="text-sm opacity-80 hover:opacity-100 transition btn-active">
@@ -364,39 +365,7 @@
             
         </div>
         
-        <!-- БЛОК 2: МАГАЗИН "СТРОЙ ДОМ" -->
-        <div class="mt-8 pt-4">
-            <h3 class="text-2xl font-extrabold text-center mb-4 text-white text-shadow-md">
-                🛠️ Стройматериалы Белоусовка
-            </h3>
-            <div class="stroy-dom-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300">
-                <div class="flex flex-col items-center sm:items-start text-center sm:text-left mb-3 sm:mb-0">
-                    <i class="fas fa-building text-4xl mb-1 text-emerald-600"></i>
-                    <span class="text-2xl block leading-tight font-black text-emerald-800">СТРОЙ ДОМ</span>
-                    <span class="text-base text-gray-700 block mt-1">
-                        Магазин стройматериалов: <span class="font-bold">ул. Юбилейная, 10</span>
-                    </span>
-                    <span class="text-sm text-gray-700 block mt-1">
-                        Телефон: <a href="tel:+77764764606" class="text-blue-600 hover:text-blue-800 font-bold">+7 776 476 4606</a>
-                    </span>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                    <a href="https://wa.me/77764764606?text=Здравствуйте!%20Интересуют%20стройматериалы%20в%20магазине%20%22Строй%20Дом%22%20по%20адресу%20Юбилейная%2010." target="_blank"
-                       class="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
-                        <i class="fab fa-whatsapp mr-2"></i> WhatsApp
-                    </a>
-                    <a href="https://yandex.kz/maps/-/CLgm7KK9" target="_blank"
-                       class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
-                        <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
-                    </a>
-                    <a href="https://www.instagram.com/stroy_dom_bk" target="_blank"
-                       class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active">
-                        <i class="fab fa-instagram mr-2"></i> Instagram
-                    </a>
-                </div>
-            </div>
-        </div>
+        <!-- БЛОК 2 "СТРОЙ ДОМ" УДАЛЕН ПО ЗАПРОСУ ПОЛЬЗОВАТЕЛЯ -->
         
         <!-- БЛОК 3: НАШИ УСЛУГИ -->
         <h3 class="text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-8 border-gray-400 border-opacity-30">Дополнительные Услуги (Форма)</h3>
@@ -1501,7 +1470,7 @@
         }
 
         function checkAndShowAnnouncement() {
-            const dismissKey = 'announcement_dismissed_ny';
+            const dismissKey = 'announcement_dismissed_demand'; // Changed key for new banner
             if (localStorage.getItem(dismissKey) === 'true') {
                 announcementBar.classList.add('hidden');
             } else {
@@ -1511,7 +1480,7 @@
 
         window.dismissAnnouncement = function() {
             announcementBar.classList.add('hidden');
-            localStorage.setItem('announcement_dismissed_ny', 'true');
+            localStorage.setItem('announcement_dismissed_demand', 'true'); // Changed key
         }
 
         function getFormattedCurrentTime() {
@@ -1787,17 +1756,17 @@
                 const formattedNow = getFormattedCurrentTime();
                 const minTime = new Date().toISOString().slice(0, 16);
                  if (modalId === 'taxiModal') {
-                     const dtInput = document.getElementById('taxiDateTime');
-                     dtInput.value = formattedNow;
-                     dtInput.min = minTime; // Установка минимума
-                     updateTaxiPrice(); 
+                      const dtInput = document.getElementById('taxiDateTime');
+                      dtInput.value = formattedNow;
+                      dtInput.min = minTime; // Установка минимума
+                      updateTaxiPrice(); 
                  }
                  if (modalId === 'cargoModal') {
-                     const dtInput = document.getElementById('cargoDateTime');
-                     dtInput.value = formattedNow;
-                     dtInput.min = minTime; // Установка минимума
-                     document.getElementById('cargoMovers').value = '0'; 
-                     updateCargoPrice(); 
+                      const dtInput = document.getElementById('cargoDateTime');
+                      dtInput.value = formattedNow;
+                      dtInput.min = minTime; // Установка минимума
+                      document.getElementById('cargoMovers').value = '0'; 
+                      updateCargoPrice(); 
                  }
                 const firstInput = modal.querySelector('input, textarea, select');
                 if (firstInput) firstInput.focus();
@@ -1840,10 +1809,10 @@
                      updateTaxiPrice(); 
                  }
                  if (modalId === 'cargoModal') {
-                     const formattedNow = getFormattedCurrentTime();
-                     document.getElementById('cargoDateTime').value = formattedNow;
-                     document.getElementById('cargoMovers').value = '0'; 
-                     updateCargoPrice(); 
+                      const formattedNow = getFormattedCurrentTime();
+                      document.getElementById('cargoDateTime').value = formattedNow;
+                      document.getElementById('cargoMovers').value = '0'; 
+                      updateCargoPrice(); 
                  }
             }
         }
@@ -2255,4 +2224,3 @@
     </script>
 </body>
 </html>
-

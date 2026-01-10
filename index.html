@@ -497,7 +497,8 @@
                 </div>
                 
                 <!-- LOGIN FORM -->
-                <form id="driverForm" class="space-y-4">
+                <!-- CHANGED: onsubmit prevent default AND call window.driverLogin directly -->
+                <form id="driverForm" class="space-y-4" onsubmit="event.preventDefault(); window.driverLogin();">
                     <div id="driverInputs">
                         <div class="flex flex-col">
                             <label class="text-sm font-medium text-gray-700 mb-1">Ваше Имя</label>
@@ -516,7 +517,7 @@
                     <div id="driverStatusDisplay" class="hidden p-3 rounded-lg text-center font-bold mb-2"></div>
 
                     <div class="grid grid-cols-1 gap-3">
-                        <!-- Button type changed to submit for better mobile keyboard handling -->
+                        <!-- Button submits form which calls window.driverLogin() -->
                         <button type="submit" id="goOnlineBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-md btn-active">
                             <i class="fas fa-power-off mr-2"></i> ВЫЙТИ НА ЛИНИЮ
                         </button>
@@ -924,6 +925,9 @@
                 console.error("Auth failed:", e);
             }
         }
+        
+        // Start Init immediately
+        initFirebaseAndAuth();
 
         // --- DRIVER LOGIC ---
         function initDriverLogic() {
@@ -938,16 +942,10 @@
 
             driverLogicInitialized = true;
             
-            const ordersContainer = document.getElementById('driverOrdersContainer');
-            const form = document.getElementById('driverForm');
-            const modalTitle = document.getElementById('driverModalTitle');
-            
             const savedDriver = JSON.parse(localStorage.getItem('taxi_driver_data') || '{}');
             if(savedDriver.name) document.getElementById('driverName').value = savedDriver.name;
             if(savedDriver.car) document.getElementById('driverCar').value = savedDriver.car;
             if(savedDriver.plate) document.getElementById('driverPlate').value = savedDriver.plate;
-
-            // REMOVED CLICK LISTENER FOR goOnlineBtn (Moved to Form Submit)
 
             btnOffline.addEventListener('click', async () => {
                 if(!userId) return;
@@ -959,6 +957,64 @@
                     alert('Ошибка ухода с линии: ' + error.message);
                 }
             });
+        }
+        
+        // EXPOSED DRIVER LOGIN FUNCTION (Bypasses generic form handler)
+        window.driverLogin = async function() {
+            const name = document.getElementById('driverName').value.trim();
+            const car = document.getElementById('driverCar').value.trim();
+            const plate = document.getElementById('driverPlate').value.trim();
+            const btn = document.getElementById('goOnlineBtn');
+
+            if (!name || !car || !plate) {
+                alert('Пожалуйста, заполните все поля (Имя, Машина, Номер)');
+                return;
+            }
+
+            // UI Loading State (Set immediately)
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> ВХОД...';
+            btn.disabled = true;
+
+            try {
+                // FORCE AUTH CHECK
+                if (!auth) {
+                     alert("Инициализация... Попробуйте еще раз через 3 секунды.");
+                     btn.innerHTML = originalText;
+                     btn.disabled = false;
+                     return;
+                }
+
+                let currentUid = userId;
+                if (!currentUid) {
+                    if (auth.currentUser) {
+                         currentUid = auth.currentUser.uid;
+                         userId = currentUid; // Sync global
+                    } else {
+                         // Force login
+                         try {
+                            const cred = await signInAnonymously(auth);
+                            currentUid = cred.user.uid;
+                            userId = currentUid;
+                         } catch(e) {
+                            throw new Error("Ошибка подключения к серверу: " + e.message);
+                         }
+                    }
+                }
+                
+                // Proceed with logic
+                localStorage.setItem('taxi_driver_data', JSON.stringify({name, car, plate}));
+                const driverRef = doc(db, 'artifacts', appId, 'public', 'data', DRIVERS_COLLECTION, currentUid);
+                await setDoc(driverRef, { name, car, plate, status: 'online', timestamp: Date.now() });
+                setDriverUI(true);
+
+            } catch (error) {
+                console.error(error);
+                alert(error.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         }
 
         function setDriverUI(isOnline) {
@@ -1404,7 +1460,7 @@
 
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
-             initFirebaseAndAuth();
+             // initFirebaseAndAuth called immediately above
              if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
              const pi = document.getElementById('passengerPhone');
              if (pi) IMask(pi, { mask: '+{7} (000) 000-00-00' });
@@ -1461,8 +1517,12 @@
         // --- RESTORED FORM SUBMISSION LOGIC ---
         document.querySelectorAll('form').forEach(f => {
             f.addEventListener('submit', async (e) => {
-                e.preventDefault();
                 const formId = f.id;
+                
+                // SKIPPING DRIVER FORM HERE because it is handled explicitly by onsubmit in HTML
+                if (formId === 'driverForm') return; 
+
+                e.preventDefault();
                 let msg = '';
                 let orderData = null;
                 
@@ -1529,50 +1589,6 @@
                     const loc = document.getElementById('assistLoc').value;
                     msg = `🆘 ПОМОЩЬ НА ДОРОГЕ\n\nЧто случилось: ${what}\nГде: ${loc}`;
                      orderData = { type: 'assistance', typeLabel: 'Помощь', from: loc, to: 'На месте', price: 'Договорная', wishes: what, timestamp: Date.now(), status: 'pending' };
-                }
-                else if (formId === 'driverForm') {
-                    const name = document.getElementById('driverName').value.trim();
-                    const car = document.getElementById('driverCar').value.trim();
-                    const plate = document.getElementById('driverPlate').value.trim();
-                    const btn = document.getElementById('goOnlineBtn');
-
-                    // UI Loading State (Set immediately)
-                    const originalText = btn.innerHTML;
-                    btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> ...';
-                    btn.disabled = true;
-
-                    // Ensure Auth
-                    if(!userId) {
-                        try {
-                            if (auth && auth.currentUser) {
-                                userId = auth.currentUser.uid;
-                            } else {
-                                const userCred = await signInAnonymously(auth);
-                                userId = userCred.user.uid;
-                            }
-                        } catch (e) {
-                            console.error("Auth retry failed", e);
-                            alert('Ошибка подключения. Проверьте интернет.');
-                            btn.innerHTML = originalText;
-                            btn.disabled = false;
-                            return;
-                        }
-                    }
-
-                    // Main Logic
-                    try {
-                        localStorage.setItem('taxi_driver_data', JSON.stringify({name, car, plate}));
-                        const driverRef = doc(db, 'artifacts', appId, 'public', 'data', DRIVERS_COLLECTION, userId);
-                        await setDoc(driverRef, { name, car, plate, status: 'online', timestamp: Date.now() });
-                        setDriverUI(true);
-                    } catch (error) {
-                        console.error(error);
-                        alert('Ошибка сохранения: ' + error.message);
-                    } finally {
-                        btn.innerHTML = originalText;
-                        btn.disabled = false;
-                    }
-                    return; 
                 }
 
                 if (msg) {

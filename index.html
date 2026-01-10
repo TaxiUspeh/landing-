@@ -1536,13 +1536,30 @@
                     const plate = document.getElementById('driverPlate').value.trim();
                     const btn = document.getElementById('goOnlineBtn');
 
-                    if(!userId) { alert('Ошибка авторизации. Подождите пару секунд...'); return; }
-
-                    // UI Loading
+                    // UI Loading State (Set immediately)
                     const originalText = btn.innerHTML;
-                    btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> ВХОД...';
+                    btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> ...';
                     btn.disabled = true;
-                    
+
+                    // Ensure Auth
+                    if(!userId) {
+                        try {
+                            if (auth && auth.currentUser) {
+                                userId = auth.currentUser.uid;
+                            } else {
+                                const userCred = await signInAnonymously(auth);
+                                userId = userCred.user.uid;
+                            }
+                        } catch (e) {
+                            console.error("Auth retry failed", e);
+                            alert('Ошибка подключения. Проверьте интернет.');
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                            return;
+                        }
+                    }
+
+                    // Main Logic
                     try {
                         localStorage.setItem('taxi_driver_data', JSON.stringify({name, car, plate}));
                         const driverRef = doc(db, 'artifacts', appId, 'public', 'data', DRIVERS_COLLECTION, userId);
@@ -1550,12 +1567,12 @@
                         setDriverUI(true);
                     } catch (error) {
                         console.error(error);
-                        alert('Ошибка: ' + error.message);
+                        alert('Ошибка сохранения: ' + error.message);
                     } finally {
                         btn.innerHTML = originalText;
                         btn.disabled = false;
                     }
-                    return; // Stop here so it doesn't trigger WhatsApp
+                    return; 
                 }
 
                 if (msg) {

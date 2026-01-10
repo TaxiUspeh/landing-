@@ -272,6 +272,11 @@
         
         <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6 main-card">
             
+            <!-- НОВЫЙ БЛОК: СТАТУС МАШИН НА ЛИНИИ -->
+            <div id="lineStatus" class="mb-3 p-3 rounded-lg text-center text-sm font-bold border hidden shadow-sm">
+                <!-- Сюда JS подставит текст -->
+            </div>
+
             <!-- КНОПКА 1 (СИНЯЯ): БЫСТРЫЙ ЗАКАЗ (МОДАЛ TAXI) -->
             <button data-service="taxi"
                 class="service-btn btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3 blink-btn">
@@ -1028,6 +1033,7 @@
         let userId = null;
         
         let orderDestination = 'whatsapp';
+        let priceMultiplier = 1; // Глобальный множитель цены (1 = стандарт, 1.3 = ночь)
         
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
@@ -1035,6 +1041,43 @@
         
         const LOCAL_STORAGE_HISTORY_KEY = 'taxi_address_history_v1';
         const FULL_HISTORY_KEY = 'taxi_full_orders_history';
+
+        // --- ЛОГИКА ИМИТАЦИИ МАШИН И СПРОСА ---
+        function checkLineStatus() {
+            const hour = new Date().getHours();
+            const statusEl = document.getElementById('lineStatus');
+            let carsCount = 4; // Дефолт
+            let message = '';
+            let colorClass = '';
+
+            // 1. НОЧЬ (22:00 - 06:00) -> 1-2 машины, цена увеличена
+            if (hour >= 22 || hour < 6) {
+                carsCount = Math.floor(Math.random() * 2) + 1; // 1 или 2
+                message = `<i class="fas fa-moon"></i> Мало машин (${carsCount}). Ночной тариф: Цена увеличена.`;
+                colorClass = 'bg-purple-100 text-purple-700 border-purple-300';
+                priceMultiplier = 1.3; // +30% к цене
+            } 
+            // 2. ЧАС ПИК (Утро/Вечер) -> 5+ машин, ожидание
+            else if ((hour >= 7 && hour < 9) || (hour >= 17 && hour < 19)) {
+                carsCount = Math.floor(Math.random() * 4) + 5; // 5-8
+                message = `<i class="fas fa-clock"></i> Высокий спрос (${carsCount} авто). Ожидание 15-20 мин.`;
+                colorClass = 'bg-red-100 text-red-700 border-red-300';
+                priceMultiplier = 1; // Цена стандартная
+            }
+            // 3. ОБЫЧНОЕ ВРЕМЯ -> 3-6 машин
+            else {
+                carsCount = Math.floor(Math.random() * 4) + 3; // 3-6
+                message = `<i class="fas fa-car"></i> Машин на линии: ${carsCount}. Стандартная подача.`;
+                colorClass = 'bg-green-100 text-green-700 border-green-300';
+                priceMultiplier = 1;
+            }
+
+            if(statusEl) {
+                statusEl.innerHTML = message;
+                statusEl.className = `mb-3 p-3 rounded-lg text-center text-sm font-bold border shadow-sm ${colorClass}`;
+                statusEl.classList.remove('hidden');
+            }
+        }
 
         // --- УТИЛИТЫ ДЛЯ OSRM (РАСЧЕТ ЦЕНЫ) ---
 
@@ -1119,6 +1162,10 @@
                     if (distKm > 2) {
                         price += (distKm - 2) * 120;
                     }
+                    
+                    // ПРИМЕНЯЕМ МНОЖИТЕЛЬ НОЧНОГО ТАРИФА
+                    price = price * priceMultiplier;
+
                     // Округляем до десятков
                     price = Math.ceil(price / 10) * 10;
                     
@@ -1128,7 +1175,14 @@
             }
             // Если не удалось - возвращаем дефолт
             const addressCount = countFilledAddresses();
-            priceEl.innerText = (addressCount >= 3) ? 'от 1500–2000 тг' : 'от 700–900 тг';
+            let baseMin = (addressCount >= 3) ? 1500 : 700;
+            let baseMax = (addressCount >= 3) ? 2000 : 900;
+            
+            // Применяем множитель к дефолтным значениям
+            baseMin = Math.ceil((baseMin * priceMultiplier) / 10) * 10;
+            baseMax = Math.ceil((baseMax * priceMultiplier) / 10) * 10;
+
+            priceEl.innerText = `от ${baseMin}–${baseMax} тг`;
         }
 
         // Создаем debounced версию
@@ -1494,6 +1548,7 @@
              loadTheme(); 
              initPhoneMask(); 
              setAddressHistory(); 
+             checkLineStatus(); // ЗАПУСК ПРОВЕРКИ МАШИН
              
              const formattedNow = getFormattedCurrentTime();
              const taxiDateTimeInput = document.getElementById('taxiDateTime');
@@ -1684,9 +1739,21 @@
                 return; 
             }
             const addressCount = countFilledAddresses();
-            if (addressCount <= 2) priceText = 'от 700–900 тг';
-            else if (addressCount >= 3) priceText = 'от 1500–2000 тг';
-            else priceText = 'от 700–900 тг';
+            
+            // Базовые цены
+            let baseMin = (addressCount >= 3) ? 1500 : 700;
+            let baseMax = (addressCount >= 3) ? 2000 : 900;
+            
+            // Применяем множитель
+            baseMin = Math.ceil((baseMin * priceMultiplier) / 10) * 10;
+            baseMax = Math.ceil((baseMax * priceMultiplier) / 10) * 10;
+            
+            priceText = `от ${baseMin}–${baseMax} тг`;
+            
+            if (priceMultiplier > 1) {
+                priceText += " (Ночной)";
+            }
+            
             priceEl.textContent = priceText;
 
             // Если не межгород, запускаем OSRM (debounced)

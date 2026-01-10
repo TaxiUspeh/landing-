@@ -516,7 +516,8 @@
                     <div id="driverStatusDisplay" class="hidden p-3 rounded-lg text-center font-bold mb-2"></div>
 
                     <div class="grid grid-cols-1 gap-3">
-                        <button type="button" id="goOnlineBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-md btn-active">
+                        <!-- Button type changed to submit for better mobile keyboard handling -->
+                        <button type="submit" id="goOnlineBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-md btn-active">
                             <i class="fas fa-power-off mr-2"></i> ВЫЙТИ НА ЛИНИЮ
                         </button>
                     </div>
@@ -928,11 +929,10 @@
         function initDriverLogic() {
             if (driverLogicInitialized) return;
             
-            const btnOnline = document.getElementById('goOnlineBtn');
             const btnOffline = document.getElementById('goOfflineBtn');
 
             // FIX: Проверяем наличие кнопок перед добавлением событий
-            if (!btnOnline || !btnOffline) {
+            if (!btnOffline) {
                 return;
             }
 
@@ -947,32 +947,7 @@
             if(savedDriver.car) document.getElementById('driverCar').value = savedDriver.car;
             if(savedDriver.plate) document.getElementById('driverPlate').value = savedDriver.plate;
 
-            btnOnline.addEventListener('click', async () => {
-                const name = document.getElementById('driverName').value.trim();
-                const car = document.getElementById('driverCar').value.trim();
-                const plate = document.getElementById('driverPlate').value.trim();
-                if(!name || !car || !plate) { alert('Заполните все поля!'); return; }
-                if(!userId) { alert('Ошибка авторизации. Обновите страницу.'); return; }
-                
-                // Show loading
-                const originalText = btnOnline.innerHTML;
-                btnOnline.innerHTML = '<i class="fas fa-spinner animate-spin"></i> ВХОД...';
-                btnOnline.disabled = true;
-                
-                try {
-                    localStorage.setItem('taxi_driver_data', JSON.stringify({name, car, plate}));
-                    // Strict Path: /artifacts/{appId}/public/data/{collectionName}
-                    const driverRef = doc(db, 'artifacts', appId, 'public', 'data', DRIVERS_COLLECTION, userId);
-                    await setDoc(driverRef, { name, car, plate, status: 'online', timestamp: Date.now() });
-                    setDriverUI(true);
-                } catch (error) {
-                    console.error("Online Error:", error);
-                    alert('Ошибка выхода на линию: ' + error.message);
-                } finally {
-                    btnOnline.innerHTML = originalText;
-                    btnOnline.disabled = false;
-                }
-            });
+            // REMOVED CLICK LISTENER FOR goOnlineBtn (Moved to Form Submit)
 
             btnOffline.addEventListener('click', async () => {
                 if(!userId) return;
@@ -1556,7 +1531,31 @@
                      orderData = { type: 'assistance', typeLabel: 'Помощь', from: loc, to: 'На месте', price: 'Договорная', wishes: what, timestamp: Date.now(), status: 'pending' };
                 }
                 else if (formId === 'driverForm') {
-                    return; 
+                    const name = document.getElementById('driverName').value.trim();
+                    const car = document.getElementById('driverCar').value.trim();
+                    const plate = document.getElementById('driverPlate').value.trim();
+                    const btn = document.getElementById('goOnlineBtn');
+
+                    if(!userId) { alert('Ошибка авторизации. Подождите пару секунд...'); return; }
+
+                    // UI Loading
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> ВХОД...';
+                    btn.disabled = true;
+                    
+                    try {
+                        localStorage.setItem('taxi_driver_data', JSON.stringify({name, car, plate}));
+                        const driverRef = doc(db, 'artifacts', appId, 'public', 'data', DRIVERS_COLLECTION, userId);
+                        await setDoc(driverRef, { name, car, plate, status: 'online', timestamp: Date.now() });
+                        setDriverUI(true);
+                    } catch (error) {
+                        console.error(error);
+                        alert('Ошибка: ' + error.message);
+                    } finally {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                    return; // Stop here so it doesn't trigger WhatsApp
                 }
 
                 if (msg) {

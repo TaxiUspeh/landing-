@@ -113,6 +113,31 @@
         }
         .blink-btn { animation: blink-custom 1.5s infinite ease-in-out; }
         
+        /* НОВАЯ АНИМАЦИЯ: ПУЛЬСИРУЮЩАЯ ТОЧКА (РАДАР) */
+        .status-dot {
+            display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .status-dot.green { background-color: #10b981; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        .status-dot.yellow { background-color: #f59e0b; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+        .status-dot.red { background-color: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+
+        @keyframes pulse-green {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        @keyframes pulse-yellow {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        @keyframes pulse-red {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        
         #locationBtn {
             padding: 10px 12px; font-size: 1rem; background-color: #e5e7eb; color: #374151; font-weight: 600;
             border-radius: 8px; transition: background-color 0.2s, color 0.2s;
@@ -243,6 +268,40 @@
             background-color: rgba(17, 24, 39, 0.9);
             border-top: 1px solid rgba(55, 65, 81, 0.5);
         }
+        
+        /* WEATHER WIDGET STYLES */
+        .weather-widget {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            z-index: 50;
+        }
+        .weather-widget:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        .weather-widget .temp {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: white;
+            line-height: 1;
+            margin-top: 2px;
+        }
+        .weather-widget .icon {
+            font-size: 1rem;
+            color: #fbbf24; /* yellow-400 */
+            margin-bottom: -2px;
+        }
+        .weather-widget.cold .icon { color: #60a5fa; } /* blue-400 for cold */
+        .weather-widget.snow .icon { color: white; }
     </style>
 </head>
 
@@ -251,6 +310,16 @@
     <!-- HEADER (ФИКСИРОВАННЫЙ / ЛИПКИЙ) -->
     <!-- Изменено: добавлен класс sticky top-0 z-50 для фиксации при скролле -->
     <header class="header-bg text-white py-4 rounded-b-lg shadow-lg sticky top-0 z-50">
+        <!-- WEATHER WIDGET (LEFT) -->
+        <div class="absolute top-2 left-2">
+            <div id="weatherWidget" class="weather-widget hidden btn-active" onclick="window.fetchRealWeather()">
+                <div class="flex flex-col items-center">
+                    <i id="weatherIcon" class="fas fa-cloud-sun icon"></i>
+                    <span id="weatherTemp" class="temp">--°</span>
+                </div>
+            </div>
+        </div>
+
         <div class="absolute top-2 right-2">
             <button id="themeToggle" onclick="toggleTheme()" class="text-white p-2 rounded-full bg-black bg-opacity-10 hover:bg-opacity-30 transition-all focus:outline-none z-50 btn-active">
                 <i id="themeIcon" class="fas fa-moon text-lg"></i>
@@ -272,8 +341,8 @@
         
         <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6 main-card">
             
-            <!-- НОВЫЙ БЛОК: СТАТУС МАШИН НА ЛИНИИ -->
-            <div id="lineStatus" class="mb-3 p-3 rounded-lg text-center text-sm font-bold border hidden shadow-sm">
+            <!-- СТАТУС МАШИН НА ЛИНИИ / ПОГОДНОЕ ПРЕДУПРЕЖДЕНИЕ -->
+            <div id="lineStatus" class="mb-3 p-3 rounded-lg text-center text-sm font-bold border hidden shadow-sm transition-all duration-500">
                 <!-- Сюда JS подставит текст -->
             </div>
 
@@ -341,10 +410,17 @@
         <h3 class="text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-8 border-gray-400 border-opacity-30">Дополнительные Услуги (Форма)</h3>
         
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
-            <button data-service="delivery"
-                class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500">
-                <i class="fas fa-box-open text-2xl mb-1 text-green-600"></i><span class="text-sm">Доставка</span>
+            <!-- УМНАЯ КНОПКА ДОСТАВКИ -->
+            <button id="deliveryBtn" data-service="delivery"
+                class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500 relative overflow-hidden transition-all duration-300">
+                <!-- Status Indicator Container -->
+                <div id="deliveryStatusBadge" class="absolute top-2 right-2 w-3 h-3 rounded-full bg-gray-300"></div>
+                
+                <i id="deliveryIcon" class="fas fa-box-open text-2xl mb-1 text-green-600 transition-colors"></i>
+                <span class="text-sm">Доставка</span>
+                <span id="deliverySubtext" class="text-[9px] text-gray-500 font-normal mt-1 leading-tight min-h-[1.5em] block"></span>
             </button>
+            
             <button data-service="cargo"
                 class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
                 <i class="fas fa-truck-loading text-2xl mb-1 text-yellow-600"></i><span class="text-sm">Грузовой</span>
@@ -763,7 +839,7 @@
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
                             <div class="price-note">Примерная стоимость:</div>
-                            <div class="price-estimate">от 1200 тг</div>
+                            <div id="deliveryPriceEstimate" class="price-estimate">от 1200 тг</div>
                         </div>
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Оформить заказ</button>
                     </div>
@@ -1042,42 +1118,255 @@
         const LOCAL_STORAGE_HISTORY_KEY = 'taxi_address_history_v1';
         const FULL_HISTORY_KEY = 'taxi_full_orders_history';
 
+        // --- ЛОГИКА СТАТУСА МАГАЗИНА (НОВОЕ) ---
+        function checkShopStatus() {
+            const btn = document.getElementById('deliveryBtn');
+            const badge = document.getElementById('deliveryStatusBadge');
+            const icon = document.getElementById('deliveryIcon');
+            const subtext = document.getElementById('deliverySubtext');
+            if (!btn) return;
+
+            const now = new Date();
+            const hour = now.getHours();
+            
+            // Магазины работают с 08:00 до 23:00 (условно)
+            // 08:00 - 22:00: ОТКРЫТО (Зеленый)
+            // 22:00 - 23:00: СКОРО ЗАКРЫТИЕ (Желтый)
+            // 23:00 - 08:00: ЗАКРЫТО (Красный/Серый + Таймер)
+
+            if (hour >= 8 && hour < 22) {
+                // ОТКРЫТО
+                btn.classList.remove('opacity-60', 'grayscale');
+                badge.className = 'absolute top-2 right-2 w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse';
+                subtext.innerHTML = '<span class="text-green-600 font-bold">Открыто</span>';
+                icon.className = 'fas fa-box-open text-2xl mb-1 text-green-600 transition-colors';
+            } else if (hour === 22) {
+                // СКОРО ЗАКРЫТИЕ
+                btn.classList.remove('opacity-60', 'grayscale');
+                badge.className = 'absolute top-2 right-2 w-3 h-3 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)] animate-pulse';
+                subtext.innerHTML = '<span class="text-yellow-600 font-bold">Скоро закрытие</span>';
+                icon.className = 'fas fa-clock text-2xl mb-1 text-yellow-500 transition-colors';
+            } else {
+                // ЗАКРЫТО
+                btn.classList.add('opacity-60'); 
+                badge.className = 'absolute top-2 right-2 w-3 h-3 rounded-full bg-red-500';
+                icon.className = 'fas fa-lock text-2xl mb-1 text-gray-500 transition-colors';
+                
+                // Считаем время до открытия (08:00 следующего дня или текущего)
+                let target = new Date();
+                if (hour >= 23) {
+                    target.setDate(target.getDate() + 1);
+                }
+                target.setHours(8, 0, 0, 0);
+                
+                const diffMs = target - now;
+                if (diffMs > 0) {
+                    const diffHrs = Math.floor(diffMs / 3600000);
+                    const diffMins = Math.floor((diffMs % 3600000) / 60000);
+                    subtext.innerHTML = `<span class="text-red-500 font-bold">Откроется через<br>${diffHrs} ч. ${diffMins} мин.</span>`;
+                } else {
+                    subtext.innerHTML = '<span class="text-red-500 font-bold">Закрыто</span>';
+                }
+            }
+        }
+
+        // --- ПОГОДНАЯ ЛОГИКА (БЕЛОУСОВКА) ---
+        let currentWeather = null;
+        let weatherLastFetch = 0;
+
+        window.fetchRealWeather = async function() {
+            const now = Date.now();
+            if (currentWeather && (now - weatherLastFetch < 1000 * 60 * 15)) { // Кеш 15 минут
+                return currentWeather;
+            }
+
+            try {
+                // Координаты Белоусовки: ~50.1333, 82.55
+                const url = 'https://api.open-meteo.com/v1/forecast?latitude=50.13&longitude=82.55&current_weather=true';
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data && data.current_weather) {
+                    currentWeather = data.current_weather;
+                    weatherLastFetch = now;
+                    updateWeatherWidgetUI(currentWeather);
+                    return currentWeather;
+                }
+            } catch (e) {
+                console.warn("Weather fetch failed:", e);
+            }
+            return null;
+        };
+
+        function updateWeatherWidgetUI(weather) {
+            const widget = document.getElementById('weatherWidget');
+            const iconEl = document.getElementById('weatherIcon');
+            const tempEl = document.getElementById('weatherTemp');
+            
+            if (!widget || !weather) return;
+
+            const temp = Math.round(weather.temperature);
+            const code = weather.weathercode;
+            
+            tempEl.textContent = `${temp}°`;
+            widget.classList.remove('hidden');
+
+            // Иконки
+            let iconClass = 'fa-cloud-sun'; // default
+            widget.classList.remove('cold', 'snow');
+
+            // Коды WMO:
+            // 0: Clear sky
+            // 1, 2, 3: Partly cloudy
+            // 45, 48: Fog
+            // 51-57: Drizzle
+            // 61-67: Rain
+            // 71-77: Snow
+            // 80-82: Rain showers
+            // 85-86: Snow showers
+            // 95-99: Thunderstorm
+
+            if (code === 0) iconClass = 'fa-sun';
+            else if (code >= 1 && code <= 3) iconClass = 'fa-cloud-sun';
+            else if (code >= 45 && code <= 48) iconClass = 'fa-smog';
+            else if (code >= 51 && code <= 67) iconClass = 'fa-cloud-rain';
+            else if (code >= 71 && code <= 77) { iconClass = 'fa-snowflake'; widget.classList.add('snow'); }
+            else if (code >= 80 && code <= 82) iconClass = 'fa-cloud-showers-heavy';
+            else if (code >= 85 && code <= 86) { iconClass = 'fa-snowflake'; widget.classList.add('snow'); }
+            else if (code >= 95) iconClass = 'fa-bolt';
+
+            if (temp < -20) widget.classList.add('cold');
+
+            iconEl.className = `fas ${iconClass} icon`;
+        }
+
         // --- ЛОГИКА ИМИТАЦИИ МАШИН И СПРОСА ---
-        function checkLineStatus() {
+        const SIM_KEY = 'taxi_sim_state_v2'; // Ключ для хранения состояния симулятора
+
+        window.checkLineStatus = async function() {
+            // Запускаем проверку статуса магазина вместе с остальными проверками
+            checkShopStatus();
+
+            // Сначала пробуем получить реальную погоду
+            const weather = await window.fetchRealWeather();
+            
             const hour = new Date().getHours();
             const statusEl = document.getElementById('lineStatus');
-            let carsCount = 4; // Дефолт
+            
             let message = '';
-            let colorClass = '';
+            let style = '';
+            priceMultiplier = 1; // Сброс по умолчанию
+            let isSevereWeather = false;
 
-            // 1. НОЧЬ (22:00 - 06:00) -> 1-2 машины, цена увеличена
-            if (hour >= 22 || hour < 6) {
-                carsCount = Math.floor(Math.random() * 2) + 1; // 1 или 2
-                message = `<i class="fas fa-moon"></i> Мало машин (${carsCount}). Ночной тариф: Цена увеличена.`;
-                colorClass = 'bg-purple-100 text-purple-700 border-purple-300';
-                priceMultiplier = 1.3; // +30% к цене
-            } 
-            // 2. ЧАС ПИК (Утро/Вечер) -> 5+ машин, ожидание
-            else if ((hour >= 7 && hour < 9) || (hour >= 17 && hour < 19)) {
-                carsCount = Math.floor(Math.random() * 4) + 5; // 5-8
-                message = `<i class="fas fa-clock"></i> Высокий спрос (${carsCount} авто). Ожидание 15-20 мин.`;
-                colorClass = 'bg-red-100 text-red-700 border-red-300';
-                priceMultiplier = 1; // Цена стандартная
+            // --- ПРОВЕРКА НА ЭКСТРЕМАЛЬНУЮ ПОГОДУ (РЕАЛЬНУЮ) ---
+            if (weather) {
+                const temp = weather.temperature;
+                const code = weather.weathercode;
+
+                // 1. СИЛЬНЫЙ МОРОЗ (Ниже -25)
+                if (temp <= -25) {
+                    message = `<i class="fas fa-temperature-low animate-pulse mr-2"></i> <b>СИЛЬНЫЙ МОРОЗ (${temp}°C)</b><br>Машин мало. Запуск затруднен. Цена увеличена.`;
+                    style = 'bg-blue-900 text-white border-blue-700 shadow-xl'; // Темно-синий
+                    priceMultiplier = 1.6;
+                    isSevereWeather = true;
+                }
+                // 2. СНЕГОПАД / МЕТЕЛЬ (Коды: 73-moderate, 75-heavy snow, 85-slight snow showers, 86-heavy snow showers)
+                else if (code === 73 || code === 75 || code === 85 || code === 86) {
+                    message = `<i class="fas fa-snowflake fa-spin mr-2"></i> <b>СНЕГОПАД / МЕТЕЛЬ</b><br>Дороги заметены. Повышенный спрос.`;
+                    style = 'bg-gray-800 text-white border-gray-600 shadow-xl'; // Серый штормовой
+                    priceMultiplier = 1.5;
+                    isSevereWeather = true;
+                }
             }
-            // 3. ОБЫЧНОЕ ВРЕМЯ -> 3-6 машин
+
+            // ЕСЛИ ПОГОДА ПЛОХАЯ - ПЕРЕКРЫВАЕМ ВСЁ ОСТАЛЬНОЕ
+            if (isSevereWeather) {
+                 if(statusEl) {
+                    statusEl.innerHTML = message;
+                    statusEl.className = `mb-3 p-4 rounded-lg text-center text-sm font-bold border-2 shadow-md transition-all duration-500 ${style}`;
+                    statusEl.classList.remove('hidden');
+                }
+                // Обновляем цену и выходим, не показывая статус машин
+                window.updateTaxiPrice();
+                window.updateDeliveryPrice();
+                return; 
+            }
+
+            // --- ОБЫЧНЫЙ РЕЖИМ (ЕСЛИ ПОГОДА НОРМАЛЬНАЯ) ---
+            // УЛУЧШЕНИЕ: Плавная флуктуация и сохранение состояния
+            let stored = null;
+            try { stored = JSON.parse(localStorage.getItem(SIM_KEY)); } catch(e){}
+
+            let cars = 0;
+            let targetMin = 0, targetMax = 0;
+
+            // Определяем целевой диапазон на основе времени
+            if (hour >= 0 && hour < 6) { targetMin = 0; targetMax = 1; }
+            else if ((hour >= 7 && hour < 10) || (hour >= 17 && hour < 20)) { targetMin = 4; targetMax = 6; }
+            else { targetMin = 2; targetMax = 5; }
+
+            // Логика сглаживания
+            const nowTime = Date.now();
+            if (stored && (nowTime - stored.timestamp < 10 * 60 * 1000)) { // 10 минут память
+                 const prevCars = stored.cars;
+                 // Меняем на -1, 0 или +1 для плавности
+                 const change = Math.floor(Math.random() * 3) - 1; 
+                 cars = prevCars + change;
+                 // Держим в границах
+                 if (cars < targetMin) cars = targetMin;
+                 if (cars > targetMax) cars = targetMax;
+            } else {
+                 // Старт (если данных нет или они устарели)
+                 cars = Math.floor(Math.random() * (targetMax - targetMin + 1)) + targetMin;
+            }
+
+            // Сохраняем новое состояние
+            localStorage.setItem(SIM_KEY, JSON.stringify({ cars, timestamp: nowTime }));
+
+            // Генерируем UI с пульсирующей точкой
+            let dotColor = 'green';
+            
+            // ГЛУБОКАЯ НОЧЬ (00:00 - 05:59)
+            if (hour >= 0 && hour < 6) {
+                if (cars === 0) {
+                     message = `<b>НОЧЬ: МАШИН НЕТ</b><br><span class="font-normal text-xs opacity-90">Принимаем только предзаказы</span>`;
+                     style = 'bg-gray-800 text-white border-gray-600';
+                     priceMultiplier = 1.5;
+                     dotColor = 'red';
+                } else {
+                     message = `<b>НА ЛИНИИ: 1 МАШИНА</b><br><span class="font-normal text-xs opacity-90">Ночной тариф. Цена выше.</span>`;
+                     style = 'bg-indigo-900 text-white border-indigo-700';
+                     priceMultiplier = 1.3;
+                     dotColor = 'yellow';
+                }
+            }
+            // ЧАС ПИК (УТРО 07-10 или ВЕЧЕР 17-20)
+            else if ((hour >= 7 && hour < 10) || (hour >= 17 && hour < 20)) {
+                message = `<b>ВЫСОКИЙ СПРОС (${cars} АВТО)</b><br><span class="font-normal text-xs opacity-90">Ожидание 15-20 мин.</span>`;
+                style = 'bg-red-500 text-white border-red-700'; 
+                priceMultiplier = 1.2;
+                dotColor = 'red';
+            }
+            // ОБЫЧНЫЙ ДЕНЬ
             else {
-                carsCount = Math.floor(Math.random() * 4) + 3; // 3-6
-                message = `<i class="fas fa-car"></i> Машин на линии: ${carsCount}. Стандартная подача.`;
-                colorClass = 'bg-green-100 text-green-700 border-green-300';
+                message = `<b>СВОБОДНЫХ МАШИН: ${cars}</b><br><span class="font-normal text-xs opacity-90">Подача 5-10 мин.</span>`;
+                style = 'bg-green-500 text-white border-green-700';
                 priceMultiplier = 1;
+                dotColor = 'green';
             }
 
             if(statusEl) {
-                statusEl.innerHTML = message;
-                statusEl.className = `mb-3 p-3 rounded-lg text-center text-sm font-bold border shadow-sm ${colorClass}`;
+                // Создаем HTML для пульсирующей точки
+                const dotHtml = `<span class="status-dot ${dotColor}" style="animation: pulse-${dotColor} 2s infinite;"></span>`;
+                
+                statusEl.innerHTML = `<div class="flex items-center justify-center">${dotHtml} <div class="text-left leading-tight">${message}</div></div>`;
+                statusEl.className = `mb-3 p-3 rounded-lg text-center text-sm font-bold border shadow-md transition-all duration-500 ${style}`;
                 statusEl.classList.remove('hidden');
             }
-        }
+            
+            window.updateTaxiPrice();
+            window.updateDeliveryPrice();
+        };
 
         // --- УТИЛИТЫ ДЛЯ OSRM (РАСЧЕТ ЦЕНЫ) ---
 
@@ -1548,7 +1837,9 @@
              loadTheme(); 
              initPhoneMask(); 
              setAddressHistory(); 
-             checkLineStatus(); // ЗАПУСК ПРОВЕРКИ МАШИН
+             // Инициируем проверку (которая теперь включает погоду)
+             checkLineStatus(); 
+             setInterval(checkLineStatus, 60000); 
              
              const formattedNow = getFormattedCurrentTime();
              const taxiDateTimeInput = document.getElementById('taxiDateTime');
@@ -1563,6 +1854,7 @@
              }
              updateCargoPrice(); 
              updateTaxiPrice(); 
+             updateDeliveryPrice();
         });
         
         function setGeoButtonLoading(mode, isLoading, isError = false) {
@@ -1751,7 +2043,7 @@
             priceText = `от ${baseMin}–${baseMax} тг`;
             
             if (priceMultiplier > 1) {
-                priceText += " (Ночной)";
+                priceText += " (Тариф повышен)";
             }
             
             priceEl.textContent = priceText;
@@ -1761,6 +2053,24 @@
                 debouncedOSRM();
             }
         }
+        
+        window.updateDeliveryPrice = function() {
+            const priceEl = document.getElementById('deliveryPriceEstimate');
+            if (!priceEl) return;
+            
+            // Базовая цена доставки
+            let base = 1200;
+            
+            // Применяем глобальный множитель (тот же, что и для такси)
+            let final = Math.ceil((base * priceMultiplier) / 50) * 50;
+            
+            let text = `от ${final} тг`;
+            if (priceMultiplier > 1) {
+                text += " (Высокий спрос)";
+            }
+            
+            priceEl.textContent = text;
+        }
 
         window.openModal = function(modalId) {
             const modal = document.getElementById(modalId);
@@ -1769,20 +2079,31 @@
                 if (modalId === 'taxiModal' || modalId === 'auctionModal') setAddressHistory();
                 modal.classList.add('active');
                 modal.setAttribute('aria-hidden', 'false');
+                
+                // Проверка времени работы магазинов для доставки
+                if (modalId === 'deliveryModal') {
+                    const hour = new Date().getHours();
+                    // Если время >= 23:00 или < 08:00
+                    if (hour >= 23 || hour < 8) {
+                        showStatus(modalId, '⚠️ Внимание: Магазины в Белоусовке работают до 23:00. Выполнение заказа может быть невозможно.');
+                    }
+                    updateDeliveryPrice();
+                }
+                
                 const formattedNow = getFormattedCurrentTime();
                 const minTime = new Date().toISOString().slice(0, 16);
                  if (modalId === 'taxiModal') {
-                     const dtInput = document.getElementById('taxiDateTime');
-                     dtInput.value = formattedNow;
-                     dtInput.min = minTime; // Установка минимума
-                     updateTaxiPrice(); 
+                      const dtInput = document.getElementById('taxiDateTime');
+                      dtInput.value = formattedNow;
+                      dtInput.min = minTime; // Установка минимума
+                      updateTaxiPrice(); 
                  }
                  if (modalId === 'cargoModal') {
-                     const dtInput = document.getElementById('cargoDateTime');
-                     dtInput.value = formattedNow;
-                     dtInput.min = minTime; // Установка минимума
-                     document.getElementById('cargoMovers').value = '0'; 
-                     updateCargoPrice(); 
+                      const dtInput = document.getElementById('cargoDateTime');
+                      dtInput.value = formattedNow;
+                      dtInput.min = minTime; // Установка минимума
+                      document.getElementById('cargoMovers').value = '0'; 
+                      updateCargoPrice(); 
                  }
                 const firstInput = modal.querySelector('input, textarea, select');
                 if (firstInput) firstInput.focus();
@@ -2149,7 +2470,8 @@
                         message += getVal('deliveryItems', 'Список товаров', true);
                         message += getVal('deliveryAddress', 'Адрес доставки', true);
                         message += getVal('deliveryStore', 'Пожелания по магазину');
-                        message += '💰 Примерная цена: от 1200 тг (зависит от расстояния/объема)';
+                        const deliveryPriceText = document.getElementById('deliveryPriceEstimate').textContent;
+                        message += `💰 Примерная цена: ${deliveryPriceText}`;
                         const deliveryAddress = document.getElementById('deliveryAddress').value.trim();
                         if (deliveryAddress) addressesToSave.push(deliveryAddress);
                         break;

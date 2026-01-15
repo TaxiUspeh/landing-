@@ -791,13 +791,13 @@
                 const code = weather.weathercode;
                 if (temp <= -25) {
                     message = `<i class="fas fa-temperature-low animate-pulse mr-2"></i> <b>СИЛЬНЫЙ МОРОЗ (${temp}°C)</b><br>Машин мало. Запуск затруднен. Цена увеличена.`;
-                    style = 'bg-blue-900 text-white border-blue-700 shadow-xl'; 
+                    style = 'bg-blue-100/50 border-blue-400 text-blue-900 backdrop-blur-md dark:bg-blue-900/40 dark:border-blue-500 dark:text-blue-100'; 
                     priceMultiplier = CONFIG.TAXI.MULTIPLIERS.EXTREME_COLD;
                     isSevereWeather = true;
                 }
                 else if (code === 73 || code === 75 || code === 85 || code === 86) {
                     message = `<i class="fas fa-snowflake fa-spin mr-2"></i> <b>СНЕГОПАД / МЕТЕЛЬ</b><br>Дороги заметены. Повышенный спрос.`;
-                    style = 'bg-gray-800 text-white border-gray-600 shadow-xl'; 
+                    style = 'bg-slate-100/50 border-slate-400 text-slate-900 backdrop-blur-md dark:bg-slate-800/50 dark:border-slate-500 dark:text-slate-100'; 
                     priceMultiplier = CONFIG.TAXI.MULTIPLIERS.SNOW;
                     isSevereWeather = true;
                 }
@@ -806,7 +806,7 @@
             if (isSevereWeather) {
                  if(statusEl) {
                     statusEl.innerHTML = message;
-                    statusEl.className = `mb-3 p-4 rounded-lg text-center text-sm font-bold border-2 shadow-md transition-all duration-500 ${style}`;
+                    statusEl.className = `mb-3 p-4 rounded-xl border shadow-lg backdrop-blur-md transition-all duration-500 text-center text-sm font-bold ${style}`;
                     statusEl.classList.remove('hidden');
                 }
                 window.updateTaxiPrice();
@@ -839,31 +839,31 @@
             if (hour >= 0 && hour < 6) {
                 if (cars === 0) {
                      message = `<b>НОЧЬ: МАШИН НЕТ</b><br><span class="font-normal text-xs opacity-90">Принимаем только предзаказы</span>`;
-                     style = 'bg-gray-800 text-white border-gray-600';
+                     style = 'bg-slate-100/50 border-slate-400 text-slate-900 backdrop-blur-md dark:bg-slate-800/50 dark:border-slate-500 dark:text-slate-100'; 
                      priceMultiplier = CONFIG.TAXI.MULTIPLIERS.SNOW;
                      dotColor = 'red';
                 } else {
                      message = `<b>НА ЛИНИИ: 1 МАШИНА</b><br><span class="font-normal text-xs opacity-90">Ночной тариф. Цена выше.</span>`;
-                     style = 'bg-indigo-900 text-white border-indigo-700';
+                     style = 'bg-indigo-100/50 border-indigo-400 text-indigo-900 backdrop-blur-md dark:bg-indigo-900/40 dark:border-indigo-500 dark:text-indigo-100';
                      priceMultiplier = CONFIG.TAXI.MULTIPLIERS.NIGHT;
                      dotColor = 'yellow';
                 }
             }
             else if ((hour >= 7 && hour < 10) || (hour >= 17 && hour < 20)) {
                 message = `<b>ВЫСОКИЙ СПРОС (${cars} АВТО)</b><br><span class="font-normal text-xs opacity-90">Ожидание 15-20 мин.</span>`;
-                style = 'bg-red-500 text-white border-red-700'; 
+                style = 'bg-red-100/50 border-red-400 text-red-900 backdrop-blur-md dark:bg-red-900/40 dark:border-red-500 dark:text-red-100'; 
                 priceMultiplier = CONFIG.TAXI.MULTIPLIERS.HIGH_DEMAND;
                 dotColor = 'red';
             }
             else {
                 if (cars < 4) {
                     message = `<b>МАЛО МАШИН (${cars} АВТО)</b><br><span class="font-normal text-xs opacity-90">Цена временно увеличена</span>`;
-                    style = 'bg-orange-500 text-white border-orange-600 shadow-md';
+                    style = 'bg-orange-100/50 border-orange-400 text-orange-900 backdrop-blur-md dark:bg-orange-900/40 dark:border-orange-500 dark:text-orange-100';
                     priceMultiplier = CONFIG.TAXI.MULTIPLIERS.SCARCE_CARS;
                     dotColor = 'yellow';
                 } else {
                     message = `<b>СВОБОДНЫХ МАШИН: ${cars}</b><br><span class="font-normal text-xs opacity-90">Подача 5-10 мин.</span>`;
-                    style = 'bg-green-500 text-white border-green-700';
+                    style = 'bg-green-100/50 border-green-400 text-green-900 backdrop-blur-md dark:bg-green-900/40 dark:border-green-500 dark:text-green-100';
                     priceMultiplier = 1;
                     dotColor = 'green';
                 }
@@ -871,8 +871,8 @@
 
             if(statusEl) {
                 const dotHtml = `<span class="status-dot ${dotColor}" style="animation: pulse-${dotColor} 2s infinite;"></span>`;
-                statusEl.innerHTML = `<div class="flex items-center justify-center">${dotHtml} <div class="text-left leading-tight">${message}</div></div>`;
-                statusEl.className = `mb-3 p-3 rounded-lg text-center text-sm font-bold border shadow-md transition-all duration-500 ${style}`;
+                statusEl.innerHTML = `<div class="flex items-center justify-center gap-3">${dotHtml} <div class="text-left leading-tight">${message}</div></div>`;
+                statusEl.className = `mb-3 p-3 rounded-xl border shadow-lg backdrop-blur-md transition-all duration-500 text-center text-sm font-bold ${style}`;
                 statusEl.classList.remove('hidden');
             }
             window.updateTaxiPrice();

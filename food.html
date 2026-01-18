@@ -4,23 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- === PWA SETTINGS (ВСЁ В ОДНОМ ФАЙЛЕ) === -->
+    <!-- === PWA SETTINGS (Встроенный манифест) === -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Праздник">
     <meta name="theme-color" content="#1a0b0b">
     
-    <!-- Иконка приложения (Тарелка/Ужин) -->
+    <!-- Иконка приложения -->
     <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/512/dinner.png">
     <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/512/dinner.png">
     
-    <!-- ВСТРОЕННЫЙ МАНИФЕСТ (Без внешнего файла) -->
+    <!-- Манифест -->
     <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Домашний Праздник","short_name":"Праздник","start_url":".","display":"standalone","background_color":"#0f0505","theme_color":"#1a0b0b","orientation":"portrait","icons":[{"src":"https://img.icons8.com/fluency/512/dinner.png","sizes":"512x512","type":"image/png"}]}'>
-    <!-- ======================================== -->
 
     <title>Домашний Праздник | Доставка и Такси</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <script>
         if (typeof tailwind !== 'undefined') {
             tailwind.config = {
@@ -58,127 +58,72 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* Стили заголовков и фона */
         .section-title {
-            position: relative;
-            display: inline-block;
-            padding-bottom: 0.5rem;
-            text-shadow: 2px 2px #000;
+            position: relative; display: inline-block; padding-bottom: 0.5rem; text-shadow: 2px 2px #000;
         }
         .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 4px;
-            background-color: #fbbf24;
-            border-radius: 9999px;
+            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 60px; height: 4px; background-color: #fbbf24; border-radius: 9999px;
         }
         .hero-background {
             background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.9)), url('https://placehold.co/1200x800/521212/fbbf24?text=ВКУСНЫЙ+ПРАЗДНИК');
-            background-size: cover;
-            background-position: center;
+            background-size: cover; background-position: center;
         }
         
         /* Sticky Order Bar */
         #sticky-order-bar {
-            position: fixed;
-            bottom: calc(70px + env(safe-area-inset-bottom)); 
-            left: 0;
-            right: 0;
-            z-index: 80;
-            transform: translateY(200%);
-            transition: transform 0.3s ease-in-out;
+            position: fixed; bottom: calc(70px + env(safe-area-inset-bottom)); 
+            left: 0; right: 0; z-index: 80;
+            transform: translateY(200%); transition: transform 0.3s ease-in-out;
         }
         #sticky-order-bar.visible { transform: translateY(0); }
         @media (min-width: 768px) { #sticky-order-bar { bottom: 0; } }
 
         /* Notification */
         #notification-box {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            left: 20px;
-            z-index: 1000;
+            position: fixed; top: 20px; right: 20px; left: 20px; z-index: 1000;
             transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-            transform: translateY(-150%);
-            opacity: 0;
+            transform: translateY(-150%); opacity: 0;
         }
         @media(min-width: 640px) { #notification-box { left: auto; width: auto; } }
         #notification-box.show { transform: translateY(0); opacity: 1; }
         
         /* Modals */
-        .modal-backdrop {
-            background-color: rgba(0, 0, 0, 0.9);
-            z-index: 900;
-            backdrop-filter: blur(5px);
-        }
+        .modal-backdrop { background-color: rgba(0, 0, 0, 0.9); z-index: 900; backdrop-filter: blur(5px); }
         .modal-content-lg {
-            background-color: #1a0b0b;
-            z-index: 910;
-            width: 100%;
-            height: 100%; 
-            max-height: 100vh;
-            border-radius: 0;
-            display: flex;
-            flex-direction: column;
+            background-color: #1a0b0b; z-index: 910; width: 100%; height: 100%; 
+            max-height: 100vh; border-radius: 0; display: flex; flex-direction: column;
         }
         @media(min-width: 768px) {
-            .modal-content-lg {
-                width: 90%;
-                height: auto;
-                max-height: 90vh;
-                border-radius: 0.75rem; 
-            }
+            .modal-content-lg { width: 90%; height: auto; max-height: 90vh; border-radius: 0.75rem; }
         }
         .modal-content-sm {
-            width: 100%;
-            max-width: 100%;
-            margin: 0;
-            border-radius: 1.5rem 1.5rem 0 0;
-            position: absolute;
-            bottom: 0;
-            max-height: 90vh;
-            animation: slideUp 0.3s ease-out;
-            background-color: #1a0b0b;
-            border-top: 1px solid #b71c1c;
+            width: 100%; max-width: 100%; margin: 0; border-radius: 1.5rem 1.5rem 0 0;
+            position: absolute; bottom: 0; max-height: 90vh; animation: slideUp 0.3s ease-out;
+            background-color: #1a0b0b; border-top: 1px solid #b71c1c;
         }
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @media(min-width: 640px) {
-            .modal-content-sm {
-                max-width: 28rem;
-                margin: 1rem;
-                border-radius: 0.75rem;
-                position: relative;
-                bottom: auto;
-                animation: none;
-                border: 1px solid #b71c1c;
-            }
+            .modal-content-sm { max-width: 28rem; margin: 1rem; border-radius: 0.75rem; position: relative; bottom: auto; animation: none; border: 1px solid #b71c1c; }
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .menu-tab {
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
-        .menu-tab.active {
-            border-bottom-color: #fbbf24;
-            color: #fbbf24;
-            background-color: rgba(251, 191, 36, 0.1);
-        }
+        .menu-tab { border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .menu-tab.active { border-bottom-color: #fbbf24; color: #fbbf24; background-color: rgba(251, 191, 36, 0.1); }
         .close-btn { padding: 0.75rem; margin: -0.5rem; color: #9ca3af; }
         .close-btn:active { color: white; background-color: rgba(255,255,255,0.1); border-radius: 9999px; }
-        
-        .cat-nav-btn.active {
-            background-color: #fbbf24;
-            color: black;
-            font-weight: 800;
+        .cat-nav-btn.active { background-color: #fbbf24; color: black; font-weight: 800; }
+
+        /* --- НОВЫЕ СТИЛИ ДЛЯ АНИМАЦИИ --- */
+        .flying-img {
+            position: fixed; z-index: 9999; width: 50px; height: 50px; object-fit: cover; border-radius: 50%;
+            pointer-events: none; transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+            opacity: 0.8; box-shadow: 0 0 10px rgba(251, 191, 36, 0.5); border: 2px solid #fbbf24;
         }
+        @keyframes cart-bump {
+            0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); }
+        }
+        .cart-bump-anim { animation: cart-bump 0.3s ease; }
     </style>
 </head>
 <body class="antialiased selection:bg-holiday-red selection:text-white">
@@ -197,8 +142,7 @@
                 <span id="sticky-total" class="text-xl font-black text-white">0 ₸</span>
             </div>
             <button onclick="showCartModal()" class="bg-white text-holiday-red font-bold py-2 px-6 rounded-full shadow-lg flex items-center animate-pulse hover:bg-gray-100 transition active:scale-95">
-                К оформлению
-                <i class="fas fa-arrow-right ml-2"></i>
+                К оформлению <i class="fas fa-arrow-right ml-2"></i>
             </button>
         </div>
     </div>
@@ -211,9 +155,7 @@
                 <button onclick="hideCartModal()" class="close-btn text-3xl leading-none text-white hover:text-holiday-gold">&times;</button>
             </div>
             <div class="p-4 flex-grow overflow-y-auto overscroll-contain">
-                <div id="cart-items-container" class="space-y-4">
-                    <!-- Items -->
-                </div>
+                <div id="cart-items-container" class="space-y-4"></div>
                 
                 <div id="cart-empty-message" class="text-center py-10 text-gray-500 hidden">
                     <div class="text-6xl mb-4">🍽️</div>
@@ -228,27 +170,36 @@
                         <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Ваше имя</label>
                         <input type="text" id="order-name" placeholder="Как к вам обращаться?" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-holiday-gold outline-none transition focus:ring-1 focus:ring-holiday-gold">
                     </div>
-                    <!-- Региональная доставка -->
+                    <!-- УЛУЧШЕНО: Выбор города с логикой -->
                     <div>
                         <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Населенный пункт <span class="text-red-500">*</span></label>
-                        <input type="text" id="order-city" placeholder="Белоусовка, Глубокое, Район..." class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-holiday-gold outline-none transition focus:ring-1 focus:ring-holiday-gold">
+                        <select id="order-city" onchange="calculateDelivery()" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-holiday-gold outline-none transition focus:ring-1 focus:ring-holiday-gold">
+                            <option value="" disabled selected>Выберите пункт</option>
+                            <option value="Белоусовка">Белоусовка (Бесплатно)</option>
+                            <option value="Глубокое">Глубокое (+1000 ₸)</option>
+                            <option value="Усть-Каменогорск">Усть-Каменогорск (Такси)</option>
+                            <option value="Предгорное">Предгорное (+1500 ₸)</option>
+                            <option value="Другое">Другое</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Адрес <span class="text-red-500">*</span></label>
-                        <input type="text" id="order-address" placeholder="Улица, дом" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-holiday-gold outline-none transition focus:ring-1 focus:ring-holiday-gold">
+                        <input type="text" id="order-address" placeholder="Улица, дом, квартира" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-holiday-gold outline-none transition focus:ring-1 focus:ring-holiday-gold">
+                    </div>
+                    <!-- ДОБАВЛЕНО: Телефон с маской -->
+                    <div>
+                        <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Телефон <span class="text-red-500">*</span></label>
+                        <input type="tel" id="order-phone" placeholder="+7 (___) ___-__-__" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-holiday-gold outline-none transition focus:ring-1 focus:ring-holiday-gold">
                     </div>
                     <div>
                         <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Комментарий</label>
-                        <textarea id="order-comment" rows="2" placeholder="Дополнительные пожелания..." class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-holiday-gold outline-none transition focus:ring-1 focus:ring-holiday-gold"></textarea>
+                        <textarea id="order-comment" rows="2" placeholder="Например: 'Нужна сдача'" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-holiday-gold outline-none transition focus:ring-1 focus:ring-holiday-gold"></textarea>
                     </div>
-                    <p class="text-xs text-gray-500 italic">* Стоимость доставки по району уточнит оператор.</p>
                 </div>
 
                 <!-- AI Recommendation -->
                 <div class="mt-6 pt-4 border-t border-gray-700 pb-4">
-                    <h5 class="text-white text-lg font-bold mb-3 flex items-center">
-                        <span class="mr-2">✨</span> Что добавить?
-                    </h5>
+                    <h5 class="text-white text-lg font-bold mb-3 flex items-center"><span class="mr-2">✨</span> Что добавить?</h5>
                     <button id="ai-recommendation-btn" onclick="generateRecommendation()" class="w-full bg-gray-800 border border-holiday-gold/30 text-holiday-gold font-bold py-3 rounded-lg hover:bg-gray-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-base flex justify-center items-center">
                         <i class="fas fa-magic mr-2"></i> Совет от Шефа
                     </button>
@@ -259,11 +210,13 @@
             <div class="p-4 bg-[#0f0505] border-t border-gray-700 space-y-4 pb-safe">
                 <div class="flex justify-between items-center text-xl font-bold text-white">
                     <span>Итого:</span>
-                    <span id="cart-total-price" class="text-holiday-gold text-2xl">0 ₸</span>
+                    <div class="text-right">
+                        <span id="cart-total-price" class="text-holiday-gold text-2xl">0 ₸</span>
+                        <div id="delivery-info" class="text-[10px] text-gray-400 hidden">+ доставка</div>
+                    </div>
                 </div>
                 <button onclick="placeOrder()" id="place-order-btn" class="w-full bg-holiday-green hover:bg-[#1DA851] text-white text-lg font-bold px-6 py-4 rounded-xl shadow-lg transition duration-300 flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed active:scale-95" disabled>
-                    <i class="fab fa-whatsapp text-2xl mr-2"></i>
-                    Заказать в WhatsApp
+                    <i class="fab fa-whatsapp text-2xl mr-2"></i> Заказать в WhatsApp
                 </button>
             </div>
         </div>
@@ -275,27 +228,20 @@
             
             <div class="bg-gradient-to-r from-holiday-red to-[#7f1d1d] border-b border-holiday-gold/30 flex flex-col shrink-0 pt-safe">
                 <div class="p-4 flex justify-between items-center">
-                    <h4 class="text-xl font-bold text-white flex items-center">
-                        <span class="text-2xl mr-2">📋</span> Меню
-                    </h4>
+                    <h4 class="text-xl font-bold text-white flex items-center"><span class="text-2xl mr-2">📋</span> Меню</h4>
                     <button onclick="hideFullMenuModal()" class="close-btn text-3xl leading-none text-white">&times;</button>
                 </div>
-                
                 <div class="flex overflow-x-auto no-scrollbar px-2 bg-black/20">
                     <button onclick="switchMenuTab('table')" id="tab-table" class="menu-tab flex-1 py-3 px-4 text-gray-300 font-bold text-sm sm:text-base whitespace-nowrap text-center">🍽️ Праздничный стол</button>
                     <button onclick="switchMenuTab('frozen')" id="tab-frozen" class="menu-tab flex-1 py-3 px-4 text-gray-300 font-bold text-sm sm:text-base whitespace-nowrap text-center">🥟 Полуфабрикаты</button>
-                    <button onclick="switchMenuTab('promo')" id="tab-promo" class="menu-tab flex-1 py-3 px-4 text-gray-300 font-bold text-sm sm:text-base whitespace-nowrap text-center">🔥 Спецпредложения</button>
+                    <button onclick="switchMenuTab('promo')" id="tab-promo" class="menu-tab flex-1 py-3 px-4 text-gray-300 font-bold text-sm sm:text-base whitespace-nowrap text-center">🔥 Акции</button>
                 </div>
             </div>
             <div class="bg-[#1a0b0b] border-b border-gray-700 sticky top-0 z-20 shrink-0 shadow-lg">
-                <div id="modal-category-nav" class="flex overflow-x-auto no-scrollbar py-3 px-2 space-x-2">
-                    <!-- Categories buttons injected here -->
-                </div>
+                <div id="modal-category-nav" class="flex overflow-x-auto no-scrollbar py-3 px-2 space-x-2"></div>
             </div>
             <div id="full-menu-scroll-area" class="flex-grow overflow-y-auto p-4 md:p-6 bg-[#0f0505] pb-24 overscroll-contain">
-                <div id="full-menu-container" class="space-y-8">
-                    <!-- Menu Content injected here -->
-                </div>
+                <div id="full-menu-container" class="space-y-8"></div>
             </div>
             <div id="menu-modal-footer" class="absolute bottom-0 left-0 right-0 p-4 pb-safe bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-none hidden">
                 <button onclick="showCartModal()" class="pointer-events-auto w-full bg-holiday-green text-white font-bold py-3 px-6 rounded-xl shadow-lg flex justify-between items-center transform active:scale-95 transition">
@@ -306,7 +252,6 @@
                     <span class="text-xl" id="modal-footer-price">0 ₸</span>
                 </button>
             </div>
-            
         </div>
     </div>
     
@@ -318,20 +263,13 @@
                 <button onclick="hideCallbackModal()" class="close-btn text-3xl leading-none text-white">&times;</button>
             </div>
             <div class="p-6 space-y-5 pb-safe overflow-y-auto">
-                <div>
-                    <label class="block text-holiday-gold font-bold text-sm mb-2">Имя</label>
-                    <input type="text" id="callback-name" placeholder="Имя" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-holiday-gold outline-none">
-                </div>
-                <div>
-                    <label class="block text-holiday-gold font-bold text-sm mb-2">Телефон</label>
-                    <input type="tel" id="callback-phone" placeholder="+7 7.." class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-holiday-gold outline-none">
-                </div>
-                <button onclick="sendCallbackRequest()" class="w-full bg-holiday-red hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-lg transition mt-2 flex justify-center items-center active:scale-95">
-                    Отправить заявку
-                </button>
+                <input type="text" id="callback-name" placeholder="Имя" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-holiday-gold outline-none">
+                <input type="tel" id="callback-phone" placeholder="Телефон" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-holiday-gold outline-none">
+                <button onclick="sendCallbackRequest()" class="w-full bg-holiday-red hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-lg transition mt-2 flex justify-center items-center active:scale-95">Отправить заявку</button>
             </div>
         </div>
     </div>
+
     <!-- Chef Inquiry Modal -->
     <div id="chef-modal" class="modal-backdrop fixed inset-0 hidden items-end sm:items-center justify-center sm:p-4 z-[120]" onclick="hideChefModal()">
         <div class="bg-[#1a0b0b] modal-content-sm w-full sm:max-w-md sm:rounded-xl shadow-2xl border-t sm:border border-holiday-gold flex flex-col" onclick="event.stopPropagation()">
@@ -365,11 +303,15 @@
                 </div>
                 <div>
                     <h1 class="text-lg sm:text-xl font-black text-white leading-none">Домашний Праздник</h1>
-                    <p class="text-xs text-holiday-gold mt-1">Доставка: Белоусовка • Район • Область</p>
+                    <!-- ДОБАВЛЕНО: Статус работы -->
+                    <div id="shop-status" class="flex items-center mt-1">
+                        <span class="w-2 h-2 rounded-full bg-green-500 mr-1 animate-pulse"></span>
+                        <span class="text-[10px] text-green-500 font-bold uppercase">Открыто</span>
+                    </div>
                 </div>
             </div>
             <div class="flex gap-2">
-                <!-- Кнопка Такси в хедере -->
+                <!-- Кнопка Такси -->
                 <a href="https://taxiuspeh.github.io/landing-/" target="_blank" class="hidden sm:flex bg-taxi-yellow text-black px-4 py-2 rounded-lg font-bold items-center hover:bg-yellow-300 transition shadow-lg">
                     <i class="fas fa-taxi mr-2"></i> Заказать такси
                 </a>
@@ -396,7 +338,7 @@
                 </button>
             </div>
             
-            <!-- Generic Promo Block -->
+            <!-- Promo Block (Plakuchaya Iva) -->
             <div onclick="openMenuCategory('promo')" class="w-full max-w-lg bg-gradient-to-br from-purple-900 to-indigo-900 rounded-xl p-4 cursor-pointer hover:scale-[1.02] transition shadow-xl border border-purple-500/50">
                 <div class="flex justify-between items-center">
                     <div class="text-left">
@@ -455,7 +397,7 @@
                 <span>Звонок</span>
             </a>
             
-            <a onclick="showCartModal()" class="transform -translate-y-5 flex flex-col items-center justify-center bg-holiday-red w-14 h-14 rounded-full shadow-lg border-4 border-[#1a0b0b] text-white transition active:scale-95">
+            <a onclick="showCartModal()" id="mobile-cart-btn" class="transform -translate-y-5 flex flex-col items-center justify-center bg-holiday-red w-14 h-14 rounded-full shadow-lg border-4 border-[#1a0b0b] text-white transition active:scale-95">
                 <i class="fas fa-shopping-basket text-xl"></i>
             </a>
             
@@ -472,7 +414,7 @@
 
     <!-- Scripts -->
     <script>
-        // --- ДАННЫЕ (Обновленные) ---
+        // --- ДАННЫЕ ---
         const productsData = [
             // САЛАТЫ
             { id: 'bakl', category: 'salads', name: 'Хрустящие баклажаны', price: 6200, desc: 'Обжаренные баклажаны в соусе "Сладкий Чили". Подается теплым. (1 кг)', img: 'https://placehold.co/400x300/1a0b0b/fbbf24?text=Хрустящие+баклажаны' },
@@ -507,7 +449,6 @@
             { id: 'snack_russ', category: 'snacks', name: 'Закуска по-русски', price: 6000, desc: 'Сельдь, картофель, лук, соленья. (Тарелка)', img: 'https://placehold.co/400x300/1a0b0b/fbbf24?text=По-Русски' },
             { id: 'onion_rings', category: 'snacks', name: 'Луковые кольца', price: 170, desc: '1 шт.', img: 'https://placehold.co/200x200/1a0b0b/fbbf24?text=Кольца' },
             { id: 'b_shrimp', category: 'snacks', name: 'Брускетта Креветки', price: 480, desc: '1 шт.', img: 'https://placehold.co/200x200/1a0b0b/fbbf24?text=Брускетта' },
-            
             // ПОЛУФАБРИКАТЫ (1 кг)
             { id: 'm_rub', category: 'frozen', name: 'Манты (Рубленые)', price: 3700, desc: 'Говядина рубленая, лук, тесто.', img: 'https://placehold.co/400x300/0f0f0f/2563eb?text=Манты' },
             { id: 'm_pump', category: 'frozen', name: 'Манты (Тыква)', price: 3500, desc: 'Говядина, тыква, лук.', img: 'https://placehold.co/400x300/0f0f0f/2563eb?text=Манты+Тыква' },
@@ -542,29 +483,53 @@
 
         let cart = []; 
         let activeMenuTab = 'table'; 
-
-        // API
         const apiKey = ""; 
         const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
 
+        // --- УЛУЧШЕНИЕ: Вибрация ---
+        function vibrate() { if(navigator.vibrate) navigator.vibrate(10); }
+
+        // --- УЛУЧШЕНИЕ: Анимация полета в корзину ---
+        function animateFlyToCart(sourceImg) {
+            const cartBtn = document.getElementById('mobile-cart-btn') || document.querySelector('.fa-shopping-basket');
+            if (!cartBtn || !sourceImg) return;
+
+            const flyImg = sourceImg.cloneNode();
+            flyImg.classList.add('flying-img');
+            const rect = sourceImg.getBoundingClientRect();
+            const cartRect = cartBtn.getBoundingClientRect();
+
+            flyImg.style.top = rect.top + 'px';
+            flyImg.style.left = rect.left + 'px';
+            document.body.appendChild(flyImg);
+
+            requestAnimationFrame(() => {
+                flyImg.style.top = (cartRect.top + 10) + 'px';
+                flyImg.style.left = (cartRect.left + 10) + 'px';
+                flyImg.style.width = '20px';
+                flyImg.style.height = '20px';
+                flyImg.style.opacity = '0.5';
+            });
+
+            setTimeout(() => {
+                flyImg.remove();
+                cartBtn.classList.add('cart-bump-anim');
+                setTimeout(() => cartBtn.classList.remove('cart-bump-anim'), 300);
+            }, 700);
+        }
+
         async function callGeminiAPI(payload, maxRetries = 3) {
-            if(!apiKey) return "Рекомендую заказать ещё морс!"; 
-            
+            if(!apiKey) return "Рекомендую заказать ещё морс!";
             let attempt = 0;
             while (attempt < maxRetries) {
                 try {
                     const url = `${API_URL}?key=${apiKey}`;
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
+                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                     if (!response.ok) throw new Error('API Error');
                     const result = await response.json();
                     return result.candidates?.[0]?.content?.parts?.[0]?.text || "Рекомендую добавить сок или хлеб!";
                 } catch (error) {
-                    attempt++;
-                    await new Promise(r => setTimeout(r, 1000 * attempt));
+                    attempt++; await new Promise(r => setTimeout(r, 1000 * attempt));
                 }
             }
             return "Попробуйте наши фирменные соусы!";
@@ -582,10 +547,8 @@
             }).join(', ');
             
             if(!cartSummary) cartSummary = "Ничего (корзина пуста)";
-
             const systemPrompt = "Ты шеф-повар службы доставки 'Домашний Праздник'. Предложи ОДНО блюдо из меню (Салаты, Роллы, Горячее, Закуски), которое идеально дополнит текущий заказ. Будь краток, используй эмодзи. Не используй markdown.";
             const userQuery = `Заказ: ${cartSummary}. Что посоветуешь добавить?`;
-
             try {
                 const rec = await callGeminiAPI({
                     contents: [{ parts: [{ text: userQuery }] }],
@@ -614,7 +577,18 @@
         function saveCart() { localStorage.setItem('holiday_cart', JSON.stringify(cart)); }
         function loadCart() { try { cart = JSON.parse(localStorage.getItem('holiday_cart')) || []; } catch { cart = []; } }
 
-        function updateCartItemCount(id, delta) {
+        function updateCartItemCount(id, delta, event) {
+            vibrate(); // Вибрация
+            
+            // Анимация полета
+            if (delta > 0 && event && event.target) {
+                const card = event.target.closest('.rounded-xl'); // Ищем родительскую карточку
+                if (card) {
+                    const img = card.querySelector('img');
+                    if (img) animateFlyToCart(img);
+                }
+            }
+
             const existing = cart.find(i => i.id === id);
             if (existing) {
                 existing.count += delta;
@@ -622,11 +596,7 @@
             } else if (delta > 0) {
                 cart.push({ id: id, count: delta });
             }
-            saveCart();
-            renderCartUI();
-            renderCartModal(); 
-            renderFullMenu(); 
-            if(delta > 0) showNotification('Добавлено в корзину');
+            saveCart(); renderCartUI(); renderCartModal(); renderFullMenu(); 
         }
 
         function getCartCount(id) {
@@ -665,20 +635,13 @@
             const formContainer = document.getElementById('order-details-form');
             const orderBtn = document.getElementById('place-order-btn');
             
-            let total = 0;
-            let html = '';
+            let total = 0; let html = '';
             
             if (cart.length === 0) {
-                emptyMsg.classList.remove('hidden');
-                formContainer.classList.add('hidden');
-                container.innerHTML = '';
-                orderBtn.disabled = true;
-                totalElement.textContent = "0 ₸";
+                emptyMsg.classList.remove('hidden'); formContainer.classList.add('hidden'); container.innerHTML = '';
+                orderBtn.disabled = true; totalElement.textContent = "0 ₸";
             } else {
-                emptyMsg.classList.add('hidden');
-                formContainer.classList.remove('hidden');
-                orderBtn.disabled = false;
-                
+                emptyMsg.classList.add('hidden'); formContainer.classList.remove('hidden'); orderBtn.disabled = false;
                 cart.forEach(item => {
                     const product = getProductById(item.id);
                     if (!product) return;
@@ -691,33 +654,66 @@
                                 <p class="text-holiday-gold text-sm font-bold">${sum.toLocaleString()} ₸</p>
                             </div>
                             <div class="flex items-center bg-gray-700 rounded-lg p-1">
-                                <button onclick="updateCartItemCount('${item.id}', -1)" class="w-8 h-8 flex items-center justify-center text-white hover:text-holiday-red font-bold text-xl">-</button>
+                                <button onclick="updateCartItemCount('${item.id}', -1, event)" class="w-8 h-8 flex items-center justify-center text-white hover:text-holiday-red font-bold text-xl">-</button>
                                 <span class="font-bold text-white w-8 text-center">${item.count}</span>
-                                <button onclick="updateCartItemCount('${item.id}', 1)" class="w-8 h-8 flex items-center justify-center text-white hover:text-green-500 font-bold text-xl">+</button>
+                                <button onclick="updateCartItemCount('${item.id}', 1, event)" class="w-8 h-8 flex items-center justify-center text-white hover:text-green-500 font-bold text-xl">+</button>
                             </div>
                         </div>`;
                 });
                 container.innerHTML = html;
             }
             totalElement.textContent = `${total.toLocaleString()} ₸`;
+            
+            // Запуск расчета доставки при рендере, если уже выбрано
+            calculateDelivery();
+        }
+
+        // --- УЛУЧШЕНИЕ: Авто-расчет доставки ---
+        function calculateDelivery() {
+            let currentTotal = parseInt(document.getElementById('cart-total-price').textContent.replace(/\D/g,'')) || 0;
+            const city = document.getElementById('order-city').value;
+            const deliveryInfo = document.getElementById('delivery-info');
+            const totalEl = document.getElementById('cart-total-price');
+            
+            // Базовая цена товаров (пересчитываем, чтобы не наслаивать доставку)
+            let baseTotal = cart.reduce((sum, item) => sum + (getProductById(item.id)?.price || 0) * item.count, 0);
+            
+            let deliveryPrice = 0;
+            
+            if (city === "Глубокое") deliveryPrice = 1000;
+            if (city === "Предгорное") deliveryPrice = 1500;
+            
+            if (deliveryPrice > 0) {
+                totalEl.textContent = `${(baseTotal + deliveryPrice).toLocaleString()} ₸`;
+                // Можно добавить подсказку, если нужно
+            } else {
+                totalEl.textContent = `${baseTotal.toLocaleString()} ₸`;
+            }
         }
 
         function showCartModal() { hideFullMenuModal(); showModal('cart-modal'); renderCartModal(); }
         function hideCartModal() { hideModal('cart-modal'); }
 
         function placeOrder() {
+            vibrate();
             const name = document.getElementById('order-name').value;
             const city = document.getElementById('order-city').value;
             const address = document.getElementById('order-address').value;
+            const phone = document.getElementById('order-phone').value;
             const comment = document.getElementById('order-comment').value;
             
-            if(!address || !city) {
-                showNotification('❗ Укажите адрес и город');
+            if(!address || !city || !phone) {
+                showNotification('❗ Заполните обязательные поля');
                 return;
             }
             
-            let msg = `🎉 *НОВЫЙ ЗАКАЗ* 🎉\n`;
-            msg += `👤 *Имя:* ${name}\n📍 *Город/Поселок:* ${city}\n🏠 *Адрес:* ${address}\n`;
+            // УЛУЧШЕНИЕ: Проверка времени (Открыто/Закрыто)
+            const hour = new Date().getHours();
+            const isClosed = (hour < 10 || hour >= 23);
+            
+            let msg = isClosed ? `🌙 *ПРЕДЗАКАЗ (Сайт закрыт)*\n` : `🎉 *НОВЫЙ ЗАКАЗ*\n`;
+            
+            msg += `👤 *Имя:* ${name}\n📱 *Тел:* ${phone}\n📍 *Пункт:* ${city}\n🏠 *Адрес:* ${address}\n`;
             if(comment) msg += `📝 *Комментарий:* ${comment}\n`;
             msg += `\n--- Состав ---\n`;
             
@@ -728,9 +724,14 @@
                 total += s;
                 msg += `🔸 ${p.name} x${item.count} = ${s.toLocaleString()} ₸\n`;
             });
-            msg += `\n💰 *ИТОГО:* ${total.toLocaleString()} ₸\n`;
-            msg += `_(Доставка рассчитывается отдельно)_`;
-
+            
+            // Добавляем инфо о доставке в сообщение
+            if(city === "Глубокое") { total += 1000; msg += `🚕 *Доставка:* 1000 ₸\n`; }
+            else if(city === "Предгорное") { total += 1500; msg += `🚕 *Доставка:* 1500 ₸\n`; }
+            else if(city === "Усть-Каменогорск") { msg += `🚕 *Доставка:* Такси (оплата водителю)\n`; }
+            
+            msg += `\n💰 *ИТОГО: ${total.toLocaleString()} ₸*`;
+            
             window.open(`https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(msg)}`, '_blank');
             cart = []; saveCart(); renderCartUI(); hideCartModal();
         }
@@ -740,11 +741,11 @@
             const count = getCartCount(product.id);
             const btn = count > 0 
                 ? `<div class="flex items-center bg-holiday-green rounded-lg shadow">
-                     <button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', -1)" class="w-8 h-8 flex items-center justify-center text-white font-bold rounded-l-lg">-</button>
+                     <button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', -1, event)" class="w-8 h-8 flex items-center justify-center text-white font-bold rounded-l-lg">-</button>
                      <span class="text-white font-bold w-6 text-center text-sm">${count}</span>
-                     <button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', 1)" class="w-8 h-8 flex items-center justify-center text-white font-bold rounded-r-lg">+</button>
+                     <button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', 1, event)" class="w-8 h-8 flex items-center justify-center text-white font-bold rounded-r-lg">+</button>
                    </div>`
-                : `<button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', 1)" class="bg-gray-700 hover:bg-holiday-red text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow">В корзину</button>`;
+                : `<button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', 1, event)" class="bg-gray-700 hover:bg-holiday-red text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow">В корзину</button>`;
             
             return `
                 <div class="flex bg-[#1a0b0b] rounded-xl overflow-hidden shadow-lg border border-gray-800">
@@ -782,9 +783,7 @@
             if(!container || !nav) return;
             
             const groups = menuGroups[activeMenuTab] || menuGroups['table'];
-            let htmlContent = '';
-            let htmlNav = '';
-            let first = true;
+            let htmlContent = ''; let htmlNav = ''; let first = true;
             
             groups.forEach(key => {
                 const items = productsData.filter(p => p.category === key);
@@ -806,8 +805,7 @@
                     </div>`;
                 first = false;
             });
-            container.innerHTML = htmlContent;
-            nav.innerHTML = htmlNav;
+            container.innerHTML = htmlContent; nav.innerHTML = htmlNav;
             
             document.querySelectorAll('.menu-tab').forEach(t => t.classList.remove('active'));
             document.getElementById(`tab-${activeMenuTab}`).classList.add('active');
@@ -841,9 +839,36 @@
             hideChefModal();
         }
 
+        // --- УЛУЧШЕНИЕ: Статус работы ---
+        function checkWorkingHours() {
+            const hour = new Date().getHours();
+            const statusDiv = document.getElementById('shop-status');
+            if(statusDiv) {
+                if(hour >= 10 && hour < 23) {
+                    statusDiv.innerHTML = '<span class="w-2 h-2 rounded-full bg-green-500 mr-1 animate-pulse"></span><span class="text-[10px] text-green-500 font-bold uppercase">Открыто</span>';
+                } else {
+                    statusDiv.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500 mr-1"></span><span class="text-[10px] text-red-500 font-bold uppercase">Закрыто (с 10:00)</span>';
+                }
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             loadCart();
             renderCartUI();
+            checkWorkingHours(); // Запуск проверки времени
+            
+            // --- УЛУЧШЕНИЕ: Маска телефона ---
+            const phoneInput = document.getElementById('order-phone');
+            if(phoneInput) {
+                phoneInput.addEventListener('input', function (e) {
+                    let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+                    if (!x[2] && x[1] !== '') {
+                        e.target.value = x[1] === '8' ? '8' : '+7';
+                    } else {
+                        e.target.value = !x[2] ? x[1] : '+7 (' + x[2] + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+                    }
+                });
+            }
         });
     </script>
 </body>

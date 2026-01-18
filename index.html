@@ -38,7 +38,7 @@
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: #1f2937;
-            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
                               url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=1920&auto=format&fit=crop');
             background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat;
             padding-bottom: 90px; transition: color 0.3s; color: #1f2937; 
@@ -51,6 +51,29 @@
         .service-card:hover { transform: scale(1.03); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
         .auction-cta { background-color: #fff; border: 2px solid #f59e0b; }
         
+        /* === REAL GLASS (Прозрачный хрусталь) === */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.15) !important; 
+            backdrop-filter: blur(15px);           
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.5);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+        }
+        .glass-text { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+        #locationBtn.glass-mode { background-color: rgba(255, 255, 255, 0.9); color: #374151; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        /* Иконки внутри инпутов */
+        .input-wrapper { position: relative; width: 100%; }
+        .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #6b7280; pointer-events: none; z-index: 10; font-size: 1.1rem; }
+        .form-input-control { padding: 12px 12px 12px 44px; border: 1px solid #d1d5db; border-radius: 10px; width: 100%; transition: border-color 0.2s; box-sizing: border-box; font-size: 16px; background-color: #ffffff; }
+        .form-input-control:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
+        .form-input-control:focus + .input-icon { color: #3b82f6; }
+        .input-with-plus-btn { display: flex; align-items: center; gap: 8px; }
+        .input-with-plus-btn .input-wrapper { flex-grow: 1; min-width: 0; }
+
         @keyframes checkmark { 0% { stroke-dashoffset: 100px; } 100% { stroke-dashoffset: 0; } }
         @keyframes checkmark-circle { 0% { stroke-dashoffset: 480px; } 100% { stroke-dashoffset: 960px; } }
         .success-checkmark { width: 80px; height: 80px; margin: 0 auto; }
@@ -78,17 +101,7 @@
         .modal-overlay.active { opacity: 1; visibility: visible; }
         .modal { background: white; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); transform: scale(0.95); transition: transform 0.3s ease, background-color 0.3s; }
         
-        /* INPUT ICONS */
-        .input-wrapper { position: relative; width: 100%; }
-        .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; z-index: 10; font-size: 1.1rem; }
-        .form-input-control { padding: 12px 12px 12px 44px; border: 1px solid #d1d5db; border-radius: 8px; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; font-size: 16px; background-color: white; }
-        .form-input-control:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); outline: none; }
-        .form-input-control:focus + .input-icon { color: #3b82f6; }
-        
-        .input-with-plus-btn { display: flex; align-items: center; gap: 8px; }
-        .input-with-plus-btn .input-wrapper { flex-grow: 1; min-width: 0; }
-        
-        .geo-btn, .add-stop-btn, .remove-stop-btn { flex-shrink: 0; width: 44px; height: 44px; color: white; border-radius: 8px; transition: background-color 0.2s, transform 0.2s; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; }
+        .geo-btn, .add-stop-btn, .remove-stop-btn { flex-shrink: 0; width: 46px; height: 46px; color: white; border-radius: 8px; transition: background-color 0.2s, transform 0.2s; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; }
         .geo-btn { background-color: #f59e0b; box-shadow: 0 2px 5px rgba(245, 158, 11, 0.5); }
         .add-stop-btn { background-color: #10b981; box-shadow: 0 2px 5px rgba(16, 185, 129, 0.5); }
         .remove-stop-btn { background-color: #ef4444; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.5); }
@@ -106,7 +119,7 @@
         /* Dark Mode */
         .dark { background-color: #111827; color: #f3f4f6; }
         .dark .header-bg { background: linear-gradient(135deg, rgba(76, 29, 149, 0.95) 0%, rgba(16, 185, 129, 0.95) 100%); }
-        .dark .main-card, .dark .service-card, .dark .auction-cta, .dark .modal, .dark #faq-accordion > div, .dark .faq-item-content { background-color: #1f2937 !important; color: #e5e7eb !important; }
+        .dark .service-card, .dark .auction-cta, .dark .modal, .dark #faq-accordion > div, .dark .faq-item-content { background-color: #1f2937 !important; color: #e5e7eb !important; }
         .dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700 { color: #d1d5db !important; }
         .dark .text-gray-600 { color: #9ca3af !important; }
         .dark .text-gray-500 { color: #6b7280 !important; }
@@ -114,7 +127,7 @@
         .dark .border-t, .dark .border, .dark .border-b { border-color: #374151 !important; }
         .dark .main-card { border-color: #059669 !important; }
         .dark .form-input-control { background-color: #374151; border-color: #4b5563; color: #f3f4f6; }
-        .dark .form-input-control:focus { border-color: #60a5fa; }
+        .dark .form-input-control:focus { border-color: #60a5fa; background-color: #374151; }
         .dark .geo-btn { background-color: #b45309; }
         .dark #locationBtn { background-color: #374151; color: #f3f4f6; border: 1px solid #4b5563; }
         .dark #locationBtn:hover { background-color: #4b5563; }
@@ -178,55 +191,40 @@
     <!-- MAIN -->
     <main class="max-w-3xl mx-auto px-4 py-8 flex-grow">
         
-        <!-- BLOCK 1: MAIN ORDER -->
-        <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6 main-card">
+        <!-- MAIN BLOCK (TRANSPARENT GLASS) -->
+        <div class="max-w-md mx-auto p-4 mb-6 glass-panel border-t-4 border-green-500 shadow-2xl">
+            <div id="lineStatus" class="mb-3 p-3 rounded-lg text-center text-sm font-bold border hidden shadow-sm transition-all duration-500 bg-white/80"></div>
             
-            <!-- LINE STATUS -->
-            <div id="lineStatus" class="mb-3 p-3 rounded-lg text-center text-sm font-bold border hidden shadow-sm transition-all duration-500"></div>
-            
-            <!-- TAXI BUTTON -->
-            <button data-service="taxi"
-                class="service-btn btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3 blink-btn">
+            <button data-service="taxi" class="service-btn btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3 blink-btn">
                 <i class="fas fa-car-side text-lg"></i><span>Заказать Taxi</span>
             </button>
             
-            <!-- SPLIT BUTTON -->
             <div class="split-btn mb-3">
                 <button onclick="openServicesMenu('whatsapp')" class="btn-hover btn-active split-btn-part split-btn-taxi"><span>Меню услуг</span></button>
-                <a href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html" target="_blank" class="btn-hover btn-active split-btn-part split-btn-food"><span>Заказ Еды</span></a>
+                <button onclick="openModal('foodModal')" class="btn-hover btn-active split-btn-part split-btn-food"><span>Заказ Еды</span></button>
             </div>
             
-            <!-- QUICK ACTIONS -->
             <div class="grid grid-cols-3 gap-2 mb-4">
-                <button onclick="shareApp()" class="btn-hover btn-active bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
-                    <i class="fas fa-share-alt mb-0.5"></i><span>Поделиться</span>
-                </button>
-                <button onclick="openServicesMenu('telegram')" class="btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
-                    <i class="fab fa-telegram-plane mb-0.5"></i><span>Telegram</span>
-                </button>
-                <button data-service="auction" class="service-btn btn-hover btn-active bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
-                    <i class="fas fa-gavel mb-0.5"></i><span>Аукцион</span>
-                </button>
+                <button onclick="shareApp()" class="btn-hover btn-active bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-share-alt mb-0.5"></i><span>Поделиться</span></button>
+                <button onclick="openServicesMenu('telegram')" class="btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fab fa-telegram-plane mb-0.5"></i><span>Telegram</span></button>
+                <button data-service="auction" class="service-btn btn-hover btn-active bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-gavel mb-0.5"></i><span>Аукцион</span></button>
             </div>
             
-            <!-- LOCATION BUTTON -->
-            <button type="button" onclick="getCurrentLocation('main')" id="locationBtn" class="w-full text-gray-700 font-semibold transition flex items-center justify-center space-x-3 shadow-inner btn-active">
+            <button type="button" onclick="getCurrentLocation('main')" id="locationBtn" class="w-full glass-mode font-semibold transition flex items-center justify-center space-x-3 shadow-sm btn-active">
                 <i class="fas fa-location-arrow"></i><span id="locationBtnText">Использовать мое местоположение</span>
             </button>
-            <p id="locationResult" class="text-xs text-center text-gray-500 mt-2 hidden">
-                <a id="locationAddress" href="#" target="_blank" class="coord-link"></a>
+            <p id="locationResult" class="text-xs text-center text-white mt-2 hidden" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
+                <a id="locationAddress" href="#" target="_blank" class="coord-link text-white underline"></a>
             </p>
             
-            <!-- PAYMENTS -->
-            <div class="mt-4 pt-3 border-t border-gray-100 flex justify-center space-x-6 text-gray-600">
-                <div class="flex items-center space-x-1"><i class="fas fa-money-bill-wave text-xl text-green-500"></i><span class="font-semibold text-xs">Наличные</span></div>
-                <div class="flex items-center space-x-1"><i class="fas fa-exchange-alt text-xl text-blue-500"></i><span class="font-semibold text-xs">Перевод (Kaspi)</span></div>
+            <div class="mt-4 pt-3 border-t border-white/30 flex justify-center space-x-6 glass-text">
+                <div class="flex items-center space-x-1"><i class="fas fa-money-bill-wave text-xl text-green-400"></i><span class="font-semibold text-xs">Наличные</span></div>
+                <div class="flex items-center space-x-1"><i class="fas fa-exchange-alt text-xl text-blue-400"></i><span class="font-semibold text-xs">Перевод (Kaspi)</span></div>
             </div>
         </div>
         
-        <!-- BLOCK 3: SERVICES -->
+        <!-- SERVICES BLOCK -->
         <h3 class="text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-8 border-gray-400 border-opacity-30">Дополнительные Услуги</h3>
-        
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
             <button id="deliveryBtn" data-service="delivery" class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500 relative overflow-hidden transition-all duration-300">
                 <div id="deliveryStatusBadge" class="absolute top-2 right-2 w-3 h-3 rounded-full bg-gray-300"></div>
@@ -243,8 +241,8 @@
                 <i class="fas fa-life-ring text-2xl mb-1 text-indigo-600"></i><span class="text-sm">Помощь</span>
             </button>
         </div>
-
-        <!-- BLOCK 4: QUICK ACTIONS -->
+        
+        <!-- QUICK ACTIONS BLOCK -->
         <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md border-t pt-4 border-gray-400 border-opacity-30">Быстрые Действия</h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
             <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" class="btn-hover btn-active bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-star text-xl mb-1"></i><span>Оценка</span></a>
@@ -252,11 +250,11 @@
             <button onclick="showPartnerModal()" class="btn-hover btn-active bg-pink-600 hover:bg-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span></button>
             <button onclick="installApp()" class="btn-hover btn-active bg-gray-700 hover:bg-gray-800 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span></button>
         </div>
-
-        <!-- BLOCK 5: PARTNERS -->
+        
+        <!-- PARTNER INFO -->
         <div class="mt-8 border-t pt-6 border-gray-400 border-opacity-30">
-            <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Нашим Партнерам: ТехОсмотр</h3>
-            <div class="auction-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300 border-indigo-500 border-2">
+             <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Нашим Партнерам: ТехОсмотр</h3>
+             <div class="auction-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300 border-indigo-500 border-2">
                 <div class="flex flex-col items-center sm:items-start text-center sm:text-left mb-3 sm:mb-0">
                     <i class="fas fa-wrench text-3xl mb-1 text-red-600"></i>
                     <span class="text-xl block leading-tight font-black text-red-600">ТЕХОСМОТР В БЕЛОУСОВКЕ!</span>
@@ -270,7 +268,7 @@
             </div>
         </div>
 
-        <!-- FAQ AND PRICES -->
+        <!-- FAQ BLOCK WITH FULL PRICES -->
         <div class="mt-10 border-t pt-6 max-w-lg mx-auto border-gray-400 border-opacity-30">
             <h3 class="text-2xl font-bold text-center text-white text-shadow-md mb-6">Вопросы и Цены</h3>
             <div id="faq-accordion" class="space-y-4">
@@ -282,7 +280,7 @@
                         <p>Минимальная стоимость поездки по Белоусовке составляет **700 тенге**. Окончательная цена зависит от расстояния и текущей дорожной ситуации.</p>
                     </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
+                 <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
                     <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-4')">
                         <span>📦 Сколько стоит услуга Доставки?</span><i id="icon-faq-4" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
@@ -303,7 +301,7 @@
                         <span>📍 Примерные цены на Межгород и пригород</span><i id="icon-faq-3" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
                     <div id="faq-3" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
-                        <p class="font-bold text-red-600 mb-2">⚠️ ВНИМАНИЕ: Цены ориентировочные!</p>
+                         <p class="font-bold text-red-600 mb-2">⚠️ ВНИМАНИЕ: Цены ориентировочные!</p>
                         <ul class="list-disc list-inside mt-2 space-y-1">
                             <li>**Базовый тариф:** **230 ₸** за 1 км.</li>
                             <li>Усть-Каменогорск: **4800—6210 ₸**</li>
@@ -388,7 +386,52 @@
     </footer>
 
     <!-- MENUS & MODALS -->
-    <!-- (MODALS START) -->
+    
+    <!-- === NEW FOOD MENU MODAL (ЗАКАЗ ЕДЫ) === -->
+    <div id="foodModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6 text-center">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">🍔 Где закажем еду?</h3>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="foodModal">×</button>
+                </div>
+                
+                <div class="space-y-4">
+                    <a href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html" target="_blank"
+                       class="block w-full p-6 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition transform hover:scale-105 shadow-md flex items-center justify-between group">
+                        <div class="flex items-center gap-4">
+                            <div class="bg-red-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl group-hover:bg-red-600 transition">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="text-left">
+                                <h4 class="text-lg font-bold text-gray-800">Шашлычный двор</h4>
+                                <p class="text-sm text-gray-500">Сочный шашлык и гриль</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </a>
+
+                    <a href="https://taxiuspeh.github.io/landing-/food.html" target="_blank"
+                       class="block w-full p-6 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-xl transition transform hover:scale-105 shadow-md flex items-center justify-between group">
+                        <div class="flex items-center gap-4">
+                            <div class="bg-orange-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl group-hover:bg-orange-600 transition">
+                                <i class="fas fa-utensils"></i>
+                            </div>
+                            <div class="text-left">
+                                <h4 class="text-lg font-bold text-gray-800">Домашний праздник</h4>
+                                <p class="text-sm text-gray-500">Вкусная домашняя еда</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </a>
+                </div>
+                
+                <button onclick="closeModal('foodModal')" class="mt-6 text-gray-400 underline hover:text-gray-600">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <!-- === END FOOD MODAL === -->
+
     <div id="servicesMenuModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
@@ -999,6 +1042,7 @@
                 dotColor = 'red';
             }
             else {
+                // Config logic: Cars < 4
                 if (cars < 4) {
                     message = `<b>МАЛО МАШИН (${cars} АВТО)</b><br><span class="font-normal text-xs opacity-90">Цена временно увеличена</span>`;
                     style = 'bg-orange-100/50 border-orange-400 text-orange-900 backdrop-blur-md dark:bg-orange-900/40 dark:border-orange-500 dark:text-orange-100';
@@ -1546,16 +1590,6 @@
             return count;
         }
         
-        // --- LUCKY DISCOUNT LOGIC ---
-        window.initLuckyMode = function() {
-            // Check chance (30% chance for demonstration)
-            if (Math.random() < CONFIG.LUCKY_DISCOUNT.CHANCE) {
-                isLuckyDiscount = true;
-                const banner = document.getElementById('luckyBanner');
-                if (banner) banner.classList.remove('hidden');
-            }
-        }
-
         window.updateTaxiPrice = function() {
             const priceEl = document.getElementById('taxiPriceEstimate');
             const waitTimeEl = document.getElementById('taxiWaitTime');

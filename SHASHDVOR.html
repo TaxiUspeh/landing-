@@ -2,32 +2,60 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <!-- Добавлено viewport-fit=cover для корректного отображения на iPhone с "челкой" -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <title>Шашлычный Двор | Доставка по Белоусовке</title>
     
-    <!-- PWA Settings start -->
+    <!-- SEO и Social Media (Open Graph) -->
+    <meta name="description" content="Сочный шашлык на углях, люля-кебаб и горячие блюда с доставкой в Белоусовке. Заказывайте онлайн!">
+    <meta property="og:title" content="Шашлычный Двор | Вкуснейший шашлык">
+    <meta property="og:description" content="Свежее мясо, маринованное по секретным рецептам. Быстрая доставка и самовывоз.">
+    <meta property="og:image" content="https://img.icons8.com/color/512/kebab.png">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ru_RU">
+
+    <!-- Schema.org микроразметка для Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Restaurant",
+      "name": "Шашлычный Двор",
+      "image": "https://img.icons8.com/color/512/kebab.png",
+      "telephone": "+77055071640",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Белоусовка",
+        "addressCountry": "KZ"
+      },
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+        "opens": "10:00",
+        "closes": "00:00"
+      },
+      "priceRange": "$$",
+      "servesCuisine": "Caucasian"
+    }
+    </script>
+
+    <!-- PWA Settings (Встроенный манифест) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Шашлычный">
-    <!-- Цвета темы под стиль гриль-кафе -->
     <meta name="theme-color" content="#2E1E1E" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     
-    <!-- Иконка приложения (Шашлык) -->
     <link rel="icon" type="image/png" href="https://img.icons8.com/color/512/kebab.png">
     <link rel="apple-touch-icon" href="https://img.icons8.com/color/512/kebab.png">
-    
-    <!-- Манифест для Android (встроенный, обновлен под тематику сайта) -->
-    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Шашлычный Двор","short_name":"Шашлык","start_url":".","display":"standalone","background_color":"#1a1a1a","theme_color":"#2E1E1E","icons":[{"src":"https://img.icons8.com/color/512/kebab.png","sizes":"512x512","type":"image/png"}]}'>
-    <!-- PWA Settings end -->
+    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Шашлычный Двор","short_name":"Шашлык","start_url":".","display":"standalone","background_color":"#1a1a1a","theme_color":"#2E1E1E","orientation":"portrait-primary","icons":[{"src":"https://img.icons8.com/color/512/kebab.png","sizes":"512x512","type":"image/png"}]}'>
+
+    <!-- Предзагрузка -->
+    <link rel="preload" as="image" href="https://images.unsplash.com/photo-1594041680527-185d638848a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <script>
-        // Безопасная проверка загрузки Tailwind перед применением конфига
         if (typeof tailwind !== 'undefined') {
             tailwind.config = {
                 theme: {
@@ -36,13 +64,13 @@
                             'grill-dark': '#2E1E1E', 
                             'grill-red': '#A52A2A',  
                             'grill-accent': '#FF8C00', 
-                            'grill-green': '#25D366', // WhatsApp Green
+                            'grill-green': '#25D366',
                         },
                         fontFamily: {
                             sans: ['Inter', 'sans-serif'],
                         },
                         screens: {
-                            'xs': '375px', // Для очень маленьких экранов
+                            'xs': '375px',
                         }
                     }
                 }
@@ -52,57 +80,37 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
 
-        /* Улучшение для PWA: отключение "резиновой" прокрутки и выделения при тапе */
         html, body {
             overscroll-behavior-y: none;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Поддержка безопасных зон для iPhone X+ */
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
-            .pb-safe {
-                padding-bottom: env(safe-area-inset-bottom);
-            }
-            .mb-safe {
-                margin-bottom: env(safe-area-inset-bottom);
-            }
-            .bottom-safe {
-                bottom: env(safe-area-inset-bottom);
-            }
+            .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+            .mb-safe { margin-bottom: env(safe-area-inset-bottom); }
+            .bottom-safe { bottom: env(safe-area-inset-bottom); }
         }
         
-        /* Для iOS PWA: отступ сверху, чтобы контент не наезжал на статус-бар */
         @supports (-webkit-touch-callout: none) {
-            header {
-                padding-top: env(safe-area-inset-top);
-                height: calc(64px + env(safe-area-inset-top)); /* Примерная высота хедера */
-            }
-            .pt-safe {
-                padding-top: env(safe-area-inset-top);
-            }
+            header { padding-top: env(safe-area-inset-top); height: calc(74px + env(safe-area-inset-top)); }
+            .pt-safe { padding-top: env(safe-area-inset-top); }
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            /* Обновленное тематическое фото: процесс жарки мяса на углях с дымком */
             background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.85)), url('https://images.unsplash.com/photo-1594041680527-185d638848a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
             background-attachment: fixed;
             background-position: center;
             background-size: cover;
-            
             color: #f7f7f7;
-            /* Большой отступ снизу для навигации + безопасной зоны */
             padding-bottom: calc(140px + env(safe-area-inset-bottom));
         }
         
-        /* Анимация мигания для кнопки */
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
         }
-        .animate-blink {
-            animation: blink 1.5s infinite;
-        }
+        .animate-blink { animation: blink 1.5s infinite; }
 
         .section-title {
             position: relative;
@@ -121,21 +129,20 @@
             background-color: #FF8C00;
             border-radius: 9999px;
         }
+
         .primary-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(255, 140, 0, 0.5), 0 4px 6px -2px rgba(255, 140, 0, 0.5);
         }
+
         .hero-background {
-            /* Реальное фото шашлыка для главного баннера */
             background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
             background-size: cover;
             background-position: center;
         }
         
-        /* Стили для липкой панели заказа */
         #sticky-order-bar {
             position: fixed;
-            /* Позиционируем с учетом высоты нижнего меню (около 60-70px) + безопасная зона */
             bottom: calc(70px + env(safe-area-inset-bottom)); 
             left: 0;
             right: 0;
@@ -143,39 +150,28 @@
             transform: translateY(200%);
             transition: transform 0.3s ease-in-out;
         }
-        #sticky-order-bar.visible {
-            transform: translateY(0);
-        }
-        @media (min-width: 768px) {
-            #sticky-order-bar { bottom: 0; }
-        }
+        #sticky-order-bar.visible { transform: translateY(0); }
+        @media (min-width: 768px) { #sticky-order-bar { bottom: 0; } }
 
-        /* Notification Toast */
         #notification-box {
             position: fixed;
             top: 20px;
             right: 20px;
-            left: 20px; /* На мобильном центрируем или растягиваем */
+            left: 20px;
             z-index: 1000;
             transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
             transform: translateY(-150%);
             opacity: 0;
         }
-        @media(min-width: 640px) {
-            #notification-box { left: auto; width: auto; }
-        }
-        #notification-box.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
+        @media(min-width: 640px) { #notification-box { left: auto; width: auto; } }
+        #notification-box.show { transform: translateY(0); opacity: 1; }
         
-        /* Modal Styles */
         .modal-backdrop {
             background-color: rgba(0, 0, 0, 0.85);
             z-index: 900;
-            backdrop-filter: blur(4px); /* Размытие фона для красоты */
+            backdrop-filter: blur(4px);
         }
-        /* Mobile First Modal Content: Full Screen */
+        
         .modal-content-lg {
             background-color: #1a1a1a;
             z-index: 910;
@@ -195,24 +191,20 @@
             }
         }
         
-        /* Standard Modal (Booking/Callback) Mobile Styles */
         .modal-content-sm {
             width: 100%;
             max-width: 100%;
             margin: 0;
-            border-radius: 1rem 1rem 0 0; /* Закругление только сверху как Bottom Sheet */
+            border-radius: 1rem 1rem 0 0;
             position: absolute;
             bottom: 0;
             max-height: 90vh;
             animation: slideUp 0.3s ease-out;
         }
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @media(min-width: 640px) {
             .modal-content-sm {
-                max-width: 28rem; /* max-w-md */
+                max-width: 28rem;
                 margin: 1rem;
                 border-radius: 0.75rem;
                 position: relative;
@@ -221,30 +213,14 @@
             }
         }
 
-        .nav-icon {
-            width: 1.5rem;
-            height: 1.5rem;
-        }
+        .nav-icon { width: 1.5rem; height: 1.5rem; }
         
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .menu-tab {
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
-        .menu-tab.active {
-            border-bottom-color: #FF8C00;
-            color: #FF8C00;
-            background-color: rgba(255, 140, 0, 0.1);
-        }
+        .menu-tab { border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .menu-tab.active { border-bottom-color: #FF8C00; color: #FF8C00; background-color: rgba(255, 140, 0, 0.1); }
         
-        /* Увеличенные тач-зоны для input date/time */
         input[type="date"]::-webkit-calendar-picker-indicator,
         input[type="time"]::-webkit-calendar-picker-indicator {
             filter: invert(1);
@@ -254,73 +230,19 @@
             height: 24px;
         }
         
-        /* Увеличенная кнопка закрытия */
-        .close-btn {
-            padding: 0.75rem; /* Больше область нажатия */
-            margin: -0.5rem;  /* Компенсация отступа */
-            color: #9ca3af;
-        }
-        .close-btn:active {
-            color: white;
-            background-color: rgba(255,255,255,0.1);
-            border-radius: 9999px;
-        }
+        .close-btn { padding: 0.75rem; margin: -0.5rem; color: #9ca3af; }
+        .close-btn:active { color: white; background-color: rgba(255,255,255,0.1); border-radius: 9999px; }
+        .cursor-zoom-in { cursor: zoom-in; }
 
-        /* --- Success Checkmark Animation --- */
-        .success-checkmark {
-            width: 80px;
-            height: 115px;
-            margin: 0 auto;
-        }
-        .check-icon {
-            width: 80px;
-            height: 80px;
-            position: relative;
-            border-radius: 50%;
-            box-sizing: content-box;
-            border: 4px solid #25D366;
-        }
-        .check-icon::before {
-            content: '';
-            position: absolute;
-            top: 3px;
-            left: -2px;
-            width: 30px;
-            transform-origin: 100% 50%;
-            border-radius: 100px 0 0 100px;
-        }
-        .check-icon::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 30px;
-            width: 60px;
-            transform-origin: 0 50%;
-            border-radius: 0 100px 100px 0;
-            animation: rotate-circle 4.25s ease-in;
-        }
-        .icon-line {
-            height: 5px;
-            background-color: #25D366;
-            display: block;
-            border-radius: 2px;
-            position: absolute;
-            z-index: 10;
-        }
-        .line-tip {
-            top: 46px;
-            left: 14px;
-            width: 25px;
-            transform: rotate(45deg);
-            animation: icon-line-tip 0.75s;
-        }
-        .line-long {
-            top: 38px;
-            right: 8px;
-            width: 47px;
-            transform: rotate(-45deg);
-            animation: icon-line-long 0.75s;
-        }
+        /* Animation */
+        .success-checkmark { width: 80px; height: 115px; margin: 0 auto; }
+        .check-icon { width: 80px; height: 80px; position: relative; border-radius: 50%; box-sizing: content-box; border: 4px solid #25D366; }
+        .check-icon::before { content: ''; position: absolute; top: 3px; left: -2px; width: 30px; transform-origin: 100% 50%; border-radius: 100px 0 0 100px; }
+        .check-icon::after { content: ''; position: absolute; top: 0; left: 30px; width: 60px; transform-origin: 0 50%; border-radius: 0 100px 100px 0; animation: rotate-circle 4.25s ease-in; }
+        .icon-line { height: 5px; background-color: #25D366; display: block; border-radius: 2px; position: absolute; z-index: 10; }
+        .line-tip { top: 46px; left: 14px; width: 25px; transform: rotate(45deg); animation: icon-line-tip 0.75s; }
+        .line-long { top: 38px; right: 8px; width: 47px; transform: rotate(-45deg); animation: icon-line-long 0.75s; }
+        
         @keyframes icon-line-tip {
             0% { width: 0; left: 1px; top: 19px; }
             54% { width: 0; left: 1px; top: 19px; }
@@ -343,6 +265,11 @@
     </style>
 </head>
 <body class="antialiased selection:bg-grill-accent selection:text-black">
+
+    <!-- Offline Alert -->
+    <div id="offline-alert" class="hidden fixed top-0 left-0 w-full bg-red-600 text-white text-center py-2 z-[3000] font-bold text-sm">
+        Нет подключения к интернету 📡
+    </div>
 
     <!-- Notification Toast -->
     <div id="notification-box" class="bg-grill-green text-white px-6 py-4 rounded-xl shadow-2xl font-bold text-center mx-4 sm:mx-0 flex items-center justify-center">
@@ -397,20 +324,15 @@
     
     <!-- Cart Modal -->
     <div id="cart-modal" class="modal-backdrop fixed inset-0 hidden items-end sm:items-center justify-center sm:p-4" onclick="hideCartModal()">
-        <!-- Используем modal-content-sm для мобильных (выезжает снизу) -->
         <div class="bg-[#1a1a1a] modal-content-sm w-full sm:max-w-lg sm:rounded-xl shadow-2xl overflow-hidden border-t sm:border border-gray-700 flex flex-col max-h-[85vh]" onclick="event.stopPropagation()">
             
-            <!-- Default Cart Content -->
             <div id="cart-main-content" class="flex flex-col h-full overflow-hidden">
                 <div class="p-4 bg-grill-dark border-b border-gray-700 flex justify-between items-center sticky top-0 z-10">
                     <h4 class="text-2xl font-bold text-white">Ваш заказ</h4>
                     <button onclick="hideCartModal()" class="close-btn text-3xl leading-none">&times;</button>
                 </div>
-
                 <div class="p-4 flex-grow overflow-y-auto overscroll-contain">
-                    <div id="cart-items-container" class="space-y-4">
-                        <!-- Items -->
-                    </div>
+                    <div id="cart-items-container" class="space-y-4"></div>
                     
                     <div id="cart-empty-message" class="text-center py-10 text-gray-500 hidden">
                         <div class="text-6xl mb-4">🍖</div>
@@ -419,32 +341,38 @@
                     </div>
                     
                     <div id="order-details-form" class="mt-6 pt-4 border-t border-gray-700 space-y-4 hidden pb-safe">
-                        <h5 class="text-white text-lg font-bold flex items-center"><span class="mr-2">📝</span> Детали доставки</h5>
-                        
-                        <div>
-                            <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Ваше имя</label>
-                            <!-- text-base added to prevent iOS zoom -->
-                            <input type="text" id="order-name" placeholder="Как к вам обращаться?" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
+                        <!-- Promo Code Section -->
+                        <div class="bg-gray-800 p-3 rounded-lg border border-gray-600">
+                             <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Промокод</label>
+                             <div class="flex space-x-2">
+                                <input type="text" id="promo-input" placeholder="Код скидки" class="w-full bg-gray-900 text-white text-sm p-2 rounded border border-gray-700 uppercase focus:border-grill-accent outline-none">
+                                <button onclick="applyPromo()" class="bg-grill-accent text-grill-dark font-bold px-4 py-2 rounded text-sm hover:bg-orange-500">OK</button>
+                             </div>
+                             <p id="promo-message" class="text-xs mt-1 hidden"></p>
                         </div>
 
+                        <h5 class="text-white text-lg font-bold flex items-center"><span class="mr-2">📝</span> Детали доставки</h5>
+                        <div>
+                            <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Ваше имя</label>
+                            <input type="text" id="order-name" placeholder="Как к вам обращаться?" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
+                        </div>
                         <div>
                             <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Адрес доставки <span class="text-red-500">*</span></label>
                             <input type="text" id="order-address" placeholder="Улица, дом, квартира" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
                         </div>
-
                         <div>
                             <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Комментарий к заказу</label>
                             <textarea id="order-comment" rows="2" placeholder="Например: 'Поострее', 'Не звонить в домофон'" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent"></textarea>
                         </div>
                     </div>
-
-                    <!-- AI Recommendation -->
+                    
+                    <!-- AI Recommendation (Local Logic) -->
                     <div class="mt-6 pt-4 border-t border-gray-700 pb-4">
                         <h5 class="text-white text-lg font-bold mb-3 flex items-center">
                             <span class="mr-2">✨</span> Что добавить?
                         </h5>
-                        <button id="ai-recommendation-btn" onclick="generateRecommendation()" class="w-full bg-gray-700 text-white font-bold py-3 rounded-lg hover:bg-gray-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-base">
-                            ✨ Рекомендация от Шефа
+                        <button id="ai-recommendation-btn" onclick="generateLocalRecommendation()" class="w-full bg-gray-700 text-white font-bold py-3 rounded-lg hover:bg-gray-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-base">
+                            ✨ Совет от Шефа
                         </button>
                         <div id="ai-recommendation-result" class="mt-3 min-h-[40px]"></div>
                     </div>
@@ -453,9 +381,11 @@
                 <div class="p-4 bg-gray-900 border-t border-gray-700 space-y-4 pb-safe">
                     <div class="flex justify-between items-center text-xl font-bold text-white">
                         <span>Итого:</span>
-                        <span id="cart-total-price" class="text-grill-accent text-2xl">0 ₸</span>
+                        <div class="text-right">
+                             <span id="cart-total-price" class="text-grill-accent text-2xl">0 ₸</span>
+                             <div id="cart-old-price" class="text-gray-500 text-sm line-through hidden"></div>
+                        </div>
                     </div>
-                    <!-- ИЗМЕНЕНА КНОПКА ЗАКАЗА -->
                     <button onclick="placeOrder()" id="place-order-btn" class="w-full bg-grill-green hover:bg-[#1DA851] text-white text-lg font-bold px-6 py-4 rounded-xl shadow-lg transition duration-300 flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed active:scale-95" disabled>
                         Оформить заказ
                     </button>
@@ -482,19 +412,12 @@
                     <button onclick="switchMenuTab('hot')" id="tab-hot" class="menu-tab flex-1 py-3 px-4 text-gray-400 font-bold text-sm sm:text-base whitespace-nowrap text-center">🍲 Горячее</button>
                 </div>
             </div>
-
             <div class="bg-[#1a1a1a] border-b border-gray-700 sticky top-0 z-20 shrink-0 shadow-lg">
-                <div id="modal-category-nav" class="flex overflow-x-auto no-scrollbar py-3 px-2 space-x-2">
-                    <!-- Categories -->
-                </div>
+                <div id="modal-category-nav" class="flex overflow-x-auto no-scrollbar py-3 px-2 space-x-2"></div>
             </div>
-
             <div id="full-menu-scroll-area" class="flex-grow overflow-y-auto p-4 md:p-6 bg-stone-900 pb-24 overscroll-contain">
-                <div id="full-menu-container" class="space-y-8">
-                    <!-- Content -->
-                </div>
+                <div id="full-menu-container" class="space-y-8"></div>
             </div>
-
             <div id="menu-modal-footer" class="absolute bottom-0 left-0 right-0 p-4 pb-safe bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-none hidden">
                 <button onclick="showCartModal()" class="pointer-events-auto w-full bg-grill-green text-white font-bold py-3 px-6 rounded-xl shadow-lg flex justify-between items-center transform active:scale-95 transition">
                     <div class="flex items-center">
@@ -504,7 +427,6 @@
                     <span class="text-xl" id="modal-footer-price">0 ₸</span>
                 </button>
             </div>
-            
         </div>
     </div>
 
@@ -518,26 +440,22 @@
                 </div>
                 <button onclick="hideBanquetModal()" class="close-btn text-3xl leading-none text-white">&times;</button>
             </div>
-
             <div class="p-6 text-white space-y-8 overflow-y-auto pb-safe">
                 <div class="space-y-4">
                     <h5 class="font-bold text-lg text-white border-l-4 border-grill-accent pl-3">Примерное меню:</h5>
                     <ul class="space-y-3 bg-gray-800/50 p-4 rounded-xl">
-                         <!-- Static items list -->
                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🍢 Шашлык</span><span class="font-mono text-gray-400">1 шт.</span></li>
                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🥗 Салат</span><span class="font-mono text-gray-400">1 порция</span></li>
-                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🍲 Горячее</span><span class="font-mono text-gray-400">1 порция</span></li>
+                        <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🍲 Горячее</span><span class="font-mono text-gray-400">1 порция</span></li>
                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🍞 Хлеб/Лаваш</span><span class="font-mono text-gray-400">В ассорт.</span></li>
-                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🥣 Соус</span><span class="font-mono text-gray-400">1 порция</span></li>
+                        <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🥣 Соус</span><span class="font-mono text-gray-400">1 порция</span></li>
                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">☕ Напитки</span><span class="font-mono text-gray-400">Безлим.</span></li>
-                         <li class="flex justify-between items-center bg-grill-red/20 p-2 rounded-lg border border-grill-red/50 mt-2">
+                        <li class="flex justify-between items-center bg-grill-red/20 p-2 rounded-lg border border-grill-red/50 mt-2">
                             <span class="font-bold text-grill-red">🍷 Спиртное</span><span class="text-xs text-white">Включено</span>
                         </li>
                     </ul>
                     <p class="text-xs text-gray-400 italic text-center">* Индивидуальный расчет.</p>
                 </div>
-
-                <!-- КНОПКА ЗАКАЗА БАНКЕТА ВНУТРИ ОКНА, КОТОРАЯ ОТКРЫВАЕТ ФОРМУ БРОНИРОВАНИЯ -->
                 <div class="mt-6 pt-4 border-t border-gray-700">
                     <button onclick="openBanquetBooking()" class="w-full bg-grill-accent text-grill-dark font-bold py-4 rounded-xl shadow-lg transition hover:bg-orange-500 flex justify-center items-center active:scale-95">
                         <span class="mr-2 text-xl">📅</span> Заказать банкет / Обсудить
@@ -566,7 +484,7 @@
                         <input type="time" id="book-time" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
                     </div>
                     <div>
-                         <label class="block text-grill-accent font-bold text-sm mb-2">Гостей</label>
+                        <label class="block text-grill-accent font-bold text-sm mb-2">Гостей</label>
                         <select id="book-guests" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
                             <option value="2">2 чел.</option>
                             <option value="3">3 чел.</option>
@@ -593,7 +511,6 @@
                     <input type="text" id="book-name" placeholder="Имя" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
                 </div>
                 <button onclick="sendBooking()" class="w-full bg-grill-green hover:bg-[#1EBE57] text-white font-bold py-4 rounded-xl shadow-lg transition mt-2 flex justify-center items-center active:scale-95">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12.039 2C6.541 2 2 6.541 2 12.039c0 1.972.585 3.844 1.76 5.438L2.015 22l4.63-1.503A10.048 10.048 0 0012.039 22c5.498 0 10.039-4.541 10.039-10.039C22.078 6.541 17.537 2 12.039 2zm4.845 13.906c-.198.342-.81.603-1.39.81-.58.207-1.28.324-1.91.324-.63 0-1.26-.117-1.89-.324-.63-.207-1.242-.468-1.44-.81-.198-.342-.315-1.026-.117-1.39.198-.36.432-.612.63-.81.198-.198.324-.315.396-.468.072-.153.036-.585-.117-.81-.153-.225-.918-1.116-1.053-1.44-.135-.324-.27-.27-.468-.27-.198 0-.468-.027-.738.036-.27.063-.513.117-.756.396-.243.279-.693.684-.693 1.62 0 .936.729 1.836.837 1.989.108.153 1.413 2.16 3.483 3.096 2.07.936 2.07.693 2.457.657.387-.036 1.188-.486 1.35-1.008.162-.522.162-.972.117-1.143-.045-.171-.243-.27-.486-.36z"/></svg>
                     Подтвердить
                 </button>
             </div>
@@ -614,7 +531,7 @@
                 </div>
                 <div>
                     <label class="block text-grill-accent font-bold text-sm mb-2">Телефон</label>
-                    <input type="tel" id="callback-phone" placeholder="+7 7.." class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
+                    <input type="tel" id="callback-phone" placeholder="+7 (___) ___-__-__" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
                 </div>
                 <div>
                     <label class="block text-grill-accent font-bold text-sm mb-2">Комментарий</label>
@@ -629,14 +546,7 @@
 
     <!-- Scripts -->
     <script>
-        // ... (data and gemini logic remains same)
-        /*
-        * ВНИМАНИЕ: Если вы хотите использовать свое фото шашлыка "Баранина",
-        * замените URL-адрес в поле 'img' для продуктов 'lamb_meat' и 'lamb_ribs' 
-        * (строки 88 и 89) на вашу публичную ссылку на изображение (например, с Imgur, Google Photos).
-        * Локальные файлы с компьютера загрузить невозможно.
-        */
-         const productsData = [
+        const productsData = [
             // ХИТЫ
             { id: 'lula_hits', category: 'hits', name: 'Люля-кебаб (Хит)', price: 2500, desc: 'Фарш из отборной говядины с пряными травами. (400г)', img: 'https://placehold.co/400x300/4B2C1B/FFFFFF?text=ЛЮЛЯ-КЕБАБ' },
             { id: 'pork_classic_hits', category: 'hits', name: 'Свинина «Классика»', price: 3000, desc: 'Сочный свиной ошеек, маринованный в луке и специях. (300г)', img: 'https://placehold.co/400x300/6A321A/FFFFFF?text=СВИНИНА+КЛАССИКА' },
@@ -690,7 +600,7 @@
             { id: 'beef_liver', category: 'beef', name: 'Печень в сетке', price: 2200, desc: 'Нежная говяжья печень в жировой сетке с травами.', img: 'https://placehold.co/500x350/B54030/FFFFFF?text=ПЕЧЕНЬ' },
             { id: 'beef_ribs', category: 'beef', name: 'Ребра говяжьи', price: 2800, desc: 'Томленые ребра на углях.', img: 'https://placehold.co/500x350/802010/FFFFFF?text=РЕБРА' },
 
-            // БАРАНИНА (МЕСТО ДЛЯ ВАШЕГО ФОТО)
+            // БАРАНИНА
             { id: 'lamb_meat', category: 'lamb', name: 'Баранина (мякоть)', price: 3500, desc: 'Классика Востока. Нежное филе баранины. (300г)', img: 'https://placehold.co/500x350/935C3A/F7F7F7?text=БАРАНИНА+МЯКОТЬ' },
             { id: 'lamb_ribs', category: 'lamb', name: 'Бараньи семечки (ребрышки)', price: 3500, desc: 'Молодые ребрышки, обжаренные до золотистой корочки. (350г)', img: 'https://placehold.co/500x350/7A4A30/FFFFFF?text=БАРАНЬИ+РЕБРА' },
             
@@ -746,76 +656,54 @@
 
         let cart = []; 
         let activeMenuTab = 'grill'; 
+        let activeDiscount = 0; // % скидки
 
-        const apiKey = ""; 
-        const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
-        
-        // ... (API calls and other logic same as before)
-        
-        async function callGeminiAPI(payload, maxRetries = 5) {
-            let attempt = 0;
-            while (attempt < maxRetries) {
-                try {
-                    const url = `${API_URL}?key=${apiKey}`;
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (response.status === 429) {
-                        if (attempt === maxRetries - 1) throw new Error("API rate limit exceeded.");
-                        const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        attempt++;
-                        continue;
-                    }
-                    if (!response.ok) throw new Error(`API call failed with status: ${response.status}`);
-                    const result = await response.json();
-                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Не удалось получить рекомендацию от Шефа.";
-                } catch (error) {
-                    console.error("Gemini API Error:", error);
-                    if (attempt === maxRetries - 1) throw error;
-                    await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-                    attempt++;
-                }
-            }
-            return "Извините, сервис рекомендаций временно недоступен.";
-        }
-
-        async function generateRecommendation() {
+        // --- Local "AI" Logic (No API Key needed) ---
+        async function generateLocalRecommendation() {
             const resultBox = document.getElementById('ai-recommendation-result');
             const button = document.getElementById('ai-recommendation-btn');
+            
             button.disabled = true;
-            resultBox.innerHTML = ''; 
+            resultBox.innerHTML = '<p class="text-sm text-gray-400 flex items-center justify-center animate-pulse">👨‍🍳 Шеф изучает ваш заказ...</p>';
+            
+            await new Promise(resolve => setTimeout(resolve, 800));
 
             if (cart.length === 0) {
-                resultBox.innerHTML = '<p class="text-sm text-yellow-500">Корзина пуста. Добавьте блюда, чтобы Шеф мог дать рекомендацию!</p>';
+                resultBox.innerHTML = '<p class="text-sm text-yellow-500">Корзина пуста. Добавьте шашлык, а я подскажу соус!</p>';
                 button.disabled = false;
                 return;
             }
 
-            resultBox.innerHTML = '<p class="text-sm text-gray-400 flex items-center justify-center"><svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-grill-accent" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Шеф думает над идеальным дополнением...</p>';
+            const cartItems = cart.map(item => getProductById(item.id));
+            const hasMeat = cartItems.some(p => ['pork', 'beef', 'lamb', 'chicken', 'lula', 'duck', 'premium'].includes(p.category) || p.category === 'hits');
+            const hasSauce = cartItems.some(p => p.category === 'sauces');
+            const hasGarnish = cartItems.some(p => p.category === 'garnishes');
+            const hasSalad = cartItems.some(p => p.category === 'salads');
 
-            let cartSummary = cart.map(item => {
-                const product = getProductById(item.id);
-                return product ? `${product.name} (${item.count} шт.)` : '';
-            }).filter(Boolean).join(', ');
-            
-            const systemPrompt = "Вы — опытный шеф-повар и эксперт по кавказской кухне. Ваша задача — проанализировать текущий заказ клиента (список блюд в корзине) и предложить ОДНУ идеальную рекомендацию. Это должна быть недостающая позиция (соус, гарнир, лаваш) или напиток, который идеально дополнит заказ. Рекомендация должна быть краткой (одно-два предложения), продающей, начинаться со слов 'Совет Шефа: ' и включать эмодзи. Не используйте markdown-форматирование.";
-            
-            const userQuery = `Мой текущий заказ: ${cartSummary}. Что еще идеально дополнит мой стол в кавказском стиле? Предложи одну вещь.`;
-            
-            try {
-                const recommendation = await callGeminiAPI({
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] },
-                });
-                resultBox.innerHTML = `<div class="p-3 bg-gray-900 border border-grill-accent/50 rounded-lg shadow-inner text-white font-medium text-sm">${recommendation}</div>`;
-            } catch (e) {
-                resultBox.innerHTML = `<p class="text-sm text-red-500">Ошибка: ${e.message}</p>`;
-            } finally {
-                button.disabled = false;
+            let recommendationText = "";
+            let suggestedProduct = null;
+
+            if (hasMeat && !hasSauce) {
+                recommendationText = "К мясу обязательно нужен соус! Рекомендую фирменный красный или ткемали.";
+                suggestedProduct = productsData.find(p => p.id === 'sauce_red');
+            } else if (hasMeat && !hasGarnish) {
+                recommendationText = "Не забудьте гарнир! Хрустящий картофель фри или лаваш с паприкой идеально подойдут.";
+                suggestedProduct = productsData.find(p => p.id === 'lavash_firm');
+            } else if (hasMeat && !hasSalad) {
+                recommendationText = "Добавьте свежести! Салат «Греческий» или овощная нарезка отлично оттенят вкус мяса.";
+                suggestedProduct = productsData.find(p => p.id === 'salad_greek');
+            } else {
+                recommendationText = "У вас отличный выбор! Может, добавим грибочки на мангале для полного счастья?";
+                suggestedProduct = productsData.find(p => p.id === 'veg_mushrooms');
             }
+
+            resultBox.innerHTML = `
+                <div class="p-3 bg-gray-900 border border-grill-accent/50 rounded-lg shadow-inner text-white text-sm">
+                    <span class="text-grill-accent font-bold">Совет Шефа:</span> ${recommendationText}
+                    ${suggestedProduct ? `<br><button onclick="updateCartItemCount('${suggestedProduct.id}', 1); showNotification('Добавлено по совету Шефа!');" class="mt-2 text-xs bg-grill-accent text-black px-2 py-1 rounded font-bold hover:bg-white transition">+ Добавить ${suggestedProduct.name}</button>` : ''}
+                </div>`;
+            
+            button.disabled = false;
         }
 
         // --- Core Helpers ---
@@ -840,7 +728,6 @@
             document.getElementById(modalId).classList.add('flex');
             toggleBodyScroll(true);
         }
-
         function hideModal(modalId) {
             document.getElementById(modalId).classList.add('hidden');
             document.getElementById(modalId).classList.remove('flex');
@@ -851,6 +738,7 @@
             showModal('booking-modal');
             const today = new Date().toISOString().split('T')[0];
             const dateInput = document.getElementById('book-date');
+            dateInput.min = today; 
             if(!dateInput.value) dateInput.value = today;
         }
 
@@ -862,7 +750,9 @@
             const dateInput = document.getElementById('book-date');
             if(typeSelect) typeSelect.value = 'Банкет';
             if(guestsSelect) guestsSelect.value = '10+';
+            
             const today = new Date().toISOString().split('T')[0];
+            dateInput.min = today;
             if(dateInput && !dateInput.value) dateInput.value = today;
         }
 
@@ -873,26 +763,19 @@
         function hideBanquetModal() { hideModal('banquet-modal'); }
 
         // --- PWA Logic ---
-        function showPWAInstructions() {
-             showModal('pwa-instructions-modal');
-        }
-        function hidePWAInstructions() {
-             hideModal('pwa-instructions-modal');
-        }
+        function showPWAInstructions() { showModal('pwa-instructions-modal'); }
+        function hidePWAInstructions() { hideModal('pwa-instructions-modal'); }
         
         let deferredPrompt;
-
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
             console.log("PWA install prompt intercepted");
         });
-
         async function installApp() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                console.log(`User response to install prompt: ${outcome}`);
                 deferredPrompt = null;
             } else {
                 showPWAInstructions();
@@ -915,19 +798,76 @@
             
             setTimeout(() => {
                 if (callback) callback();
-                
-                // Hide animation
                 overlay.classList.remove('opacity-100');
                 overlay.classList.add('opacity-0');
                 setTimeout(() => {
                     overlay.classList.add('hidden');
                     overlay.classList.remove('flex');
-                    titleEl.textContent = originalTitle; // Reset title
+                    titleEl.textContent = originalTitle; 
                 }, 300);
-            }, 2500); // Wait 2.5s
+            }, 2500); 
         }
         
-        // ... (rest of the functions: sendBooking, sendCallbackRequest, shareApp, cart logic)
+        // --- Working Hours Logic ---
+        function checkWorkingHours() {
+            const now = new Date();
+            const hours = now.getHours();
+            const isOpen = hours >= 10 && hours < 24; 
+            const statusDiv = document.getElementById('working-status');
+            
+            if (!isOpen) {
+                 if(statusDiv) statusDiv.innerHTML = '<span class="px-2 py-1 bg-red-600/80 rounded text-xs font-bold text-white shadow">🔴 Закрыто (с 10:00)</span>';
+            } else {
+                 if(statusDiv) statusDiv.innerHTML = '<span class="px-2 py-1 bg-green-600/80 rounded text-xs font-bold text-white shadow">🟢 Открыто</span>';
+            }
+            return isOpen;
+        }
+
+        // --- Promo Code Logic ---
+        function applyPromo() {
+            const code = document.getElementById('promo-input').value.toUpperCase().trim();
+            const msg = document.getElementById('promo-message');
+            const codes = {
+                'SHASHLIK2026': 10, 
+                'BELOUSOVKA': 5,
+                'BONUS': 5
+            };
+            
+            msg.classList.remove('hidden');
+            if (codes[code]) {
+                activeDiscount = codes[code];
+                msg.textContent = `✅ Применен код: -${activeDiscount}%`;
+                msg.className = "text-xs mt-1 text-green-500 font-bold";
+                renderCartModal(); 
+            } else {
+                activeDiscount = 0;
+                msg.textContent = "❌ Неверный код";
+                msg.className = "text-xs mt-1 text-red-500 font-bold";
+                renderCartModal();
+            }
+        }
+        
+        // --- Lightbox Logic ---
+        function openImage(src) {
+            const div = document.createElement('div');
+            div.className = 'fixed inset-0 z-[3000] bg-black/95 flex items-center justify-center p-4 cursor-pointer backdrop-blur-sm animate-fade-in';
+            div.onclick = () => div.remove();
+            div.innerHTML = `<img src="${src}" class="max-w-full max-h-full rounded-lg shadow-2xl scale-95 transition-transform duration-300">`;
+            document.body.appendChild(div);
+            setTimeout(() => div.querySelector('img').classList.remove('scale-95'), 10);
+        }
+
+        // --- Order & Format Logic ---
+        function formatPhoneNumber(input) {
+            let value = input.value.replace(/\D/g, '');
+            if (value.startsWith('7') || value.startsWith('8')) value = value.slice(1);
+            let formatted = '+7 ';
+            if (value.length > 0) formatted += '(' + value.substring(0, 3);
+            if (value.length >= 3) formatted += ') ' + value.substring(3, 6);
+            if (value.length >= 6) formatted += '-' + value.substring(6, 8);
+            if (value.length >= 8) formatted += '-' + value.substring(8, 10);
+            input.value = formatted;
+        }
 
         function sendBooking() {
             const date = document.getElementById('book-date').value;
@@ -942,10 +882,8 @@
             }
             
             hideBookingModal();
-            
-            // Show animation
             showSuccessAnimation("Бронь принята!", () => {
-                const message = `Здравствуйте! Хочу забронировать столик 🍽️.\n\n📅 Дата: ${date}\n⏰ Время: ${time}\n🎭 Тип: ${type}\n👥 Гостей: ${guests}\n👤 Имя: ${name}`;
+                const message = `Здравствуйте! Хочу забронировать столик 🍽️.\n\n📅 *Дата:* ${date}\n⏰ *Время:* ${time}\n🎭 *Тип:* ${type}\n👥 *Гостей:* ${guests}\n👤 *Имя:* ${name}`;
                 const url = `https://wa.me/77055071640?text=${encodeURIComponent(message)}`;
                 window.open(url, '_blank');
             });
@@ -962,24 +900,83 @@
             }
             
             hideCallbackModal();
-
-            // Show animation
             showSuccessAnimation("Заявка отправлена!", () => {
-                let message = `Здравствуйте! Перезвоните мне, пожалуйста 📞.\n\n👤 Имя: ${name}\n📱 Телефон: ${phone}`;
-                if(comment) message += `\n💬 Комментарий: ${comment}`;
-                
+                let message = `Здравствуйте! Перезвоните мне, пожалуйста 📞.\n\n👤 *Имя:* ${name}\n📱 *Телефон:* ${phone}`;
+                if(comment) message += `\n💬 *Коммент:* ${comment}`;
                 const url = `https://wa.me/77055071640?text=${encodeURIComponent(message)}`;
                 window.open(url, '_blank');
             });
         }
 
+        function placeOrder() {
+            if (cart.length === 0) return;
+            const name = document.getElementById('order-name').value.trim();
+            const address = document.getElementById('order-address').value.trim();
+            const comment = document.getElementById('order-comment').value.trim();
+            
+            // Re-calc with discount
+            let total = 0;
+            cart.forEach(item => {
+                 const p = getProductById(item.id);
+                 if(p) total += p.price * item.count;
+            });
+            let finalTotal = total;
+            let discountAmount = 0;
+            if (activeDiscount > 0) {
+                discountAmount = Math.floor(total * (activeDiscount / 100));
+                finalTotal = total - discountAmount;
+            }
+
+            if (!address) {
+                showNotification('❗ Пожалуйста, укажите адрес доставки!');
+                const addressInput = document.getElementById('order-address');
+                addressInput.classList.add('border-red-500');
+                addressInput.focus();
+                setTimeout(() => addressInput.classList.remove('border-red-500'), 2000);
+                return;
+            }
+            
+            hideCartModal();
+            showSuccessAnimation("Заказ оформлен!", () => {
+                let orderDetails = "Здравствуйте! Хочу заказать доставку 🍢:\n\n";
+                cart.forEach(item => {
+                    const product = getProductById(item.id);
+                    if (product) {
+                        const itemTotal = product.price * item.count;
+                        orderDetails += `🔹 *${product.name}*\n    ${item.count} шт. х ${product.price} = ${itemTotal} ₸\n`;
+                    }
+                });
+                
+                if (activeDiscount > 0) {
+                     orderDetails += `\n🏷 *Скидка:* ${activeDiscount}% (-${discountAmount} ₸)`;
+                }
+                
+                orderDetails += `\n💰 *ИТОГО: ${finalTotal} ₸*`;
+                if (name) orderDetails += `\n👤 *Имя:* ${name}`;
+                orderDetails += `\n📍 *Адрес:* ${address}`;
+                if (comment) orderDetails += `\n💬 *Коммент:* ${comment}`;
+
+                const url = `https://wa.me/77055071640?text=${encodeURIComponent(orderDetails)}`;
+                window.open(url, '_blank');
+                
+                cart = [];
+                activeDiscount = 0;
+                localStorage.removeItem('shashlyk_cart');
+                document.getElementById('order-address').value = '';
+                document.getElementById('order-comment').value = '';
+                document.getElementById('promo-input').value = '';
+                document.getElementById('promo-message').classList.add('hidden');
+                renderCartUI();
+            });
+        }
+
+        // --- Other Helpers (Share, Cart, Render) ---
         function shareApp() {
             const shareData = {
                 title: 'Шашлычный Двор | Доставка по Белоусовке',
                 text: 'Заказывайте вкусный шашлык на углях с доставкой!',
-                url: 'https://taxiuspeh.github.io/landing-/SHASHDVOR.html'
+                url: window.location.href
             };
-
             if (navigator.share) {
                 navigator.share(shareData).catch(err => console.log('Error sharing:', err));
             } else {
@@ -989,7 +986,7 @@
                 dummy.select();
                 document.execCommand('copy');
                 document.body.removeChild(dummy);
-                showNotification('Ссылка скопирована в буфер обмена!');
+                showNotification('Ссылка скопирована!');
             }
         }
 
@@ -1009,22 +1006,29 @@
             renderCartModal(); 
             renderFullMenu(); 
         }
-
         function getCartCount(productId) {
             const item = cart.find(i => i.id === productId);
             return item ? item.count : 0;
         }
 
         function renderCartUI() {
+            let total = 0;
+            cart.forEach(item => {
+                const p = getProductById(item.id);
+                if(p) total += p.price * item.count;
+            });
+            // Apply discount for Sticky Bar visual (simplified)
+            if (activeDiscount > 0) {
+                 total = Math.floor(total * ((100 - activeDiscount) / 100));
+            }
+            
             const totalCount = cart.reduce((sum, item) => sum + item.count, 0);
-            const totalPrice = cart.reduce((sum, item) => sum + (getProductById(item.id)?.price || 0) * item.count, 0);
-
             const stickyBar = document.getElementById('sticky-order-bar');
             const stickyTotal = document.getElementById('sticky-total');
             
             if (totalCount > 0) {
                 stickyBar.classList.add('visible');
-                stickyTotal.textContent = `${totalPrice} ₸`;
+                stickyTotal.textContent = `${total} ₸`;
             } else {
                 stickyBar.classList.remove('visible');
             }
@@ -1033,7 +1037,7 @@
             if (totalCount > 0) {
                 modalFooter.classList.remove('hidden');
                 document.getElementById('modal-footer-count').textContent = totalCount;
-                document.getElementById('modal-footer-price').textContent = `${totalPrice} ₸`;
+                document.getElementById('modal-footer-price').textContent = `${total} ₸`;
             } else {
                 modalFooter.classList.add('hidden');
             }
@@ -1059,11 +1063,13 @@
         function renderCartModal() {
             const container = document.getElementById('cart-items-container');
             const totalElement = document.getElementById('cart-total-price');
+            const oldPriceElement = document.getElementById('cart-old-price');
             const emptyMessage = document.getElementById('cart-empty-message');
             const orderBtn = document.getElementById('place-order-btn');
             const aiButton = document.getElementById('ai-recommendation-btn');
             const resultBox = document.getElementById('ai-recommendation-result');
             const formContainer = document.getElementById('order-details-form');
+            const isOpen = checkWorkingHours(); // Re-check hours
 
             let total = 0;
             let itemsHTML = '';
@@ -1075,13 +1081,13 @@
                 orderBtn.disabled = true;
                 aiButton.disabled = true;
                 totalElement.textContent = "0 ₸";
+                oldPriceElement.classList.add('hidden');
                 resultBox.innerHTML = '';
             } else {
                 emptyMessage.classList.add('hidden');
                 formContainer.classList.remove('hidden'); 
                 orderBtn.disabled = false;
                 aiButton.disabled = false;
-
                 cart.forEach(item => {
                     const product = getProductById(item.id);
                     if (!product) return;
@@ -1102,7 +1108,28 @@
                 });
                 container.innerHTML = itemsHTML;
             }
-            totalElement.textContent = `${total} ₸`;
+            
+            // Handle Discount & Button State
+            if (activeDiscount > 0) {
+                const discounted = Math.floor(total * ((100 - activeDiscount) / 100));
+                totalElement.textContent = `${discounted} ₸`;
+                oldPriceElement.textContent = `${total} ₸`;
+                oldPriceElement.classList.remove('hidden');
+            } else {
+                totalElement.textContent = `${total} ₸`;
+                oldPriceElement.classList.add('hidden');
+            }
+
+            // Warning if closed
+            if (!isOpen && cart.length > 0) {
+                 orderBtn.innerText = "Заказать (на завтра)";
+                 orderBtn.classList.remove('bg-grill-green', 'hover:bg-[#1DA851]');
+                 orderBtn.classList.add('bg-gray-600', 'hover:bg-gray-500');
+            } else if (cart.length > 0) {
+                 orderBtn.innerText = "Оформить заказ";
+                 orderBtn.classList.add('bg-grill-green', 'hover:bg-[#1DA851]');
+                 orderBtn.classList.remove('bg-gray-600', 'hover:bg-gray-500');
+            }
         }
 
         function showCartModal() {
@@ -1110,56 +1137,7 @@
             renderCartModal();
             showModal('cart-modal');
         }
-
-        function hideCartModal() { 
-            hideModal('cart-modal'); 
-        }
-
-        function placeOrder() {
-            if (cart.length === 0) return;
-            const name = document.getElementById('order-name').value.trim();
-            const address = document.getElementById('order-address').value.trim();
-            const comment = document.getElementById('order-comment').value.trim();
-            if (!address) {
-                showNotification('❗ Пожалуйста, укажите адрес доставки!');
-                const addressInput = document.getElementById('order-address');
-                addressInput.classList.add('border-red-500');
-                addressInput.focus();
-                setTimeout(() => addressInput.classList.remove('border-red-500'), 2000);
-                return;
-            }
-            
-            // Close cart modal immediately to show animation
-            hideCartModal();
-
-            // Show animation with specific text
-            showSuccessAnimation("Заказ оформлен!", () => {
-                let orderDetails = "Здравствуйте! Хочу заказать шашлык 🍢:\n\n";
-                let total = 0;
-                cart.forEach(item => {
-                    const product = getProductById(item.id);
-                    if (product) {
-                        const itemTotal = product.price * item.count;
-                        total += itemTotal;
-                        orderDetails += `🔹 ${product.name} — ${item.count} шт. (${itemTotal} ₸)\n`;
-                    }
-                });
-                orderDetails += `\n💰 *Итого: ${total} ₸*`;
-                if (name) orderDetails += `\n👤 Имя: ${name}`;
-                orderDetails += `\n📍 Адрес доставки: ${address}`;
-                if (comment) orderDetails += `\n💬 Комментарий: ${comment}`;
-                const url = `https://wa.me/77055071640?text=${encodeURIComponent(orderDetails)}`;
-
-                window.open(url, '_blank');
-                
-                // Cleanup after opening WhatsApp
-                cart = [];
-                localStorage.removeItem('shashlyk_cart');
-                document.getElementById('order-address').value = '';
-                document.getElementById('order-comment').value = '';
-                renderCartUI();
-            });
-        }
+        function hideCartModal() { hideModal('cart-modal'); }
 
         function createMenuCard(product) {
             const count = getCartCount(product.id);
@@ -1172,11 +1150,10 @@
                 : `<button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', 1)" class="bg-gray-700 hover:bg-grill-accent hover:text-black text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow active:scale-95">
                      + Добавить
                    </button>`;
-
             return `
                 <div class="flex bg-gray-800 rounded-xl overflow-hidden shadow-lg border border-gray-700">
-                    <div class="w-1/3 min-w-[100px] h-auto relative">
-                         <img src="${product.img}" alt="${product.name}" class="absolute inset-0 w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/200x200/444444/FFFFFF?text=Фото'">
+                    <div class="w-1/3 min-w-[100px] h-auto relative overflow-hidden" onclick="openImage('${product.img}')">
+                         <img src="${product.img}" alt="${product.name}" class="absolute inset-0 w-full h-full object-cover cursor-zoom-in transition-transform hover:scale-110 duration-500" onerror="this.onerror=null;this.src='https://placehold.co/200x200/444444/FFFFFF?text=Фото'">
                     </div>
                     <div class="w-2/3 p-3 flex flex-col justify-between">
                         <div>
@@ -1191,8 +1168,6 @@
                 </div>
             `;
         }
-        
-        // ... (scrollToCategory, renderFullMenu, modal functions)
 
         function scrollToCategory(catId) {
              const element = document.getElementById(`cat-${catId}`);
@@ -1220,6 +1195,7 @@
             let navHTML = '';
             const categoryKeys = menuGroups[activeMenuTab] || menuGroups['grill'];
             let isFirst = true;
+
             categoryKeys.forEach(key => {
                 const categoryProducts = productsData.filter(p => p.category === key);
                 if (categoryProducts.length === 0) return;
@@ -1253,23 +1229,32 @@
             activeMenuTab = tabName;
             showFullMenuModal();
         }
-        
         function switchMenuTab(tabName) {
             activeMenuTab = tabName;
             renderFullMenu();
         }
-
         function showFullMenuModal() {
             renderFullMenu(); 
             showModal('full-menu-modal');
             renderCartUI(); 
         }
-
         function hideFullMenuModal() { hideModal('full-menu-modal'); }
 
+        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadCart();
             renderCartUI();
+            checkWorkingHours();
+            
+            // Add Phone Formatting Listeners
+            const phoneInputs = document.querySelectorAll('input[type="tel"]');
+            phoneInputs.forEach(input => {
+                input.addEventListener('input', (e) => formatPhoneNumber(e.target));
+            });
+
+            // Online/Offline Listeners
+            window.addEventListener('online', () => document.getElementById('offline-alert').classList.add('hidden'));
+            window.addEventListener('offline', () => document.getElementById('offline-alert').classList.remove('hidden'));
         });
     </script>
     
@@ -1277,6 +1262,7 @@
     <header class="bg-grill-dark/90 sticky top-0 z-50 shadow-lg backdrop-blur-sm">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-3xl font-bold text-grill-accent">Шашлычный Двор</h1>
+            <div id="working-status"></div>
         </div>
     </header>
 
@@ -1288,7 +1274,7 @@
                 <button onclick="openMenuCategory('salads')" class="primary-btn bg-white text-grill-dark text-lg font-bold py-4 rounded-xl shadow-2xl hover:bg-gray-100">Заказать салаты 🥗</button>
                 <button onclick="openMenuCategory('hot')" class="primary-btn bg-grill-accent text-grill-dark text-lg font-bold py-4 rounded-xl shadow-2xl hover:bg-orange-600 hover:text-white">Заказать горячее 🍲</button>
             </div>
-            <!-- Modified Block -->
+            
             <div class="w-full max-w-2xl bg-black/50 backdrop-blur-sm border border-grill-accent rounded-xl p-6 shadow-2xl relative overflow-hidden group text-left">
                 <h3 class="text-xl md:text-2xl font-bold text-grill-accent mb-3 leading-tight">Шашлычный Двор приглашает провести корпоративы, банкеты и торжества!</h3>
                 <p class="text-gray-300 text-sm mb-5">Мы возьмем на себя все заботы о вкусном столе.</p>
@@ -1312,7 +1298,6 @@
                         </p>
                     </div>
                 </div>
-
                 <div class="flex flex-col gap-3">
                     <div class="flex flex-col sm:flex-row gap-3">
                         <button onclick="bookTable()" class="flex-1 bg-[#25D366] hover:bg-[#1EBE57] text-white font-bold py-3 px-4 rounded-lg text-center flex items-center justify-center transition shadow-lg">Написать в WhatsApp</button>
@@ -1332,7 +1317,6 @@
         </div>
     </section>
 
-    <!-- Сделал фон секции прозрачным для отображения фоновой картинки -->
     <section class="py-16 md:py-24 bg-transparent backdrop-blur-sm">
         <div class="max-w-7xl mx-auto px-4">
             <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Почему выбирают нас?</h3>
@@ -1345,7 +1329,6 @@
         </div>
     </section>
 
-    <!-- Сделал фон секции прозрачным для отображения фоновой картинки -->
     <section id="contacts" class="py-16 md:py-24 bg-transparent backdrop-blur-sm">
         <div class="max-w-7xl mx-auto px-4">
              <h3 class="section-title text-4xl font-bold text-white mb-12 text-center">Контакты и заказ</h3>
@@ -1364,7 +1347,7 @@
         </div>
     </section>
 
-    <!-- Optimized Bottom Navigation -->
+    <!-- Bottom Navigation -->
     <nav class="fixed bottom-0 left-0 right-0 bg-grill-dark border-t border-gray-700 shadow-2xl py-2 md:hidden z-50 pb-safe">
         <div class="flex justify-around items-center max-w-lg mx-auto h-full">
             <button onclick="openMenuCategory('grill')" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1 active:scale-95">
@@ -1376,7 +1359,6 @@
                 <svg class="nav-icon mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                 <span>Звонок</span>
             </a>
-
             <a onclick="showCartModal()" id="mobile-cart-btn" class="transform -translate-y-6 flex flex-col items-center justify-center bg-grill-accent w-14 h-14 rounded-full shadow-lg border-4 border-grill-dark text-grill-dark transition duration-300 cursor-pointer active:scale-90">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
             </a>

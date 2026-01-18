@@ -80,12 +80,15 @@
         
         .form-input-control { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; font-size: 16px; background-color: white; }
         .form-input-control:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); outline: none; }
+        
         .input-with-plus-btn { display: flex; align-items: center; gap: 8px; }
         .input-with-plus-btn .form-input-control { flex-grow: 1; min-width: 0; }
+        
         .geo-btn, .add-stop-btn, .remove-stop-btn { flex-shrink: 0; width: 44px; height: 44px; color: white; border-radius: 8px; transition: background-color 0.2s, transform 0.2s; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; }
         .geo-btn { background-color: #f59e0b; box-shadow: 0 2px 5px rgba(245, 158, 11, 0.5); }
         .add-stop-btn { background-color: #10b981; box-shadow: 0 2px 5px rgba(16, 185, 129, 0.5); }
         .remove-stop-btn { background-color: #ef4444; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.5); }
+        
         .wish-tag { transition: all 0.2s ease; user-select: none; }
         .wish-tag:active { transform: scale(0.95); }
         
@@ -134,7 +137,7 @@
         .bottom-bar-glass { background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid rgba(229, 231, 235, 0.5); }
         .dark .bottom-bar-glass { background-color: rgba(17, 24, 39, 0.9); border-top: 1px solid rgba(55, 65, 81, 0.5); }
         
-        /* Weather */
+        /* Weather Widget */
         .weather-widget { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(5px); box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: all 0.3s ease; cursor: pointer; z-index: 50; }
         .weather-widget:hover { background: rgba(255, 255, 255, 0.3); transform: scale(1.05); }
         .weather-widget .temp { font-size: 0.7rem; font-weight: 800; color: white; line-height: 1; margin-top: 2px; }
@@ -172,25 +175,38 @@
     <!-- MAIN -->
     <main class="max-w-3xl mx-auto px-4 py-8 flex-grow">
         
-        <!-- MAIN BLOCK -->
+        <!-- BLOCK 1: MAIN ORDER -->
         <div class="max-w-md mx-auto p-4 bg-white rounded-xl shadow-xl border-t-4 border-green-500 mb-6 main-card">
+            
+            <!-- LINE STATUS -->
             <div id="lineStatus" class="mb-3 p-3 rounded-lg text-center text-sm font-bold border hidden shadow-sm transition-all duration-500"></div>
             
-            <button data-service="taxi" class="service-btn btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3 blink-btn">
+            <!-- TAXI BUTTON -->
+            <button data-service="taxi"
+                class="service-btn btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3 blink-btn">
                 <i class="fas fa-car-side text-lg"></i><span>Заказать Taxi</span>
             </button>
             
+            <!-- SPLIT BUTTON -->
             <div class="split-btn mb-3">
                 <button onclick="openServicesMenu('whatsapp')" class="btn-hover btn-active split-btn-part split-btn-taxi"><span>Меню услуг</span></button>
                 <a href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html" target="_blank" class="btn-hover btn-active split-btn-part split-btn-food"><span>Заказ Еды</span></a>
             </div>
             
+            <!-- QUICK ACTIONS -->
             <div class="grid grid-cols-3 gap-2 mb-4">
-                <button onclick="shareApp()" class="btn-hover btn-active bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-share-alt mb-0.5"></i><span>Поделиться</span></button>
-                <button onclick="openServicesMenu('telegram')" class="btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fab fa-telegram-plane mb-0.5"></i><span>Telegram</span></button>
-                <button data-service="auction" class="service-btn btn-hover btn-active bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-gavel mb-0.5"></i><span>Аукцион</span></button>
+                <button onclick="shareApp()" class="btn-hover btn-active bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
+                    <i class="fas fa-share-alt mb-0.5"></i><span>Поделиться</span>
+                </button>
+                <button onclick="openServicesMenu('telegram')" class="btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
+                    <i class="fab fa-telegram-plane mb-0.5"></i><span>Telegram</span>
+                </button>
+                <button data-service="auction" class="service-btn btn-hover btn-active bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-all shadow-md quick-order-btn">
+                    <i class="fas fa-gavel mb-0.5"></i><span>Аукцион</span>
+                </button>
             </div>
             
+            <!-- LOCATION BUTTON -->
             <button type="button" onclick="getCurrentLocation('main')" id="locationBtn" class="w-full text-gray-700 font-semibold transition flex items-center justify-center space-x-3 shadow-inner btn-active">
                 <i class="fas fa-location-arrow"></i><span id="locationBtnText">Использовать мое местоположение</span>
             </button>
@@ -198,20 +214,23 @@
                 <a id="locationAddress" href="#" target="_blank" class="coord-link"></a>
             </p>
             
+            <!-- PAYMENTS -->
             <div class="mt-4 pt-3 border-t border-gray-100 flex justify-center space-x-6 text-gray-600">
                 <div class="flex items-center space-x-1"><i class="fas fa-money-bill-wave text-xl text-green-500"></i><span class="font-semibold text-xs">Наличные</span></div>
                 <div class="flex items-center space-x-1"><i class="fas fa-exchange-alt text-xl text-blue-500"></i><span class="font-semibold text-xs">Перевод (Kaspi)</span></div>
             </div>
         </div>
         
-        <!-- SERVICES BLOCK -->
+        <!-- BLOCK 3: SERVICES -->
         <h3 class="text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-8 border-gray-400 border-opacity-30">Дополнительные Услуги</h3>
+        
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
             <button id="deliveryBtn" data-service="delivery" class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500 relative overflow-hidden transition-all duration-300">
                 <div id="deliveryStatusBadge" class="absolute top-2 right-2 w-3 h-3 rounded-full bg-gray-300"></div>
                 <i id="deliveryIcon" class="fas fa-box-open text-2xl mb-1 text-green-600 transition-colors"></i><span class="text-sm">Доставка</span>
                 <span id="deliverySubtext" class="text-[9px] text-gray-500 font-normal mt-1 leading-tight min-h-[1.5em] block"></span>
             </button>
+            
             <button data-service="cargo" class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
                 <i class="fas fa-truck-loading text-2xl mb-1 text-yellow-600"></i><span class="text-sm">Грузовой</span>
             </button>
@@ -222,8 +241,8 @@
                 <i class="fas fa-life-ring text-2xl mb-1 text-indigo-600"></i><span class="text-sm">Помощь</span>
             </button>
         </div>
-        
-        <!-- QUICK ACTIONS BLOCK -->
+
+        <!-- BLOCK 4: QUICK ACTIONS -->
         <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md border-t pt-4 border-gray-400 border-opacity-30">Быстрые Действия</h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
             <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" class="btn-hover btn-active bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-star text-xl mb-1"></i><span>Оценка</span></a>
@@ -231,11 +250,11 @@
             <button onclick="showPartnerModal()" class="btn-hover btn-active bg-pink-600 hover:bg-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span></button>
             <button onclick="installApp()" class="btn-hover btn-active bg-gray-700 hover:bg-gray-800 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span></button>
         </div>
-        
-        <!-- PARTNER INFO -->
+
+        <!-- BLOCK 5: PARTNERS -->
         <div class="mt-8 border-t pt-6 border-gray-400 border-opacity-30">
-             <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Нашим Партнерам: ТехОсмотр</h3>
-             <div class="auction-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300 border-indigo-500 border-2">
+            <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Нашим Партнерам: ТехОсмотр</h3>
+            <div class="auction-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300 border-indigo-500 border-2">
                 <div class="flex flex-col items-center sm:items-start text-center sm:text-left mb-3 sm:mb-0">
                     <i class="fas fa-wrench text-3xl mb-1 text-red-600"></i>
                     <span class="text-xl block leading-tight font-black text-red-600">ТЕХОСМОТР В БЕЛОУСОВКЕ!</span>
@@ -249,7 +268,7 @@
             </div>
         </div>
 
-        <!-- FAQ BLOCK WITH FULL PRICES -->
+        <!-- FAQ AND PRICES -->
         <div class="mt-10 border-t pt-6 max-w-lg mx-auto border-gray-400 border-opacity-30">
             <h3 class="text-2xl font-bold text-center text-white text-shadow-md mb-6">Вопросы и Цены</h3>
             <div id="faq-accordion" class="space-y-4">
@@ -261,7 +280,7 @@
                         <p>Минимальная стоимость поездки по Белоусовке составляет **700 тенге**. Окончательная цена зависит от расстояния и текущей дорожной ситуации.</p>
                     </div>
                 </div>
-                 <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
                     <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-4')">
                         <span>📦 Сколько стоит услуга Доставки?</span><i id="icon-faq-4" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
@@ -282,7 +301,7 @@
                         <span>📍 Примерные цены на Межгород и пригород</span><i id="icon-faq-3" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
                     <div id="faq-3" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
-                         <p class="font-bold text-red-600 mb-2">⚠️ ВНИМАНИЕ: Цены ориентировочные!</p>
+                        <p class="font-bold text-red-600 mb-2">⚠️ ВНИМАНИЕ: Цены ориентировочные!</p>
                         <ul class="list-disc list-inside mt-2 space-y-1">
                             <li>**Базовый тариф:** **230 ₸** за 1 км.</li>
                             <li>Усть-Каменогорск: **4800—6210 ₸**</li>
@@ -405,7 +424,10 @@
                         <div class="flex flex-col">
                             <label for="taxiFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес) *</label>
                             <div class="input-with-plus-btn">
-                                <input id="taxiFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control" placeholder="Улица, дом (обязательно)" required oninput="updateTaxiPrice()">
+                                <div class="relative w-full">
+                                    <i class="fas fa-map-marker-alt absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                                    <input id="taxiFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control pl-10" placeholder="Улица, дом" required oninput="updateTaxiPrice()">
+                                </div>
                                 <datalist id="fromHistory"></datalist>
                                 <button type="button" onclick="getCurrentLocation('taxi')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="taxiGeoIcon" class="fas fa-compass"></i></button>
                             </div>
@@ -417,7 +439,10 @@
                         <div class="flex flex-col">
                             <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
                             <div class="input-with-plus-btn">
-                                <input id="taxiTo" name="to" type="text" list="toHistory" autocomplete="off" class="form-input-control" placeholder="Улица, дом/объект (обязательно)" required oninput="updateTaxiPrice()">
+                                <div class="relative w-full">
+                                    <i class="fas fa-flag-checkered absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                                    <input id="taxiTo" name="to" type="text" list="toHistory" autocomplete="off" class="form-input-control pl-10" placeholder="Улица, дом/объект" required oninput="updateTaxiPrice()">
+                                </div>
                                 <datalist id="toHistory"></datalist>
                                 <button type="button" onclick="addStop('additionalStops', 'taxi')" class="add-stop-btn btn-active" title="Добавить адрес"><i class="fas fa-plus"></i></button>
                             </div>
@@ -442,10 +467,16 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex flex-col"><label for="passengerPhone" class="text-sm font-medium text-gray-700 mb-1">Телефон для связи</label><input id="passengerPhone" name="passengerPhone" type="tel" pattern="[0-9+() -]*" class="form-input-control" placeholder="+7 (XXX) XXX-XX-XX"></div>
+                    <div class="flex flex-col">
+                        <label for="passengerPhone" class="text-sm font-medium text-gray-700 mb-1">Телефон для связи</label>
+                        <div class="relative w-full">
+                            <i class="fas fa-phone absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                            <input id="passengerPhone" name="passengerPhone" type="tel" pattern="[0-9+() -]*" class="form-input-control pl-10" placeholder="+7 (XXX) XXX-XX-XX">
+                        </div>
+                    </div>
                     <div id="taxiStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
-                        <div><div class="price-note">Примерная стоимость:</div><div id="taxiPriceEstimate" class="price-estimate">-- тг</div><div class="price-note text-red-600 font-semibold">Внимание: точная цена после подтверждения.</div></div>
+                        <div><div class="price-note">Примерная стоимость:</div><div id="taxiPriceEstimate" class="price-estimate">-- тг</div><div class="price-note text-red-600 font-semibold">Внимание: точная цена после подтверждения водителем.</div></div>
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Заказать</button>
                     </div>
                 </form>
@@ -460,9 +491,20 @@
                 <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🛍️ Доставка Товаров</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="deliveryModal">×</button></div>
                 <form id="deliveryForm" class="space-y-4">
                     <div class="flex flex-col"><label for="deliveryItems" class="text-sm font-medium text-gray-700 mb-1">Список товаров *</label><textarea id="deliveryItems" name="items" rows="3" class="form-input-control" placeholder="Например: хлеб, пиво..." required></textarea></div>
-                    <div class="flex flex-col"><label for="deliveryStore" class="text-sm font-medium text-gray-700 mb-1">Пожелания по магазину</label><input id="deliveryStore" name="store" type="text" class="form-input-control" placeholder="Например: Супермаркет" /></div>
+                    <div class="flex flex-col"><label for="deliveryStore" class="text-sm font-medium text-gray-700 mb-1">Пожелания по магазину</label>
+                        <div class="relative w-full">
+                            <i class="fas fa-store absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                            <input id="deliveryStore" name="store" type="text" class="form-input-control pl-10" placeholder="Например: Супермаркет" />
+                        </div>
+                    </div>
                     <div class="flex flex-col"><label for="deliveryAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес доставки *</label>
-                        <div class="input-with-plus-btn"><input id="deliveryAddress" name="address" type="text" class="form-input-control" placeholder="Адрес" required /><button type="button" onclick="getCurrentLocation('delivery')" class="geo-btn btn-active"><i id="deliveryGeoIcon" class="fas fa-compass"></i></button></div>
+                        <div class="input-with-plus-btn">
+                            <div class="relative w-full">
+                                <i class="fas fa-map-marker-alt absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                                <input id="deliveryAddress" name="address" type="text" class="form-input-control pl-10" placeholder="Адрес" required />
+                            </div>
+                            <button type="button" onclick="getCurrentLocation('delivery')" class="geo-btn btn-active"><i id="deliveryGeoIcon" class="fas fa-compass"></i></button>
+                        </div>
                     </div>
                     <div id="deliveryStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
@@ -480,8 +522,21 @@
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🚚 Грузовые Перевозки</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="cargoModal">×</button></div>
                 <form id="cargoForm" class="space-y-4">
-                    <div class="flex flex-col"><label for="cargoFrom" class="text-sm font-medium text-gray-700 mb-1">Адрес погрузки *</label><div class="input-with-plus-btn"><input id="cargoFrom" name="from" type="text" class="form-input-control" required><button type="button" onclick="getCurrentLocation('cargo')" class="geo-btn btn-active"><i id="cargoGeoIcon" class="fas fa-compass"></i></button></div></div>
-                    <div class="flex flex-col"><label for="cargoTo" class="text-sm font-medium text-gray-700 mb-1">Адрес выгрузки *</label><input id="cargoTo" name="to" type="text" class="form-input-control" required></div>
+                    <div class="flex flex-col"><label for="cargoFrom" class="text-sm font-medium text-gray-700 mb-1">Адрес погрузки *</label>
+                        <div class="input-with-plus-btn">
+                            <div class="relative w-full">
+                                <i class="fas fa-map-marker-alt absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                                <input id="cargoFrom" name="from" type="text" class="form-input-control pl-10" required>
+                            </div>
+                            <button type="button" onclick="getCurrentLocation('cargo')" class="geo-btn btn-active"><i id="cargoGeoIcon" class="fas fa-compass"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col"><label for="cargoTo" class="text-sm font-medium text-gray-700 mb-1">Адрес выгрузки *</label>
+                        <div class="relative w-full">
+                            <i class="fas fa-flag-checkered absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                            <input id="cargoTo" name="to" type="text" class="form-input-control pl-10" required>
+                        </div>
+                    </div>
                     <div class="flex flex-col"><label for="cargoDescription" class="text-sm font-medium text-gray-700 mb-1">Описание груза *</label><textarea id="cargoDescription" name="description" rows="2" class="form-input-control" required></textarea></div>
                     <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3"><p class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Предзаказ</p><div class="flex flex-col"><label for="cargoDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время</label><input id="cargoDateTime" name="dateTime" type="datetime-local" class="form-input-control"></div></div>
                     <div class="flex flex-col"><label for="cargoMovers" class="text-sm font-medium text-gray-700 mb-1">Грузчики</label><div class="input-with-plus-btn"><select id="cargoMovers" name="movers" class="form-input-control" required onchange="updateCargoPrice()"><option value="0">Не требуются</option><option value="1">1 человек</option><option value="2">2 человека</option></select><span class="text-sm font-bold text-red-600">(+доплата)</span></div></div>
@@ -501,9 +556,27 @@
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🔑 Трезвый Водитель</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="soberDriverModal">×</button></div>
                 <form id="soberDriverForm" class="space-y-4">
-                    <div class="flex flex-col"><label for="soberDriverFrom" class="text-sm font-medium text-gray-700 mb-1">Где авто *</label><div class="input-with-plus-btn"><input id="soberDriverFrom" name="from" type="text" class="form-input-control" required><button type="button" onclick="getCurrentLocation('soberDriver')" class="geo-btn btn-active"><i id="soberDriverGeoIcon" class="fas fa-compass"></i></button></div></div>
-                    <div class="flex flex-col"><label for="soberDriverCarModel" class="text-sm font-medium text-gray-700 mb-1">Марка авто *</label><input id="soberDriverCarModel" name="carModel" type="text" class="form-input-control" required></div>
-                    <div class="flex flex-col"><label for="soberDriverTo" class="text-sm font-medium text-gray-700 mb-1">Куда везти *</label><input id="soberDriverTo" name="to" type="text" class="form-input-control" required></div>
+                    <div class="flex flex-col"><label for="soberDriverFrom" class="text-sm font-medium text-gray-700 mb-1">Где авто *</label>
+                        <div class="input-with-plus-btn">
+                            <div class="relative w-full">
+                                <i class="fas fa-map-marker-alt absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                                <input id="soberDriverFrom" name="from" type="text" class="form-input-control pl-10" required>
+                            </div>
+                            <button type="button" onclick="getCurrentLocation('soberDriver')" class="geo-btn btn-active"><i id="soberDriverGeoIcon" class="fas fa-compass"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col"><label for="soberDriverCarModel" class="text-sm font-medium text-gray-700 mb-1">Марка авто *</label>
+                        <div class="relative w-full">
+                            <i class="fas fa-car absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                            <input id="soberDriverCarModel" name="carModel" type="text" class="form-input-control pl-10" required>
+                        </div>
+                    </div>
+                    <div class="flex flex-col"><label for="soberDriverTo" class="text-sm font-medium text-gray-700 mb-1">Куда везти *</label>
+                        <div class="relative w-full">
+                            <i class="fas fa-flag-checkered absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                            <input id="soberDriverTo" name="to" type="text" class="form-input-control pl-10" required>
+                        </div>
+                    </div>
                     <div id="soberDriverStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div><div class="price-note">Примерная стоимость:</div><div class="price-estimate">от 3800 тг</div></div>
@@ -523,7 +596,15 @@
                     <div class="flex flex-col"><label for="assistanceType" class="text-sm font-medium text-gray-700 mb-1">Тип помощи *</label><select id="assistanceType" name="type" class="form-input-control" required><option value="">Выберите...</option><option value="Подкачать колесо">Подкачать колесо</option><option value="Прикурить автомобиль">Прикурить автомобиль</option><option value="Прочее поручение/помощь">Прочее</option></select></div>
                     <div id="carDetails" class="space-y-4 p-3 bg-teal-50 rounded-lg border border-dashed border-teal-300 hidden"><div class="flex flex-col"><label for="carModel" class="text-sm font-medium text-gray-700 mb-1">Марка авто</label><input id="carModel" name="carModel" type="text" class="form-input-control"></div><div class="flex flex-col"><label for="licencePlate" class="text-sm font-medium text-gray-700 mb-1">Гос. номер</label><input id="licencePlate" name="licencePlate" type="text" class="form-input-control"></div></div>
                     <div class="flex flex-col"><label for="assistanceTask" class="text-sm font-medium text-gray-700 mb-1">Детали</label><textarea id="assistanceTask" name="task" rows="3" class="form-input-control"></textarea></div>
-                    <div class="flex flex-col"><label for="assistanceAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес *</label><div class="input-with-plus-btn"><input id="assistanceAddress" name="address" type="text" class="form-input-control" required /><button type="button" onclick="getCurrentLocation('assistance')" class="geo-btn btn-active"><i id="assistanceGeoIcon" class="fas fa-compass"></i></button></div></div>
+                    <div class="flex flex-col"><label for="assistanceAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес *</label>
+                        <div class="input-with-plus-btn">
+                            <div class="relative w-full">
+                                <i class="fas fa-map-marker-alt absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                                <input id="assistanceAddress" name="address" type="text" class="form-input-control pl-10" required />
+                            </div>
+                            <button type="button" onclick="getCurrentLocation('assistance')" class="geo-btn btn-active"><i id="assistanceGeoIcon" class="fas fa-compass"></i></button>
+                        </div>
+                    </div>
                     <div id="assistanceStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div><div class="price-note">Стоимость:</div><div class="price-estimate">от 1500 тг</div></div>
@@ -541,10 +622,31 @@
                 <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🔨 Аукцион</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="auctionModal">×</button></div>
                 <form id="auctionForm" class="space-y-4">
                     <div id="addressInputsAuction">
-                        <div class="flex flex-col"><label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда</label><div class="input-with-plus-btn"><input id="auctionFrom" name="from" type="text" autocomplete="off" class="form-input-control" required><button type="button" onclick="getCurrentLocation('auction')" class="geo-btn btn-active"><i id="auctionGeoIcon" class="fas fa-compass"></i></button></div></div>
-                        <div class="flex flex-col"><label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда *</label><div class="input-with-plus-btn"><input id="auctionTo" name="to" type="text" autocomplete="off" class="form-input-control" required><button type="button" onclick="addStop('additionalStopsAuction', 'auction')" class="add-stop-btn btn-active"><i class="fas fa-plus"></i></button></div><div id="additionalStopsAuction" class="mt-2 space-y-2"></div></div>
+                        <div class="flex flex-col"><label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда</label>
+                            <div class="input-with-plus-btn">
+                                <div class="relative w-full">
+                                    <i class="fas fa-map-marker-alt absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                                    <input id="auctionFrom" name="from" type="text" autocomplete="off" class="form-input-control pl-10" required>
+                                </div>
+                                <button type="button" onclick="getCurrentLocation('auction')" class="geo-btn btn-active"><i id="auctionGeoIcon" class="fas fa-compass"></i></button>
+                            </div>
+                        </div>
+                        <div class="flex flex-col"><label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда *</label>
+                            <div class="input-with-plus-btn">
+                                <div class="relative w-full">
+                                    <i class="fas fa-flag-checkered absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                                    <input id="auctionTo" name="to" type="text" autocomplete="off" class="form-input-control pl-10" required>
+                                </div>
+                                <button type="button" onclick="addStop('additionalStopsAuction', 'auction')" class="add-stop-btn btn-active"><i class="fas fa-plus"></i></button>
+                            </div><div id="additionalStopsAuction" class="mt-2 space-y-2"></div>
+                        </div>
                     </div>
-                    <div class="flex flex-col"><label for="auctionPrice" class="text-sm font-medium text-gray-700 mb-1">Ваша цена</label><input id="auctionPrice" name="price" type="number" inputmode="numeric" pattern="[0-9]*" min="500" class="form-input-control" placeholder="Мин. 500 KZT" required></div>
+                    <div class="flex flex-col"><label for="auctionPrice" class="text-sm font-medium text-gray-700 mb-1">Ваша цена</label>
+                        <div class="relative w-full">
+                            <i class="fas fa-tenge-sign absolute left-3 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                            <input id="auctionPrice" name="price" type="number" inputmode="numeric" pattern="[0-9]*" min="500" class="form-input-control pl-10" placeholder="Мин. 500 KZT" required>
+                        </div>
+                    </div>
                     <div id="auctionStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div><div class="price-estimate text-yellow-600">Начните от 500 тг</div></div>
@@ -814,9 +916,9 @@
                 return; 
             }
 
+            let cars = 0;
             let stored = null;
             try { stored = JSON.parse(localStorage.getItem(SIM_KEY)); } catch(e){}
-            let cars = 0;
             let targetMin = 0, targetMax = 0;
             if (hour >= 0 && hour < 6) { targetMin = 0; targetMax = 1; }
             else if ((hour >= 7 && hour < 10) || (hour >= 17 && hour < 20)) { targetMin = 4; targetMax = 6; }
@@ -832,8 +934,8 @@
             } else {
                  cars = Math.floor(Math.random() * (targetMax - targetMin + 1)) + targetMin;
             }
-
             localStorage.setItem(SIM_KEY, JSON.stringify({ cars, timestamp: nowTime }));
+
             let dotColor = 'green';
             
             if (hour >= 0 && hour < 6) {
@@ -1354,7 +1456,7 @@
             const divId = `stopDiv${containerId}${stopCounter}`;
             stopDiv.id = divId;
             const inputEvents = (mode === 'taxi') ? 'oninput="updateTaxiPrice()"' : '';
-            stopDiv.innerHTML = `<input id="${stopId}" name="${stopId}" type="text" list="toHistory" autocomplete="off" class="form-input-control" placeholder="${stopLabel} (обязательно)" required ${inputEvents}><button type="button" onclick="removeStop('${divId}', '${mode}')" class="remove-stop-btn btn-active" title="Удалить адрес"><i class="fas fa-minus"></i></button>`;
+            stopDiv.innerHTML = `<div class="input-wrapper"><i class="fas fa-map-marker-alt input-icon"></i><input id="${stopId}" name="${stopId}" type="text" list="toHistory" autocomplete="off" class="form-input-control pl-10" placeholder="${stopLabel} (обязательно)" required ${inputEvents}></div><button type="button" onclick="removeStop('${divId}', '${mode}')" class="remove-stop-btn btn-active" title="Удалить адрес"><i class="fas fa-minus"></i></button>`;
             stopsContainer.appendChild(stopDiv);
             setAddressHistory(); 
             if (mode === 'taxi') updateTaxiPrice();

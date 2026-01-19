@@ -144,28 +144,27 @@
                 </div>
                 <span class="text-[10px] text-gray-300">Кухня</span>
             </div>
-             <div class="flex flex-col items-center space-y-1 cursor-pointer min-w-[70px]" onclick="openWhatsappDelivery()">
+             <div class="flex flex-col items-center space-y-1 cursor-pointer min-w-[70px]" onclick="shareSiteUrl()">
                 <div class="story-ring w-[68px] h-[68px] flex items-center justify-center">
                     <div class="w-[60px] h-[60px] rounded-full border-2 border-[#1a0b0b] overflow-hidden relative">
                         <img src="https://images.unsplash.com/photo-1617347454431-f49d7ff5c3b1?w=100" class="w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center"><i class="fab fa-whatsapp text-white text-2xl"></i></div>
+                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center"><i class="fas fa-share-alt text-white text-2xl"></i></div>
                     </div>
                 </div>
-                <span class="text-[10px] text-gray-300">Доставка</span>
+                <span class="text-[10px] text-gray-300">Поделиться</span>
             </div>
         </div>
     </header>
 
     <!-- HERO SECTION -->
-    <section class="min-h-[85vh] flex items-center justify-center text-center py-12 relative">
+    <section class="min-h-[85vh] flex items-center justify-center text-center py-10 relative">
         <div class="p-6 md:p-10 bg-app-card/80 border border-app-gold/30 backdrop-blur-md rounded-3xl max-w-4xl mx-auto flex flex-col items-center w-[90%] relative z-10 shadow-2xl">
             
-            <h2 class="text-4xl sm:text-6xl font-black text-white mb-2 leading-tight drop-shadow-xl">
-                Накроем стол<br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-app-gold to-orange-400">по-домашнему</span>
-            </h2>
-            
-            <p class="text-lg text-gray-300 mb-8 font-medium">Салаты, горячее и банкеты в "Плакучей Иве"</p>
+            <div class="text-sm sm:text-lg text-gray-300 mb-8 font-medium space-y-2 text-left sm:text-center w-full max-w-lg mx-auto bg-black/20 p-4 rounded-xl border border-white/5">
+                <p class="flex items-start sm:justify-center"><span class="mr-2 text-app-green">✔</span> Свежие салаты, горячие блюда, банкеты под ключ.</p>
+                <p class="flex items-start sm:justify-center"><span class="mr-2 text-app-green">✔</span> Повар на выезд — готовим прямо у вас.</p>
+                <p class="flex items-start sm:justify-center"><span class="mr-2 text-app-green">✔</span> Заказ домашней еды с доставкой на дом.</p>
+            </div>
             
             <!-- Основные кнопки -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-lg mb-6">
@@ -656,7 +655,12 @@
                 const orderData = { date: new Date().toLocaleString(), name, phone, city, address, comment, items: itemsList, total, discount: win ? '5%' : '0%' };
                 
                 // Google Sheets
-                fetch(GOOGLE_SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(orderData) });
+                fetch(GOOGLE_SCRIPT_URL, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(orderData) 
+                }).catch(err => console.error('Ошибка отправки в Google Sheets:', err));
 
                 window.open(`https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(msg)}`, '_blank');
                 cart = []; saveCart(); renderUI();
@@ -738,9 +742,24 @@
             hideChefModal(); 
             window.open(`https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(`👨‍🍳 Заявка на повара\nДата: ${d}\nСобытие: ${e}`)}`, '_blank'); 
         }
-        function hidePwa() { document.getElementById('pwa-instructions-modal').classList.add('hidden'); }
+        function hidePWAInstructions() { document.getElementById('pwa-instructions-modal').classList.add('hidden'); }
         function installApp() { document.getElementById('pwa-instructions-modal').classList.remove('hidden'); document.getElementById('pwa-instructions-modal').classList.add('flex'); }
-        
+        function shareSiteUrl() { 
+             const url = "https://taxiuspeh.github.io/landing-/food.html";
+             if (navigator.share) {
+                 navigator.share({
+                     title: 'Домашний Праздник',
+                     text: 'Вкусная еда с доставкой!',
+                     url: url
+                 }).catch(console.error);
+             } else {
+                 // Fallback for desktop
+                 navigator.clipboard.writeText(url).then(() => {
+                     alert("Ссылка скопирована: " + url);
+                 });
+             }
+        }
+
         let deferredPrompt; window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
         function installApp() { if(deferredPrompt) deferredPrompt.prompt(); else document.getElementById('pwa-instructions-modal').classList.remove('hidden'); document.getElementById('pwa-instructions-modal').classList.add('flex'); }
 

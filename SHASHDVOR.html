@@ -2,10 +2,26 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <!-- Добавлено viewport-fit=cover для корректного отображения на iPhone с "челкой" -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <title>Шашлычный Двор | Доставка по Белоусовке</title>
     
+    <!-- PWA Settings start -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Шашлычный">
+    <!-- Цвета темы под стиль гриль-кафе -->
+    <meta name="theme-color" content="#2E1E1E" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+    
+    <!-- Иконка приложения (Шашлык) -->
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/512/kebab.png">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/color/512/kebab.png">
+    
+    <!-- Манифест для Android -->
+    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Шашлычный Двор","short_name":"Шашлык","start_url":".","display":"standalone","background_color":"#1a1a1a","theme_color":"#2E1E1E","icons":[{"src":"https://img.icons8.com/color/512/kebab.png","sizes":"512x512","type":"image/png"}]}'>
+    <!-- PWA Settings end -->
+
     <!-- SEO и Social Media (Open Graph) -->
     <meta name="description" content="Сочный шашлык на углях, люля-кебаб и горячие блюда с доставкой в Белоусовке. Заказывайте онлайн!">
     <meta property="og:title" content="Шашлычный Двор | Вкуснейший шашлык">
@@ -14,7 +30,7 @@
     <meta property="og:type" content="website">
     <meta property="og:locale" content="ru_RU">
 
-    <!-- Schema.org микроразметка для Google -->
+    <!-- Schema.org -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -22,40 +38,19 @@
       "name": "Шашлычный Двор",
       "image": "https://img.icons8.com/color/512/kebab.png",
       "telephone": "+77055071640",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "Белоусовка",
-        "addressCountry": "KZ"
-      },
-      "openingHoursSpecification": {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-        "opens": "10:00",
-        "closes": "00:00"
-      },
+      "address": { "@type": "PostalAddress", "addressLocality": "Белоусовка", "addressCountry": "KZ" },
+      "openingHoursSpecification": { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "opens": "10:00", "closes": "00:00" },
       "priceRange": "$$",
       "servesCuisine": "Caucasian"
     }
     </script>
 
-    <!-- PWA Settings (Встроенный манифест) -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Шашлычный">
-    <meta name="theme-color" content="#2E1E1E" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-    
-    <link rel="icon" type="image/png" href="https://img.icons8.com/color/512/kebab.png">
-    <link rel="apple-touch-icon" href="https://img.icons8.com/color/512/kebab.png">
-    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Шашлычный Двор","short_name":"Шашлык","start_url":".","display":"standalone","background_color":"#1a1a1a","theme_color":"#2E1E1E","orientation":"portrait-primary","icons":[{"src":"https://img.icons8.com/color/512/kebab.png","sizes":"512x512","type":"image/png"}]}'>
-
-    <!-- Предзагрузка -->
-    <link rel="preload" as="image" href="https://images.unsplash.com/photo-1594041680527-185d638848a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80">
-
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <script>
+        // Безопасная проверка загрузки Tailwind перед применением конфига
         if (typeof tailwind !== 'undefined') {
             tailwind.config = {
                 theme: {
@@ -64,13 +59,13 @@
                             'grill-dark': '#2E1E1E', 
                             'grill-red': '#A52A2A',  
                             'grill-accent': '#FF8C00', 
-                            'grill-green': '#25D366',
+                            'grill-green': '#25D366', // WhatsApp Green
                         },
                         fontFamily: {
                             sans: ['Inter', 'sans-serif'],
                         },
                         screens: {
-                            'xs': '375px',
+                            'xs': '375px', // Для очень маленьких экранов
                         }
                     }
                 }
@@ -79,39 +74,45 @@
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-
+        /* Улучшение для PWA: отключение "резиновой" прокрутки и выделения при тапе */
         html, body {
             overscroll-behavior-y: none;
             -webkit-tap-highlight-color: transparent;
         }
-
+        /* Поддержка безопасных зон для iPhone X+ */
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
             .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
             .mb-safe { margin-bottom: env(safe-area-inset-bottom); }
             .bottom-safe { bottom: env(safe-area-inset-bottom); }
         }
         
+        /* Для iOS PWA: отступ сверху */
         @supports (-webkit-touch-callout: none) {
-            header { padding-top: env(safe-area-inset-top); height: calc(74px + env(safe-area-inset-top)); }
+            header {
+                padding-top: env(safe-area-inset-top);
+                height: calc(64px + env(safe-area-inset-top)); 
+            }
             .pt-safe { padding-top: env(safe-area-inset-top); }
         }
-
         body {
             font-family: 'Inter', sans-serif;
+            /* Обновленное тематическое фото: процесс жарки мяса на углях с дымком */
             background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.85)), url('https://images.unsplash.com/photo-1594041680527-185d638848a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
             background-attachment: fixed;
             background-position: center;
             background-size: cover;
+            
             color: #f7f7f7;
+            /* Большой отступ снизу для навигации + безопасной зоны */
             padding-bottom: calc(140px + env(safe-area-inset-bottom));
         }
         
+        /* Анимация мигания для кнопки */
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
         }
         .animate-blink { animation: blink 1.5s infinite; }
-
         .section-title {
             position: relative;
             display: inline-block;
@@ -129,18 +130,18 @@
             background-color: #FF8C00;
             border-radius: 9999px;
         }
-
         .primary-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(255, 140, 0, 0.5), 0 4px 6px -2px rgba(255, 140, 0, 0.5);
         }
-
         .hero-background {
+            /* Реальное фото шашлыка для главного баннера */
             background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
             background-size: cover;
             background-position: center;
         }
         
+        /* Стили для липкой панели заказа */
         #sticky-order-bar {
             position: fixed;
             bottom: calc(70px + env(safe-area-inset-bottom)); 
@@ -153,11 +154,12 @@
         #sticky-order-bar.visible { transform: translateY(0); }
         @media (min-width: 768px) { #sticky-order-bar { bottom: 0; } }
 
+        /* Notification Toast */
         #notification-box {
             position: fixed;
             top: 20px;
             right: 20px;
-            left: 20px;
+            left: 20px; 
             z-index: 1000;
             transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
             transform: translateY(-150%);
@@ -166,12 +168,13 @@
         @media(min-width: 640px) { #notification-box { left: auto; width: auto; } }
         #notification-box.show { transform: translateY(0); opacity: 1; }
         
+        /* Modal Styles */
         .modal-backdrop {
             background-color: rgba(0, 0, 0, 0.85);
             z-index: 900;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px); 
         }
-        
+        /* Mobile First Modal Content: Full Screen */
         .modal-content-lg {
             background-color: #1a1a1a;
             z-index: 910;
@@ -191,20 +194,24 @@
             }
         }
         
+        /* Standard Modal (Booking/Callback) Mobile Styles */
         .modal-content-sm {
             width: 100%;
             max-width: 100%;
             margin: 0;
-            border-radius: 1rem 1rem 0 0;
+            border-radius: 1rem 1rem 0 0; 
             position: absolute;
             bottom: 0;
             max-height: 90vh;
             animation: slideUp 0.3s ease-out;
         }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
         @media(min-width: 640px) {
             .modal-content-sm {
-                max-width: 28rem;
+                max-width: 28rem; /* max-w-md */
                 margin: 1rem;
                 border-radius: 0.75rem;
                 position: relative;
@@ -212,15 +219,14 @@
                 animation: none;
             }
         }
-
         .nav-icon { width: 1.5rem; height: 1.5rem; }
         
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
         .menu-tab { border-bottom: 2px solid transparent; transition: all 0.2s; }
         .menu-tab.active { border-bottom-color: #FF8C00; color: #FF8C00; background-color: rgba(255, 140, 0, 0.1); }
         
+        /* Увеличенные тач-зоны для input date/time */
         input[type="date"]::-webkit-calendar-picker-indicator,
         input[type="time"]::-webkit-calendar-picker-indicator {
             filter: invert(1);
@@ -230,11 +236,19 @@
             height: 24px;
         }
         
-        .close-btn { padding: 0.75rem; margin: -0.5rem; color: #9ca3af; }
-        .close-btn:active { color: white; background-color: rgba(255,255,255,0.1); border-radius: 9999px; }
+        .close-btn {
+            padding: 0.75rem; 
+            margin: -0.5rem;  
+            color: #9ca3af;
+        }
+        .close-btn:active {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+            border-radius: 9999px;
+        }
         .cursor-zoom-in { cursor: zoom-in; }
 
-        /* Animation */
+        /* --- Success Checkmark Animation --- */
         .success-checkmark { width: 80px; height: 115px; margin: 0 auto; }
         .check-icon { width: 80px; height: 80px; position: relative; border-radius: 50%; box-sizing: content-box; border: 4px solid #25D366; }
         .check-icon::before { content: ''; position: absolute; top: 3px; left: -2px; width: 30px; transform-origin: 100% 50%; border-radius: 100px 0 0 100px; }
@@ -242,26 +256,19 @@
         .icon-line { height: 5px; background-color: #25D366; display: block; border-radius: 2px; position: absolute; z-index: 10; }
         .line-tip { top: 46px; left: 14px; width: 25px; transform: rotate(45deg); animation: icon-line-tip 0.75s; }
         .line-long { top: 38px; right: 8px; width: 47px; transform: rotate(-45deg); animation: icon-line-long 0.75s; }
-        
         @keyframes icon-line-tip {
-            0% { width: 0; left: 1px; top: 19px; }
-            54% { width: 0; left: 1px; top: 19px; }
-            70% { width: 50px; left: -8px; top: 37px; }
-            84% { width: 17px; left: 21px; top: 48px; }
-            100% { width: 25px; left: 14px; top: 46px; }
+            0% { width: 0; left: 1px; top: 19px; } 54% { width: 0; left: 1px; top: 19px; } 70% { width: 50px; left: -8px; top: 37px; } 84% { width: 17px; left: 21px; top: 48px; } 100% { width: 25px; left: 14px; top: 46px; }
         }
         @keyframes icon-line-long {
-            0% { width: 0; right: 46px; top: 54px; }
-            65% { width: 0; right: 46px; top: 54px; }
-            84% { width: 55px; right: 0px; top: 35px; }
-            100% { width: 47px; right: 8px; top: 38px; }
+            0% { width: 0; right: 46px; top: 54px; } 65% { width: 0; right: 46px; top: 54px; } 84% { width: 55px; right: 0px; top: 35px; } 100% { width: 47px; right: 8px; top: 38px; }
         }
         @keyframes rotate-circle {
-            0% { transform: rotate(-45deg); }
-            5% { transform: rotate(-45deg); }
-            12% { transform: rotate(-405deg); }
-            100% { transform: rotate(-405deg); }
+            0% { transform: rotate(-45deg); } 5% { transform: rotate(-45deg); } 12% { transform: rotate(-405deg); } 100% { transform: rotate(-405deg); }
         }
+
+        /* Confetti for Lucky Modal */
+        .confetti { position: absolute; width: 10px; height: 10px; background-color: #f00; animation: fall linear forwards; }
+        @keyframes fall { to { transform: translateY(100vh) rotate(720deg); } }
     </style>
 </head>
 <body class="antialiased selection:bg-grill-accent selection:text-black">
@@ -296,6 +303,28 @@
         </div>
     </div>
 
+    <!-- Lucky Modal (Banner) -->
+    <div id="lucky-modal" class="modal-backdrop fixed inset-0 hidden items-center justify-center z-[2500]" onclick="hideLuckyModal()">
+        <div class="bg-gradient-to-b from-grill-dark to-black border-2 border-grill-accent w-11/12 max-w-sm rounded-2xl p-6 text-center shadow-2xl relative overflow-hidden" onclick="event.stopPropagation()">
+            <div id="confetti-container" class="absolute inset-0 pointer-events-none"></div>
+            <div class="text-6xl mb-4 animate-bounce">🎉</div>
+            <h3 class="text-2xl font-black text-grill-accent mb-2 uppercase">Вам повезло!</h3>
+            <p class="text-white text-lg font-bold mb-4" id="lucky-discount-text">Вы выиграли скидку!</p>
+            
+            <div class="bg-white/10 p-4 rounded-xl mb-6 border border-dashed border-grill-accent/50">
+                <p class="text-xs text-gray-400 mb-1">Ваш промокод:</p>
+                <p class="text-2xl font-mono font-bold text-white tracking-wider" id="lucky-code-display">CODE</p>
+                <p class="text-[10px] text-grill-green mt-1">(Применится автоматически)</p>
+            </div>
+
+            <!-- Кнопка автоматического применения -->
+            <button id="lucky-claim-btn" class="w-full bg-grill-green text-white font-bold py-3 rounded-xl shadow-lg hover:bg-[#1EBE57] transition animate-pulse">
+                Забрать и заказать
+            </button>
+            <button onclick="proceedWithOrder()" class="mt-3 text-gray-500 text-xs underline">Пропустить скидку</button>
+        </div>
+    </div>
+
     <!-- Global Success Overlay -->
     <div id="global-success-overlay" class="fixed inset-0 z-[2000] bg-black/95 hidden flex-col items-center justify-center transition-opacity duration-300 opacity-0 backdrop-blur-sm">
         <div class="success-checkmark scale-150 transform">
@@ -324,8 +353,10 @@
     
     <!-- Cart Modal -->
     <div id="cart-modal" class="modal-backdrop fixed inset-0 hidden items-end sm:items-center justify-center sm:p-4" onclick="hideCartModal()">
+        <!-- Используем modal-content-sm для мобильных (выезжает снизу) -->
         <div class="bg-[#1a1a1a] modal-content-sm w-full sm:max-w-lg sm:rounded-xl shadow-2xl overflow-hidden border-t sm:border border-gray-700 flex flex-col max-h-[85vh]" onclick="event.stopPropagation()">
             
+            <!-- Default Cart Content -->
             <div id="cart-main-content" class="flex flex-col h-full overflow-hidden">
                 <div class="p-4 bg-grill-dark border-b border-gray-700 flex justify-between items-center sticky top-0 z-10">
                     <h4 class="text-2xl font-bold text-white">Ваш заказ</h4>
@@ -341,6 +372,7 @@
                     </div>
                     
                     <div id="order-details-form" class="mt-6 pt-4 border-t border-gray-700 space-y-4 hidden pb-safe">
+                        
                         <!-- Promo Code Section -->
                         <div class="bg-gray-800 p-3 rounded-lg border border-gray-600">
                              <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Промокод</label>
@@ -352,8 +384,10 @@
                         </div>
 
                         <h5 class="text-white text-lg font-bold flex items-center"><span class="mr-2">📝</span> Детали доставки</h5>
+                        
                         <div>
                             <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Ваше имя</label>
+                            <!-- text-base added to prevent iOS zoom -->
                             <input type="text" id="order-name" placeholder="Как к вам обращаться?" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
                         </div>
                         <div>
@@ -365,8 +399,7 @@
                             <textarea id="order-comment" rows="2" placeholder="Например: 'Поострее', 'Не звонить в домофон'" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent"></textarea>
                         </div>
                     </div>
-                    
-                    <!-- AI Recommendation (Local Logic) -->
+                    <!-- AI Recommendation -->
                     <div class="mt-6 pt-4 border-t border-gray-700 pb-4">
                         <h5 class="text-white text-lg font-bold mb-3 flex items-center">
                             <span class="mr-2">✨</span> Что добавить?
@@ -386,7 +419,8 @@
                              <div id="cart-old-price" class="text-gray-500 text-sm line-through hidden"></div>
                         </div>
                     </div>
-                    <button onclick="placeOrder()" id="place-order-btn" class="w-full bg-grill-green hover:bg-[#1DA851] text-white text-lg font-bold px-6 py-4 rounded-xl shadow-lg transition duration-300 flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed active:scale-95" disabled>
+                    <!-- Кнопка изменена на tryPlaceOrder для запуска лотереи -->
+                    <button onclick="tryPlaceOrder()" id="place-order-btn" class="w-full bg-grill-green hover:bg-[#1DA851] text-white text-lg font-bold px-6 py-4 rounded-xl shadow-lg transition duration-300 flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed active:scale-95" disabled>
                         Оформить заказ
                     </button>
                 </div>
@@ -413,10 +447,14 @@
                 </div>
             </div>
             <div class="bg-[#1a1a1a] border-b border-gray-700 sticky top-0 z-20 shrink-0 shadow-lg">
-                <div id="modal-category-nav" class="flex overflow-x-auto no-scrollbar py-3 px-2 space-x-2"></div>
+                <div id="modal-category-nav" class="flex overflow-x-auto no-scrollbar py-3 px-2 space-x-2">
+                    <!-- Categories -->
+                </div>
             </div>
             <div id="full-menu-scroll-area" class="flex-grow overflow-y-auto p-4 md:p-6 bg-stone-900 pb-24 overscroll-contain">
-                <div id="full-menu-container" class="space-y-8"></div>
+                <div id="full-menu-container" class="space-y-8">
+                    <!-- Content -->
+                </div>
             </div>
             <div id="menu-modal-footer" class="absolute bottom-0 left-0 right-0 p-4 pb-safe bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-none hidden">
                 <button onclick="showCartModal()" class="pointer-events-auto w-full bg-grill-green text-white font-bold py-3 px-6 rounded-xl shadow-lg flex justify-between items-center transform active:scale-95 transition">
@@ -427,9 +465,9 @@
                     <span class="text-xl" id="modal-footer-price">0 ₸</span>
                 </button>
             </div>
+            
         </div>
     </div>
-
     <!-- Banquet Modal -->
     <div id="banquet-modal" class="modal-backdrop fixed inset-0 hidden items-end sm:items-center justify-center sm:p-4 z-[110]" onclick="hideBanquetModal()">
         <div class="bg-[#1a1a1a] modal-content-sm w-full sm:max-w-2xl sm:rounded-xl shadow-2xl overflow-y-auto border-t sm:border-2 border-grill-accent flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
@@ -444,18 +482,20 @@
                 <div class="space-y-4">
                     <h5 class="font-bold text-lg text-white border-l-4 border-grill-accent pl-3">Примерное меню:</h5>
                     <ul class="space-y-3 bg-gray-800/50 p-4 rounded-xl">
+                         <!-- Static items list -->
                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🍢 Шашлык</span><span class="font-mono text-gray-400">1 шт.</span></li>
                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🥗 Салат</span><span class="font-mono text-gray-400">1 порция</span></li>
-                        <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🍲 Горячее</span><span class="font-mono text-gray-400">1 порция</span></li>
+                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🍲 Горячее</span><span class="font-mono text-gray-400">1 порция</span></li>
                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🍞 Хлеб/Лаваш</span><span class="font-mono text-gray-400">В ассорт.</span></li>
-                        <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🥣 Соус</span><span class="font-mono text-gray-400">1 порция</span></li>
+                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">🥣 Соус</span><span class="font-mono text-gray-400">1 порция</span></li>
                         <li class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="flex items-center">☕ Напитки</span><span class="font-mono text-gray-400">Безлим.</span></li>
-                        <li class="flex justify-between items-center bg-grill-red/20 p-2 rounded-lg border border-grill-red/50 mt-2">
+                         <li class="flex justify-between items-center bg-grill-red/20 p-2 rounded-lg border border-grill-red/50 mt-2">
                             <span class="font-bold text-grill-red">🍷 Спиртное</span><span class="text-xs text-white">Включено</span>
                         </li>
                     </ul>
                     <p class="text-xs text-gray-400 italic text-center">* Индивидуальный расчет.</p>
                 </div>
+                <!-- КНОПКА ЗАКАЗА БАНКЕТА ВНУТРИ ОКНА, КОТОРАЯ ОТКРЫВАЕТ ФОРМУ БРОНИРОВАНИЯ -->
                 <div class="mt-6 pt-4 border-t border-gray-700">
                     <button onclick="openBanquetBooking()" class="w-full bg-grill-accent text-grill-dark font-bold py-4 rounded-xl shadow-lg transition hover:bg-orange-500 flex justify-center items-center active:scale-95">
                         <span class="mr-2 text-xl">📅</span> Заказать банкет / Обсудить
@@ -484,7 +524,7 @@
                         <input type="time" id="book-time" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
                     </div>
                     <div>
-                        <label class="block text-grill-accent font-bold text-sm mb-2">Гостей</label>
+                         <label class="block text-grill-accent font-bold text-sm mb-2">Гостей</label>
                         <select id="book-guests" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none">
                             <option value="2">2 чел.</option>
                             <option value="3">3 чел.</option>
@@ -546,6 +586,46 @@
 
     <!-- Scripts -->
     <script>
+        // ==========================================
+        // 🔧 КОНФИГУРАЦИЯ ЦЕН (Менять цены тут)
+        // ==========================================
+        const PRICE_CONFIG = {
+            // Хиты
+            lula_hits: 2500, pork_classic_hits: 3000, chicken_wings_hits: 2500,
+            // Горячее
+            hd_kazakh: 2500, hd_thai: 2500, hd_manti_fried: 2500, hd_chop_greek: 2000, hd_chop_forest: 2000,
+            hd_dumplings: 2000, hd_cabbage_rolls: 2000, hd_chicken_veg: 2000, hd_chebureks: 2000, 
+            hd_nuggets: 800, hd_khashlama: 2000, hd_manti: 2000,
+            // Салаты
+            salad_breeze: 1000, salad_uyut: 1500, salad_manon: 1000, salad_fantasy: 1300, 
+            salad_original: 1500, salad_thai: 1300, salad_cha: 1300, salad_prince: 1300, 
+            salad_hussar: 1000, salad_gourmet: 1300, salad_greek: 1000, salad_olivier: 1000, 
+            salad_whatneeded: 1000, salad_caesar: 1000,
+            // Премиум
+            royal_shashlyk: 4000, khan_shashlyk: 4000,
+            // Утка
+            duck_filet: 2900, duck_wings: 2900,
+            // Свинина
+            pork_classic: 3000, pork_entrecote: 3000, pork_bone: 3000,
+            // Говядина
+            beef_tenderloin: 3200, beef_liver: 2200, beef_ribs: 2800,
+            // Баранина
+            lamb_meat: 3500, lamb_ribs: 3500,
+            // Курица
+            chicken_filet: 2500,
+            // Люля
+            lula_chk: 2500, lula_bf: 2500, lula_lamb: 2500,
+            // Овощи
+            veg_mushrooms: 2500, veg_mix: 2200,
+            // Нарезки
+            platter_caucasus: 2500, platter_veg: 2000,
+            // Соусы
+            sauce_red: 300, sauce_white: 300, sauce_bbq: 350, sauce_tkemali: 400,
+            // Гарниры
+            potatoes: 500, lavash_firm: 300
+        };
+        // ==========================================
+
         const productsData = [
             // ХИТЫ
             { id: 'lula_hits', category: 'hits', name: 'Люля-кебаб (Хит)', price: 2500, desc: 'Фарш из отборной говядины с пряными травами. (400г)', img: 'https://placehold.co/400x300/4B2C1B/FFFFFF?text=ЛЮЛЯ-КЕБАБ' },
@@ -631,6 +711,9 @@
             { id: 'lavash_firm', category: 'garnishes', name: 'Лаваш фирменный', price: 300, desc: 'Армянский лаваш, обжаренный с паприкой и зеленью.', img: 'https://placehold.co/500x350/F5DEB3/000000?text=ЛАВАШ' }
         ];
 
+        // --- APPLIED PRICE CONFIGURATION ---
+        productsData.forEach(p => { if(PRICE_CONFIG[p.id]) p.price = PRICE_CONFIG[p.id]; });
+
         const menuCategories = {
             hits: { name: "Хиты", icon: "⭐" },
             hot_dishes: { name: "Горячие блюда", icon: "🍲" }, 
@@ -656,21 +739,358 @@
 
         let cart = []; 
         let activeMenuTab = 'grill'; 
-        let activeDiscount = 0; // % скидки
+        let activeDiscount = 0; 
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzMQ_FxyK0IKcDIwP6Gp6NbuZzlGRxfJhL4S6utb3gqUTzn-DStkySErcL9bAdw8y6jsQ/exec';
 
-        // --- Local "AI" Logic (No API Key needed) ---
-        async function generateLocalRecommendation() {
+        // --- NEW HELPER FUNCTIONS ---
+        function checkWorkingHours() {
+            const now = new Date();
+            const hour = now.getHours();
+            const statusDiv = document.getElementById('working-status');
+            // Open from 10:00 to 00:00 (midnight)
+            // 00:00 is technically 0 hours of the next day, but usually implied as end of day.
+            // Let's assume 10:00 to 23:59.
+            const isOpen = hour >= 10 && hour < 24; 
+            
+            if (statusDiv) {
+                if (isOpen) {
+                    statusDiv.innerHTML = '<span class="text-xs font-bold text-green-500 flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span> Открыто</span>';
+                } else {
+                    statusDiv.innerHTML = '<span class="text-xs font-bold text-red-500 flex items-center"><span class="w-2 h-2 bg-red-500 rounded-full mr-1"></span> Закрыто (с 10:00)</span>';
+                }
+            }
+            return isOpen;
+        }
+
+        function createMenuCard(product) {
+            const count = (cart.find(i => i.id === product.id) || {}).count || 0;
+            const buttonState = count > 0 
+                ? `<div class="flex items-center bg-grill-green rounded-lg shadow-lg" onclick="event.stopPropagation()">
+                        <button onclick="updateCartItemCount('${product.id}', -1)" class="w-8 h-8 flex items-center justify-center text-white font-bold text-lg active:bg-black/20 rounded-l-lg">-</button>
+                        <span class="text-white font-bold w-6 text-center text-sm">${count}</span>
+                        <button onclick="updateCartItemCount('${product.id}', 1)" class="w-8 h-8 flex items-center justify-center text-white font-bold text-lg active:bg-black/20 rounded-r-lg">+</button>
+                    </div>`
+                : `<button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', 1)" class="bg-gray-700 hover:bg-grill-accent hover:text-black text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow active:scale-95">
+                        + Добавить
+                    </button>`;
+
+            return `
+                <div class="flex bg-gray-800 rounded-xl overflow-hidden shadow-lg border border-gray-700 cursor-pointer hover:border-grill-accent transition" onclick="openImage('${product.img}')">
+                    <div class="w-1/3 min-w-[100px] h-auto relative">
+                            <img src="${product.img}" alt="${product.name}" class="absolute inset-0 w-full h-full object-cover" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/200x200/444444/FFFFFF?text=Фото'">
+                    </div>
+                    <div class="w-2/3 p-3 flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-white text-base leading-tight mb-1">${product.name}</h4>
+                            <p class="text-[10px] text-gray-400 line-clamp-2 leading-snug">${product.desc}</p>
+                        </div>
+                        <div class="flex justify-between items-end mt-3">
+                            <span class="text-grill-accent font-bold text-lg">${product.price} ₸</span>
+                            ${buttonState}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Core Functions ---
+        function getProductById(id) { return productsData.find(p => p.id === id); }
+        
+        function sendToGoogleSheets(data) {
+            const formData = new FormData(); for (const key in data) formData.append(key, data[key]);
+            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: formData }).catch(e => console.error(e));
+        }
+
+        // --- Lucky Modal Logic ---
+        function tryPlaceOrder() {
+            const address = document.getElementById('order-address').value.trim();
+            if (!address) {
+                const inp = document.getElementById('order-address');
+                inp.classList.add('border-red-500', 'ring-2', 'ring-red-500');
+                inp.focus();
+                showNotification('❗ Введите адрес!');
+                setTimeout(() => inp.classList.remove('border-red-500', 'ring-2', 'ring-red-500'), 2000);
+                return;
+            }
+            hideCartModal();
+
+            // Probability Logic:
+            // 0.0 - 0.1 (10%): SHASHLIK2026 (10%)
+            // 0.1 - 0.3 (20%): BELOUSOVKA (5%)
+            // 0.3 - 1.0 (70%): Nothing
+            
+            const r = Math.random();
+            
+            if (r < 0.10) {
+                showLuckyModal('SHASHLIK2026', 10);
+            } else if (r < 0.30) {
+                showLuckyModal('BELOUSOVKA', 5);
+            } else {
+                proceedWithOrder();
+            }
+        }
+
+        function showLuckyModal(code, percent) {
+            const modal = document.getElementById('lucky-modal');
+            document.getElementById('lucky-code-display').innerText = code;
+            document.getElementById('lucky-discount-text').innerText = `Вы выиграли скидку ${percent}%!`;
+            
+            // --- AUTOMATIC APPLY SETUP ---
+            const btn = document.getElementById('lucky-claim-btn');
+            btn.onclick = function() {
+                activeDiscount = percent; // Применяем скидку
+                proceedWithOrder(); // Отправляем заказ
+            };
+            // -----------------------------
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            startConfetti();
+        }
+
+        function hideLuckyModal() {
+            const modal = document.getElementById('lucky-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            stopConfetti();
+        }
+
+        function copyLuckyCode() {
+            const code = document.getElementById('lucky-code-display').innerText;
+            navigator.clipboard.writeText(code);
+            showNotification('Код скопирован!');
+        }
+
+        function startConfetti() {
+            const container = document.getElementById('confetti-container');
+            container.innerHTML = '';
+            for(let i=0; i<30; i++) {
+                const el = document.createElement('div');
+                el.className = 'confetti';
+                el.style.left = Math.random() * 100 + '%';
+                el.style.backgroundColor = ['#FF8C00', '#25D366', '#FF0000', '#FFFF00'][Math.floor(Math.random()*4)];
+                el.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                container.appendChild(el);
+            }
+        }
+        function stopConfetti() { document.getElementById('confetti-container').innerHTML = ''; }
+
+        function proceedWithOrder() {
+            hideLuckyModal();
+            
+            const name = document.getElementById('order-name').value.trim();
+            const address = document.getElementById('order-address').value.trim();
+            const comment = document.getElementById('order-comment').value.trim();
+            
+            let total = 0;
+            const orderItems = [];
+            cart.forEach(item => {
+                 const p = getProductById(item.id);
+                 if(p) {
+                    total += p.price * item.count;
+                    orderItems.push(`${p.name} x${item.count}`);
+                 }
+            });
+            
+            let finalTotal = total;
+            let discountAmount = 0;
+            if (activeDiscount > 0) {
+                discountAmount = Math.floor(total * (activeDiscount / 100));
+                finalTotal = total - discountAmount;
+            }
+
+            // Google Sheets
+            sendToGoogleSheets({
+                action: 'order',
+                date: new Date().toLocaleString('ru-RU'),
+                name: name,
+                address: address,
+                comment: comment,
+                items: orderItems.join(', '),
+                total: finalTotal,
+                discount: activeDiscount > 0 ? `${activeDiscount}%` : 'Нет'
+            });
+
+            // WhatsApp
+            const overlay = document.getElementById('global-success-overlay');
+            overlay.classList.remove('hidden'); overlay.classList.add('flex', 'opacity-100');
+            
+            setTimeout(() => {
+                let msg = "Здравствуйте! Хочу заказать доставку 🍢:\n\n";
+                cart.forEach(item => {
+                    const p = getProductById(item.id);
+                    if (p) msg += `🔹 *${p.name}*\n    ${item.count} шт. х ${p.price} = ${p.price*item.count} ₸\n`;
+                });
+                
+                if (activeDiscount > 0) msg += `\n🏷 *Скидка:* ${activeDiscount}% (-${discountAmount} ₸)`;
+                msg += `\n💰 *ИТОГО: ${finalTotal} ₸*`;
+                if (name) msg += `\n👤 *Имя:* ${name}`;
+                msg += `\n📍 *Адрес:* ${address}`;
+                if (comment) msg += `\n💬 *Коммент:* ${comment}`;
+
+                window.open(`https://wa.me/77055071640?text=${encodeURIComponent(msg)}`, '_blank');
+                
+                // Cleanup
+                cart = []; activeDiscount = 0; localStorage.removeItem('shashlyk_cart');
+                document.getElementById('order-address').value = '';
+                document.getElementById('order-comment').value = '';
+                document.getElementById('promo-input').value = '';
+                document.getElementById('promo-message').classList.add('hidden');
+                renderCartUI();
+                overlay.classList.remove('opacity-100');
+                setTimeout(() => { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }, 300);
+            }, 2000);
+        }
+
+        // --- Standard Logic (Cart, Menus, Modals) ---
+        function updateCartItemCount(id, delta) {
+            const item = cart.find(i => i.id === id);
+            if (item) { item.count += delta; if (item.count <= 0) cart = cart.filter(i => i.id !== id); }
+            else if (delta > 0) cart.push({ id: id, count: delta });
+            localStorage.setItem('shashlyk_cart', JSON.stringify(cart));
+            renderCartUI(); renderCartModal(); renderFullMenu();
+        }
+
+        function renderCartUI() {
+            let total = 0; cart.forEach(i => { const p = getProductById(i.id); if(p) total += p.price * i.count; });
+            if (activeDiscount > 0) total = Math.floor(total * ((100 - activeDiscount) / 100));
+            const count = cart.reduce((s, i) => s + i.count, 0);
+            
+            const bar = document.getElementById('sticky-order-bar');
+            if (count > 0) { bar.classList.add('visible'); document.getElementById('sticky-total').innerText = total + " ₸"; }
+            else bar.classList.remove('visible');
+
+            const mFooter = document.getElementById('menu-modal-footer');
+            if (count > 0) { mFooter.classList.remove('hidden'); document.getElementById('modal-footer-count').innerText = count; document.getElementById('modal-footer-price').innerText = total + " ₸"; }
+            else mFooter.classList.add('hidden');
+            
+            // Update Mobile Cart Button Badge
+            const mobileCartBtn = document.getElementById('mobile-cart-btn');
+            if (mobileCartBtn) {
+                 if (count > 0) {
+                     mobileCartBtn.innerHTML = `
+                        <div class="relative">
+                            <svg class="nav-icon text-grill-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            <span class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">${count}</span>
+                        </div>`;
+                     mobileCartBtn.classList.add('bg-white');
+                     mobileCartBtn.classList.remove('bg-grill-accent');
+                 } else {
+                     mobileCartBtn.innerHTML = `<svg class="nav-icon text-grill-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`;
+                     mobileCartBtn.classList.add('bg-grill-accent');
+                     mobileCartBtn.classList.remove('bg-white');
+                 }
+            }
+        }
+
+        function renderCartModal() {
+            const container = document.getElementById('cart-items-container');
+            const totalEl = document.getElementById('cart-total-price');
+            const oldEl = document.getElementById('cart-old-price');
+            const btn = document.getElementById('place-order-btn');
+            const emptyMessage = document.getElementById('cart-empty-message');
+            const formContainer = document.getElementById('order-details-form');
+            const aiButton = document.getElementById('ai-recommendation-btn');
             const resultBox = document.getElementById('ai-recommendation-result');
-            const button = document.getElementById('ai-recommendation-btn');
-            
-            button.disabled = true;
-            resultBox.innerHTML = '<p class="text-sm text-gray-400 flex items-center justify-center animate-pulse">👨‍🍳 Шеф изучает ваш заказ...</p>';
-            
-            await new Promise(resolve => setTimeout(resolve, 800));
+            const isOpen = checkWorkingHours();
 
             if (cart.length === 0) {
-                resultBox.innerHTML = '<p class="text-sm text-yellow-500">Корзина пуста. Добавьте шашлык, а я подскажу соус!</p>';
-                button.disabled = false;
+                emptyMessage.classList.remove('hidden');
+                formContainer.classList.add('hidden');
+                container.innerHTML = ''; 
+                btn.disabled = true; 
+                aiButton.disabled = true;
+                totalEl.innerText = "0 ₸";
+                oldEl.classList.add('hidden');
+                resultBox.innerHTML = '';
+            } else {
+                emptyMessage.classList.add('hidden');
+                formContainer.classList.remove('hidden');
+                btn.disabled = false;
+                aiButton.disabled = false;
+                let total = 0; let html = '';
+                cart.forEach(item => {
+                    const p = getProductById(item.id);
+                    if (!p) return;
+                    total += p.price * item.count;
+                    html += `<div class="flex justify-between items-center bg-gray-800 p-3 rounded-lg border border-gray-700 mb-2"><div><p class="text-white font-bold text-sm">${p.name}</p><p class="text-grill-accent text-xs">${p.price * item.count} ₸</p></div><div class="flex bg-gray-700 rounded"><button onclick="updateCartItemCount('${item.id}', -1)" class="w-8 h-8 flex items-center justify-center text-white hover:text-grill-accent font-bold text-xl active:scale-90 transition">-</button><span class="font-bold text-white w-8 text-center">${item.count}</span><button onclick="updateCartItemCount('${item.id}', 1)" class="w-8 h-8 flex items-center justify-center text-white hover:text-grill-accent font-bold text-xl active:scale-90 transition">+</button></div></div>`;
+                });
+                container.innerHTML = html;
+                
+                if (activeDiscount > 0) {
+                    const discounted = Math.floor(total * ((100 - activeDiscount) / 100));
+                    totalEl.innerText = discounted + " ₸";
+                    oldEl.innerText = total + " ₸"; 
+                    oldEl.classList.remove('hidden');
+                } else {
+                    totalEl.innerText = total + " ₸"; 
+                    oldEl.classList.add('hidden');
+                }
+                
+                if (!isOpen) {
+                     btn.innerText = "Заказать (на завтра)";
+                     btn.classList.remove('bg-grill-green', 'hover:bg-[#1DA851]');
+                     btn.classList.add('bg-gray-600', 'hover:bg-gray-500');
+                } else {
+                     btn.innerText = "Оформить заказ";
+                     btn.classList.add('bg-grill-green', 'hover:bg-[#1DA851]');
+                     btn.classList.remove('bg-gray-600', 'hover:bg-gray-500');
+                }
+            }
+        }
+
+        function applyPromo() {
+            const code = document.getElementById('promo-input').value.toUpperCase().trim();
+            const msg = document.getElementById('promo-message');
+            const codes = { 'SHASHLIK2026': 10, 'BELOUSOVKA': 5, 'BONUS': 5 }; 
+            
+            msg.classList.remove('hidden');
+            if (codes[code]) {
+                activeDiscount = codes[code];
+                msg.textContent = `✅ Скидка -${activeDiscount}%`;
+                msg.className = "text-xs mt-1 text-green-500 font-bold";
+            } else {
+                activeDiscount = 0;
+                msg.textContent = "❌ Неверный код";
+                msg.className = "text-xs mt-1 text-red-500 font-bold";
+            }
+            renderCartModal();
+        }
+
+        // --- Render Menu & Others ---
+        function renderFullMenu() {
+            const container = document.getElementById('full-menu-container');
+            const nav = document.getElementById('modal-category-nav');
+            if(!container) return;
+            let html = '', navHtml = '';
+            const categoryKeys = menuGroups[activeMenuTab] || menuGroups['grill'];
+            let isFirst = true;
+
+            categoryKeys.forEach(key => {
+                const prods = productsData.filter(p => p.category === key);
+                if (!prods.length) return;
+                const cName = menuCategories[key].name, cIcon = menuCategories[key].icon;
+                const activeClass = isFirst ? 'bg-grill-accent text-black' : 'bg-gray-700 text-white';
+                
+                navHtml += `<button id="btn-${key}" onclick="scrollToCategory('${key}')" class="cat-nav-btn shrink-0 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition ${activeClass}">${cIcon} ${cName}</button>`;
+                
+                html += `<div id="cat-${key}" class="pt-2"><h3 class="text-xl font-bold text-white mb-3 flex items-center sticky top-0 bg-stone-900/95 py-2 z-10"><span class="mr-2">${cIcon}</span> ${cName}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">` + 
+                    prods.map(createMenuCard).join('') + `</div></div>`;
+                isFirst = false;
+            });
+            container.innerHTML = html; nav.innerHTML = navHtml;
+            document.querySelectorAll('.menu-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-'+activeMenuTab).classList.add('active');
+        }
+
+        async function generateLocalRecommendation() {
+            const box = document.getElementById('ai-recommendation-result');
+            box.innerHTML = '<p class="text-sm text-gray-400 flex items-center justify-center animate-pulse">👨‍🍳 Шеф изучает ваш заказ...</p>';
+            await new Promise(r => setTimeout(r, 600));
+            
+            if (cart.length === 0) {
+                box.innerHTML = '<p class="text-sm text-yellow-500">Корзина пуста. Добавьте шашлык, а я подскажу соус!</p>';
+                document.getElementById('ai-recommendation-btn').disabled = false;
                 return;
             }
 
@@ -697,478 +1117,29 @@
                 suggestedProduct = productsData.find(p => p.id === 'veg_mushrooms');
             }
 
-            resultBox.innerHTML = `
-                <div class="p-3 bg-gray-900 border border-grill-accent/50 rounded-lg shadow-inner text-white text-sm">
-                    <span class="text-grill-accent font-bold">Совет Шефа:</span> ${recommendationText}
-                    ${suggestedProduct ? `<br><button onclick="updateCartItemCount('${suggestedProduct.id}', 1); showNotification('Добавлено по совету Шефа!');" class="mt-2 text-xs bg-grill-accent text-black px-2 py-1 rounded font-bold hover:bg-white transition">+ Добавить ${suggestedProduct.name}</button>` : ''}
-                </div>`;
-            
-            button.disabled = false;
-        }
-
-        // --- Core Helpers ---
-        function getProductById(id) {
-            return productsData.find(p => p.id === id);
-        }
-
-        function showNotification(message) {
-            const notificationBox = document.getElementById('notification-box');
-            document.getElementById('notification-text').textContent = message;
-            notificationBox.classList.add('show');
-            setTimeout(() => { notificationBox.classList.remove('show'); }, 2000);
+            box.innerHTML = `<div class="p-3 bg-gray-900 border border-grill-accent/50 rounded-lg shadow-inner text-white text-sm"><span class="text-grill-accent font-bold">Совет Шефа:</span> ${recommendationText}${suggestedProduct ? `<br><button onclick="updateCartItemCount('${suggestedProduct.id}', 1); showNotification('Добавлено по совету Шефа!');" class="mt-2 text-xs bg-grill-accent text-black px-2 py-1 rounded font-bold hover:bg-white transition">+ Добавить ${suggestedProduct.name}</button>` : ''}</div>`;
+            document.getElementById('ai-recommendation-btn').disabled = false;
         }
         
-        function toggleBodyScroll(shouldLock) {
-            document.body.style.overflow = shouldLock ? 'hidden' : '';
-        }
-
-        // --- Modals Logic Optimized ---
-        function showModal(modalId) {
-            document.getElementById(modalId).classList.remove('hidden');
-            document.getElementById(modalId).classList.add('flex');
-            toggleBodyScroll(true);
-        }
-        function hideModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-            document.getElementById(modalId).classList.remove('flex');
-            toggleBodyScroll(false);
-        }
-
-        function bookTable() {
-            showModal('booking-modal');
-            const today = new Date().toISOString().split('T')[0];
-            const dateInput = document.getElementById('book-date');
-            dateInput.min = today; 
-            if(!dateInput.value) dateInput.value = today;
-        }
-
-        function openBanquetBooking() {
-            hideBanquetModal();
-            showModal('booking-modal');
-            const typeSelect = document.getElementById('book-type');
-            const guestsSelect = document.getElementById('book-guests');
-            const dateInput = document.getElementById('book-date');
-            if(typeSelect) typeSelect.value = 'Банкет';
-            if(guestsSelect) guestsSelect.value = '10+';
-            
-            const today = new Date().toISOString().split('T')[0];
-            dateInput.min = today;
-            if(dateInput && !dateInput.value) dateInput.value = today;
-        }
-
-        function hideBookingModal() { hideModal('booking-modal'); }
-        function showCallbackModal() { showModal('callback-modal'); }
-        function hideCallbackModal() { hideModal('callback-modal'); }
-        function showBanquetModal() { showModal('banquet-modal'); }
-        function hideBanquetModal() { hideModal('banquet-modal'); }
-
-        // --- PWA Logic ---
-        function showPWAInstructions() { showModal('pwa-instructions-modal'); }
-        function hidePWAInstructions() { hideModal('pwa-instructions-modal'); }
-        
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            console.log("PWA install prompt intercepted");
-        });
-        async function installApp() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                deferredPrompt = null;
-            } else {
-                showPWAInstructions();
-            }
-        }
-
-        // --- Universal Success Animation ---
-        function showSuccessAnimation(titleText, callback) {
-            const overlay = document.getElementById('global-success-overlay');
-            const titleEl = document.getElementById('success-title');
-            const originalTitle = titleEl.textContent;
-            
-            if (titleText) titleEl.textContent = titleText;
-            
-            overlay.classList.remove('hidden');
-            void overlay.offsetWidth; // Force reflow
-            overlay.classList.add('flex');
-            overlay.classList.remove('opacity-0');
-            overlay.classList.add('opacity-100');
-            
-            setTimeout(() => {
-                if (callback) callback();
-                overlay.classList.remove('opacity-100');
-                overlay.classList.add('opacity-0');
-                setTimeout(() => {
-                    overlay.classList.add('hidden');
-                    overlay.classList.remove('flex');
-                    titleEl.textContent = originalTitle; 
-                }, 300);
-            }, 2500); 
-        }
-        
-        // --- Working Hours Logic ---
-        function checkWorkingHours() {
-            const now = new Date();
-            const hours = now.getHours();
-            const isOpen = hours >= 10 && hours < 24; 
-            const statusDiv = document.getElementById('working-status');
-            
-            if (!isOpen) {
-                 if(statusDiv) statusDiv.innerHTML = '<span class="px-2 py-1 bg-red-600/80 rounded text-xs font-bold text-white shadow">🔴 Закрыто (с 10:00)</span>';
-            } else {
-                 if(statusDiv) statusDiv.innerHTML = '<span class="px-2 py-1 bg-green-600/80 rounded text-xs font-bold text-white shadow">🟢 Открыто</span>';
-            }
-            return isOpen;
-        }
-
-        // --- Promo Code Logic ---
-        function applyPromo() {
-            const code = document.getElementById('promo-input').value.toUpperCase().trim();
-            const msg = document.getElementById('promo-message');
-            const codes = {
-                'SHASHLIK2026': 10, 
-                'BELOUSOVKA': 5,
-                'BONUS': 5
-            };
-            
-            msg.classList.remove('hidden');
-            if (codes[code]) {
-                activeDiscount = codes[code];
-                msg.textContent = `✅ Применен код: -${activeDiscount}%`;
-                msg.className = "text-xs mt-1 text-green-500 font-bold";
-                renderCartModal(); 
-            } else {
-                activeDiscount = 0;
-                msg.textContent = "❌ Неверный код";
-                msg.className = "text-xs mt-1 text-red-500 font-bold";
-                renderCartModal();
-            }
-        }
-        
-        // --- Lightbox Logic ---
-        function openImage(src) {
-            const div = document.createElement('div');
-            div.className = 'fixed inset-0 z-[3000] bg-black/95 flex items-center justify-center p-4 cursor-pointer backdrop-blur-sm animate-fade-in';
-            div.onclick = () => div.remove();
-            div.innerHTML = `<img src="${src}" class="max-w-full max-h-full rounded-lg shadow-2xl scale-95 transition-transform duration-300">`;
-            document.body.appendChild(div);
-            setTimeout(() => div.querySelector('img').classList.remove('scale-95'), 10);
-        }
-
-        // --- Order & Format Logic ---
-        function formatPhoneNumber(input) {
-            let value = input.value.replace(/\D/g, '');
-            if (value.startsWith('7') || value.startsWith('8')) value = value.slice(1);
-            let formatted = '+7 ';
-            if (value.length > 0) formatted += '(' + value.substring(0, 3);
-            if (value.length >= 3) formatted += ') ' + value.substring(3, 6);
-            if (value.length >= 6) formatted += '-' + value.substring(6, 8);
-            if (value.length >= 8) formatted += '-' + value.substring(8, 10);
-            input.value = formatted;
-        }
-
-        function sendBooking() {
-            const date = document.getElementById('book-date').value;
-            const time = document.getElementById('book-time').value;
-            const guests = document.getElementById('book-guests').value;
-            const type = document.getElementById('book-type').value; 
-            const name = document.getElementById('book-name').value;
-
-            if (!date || !time) {
-                showNotification('Выберите дату и время!');
-                return;
-            }
-            
-            hideBookingModal();
-            showSuccessAnimation("Бронь принята!", () => {
-                const message = `Здравствуйте! Хочу забронировать столик 🍽️.\n\n📅 *Дата:* ${date}\n⏰ *Время:* ${time}\n🎭 *Тип:* ${type}\n👥 *Гостей:* ${guests}\n👤 *Имя:* ${name}`;
-                const url = `https://wa.me/77055071640?text=${encodeURIComponent(message)}`;
-                window.open(url, '_blank');
-            });
-        }
-
-        function sendCallbackRequest() {
-            const name = document.getElementById('callback-name').value;
-            const phone = document.getElementById('callback-phone').value;
-            const comment = document.getElementById('callback-comment').value;
-
-            if (!name || !phone) {
-                showNotification('Укажите имя и телефон!');
-                return;
-            }
-            
-            hideCallbackModal();
-            showSuccessAnimation("Заявка отправлена!", () => {
-                let message = `Здравствуйте! Перезвоните мне, пожалуйста 📞.\n\n👤 *Имя:* ${name}\n📱 *Телефон:* ${phone}`;
-                if(comment) message += `\n💬 *Коммент:* ${comment}`;
-                const url = `https://wa.me/77055071640?text=${encodeURIComponent(message)}`;
-                window.open(url, '_blank');
-            });
-        }
-
-        function placeOrder() {
-            if (cart.length === 0) return;
-            const name = document.getElementById('order-name').value.trim();
-            const address = document.getElementById('order-address').value.trim();
-            const comment = document.getElementById('order-comment').value.trim();
-            
-            // Re-calc with discount
-            let total = 0;
-            cart.forEach(item => {
-                 const p = getProductById(item.id);
-                 if(p) total += p.price * item.count;
-            });
-            let finalTotal = total;
-            let discountAmount = 0;
-            if (activeDiscount > 0) {
-                discountAmount = Math.floor(total * (activeDiscount / 100));
-                finalTotal = total - discountAmount;
-            }
-
-            if (!address) {
-                showNotification('❗ Пожалуйста, укажите адрес доставки!');
-                const addressInput = document.getElementById('order-address');
-                addressInput.classList.add('border-red-500');
-                addressInput.focus();
-                setTimeout(() => addressInput.classList.remove('border-red-500'), 2000);
-                return;
-            }
-            
-            hideCartModal();
-            showSuccessAnimation("Заказ оформлен!", () => {
-                let orderDetails = "Здравствуйте! Хочу заказать доставку 🍢:\n\n";
-                cart.forEach(item => {
-                    const product = getProductById(item.id);
-                    if (product) {
-                        const itemTotal = product.price * item.count;
-                        orderDetails += `🔹 *${product.name}*\n    ${item.count} шт. х ${product.price} = ${itemTotal} ₸\n`;
-                    }
-                });
-                
-                if (activeDiscount > 0) {
-                     orderDetails += `\n🏷 *Скидка:* ${activeDiscount}% (-${discountAmount} ₸)`;
-                }
-                
-                orderDetails += `\n💰 *ИТОГО: ${finalTotal} ₸*`;
-                if (name) orderDetails += `\n👤 *Имя:* ${name}`;
-                orderDetails += `\n📍 *Адрес:* ${address}`;
-                if (comment) orderDetails += `\n💬 *Коммент:* ${comment}`;
-
-                const url = `https://wa.me/77055071640?text=${encodeURIComponent(orderDetails)}`;
-                window.open(url, '_blank');
-                
-                cart = [];
-                activeDiscount = 0;
-                localStorage.removeItem('shashlyk_cart');
-                document.getElementById('order-address').value = '';
-                document.getElementById('order-comment').value = '';
-                document.getElementById('promo-input').value = '';
-                document.getElementById('promo-message').classList.add('hidden');
-                renderCartUI();
-            });
-        }
-
-        // --- Other Helpers (Share, Cart, Render) ---
-        function shareApp() {
-            const shareData = {
-                title: 'Шашлычный Двор | Доставка по Белоусовке',
-                text: 'Заказывайте вкусный шашлык на углях с доставкой!',
-                url: window.location.href
-            };
-            if (navigator.share) {
-                navigator.share(shareData).catch(err => console.log('Error sharing:', err));
-            } else {
-                const dummy = document.createElement('input');
-                document.body.appendChild(dummy);
-                dummy.value = shareData.url;
-                dummy.select();
-                document.execCommand('copy');
-                document.body.removeChild(dummy);
-                showNotification('Ссылка скопирована!');
-            }
-        }
-
-        function saveCart() { localStorage.setItem('shashlyk_cart', JSON.stringify(cart)); }
-        function loadCart() { try { cart = JSON.parse(localStorage.getItem('shashlyk_cart')) || []; } catch (e) { cart = []; } }
-
-        function updateCartItemCount(productId, delta) {
-            const existingItem = cart.find(item => item.id === productId);
-            if (existingItem) {
-                existingItem.count += delta;
-                if (existingItem.count <= 0) cart = cart.filter(item => item.id !== productId);
-            } else if (delta > 0) {
-                cart.push({ id: productId, count: delta });
-            }
-            saveCart();
-            renderCartUI();
-            renderCartModal(); 
-            renderFullMenu(); 
-        }
-        function getCartCount(productId) {
-            const item = cart.find(i => i.id === productId);
-            return item ? item.count : 0;
-        }
-
-        function renderCartUI() {
-            let total = 0;
-            cart.forEach(item => {
-                const p = getProductById(item.id);
-                if(p) total += p.price * item.count;
-            });
-            // Apply discount for Sticky Bar visual (simplified)
-            if (activeDiscount > 0) {
-                 total = Math.floor(total * ((100 - activeDiscount) / 100));
-            }
-            
-            const totalCount = cart.reduce((sum, item) => sum + item.count, 0);
-            const stickyBar = document.getElementById('sticky-order-bar');
-            const stickyTotal = document.getElementById('sticky-total');
-            
-            if (totalCount > 0) {
-                stickyBar.classList.add('visible');
-                stickyTotal.textContent = `${total} ₸`;
-            } else {
-                stickyBar.classList.remove('visible');
-            }
-
-            const modalFooter = document.getElementById('menu-modal-footer');
-            if (totalCount > 0) {
-                modalFooter.classList.remove('hidden');
-                document.getElementById('modal-footer-count').textContent = totalCount;
-                document.getElementById('modal-footer-price').textContent = `${total} ₸`;
-            } else {
-                modalFooter.classList.add('hidden');
-            }
-
-            const mobileCartBtn = document.getElementById('mobile-cart-btn');
-            if (mobileCartBtn) {
-                 if (totalCount > 0) {
-                     mobileCartBtn.innerHTML = `
-                        <div class="relative">
-                            <svg class="nav-icon text-grill-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                            <span class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">${totalCount}</span>
-                        </div>`;
-                     mobileCartBtn.classList.add('bg-white');
-                     mobileCartBtn.classList.remove('bg-grill-accent');
-                 } else {
-                     mobileCartBtn.innerHTML = `<svg class="nav-icon text-grill-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`;
-                     mobileCartBtn.classList.add('bg-grill-accent');
-                     mobileCartBtn.classList.remove('bg-white');
-                 }
-            }
-        }
-
-        function renderCartModal() {
-            const container = document.getElementById('cart-items-container');
-            const totalElement = document.getElementById('cart-total-price');
-            const oldPriceElement = document.getElementById('cart-old-price');
-            const emptyMessage = document.getElementById('cart-empty-message');
-            const orderBtn = document.getElementById('place-order-btn');
-            const aiButton = document.getElementById('ai-recommendation-btn');
-            const resultBox = document.getElementById('ai-recommendation-result');
-            const formContainer = document.getElementById('order-details-form');
-            const isOpen = checkWorkingHours(); // Re-check hours
-
-            let total = 0;
-            let itemsHTML = '';
-
-            if (cart.length === 0) {
-                emptyMessage.classList.remove('hidden');
-                formContainer.classList.add('hidden'); 
-                container.innerHTML = '';
-                orderBtn.disabled = true;
-                aiButton.disabled = true;
-                totalElement.textContent = "0 ₸";
-                oldPriceElement.classList.add('hidden');
-                resultBox.innerHTML = '';
-            } else {
-                emptyMessage.classList.add('hidden');
-                formContainer.classList.remove('hidden'); 
-                orderBtn.disabled = false;
-                aiButton.disabled = false;
-                cart.forEach(item => {
-                    const product = getProductById(item.id);
-                    if (!product) return;
-                    const itemTotal = product.price * item.count;
-                    total += itemTotal;
-                    itemsHTML += `
-                        <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700">
-                            <div class="flex-grow mr-2">
-                                <p class="text-white font-semibold text-sm sm:text-base">${product.name}</p>
-                                <p class="text-grill-accent text-sm font-bold">${itemTotal} ₸</p>
-                            </div>
-                            <div class="flex items-center bg-gray-700 rounded-lg p-1">
-                                <button onclick="updateCartItemCount('${item.id}', -1)" class="w-8 h-8 flex items-center justify-center text-white hover:text-grill-accent font-bold text-xl active:scale-90 transition">-</button>
-                                <span class="font-bold text-white w-8 text-center">${item.count}</span>
-                                <button onclick="updateCartItemCount('${item.id}', 1)" class="w-8 h-8 flex items-center justify-center text-white hover:text-grill-accent font-bold text-xl active:scale-90 transition">+</button>
-                            </div>
-                        </div>`;
-                });
-                container.innerHTML = itemsHTML;
-            }
-            
-            // Handle Discount & Button State
-            if (activeDiscount > 0) {
-                const discounted = Math.floor(total * ((100 - activeDiscount) / 100));
-                totalElement.textContent = `${discounted} ₸`;
-                oldPriceElement.textContent = `${total} ₸`;
-                oldPriceElement.classList.remove('hidden');
-            } else {
-                totalElement.textContent = `${total} ₸`;
-                oldPriceElement.classList.add('hidden');
-            }
-
-            // Warning if closed
-            if (!isOpen && cart.length > 0) {
-                 orderBtn.innerText = "Заказать (на завтра)";
-                 orderBtn.classList.remove('bg-grill-green', 'hover:bg-[#1DA851]');
-                 orderBtn.classList.add('bg-gray-600', 'hover:bg-gray-500');
-            } else if (cart.length > 0) {
-                 orderBtn.innerText = "Оформить заказ";
-                 orderBtn.classList.add('bg-grill-green', 'hover:bg-[#1DA851]');
-                 orderBtn.classList.remove('bg-gray-600', 'hover:bg-gray-500');
-            }
-        }
-
-        function showCartModal() {
-            hideFullMenuModal();
-            renderCartModal();
-            showModal('cart-modal');
-        }
+        // --- Modals & Utils ---
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); document.body.style.overflow='hidden'; }
+        function hideModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); document.body.style.overflow=''; }
+        function showCartModal() { hideFullMenuModal(); renderCartModal(); showModal('cart-modal'); }
         function hideCartModal() { hideModal('cart-modal'); }
-
-        function createMenuCard(product) {
-            const count = getCartCount(product.id);
-            const buttonState = count > 0 
-                ? `<div class="flex items-center bg-grill-green rounded-lg shadow-lg">
-                     <button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', -1)" class="w-8 h-8 flex items-center justify-center text-white font-bold text-lg active:bg-black/20 rounded-l-lg">-</button>
-                     <span class="text-white font-bold w-6 text-center text-sm">${count}</span>
-                     <button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', 1)" class="w-8 h-8 flex items-center justify-center text-white font-bold text-lg active:bg-black/20 rounded-r-lg">+</button>
-                   </div>`
-                : `<button onclick="event.stopPropagation(); updateCartItemCount('${product.id}', 1)" class="bg-gray-700 hover:bg-grill-accent hover:text-black text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow active:scale-95">
-                     + Добавить
-                   </button>`;
-            return `
-                <div class="flex bg-gray-800 rounded-xl overflow-hidden shadow-lg border border-gray-700">
-                    <div class="w-1/3 min-w-[100px] h-auto relative overflow-hidden" onclick="openImage('${product.img}')">
-                         <img src="${product.img}" alt="${product.name}" class="absolute inset-0 w-full h-full object-cover cursor-zoom-in transition-transform hover:scale-110 duration-500" onerror="this.onerror=null;this.src='https://placehold.co/200x200/444444/FFFFFF?text=Фото'">
-                    </div>
-                    <div class="w-2/3 p-3 flex flex-col justify-between">
-                        <div>
-                            <h4 class="font-bold text-white text-base leading-tight mb-1">${product.name}</h4>
-                            <p class="text-[10px] text-gray-400 line-clamp-2 leading-snug">${product.desc}</p>
-                        </div>
-                        <div class="flex justify-between items-end mt-3">
-                            <span class="text-grill-accent font-bold text-lg">${product.price} ₸</span>
-                            ${buttonState}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
+        function hideFullMenuModal() { hideModal('full-menu-modal'); }
+        function openMenuCategory(tab) { activeMenuTab = tab; renderFullMenu(); showModal('full-menu-modal'); renderCartUI(); }
+        function switchMenuTab(tab) { activeMenuTab = tab; renderFullMenu(); }
+        function openImage(src) { const d=document.createElement('div'); d.className='fixed inset-0 z-[3000] bg-black/95 flex items-center justify-center p-4 cursor-pointer backdrop-blur-sm animate-fade-in'; d.onclick=()=>d.remove(); d.innerHTML=`<img src="${src}" class="max-w-full max-h-full rounded-lg shadow-2xl scale-95 transition-transform duration-300">`; document.body.appendChild(d); setTimeout(() => d.querySelector('img').classList.remove('scale-95'), 10); }
+        function showNotification(msg) { const n=document.getElementById('notification-box'); document.getElementById('notification-text').innerText=msg; n.classList.add('show'); setTimeout(()=>n.classList.remove('show'), 2000); }
+        function hidePWAInstructions() { hideModal('pwa-instructions-modal'); }
+        function showPWAInstructions() { showModal('pwa-instructions-modal'); }
+        function hideBanquetModal() { hideModal('banquet-modal'); }
+        function showBanquetModal() { showModal('banquet-modal'); }
+        function hideBookingModal() { hideModal('booking-modal'); }
+        function hideCallbackModal() { hideModal('callback-modal'); }
+        function showCallbackModal() { showModal('callback-modal'); }
+        function openBanquetBooking() { hideBanquetModal(); showModal('booking-modal'); document.getElementById('book-guests').value = '10+ (Банкет)'; document.getElementById('book-type').value = 'Банкет'; }
+        function bookTable() { showModal('booking-modal'); const today = new Date().toISOString().split('T')[0]; const dateInput = document.getElementById('book-date'); dateInput.min = today; if(!dateInput.value) dateInput.value = today; }
         function scrollToCategory(catId) {
              const element = document.getElementById(`cat-${catId}`);
              const scrollContainer = document.getElementById('full-menu-scroll-area');
@@ -1186,75 +1157,93 @@
                  }
              }
         }
-
-        function renderFullMenu() {
-            const container = document.getElementById('full-menu-container');
-            const navContainer = document.getElementById('modal-category-nav');
-            if (!container || !navContainer) return;
-            let contentHTML = '';
-            let navHTML = '';
-            const categoryKeys = menuGroups[activeMenuTab] || menuGroups['grill'];
-            let isFirst = true;
-
-            categoryKeys.forEach(key => {
-                const categoryProducts = productsData.filter(p => p.category === key);
-                if (categoryProducts.length === 0) return;
-                const catName = menuCategories[key].name;
-                const catIcon = menuCategories[key].icon;
-                const activeClass = isFirst ? 'bg-grill-accent text-black' : 'bg-gray-700 text-white';
-                navHTML += `
-                    <button id="btn-${key}" onclick="scrollToCategory('${key}')" class="cat-nav-btn shrink-0 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition ${activeClass}">
-                        ${catIcon} ${catName}
-                    </button>
-                `;
-                isFirst = false;
-                contentHTML += `
-                    <div id="cat-${key}" class="pt-2">
-                        <h3 class="text-xl font-bold text-white mb-3 flex items-center sticky top-0 bg-stone-900/95 py-2 z-10">
-                            <span class="mr-2">${catIcon}</span> ${catName}
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            ${categoryProducts.map(createMenuCard).join('')}
-                        </div>
-                    </div>
-                `;
+        
+        // Google Sheets Actions
+        function sendBooking() {
+            const date=document.getElementById('book-date').value, time=document.getElementById('book-time').value, name=document.getElementById('book-name').value;
+            if(!date||!time) return showNotification('Заполните дату и время');
+            
+            const guests = document.getElementById('book-guests').value;
+            const type = document.getElementById('book-type').value; 
+            
+            hideBookingModal();
+            sendToGoogleSheets({ action:'booking', date:new Date().toLocaleString('ru-RU'), booking_date:date, booking_time:time, guests: guests, type: type, name:name });
+            showSuccessAnimation("Бронь принята!", () => {
+                window.open(`https://wa.me/77055071640?text=${encodeURIComponent(`Здравствуйте! Хочу забронировать столик 🍽️.\n\n📅 *Дата:* ${date}\n⏰ *Время:* ${time}\n🎭 *Тип:* ${type}\n👥 *Гостей:* ${guests}\n👤 *Имя:* ${name}`)}`, '_blank');
             });
-            container.innerHTML = contentHTML;
-            navContainer.innerHTML = navHTML;
-            document.querySelectorAll('.menu-tab').forEach(tab => tab.classList.remove('active'));
-            document.getElementById(`tab-${activeMenuTab}`).classList.add('active');
+        }
+        function sendCallbackRequest() {
+            const name=document.getElementById('callback-name').value, phone=document.getElementById('callback-phone').value;
+            const comment = document.getElementById('callback-comment').value;
+            if(!name||!phone) return showNotification('Заполните данные');
+            hideCallbackModal();
+            sendToGoogleSheets({ action:'callback', date:new Date().toLocaleString('ru-RU'), name:name, phone:phone, comment: comment });
+            showSuccessAnimation("Заявка отправлена!", () => {
+                let msg = `Здравствуйте! Перезвоните мне, пожалуйста 📞.\n\n👤 *Имя:* ${name}\n📱 *Телефон:* ${phone}`;
+                if(comment) msg += `\n💬 *Коммент:* ${comment}`;
+                window.open(`https://wa.me/77055071640?text=${encodeURIComponent(msg)}`, '_blank');
+            });
+        }
+        
+        // --- Universal Success Animation ---
+        function showSuccessAnimation(titleText, callback) {
+            const overlay = document.getElementById('global-success-overlay');
+            const titleEl = document.getElementById('success-title');
+            const originalTitle = titleEl.textContent;
+            
+            if (titleText) titleEl.textContent = titleText;
+            
+            overlay.classList.remove('hidden');
+            void overlay.offsetWidth; // Force reflow
+            overlay.classList.add('flex');
+            overlay.classList.remove('opacity-0');
+            overlay.classList.add('opacity-100');
+            
+            setTimeout(() => {
+                if (callback) callback();
+                
+                // Hide animation
+                overlay.classList.remove('opacity-100');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('flex');
+                    titleEl.textContent = originalTitle; // Reset title
+                }, 300);
+            }, 2500); // Wait 2.5s
         }
 
-        function openMenuCategory(tabName) {
-            activeMenuTab = tabName;
-            showFullMenuModal();
-        }
-        function switchMenuTab(tabName) {
-            activeMenuTab = tabName;
-            renderFullMenu();
-        }
-        function showFullMenuModal() {
-            renderFullMenu(); 
-            showModal('full-menu-modal');
-            renderCartUI(); 
-        }
-        function hideFullMenuModal() { hideModal('full-menu-modal'); }
-
-        // Initialize
+        // Init
         document.addEventListener('DOMContentLoaded', () => {
-            loadCart();
+            try { cart = JSON.parse(localStorage.getItem('shashlyk_cart')) || []; } catch(e){ cart=[]; }
             renderCartUI();
             checkWorkingHours();
+            window.addEventListener('online', ()=>document.getElementById('offline-alert').classList.add('hidden'));
+            window.addEventListener('offline', ()=>document.getElementById('offline-alert').classList.remove('hidden'));
             
-            // Add Phone Formatting Listeners
-            const phoneInputs = document.querySelectorAll('input[type="tel"]');
-            phoneInputs.forEach(input => {
-                input.addEventListener('input', (e) => formatPhoneNumber(e.target));
+            // Format phone inputs
+            document.querySelectorAll('input[type="tel"]').forEach(i => i.addEventListener('input', e => {
+                let v = e.target.value.replace(/\D/g,'');
+                if(v.startsWith('7')||v.startsWith('8')) v=v.slice(1);
+                e.target.value = v.length>0 ? '+7 ('+v.substring(0,3)+') '+v.substring(3,6)+'-'+v.substring(6,8)+'-'+v.substring(8,10) : '';
+            }));
+            
+            // PWA Install
+            let deferredPrompt;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
             });
-
-            // Online/Offline Listeners
-            window.addEventListener('online', () => document.getElementById('offline-alert').classList.add('hidden'));
-            window.addEventListener('offline', () => document.getElementById('offline-alert').classList.remove('hidden'));
+            window.installApp = async function() {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User response to install prompt: ${outcome}`);
+                    deferredPrompt = null;
+                } else {
+                    showPWAInstructions();
+                }
+            }
         });
     </script>
     
@@ -1269,6 +1258,9 @@
     <section id="hero" class="hero-background min-h-[85vh] flex items-center justify-center text-center py-12">
         <div class="p-4 md:p-8 bg-black/60 rounded-xl max-w-4xl mx-auto flex flex-col items-center w-full">
             <p class="text-xl sm:text-2xl md:text-3xl font-light text-grill-accent mb-8 italic">«Настоящий шашлык с дымком — доставка по Белоусовке»</p>
+            
+            <!-- Статичный баннер НОВЫХ клиентов НЕ добавляется -->
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl mb-8">
                 <button onclick="openMenuCategory('grill')" class="primary-btn bg-grill-red text-white text-lg font-bold py-4 rounded-xl shadow-2xl hover:brightness-110 animate-blink">Заказать шашлык 🍢</button>
                 <button onclick="openMenuCategory('salads')" class="primary-btn bg-white text-grill-dark text-lg font-bold py-4 rounded-xl shadow-2xl hover:bg-gray-100">Заказать салаты 🥗</button>

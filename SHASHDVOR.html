@@ -1213,6 +1213,31 @@
             }, 2500); // Wait 2.5s
         }
 
+        // Функция "Поделиться" с надежным копированием
+        window.shareApp = async function() {
+            const shareData = {
+                title: 'Шашлычный Двор',
+                text: 'Заказывай вкуснейший шашлык с доставкой!',
+                url: 'https://taxiuspeh.github.io/landing-/SHASHDVOR.html'
+            };
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    throw new Error('Web Share API не поддерживается');
+                }
+            } catch (err) {
+                // Запасной вариант (копирование в буфер обмена)
+                const dummy = document.createElement('textarea');
+                document.body.appendChild(dummy);
+                dummy.value = shareData.url;
+                dummy.select();
+                document.execCommand('copy');
+                document.body.removeChild(dummy);
+                showNotification('Ссылка скопирована!');
+            }
+        };
+
         // Init
         document.addEventListener('DOMContentLoaded', () => {
             try { cart = JSON.parse(localStorage.getItem('shashlyk_cart')) || []; } catch(e){ cart=[]; }

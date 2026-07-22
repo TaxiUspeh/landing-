@@ -387,7 +387,7 @@
 
     <!-- MENUS & MODALS -->
     
-    <!-- === NEW FOOD MENU MODAL (ЗАКАЗ ЕДЫ) === -->
+    <!-- === FOOD MENU MODAL (ЗАКАЗ ЕДЫ) === -->
     <div id="foodModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6 text-center">
@@ -397,15 +397,15 @@
                 </div>
                 
                 <div class="space-y-4">
-                    <a href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html" target="_blank"
+                    <a href="https://belousovka.bambuk-yk.kz/" target="_blank"
                        class="block w-full p-6 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition transform hover:scale-105 shadow-md flex items-center justify-between group">
                         <div class="flex items-center gap-4">
                             <div class="bg-red-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl group-hover:bg-red-600 transition">
                                 <i class="fas fa-fire"></i>
                             </div>
                             <div class="text-left">
-                                <h4 class="text-lg font-bold text-gray-800">Шашлычный двор</h4>
-                                <p class="text-sm text-gray-500">Сочный шашлык и гриль</p>
+                                <h4 class="text-lg font-bold text-gray-800">Суши Бамбук</h4>
+                                <p class="text-sm text-gray-500">Вкусные роллы и суши</p>
                             </div>
                         </div>
                         <i class="fas fa-chevron-right text-gray-400"></i>
@@ -1467,6 +1467,7 @@
              updateDeliveryPrice();
         });
         
+        // --- GEO LOCATION FIXES ---
         function setGeoButtonLoading(mode, isLoading, isError = false) {
             let buttonEl, iconEl, textEl;
             if (mode === 'main') {
@@ -1505,56 +1506,87 @@
             }
         }
 
-        window.getCurrentLocation = function(trigger) {
-            if (!navigator.geolocation) {
-                displayMessageModal('Ошибка', 'Геолокация не поддерживается вашим браузером.', true);
-                setGeoButtonLoading(trigger, false, true);
+        function displayMessageModal(title, message, isError = false) {
+            const existingModal = document.getElementById('alertModal');
+            if (existingModal) existingModal.remove();
+            if (!isError && (title === 'Заказ сформирован!' || title === 'Готово!')) {
+                 const modalHtml = `<div id="alertModal" class="fixed inset-0 bg-black bg-opacity-60 z-[2000] flex items-center justify-center p-4"><div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center transform transition-all scale-100"><div class="success-checkmark mb-4"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130.2 130.2"><circle class="path circle" fill="none" stroke="#10b981" stroke-width="6" stroke-miterlimit="10" cx="65.1" cy="65.1" r="62.1"/><polyline class="path check" fill="none" stroke="#10b981" stroke-width="6" stroke-linecap="round" stroke-miterlimit="10" points="100.2,40.2 51.5,88.8 29.8,67.5 "/></svg></div><h3 class="text-2xl font-bold mb-2 text-gray-800 dark:text-white">${title}</h3><p class="mb-6 text-gray-600 dark:text-gray-300 text-sm">${message}</p><button onclick="document.getElementById('alertModal').remove()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition transform hover:scale-105 btn-active">Отлично</button></div></div>`;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
                 return;
             }
+            const modalHtml = `<div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-[2000] flex items-center justify-center p-4"><div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-sm text-center"><h3 class="text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}">${title}</h3><p class="mb-6 text-gray-700 dark:text-gray-300">${message}</p><button onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">OK</button></div></div>`;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        async function fallbackGeolocation(trigger) {
+            try {
+                const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
+                const data = await response.json();
+                if (data && data.latitude && data.longitude) {
+                    handleGeoSuccess(trigger, data.latitude, data.longitude, true);
+                } else {
+                    throw new Error('IP Geo failed');
+                }
+            } catch (e) {
+                setGeoButtonLoading(trigger, false, true);
+                displayMessageModal('Ошибка', 'Не удалось определить местоположение. Проверьте разрешения GPS в браузере.', true);
+            }
+        }
+
+        function handleGeoSuccess(trigger, lat, lon, isApproximate = false) {
+            setGeoButtonLoading(trigger, false, false);
+            lat = parseFloat(lat).toFixed(5);
+            lon = parseFloat(lon).toFixed(5);
+            const yandexMapUrl = `https://yandex.kz/maps/?pt=${lon},${lat}&z=16&l=map`;
+            const approxText = isApproximate ? ' (Примерно по IP)' : '';
+            currentGeolocatedAddress = `[КООРДИНАТЫ] ${lat}, ${lon}${approxText}. Ссылка: ${yandexMapUrl}`; 
+            
+            let inputId, placeholder, successMessage = 'Ваше местоположение добавлено в поле "Откуда".';
+
+            switch (trigger) {
+                case 'main':
+                    locationResultEl.classList.remove('hidden');
+                    locationAddressEl.textContent = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
+                    locationAddressEl.href = yandexMapUrl; 
+                    locationAddressEl.title = 'Открыть местоположение на карте';
+                    setAllLocationFields(currentGeolocatedAddress);
+                    displayMessageModal('Готово!', 'Ваше местоположение добавлено во все формы заказа!', false);
+                    return;
+                case 'taxi': inputId = 'taxiFrom'; placeholder = 'Откуда (Адрес определен)'; break;
+                case 'auction': inputId = 'auctionFrom'; placeholder = 'Откуда (Адрес определен)'; break;
+                case 'delivery': inputId = 'deliveryAddress'; placeholder = 'Адрес доставки (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Адрес доставки".'; break;
+                case 'cargo': inputId = 'cargoFrom'; placeholder = 'Адрес погрузки (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Адрес погрузки".'; break;
+                case 'soberDriver': inputId = 'soberDriverFrom'; placeholder = 'Адрес авто (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Ваш текущий адрес".'; break;
+                case 'assistance': inputId = 'assistanceAddress'; placeholder = 'Адрес помощи (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Адрес (где нужна помощь)".'; break;
+                default: return;
+            }
+            const input = document.getElementById(inputId);
+            if (input) { input.value = currentGeolocatedAddress; input.placeholder = placeholder; }
+            displayMessageModal('Адрес определен', successMessage, false);
+            if (trigger === 'taxi') updateTaxiPrice();
+        }
+
+        window.getCurrentLocation = function(trigger) {
             setGeoButtonLoading(trigger, true);
+            
+            if (!navigator.geolocation) {
+                fallbackGeolocation(trigger);
+                return;
+            }
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    setGeoButtonLoading(trigger, false, false);
-                    const lat = position.coords.latitude.toFixed(5);
-                    const lon = position.coords.longitude.toFixed(5);
-                    const yandexMapUrl = `https://yandex.kz/maps/?pt=${lon},${lat}&z=16&l=map`;
-                    currentGeolocatedAddress = `[КООРДИНАТЫ] ${lat}, ${lon}. Ссылка: ${yandexMapUrl}`; 
-                    
-                    let inputId, message, placeholder, successMessage = 'Ваше местоположение добавлено в поле "Откуда".';
-
-                    switch (trigger) {
-                        case 'main':
-                            locationResultEl.classList.remove('hidden');
-                            locationAddressEl.textContent = `Координаты: ${lat}, ${lon} (Нажмите, чтобы открыть карту)`;
-                            locationAddressEl.href = yandexMapUrl; 
-                            locationAddressEl.title = 'Открыть местоположение на карте';
-                            setAllLocationFields(currentGeolocatedAddress);
-                            displayMessageModal('Готово!', 'Ваше местоположение добавлено во все формы заказа!', false);
-                            return;
-                        case 'taxi': inputId = 'taxiFrom'; placeholder = 'Откуда (Адрес определен)'; break;
-                        case 'auction': inputId = 'auctionFrom'; placeholder = 'Откуда (Адрес определен)'; break;
-                        case 'delivery': inputId = 'deliveryAddress'; placeholder = 'Адрес доставки (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Адрес доставки".'; break;
-                        case 'cargo': inputId = 'cargoFrom'; placeholder = 'Адрес погрузки (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Адрес погрузки".'; break;
-                        case 'soberDriver': inputId = 'soberDriverFrom'; placeholder = 'Адрес авто (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Ваш текущий адрес".'; break;
-                        case 'assistance': inputId = 'assistanceAddress'; placeholder = 'Адрес помощи (Адрес определен)'; successMessage = 'Ваше местоположение добавлено в поле "Адрес (где нужна помощь)".'; break;
-                        default: return;
-                    }
-                    const input = document.getElementById(inputId);
-                    if (input) { input.value = currentGeolocatedAddress; input.placeholder = placeholder; }
-                    displayMessageModal('Адрес определен', successMessage, false);
-                    if (trigger === 'taxi') updateTaxiPrice();
+                    handleGeoSuccess(trigger, position.coords.latitude, position.coords.longitude);
                 },
                 (error) => {
-                    setGeoButtonLoading(trigger, false, true);
-                    let errorMessage = 'Ошибка определения местоположения.';
-                    if (error.code === error.PERMISSION_DENIED) errorMessage = 'Доступ к геолокации запрещен.';
-                    displayMessageModal('Ошибка', errorMessage, true);
+                    console.warn("Geolocation error:", error);
+                    fallbackGeolocation(trigger);
                 },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
             );
         }
-        
+        // --------------------------
+
         let stopCounter = 0; 
         window.addStop = function(containerId, mode) {
             if (stopCounter >= 3) { displayMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false); return; }
@@ -1669,121 +1701,6 @@
             else cargoPriceNoteEl.textContent = 'Минимальный заказ - 1 час.';
         }
 
-        window.openModal = function(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                document.querySelectorAll('.status-message').forEach(el => el.classList.remove('active'));
-                if (modalId === 'taxiModal' || modalId === 'auctionModal') setAddressHistory();
-                modal.classList.add('active');
-                modal.setAttribute('aria-hidden', 'false');
-                if (modalId === 'deliveryModal') {
-                    const hour = new Date().getHours();
-                    if (hour >= 23 || hour < 8) showStatus(modalId, '⚠️ Внимание: Магазины работают до 23:00. Выполнение заказа может быть невозможно.');
-                    updateDeliveryPrice();
-                }
-                const formattedNow = getFormattedCurrentTime();
-                const minTime = new Date().toISOString().slice(0, 16);
-                 if (modalId === 'taxiModal') {
-                      const dtInput = document.getElementById('taxiDateTime');
-                      dtInput.value = formattedNow; dtInput.min = minTime; 
-                      
-                      // Try Lucky Mode on open
-                      initLuckyMode();
-                      updateTaxiPrice(); 
-                 }
-                 if (modalId === 'cargoModal') {
-                      const dtInput = document.getElementById('cargoDateTime');
-                      dtInput.value = formattedNow; dtInput.min = minTime; document.getElementById('cargoMovers').value = '0'; updateCargoPrice(); 
-                 }
-                const firstInput = modal.querySelector('input, textarea, select');
-                if (firstInput) firstInput.focus();
-            }
-        }
-
-        window.closeModal = function(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.remove('active');
-                modal.setAttribute('aria-hidden', 'true');
-                if (modalId === 'taxiModal' || modalId === 'auctionModal') {
-                    const stopsContainerTaxi = document.getElementById('additionalStops');
-                    const stopsContainerAuction = document.getElementById('additionalStopsAuction');
-                    if (stopsContainerTaxi) stopsContainerTaxi.innerHTML = '';
-                    if (stopsContainerAuction) stopsContainerAuction.innerHTML = '';
-                    stopCounter = 0; 
-                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
-                    if (form) form.reset();
-                } else if (modalId === 'servicesMenuModal') {
-                } else {
-                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
-                    if (form) form.reset();
-                }
-                if (modalId === 'assistanceModal') {
-                    document.getElementById('carDetails').classList.add('hidden');
-                    document.getElementById('assistanceType').value = '';
-                }
-                if (modalId === 'taxiModal') {
-                      // Reset Lucky Mode
-                      isLuckyDiscount = false;
-                      const banner = document.getElementById('luckyBanner');
-                      if (banner) banner.classList.add('hidden');
-
-                      const content = document.getElementById('preorderContent');
-                      const icon = document.getElementById('preorderIcon');
-                      if (content && !content.classList.contains('hidden')) content.classList.add('hidden');
-                      if (icon && icon.classList.contains('rotate-180')) icon.classList.remove('rotate-180');
-                      const formattedNow = getFormattedCurrentTime();
-                      document.getElementById('taxiDateTime').value = formattedNow;
-                      updateTaxiPrice(); 
-                 }
-                 if (modalId === 'cargoModal') {
-                      const formattedNow = getFormattedCurrentTime();
-                      document.getElementById('cargoDateTime').value = formattedNow;
-                      document.getElementById('cargoMovers').value = '0'; 
-                      updateCargoPrice(); 
-                 }
-            }
-        }
-
-        function showStatus(modalId, message) {
-            const statusEl = document.getElementById(modalId.replace('Modal', 'Status'));
-            if (statusEl) { statusEl.textContent = message; statusEl.classList.add('active'); }
-        }
-        
-        function displayMessageModal(title, message, isError = false) {
-            const existingModal = document.getElementById('alertModal');
-            if (existingModal) existingModal.remove();
-            if (!isError && (title === 'Заказ сформирован!' || title === 'Готово!')) {
-                 const modalHtml = `<div id="alertModal" class="fixed inset-0 bg-black bg-opacity-60 z-[2000] flex items-center justify-center p-4"><div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center transform transition-all scale-100"><div class="success-checkmark mb-4"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130.2 130.2"><circle class="path circle" fill="none" stroke="#10b981" stroke-width="6" stroke-miterlimit="10" cx="65.1" cy="65.1" r="62.1"/><polyline class="path check" fill="none" stroke="#10b981" stroke-width="6" stroke-linecap="round" stroke-miterlimit="10" points="100.2,40.2 51.5,88.8 29.8,67.5 "/></svg></div><h3 class="text-2xl font-bold mb-2 text-gray-800 dark:text-white">${title}</h3><p class="mb-6 text-gray-600 dark:text-gray-300 text-sm">${message}</p><button onclick="document.getElementById('alertModal').remove()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition transform hover:scale-105 btn-active">Отлично</button></div></div>`;
-                document.body.insertAdjacentHTML('beforeend', modalHtml);
-                return;
-            }
-            const modalHtml = `<div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-sm text-center"><h3 class="text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}">${title}</h3><p class="mb-6 text-gray-700 dark:text-gray-300">${message}</p><button onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">OK</button></div></div>`;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-        }
-
-        function setAllLocationFields(locationText) {
-            const fieldsToFill = [ { id: 'taxiFrom', placeholder: 'Откуда (Адрес определен)' }, { id: 'deliveryAddress', placeholder: 'Адрес доставки (Адрес определен)' }, { id: 'cargoFrom', placeholder: 'Адрес погрузки (Адрес определен)' }, { id: 'soberDriverFrom', placeholder: 'Адрес авто (Адрес определен)' }, { id: 'assistanceAddress', placeholder: 'Адрес помощи (Адрес определен)' }, { id: 'auctionFrom', placeholder: 'Откуда (Адрес определен)' } ];
-            fieldsToFill.forEach(field => {
-                const input = document.getElementById(field.id);
-                if (input) { input.value = locationText; input.placeholder = field.placeholder; }
-            });
-            updateTaxiPrice();
-        }
-        
-        window.updateCargoPrice = function() {
-            const cargoMoversSelect = document.getElementById('cargoMovers');
-            const cargoTotalPriceEl = document.getElementById('cargoTotalPrice');
-            const cargoPriceNoteEl = document.getElementById('cargoPriceNote');
-            if (!cargoMoversSelect || !cargoTotalPriceEl || !cargoPriceNoteEl) return;
-            const moversCount = parseInt(cargoMoversSelect.value) || 0;
-            const totalPrice = CONFIG.CARGO.HOURLY_RATE + (moversCount * CONFIG.CARGO.MOVER_RATE);
-            const formattedPrice = totalPrice.toLocaleString('ru-RU');
-            cargoTotalPriceEl.textContent = `${formattedPrice} тг`;
-            if (moversCount > 0) cargoPriceNoteEl.innerHTML = `Базовая стоимость ${CONFIG.CARGO.HOURLY_RATE.toLocaleString('ru-RU')} тг + доплата за ${moversCount} чел.`;
-            else cargoPriceNoteEl.textContent = 'Минимальный заказ - 1 час.';
-        }
-
         window.togglePreorder = function() {
             const content = document.getElementById('preorderContent');
             const icon = document.getElementById('preorderIcon');
@@ -1880,6 +1797,96 @@
                 if (selectedType === 'Подкачать колесо' || selectedType === 'Прикурить автомобиль') carDetailsDiv.classList.remove('hidden');
                 else carDetailsDiv.classList.add('hidden');
             });
+        }
+
+        window.openModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                document.querySelectorAll('.status-message').forEach(el => el.classList.remove('active'));
+                if (modalId === 'taxiModal' || modalId === 'auctionModal') setAddressHistory();
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                if (modalId === 'deliveryModal') {
+                    const hour = new Date().getHours();
+                    if (hour >= 23 || hour < 8) showStatus(modalId, '⚠️ Внимание: Магазины работают до 23:00. Выполнение заказа может быть невозможно.');
+                    updateDeliveryPrice();
+                }
+                const formattedNow = getFormattedCurrentTime();
+                const minTime = new Date().toISOString().slice(0, 16);
+                 if (modalId === 'taxiModal') {
+                      const dtInput = document.getElementById('taxiDateTime');
+                      dtInput.value = formattedNow; dtInput.min = minTime; 
+                      
+                      // Try Lucky Mode on open
+                      initLuckyMode();
+                      updateTaxiPrice(); 
+                 }
+                 if (modalId === 'cargoModal') {
+                      const dtInput = document.getElementById('cargoDateTime');
+                      dtInput.value = formattedNow; dtInput.min = minTime; document.getElementById('cargoMovers').value = '0'; updateCargoPrice(); 
+                 }
+                const firstInput = modal.querySelector('input, textarea, select');
+                if (firstInput) firstInput.focus();
+            }
+        }
+
+        window.closeModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+                if (modalId === 'taxiModal' || modalId === 'auctionModal') {
+                    const stopsContainerTaxi = document.getElementById('additionalStops');
+                    const stopsContainerAuction = document.getElementById('additionalStopsAuction');
+                    if (stopsContainerTaxi) stopsContainerTaxi.innerHTML = '';
+                    if (stopsContainerAuction) stopsContainerAuction.innerHTML = '';
+                    stopCounter = 0; 
+                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
+                    if (form) form.reset();
+                } else if (modalId === 'servicesMenuModal') {
+                } else {
+                    const form = document.getElementById(modalId.replace('Modal', 'Form'));
+                    if (form) form.reset();
+                }
+                if (modalId === 'assistanceModal') {
+                    document.getElementById('carDetails').classList.add('hidden');
+                    document.getElementById('assistanceType').value = '';
+                }
+                if (modalId === 'taxiModal') {
+                      // Reset Lucky Mode
+                      isLuckyDiscount = false;
+                      const banner = document.getElementById('luckyBanner');
+                      if (banner) banner.classList.add('hidden');
+
+                      const content = document.getElementById('preorderContent');
+                      const icon = document.getElementById('preorderIcon');
+                      if (content && !content.classList.contains('hidden')) content.classList.add('hidden');
+                      if (icon && icon.classList.contains('rotate-180')) icon.classList.remove('rotate-180');
+                      const formattedNow = getFormattedCurrentTime();
+                      document.getElementById('taxiDateTime').value = formattedNow;
+                      updateTaxiPrice(); 
+                 }
+                 if (modalId === 'cargoModal') {
+                      const formattedNow = getFormattedCurrentTime();
+                      document.getElementById('cargoDateTime').value = formattedNow;
+                      document.getElementById('cargoMovers').value = '0'; 
+                      updateCargoPrice(); 
+                 }
+            }
+        }
+
+        function showStatus(modalId, message) {
+            const statusEl = document.getElementById(modalId.replace('Modal', 'Status'));
+            if (statusEl) { statusEl.textContent = message; statusEl.classList.add('active'); }
+        }
+
+        function setAllLocationFields(locationText) {
+            const fieldsToFill = [ { id: 'taxiFrom', placeholder: 'Откуда (Адрес определен)' }, { id: 'deliveryAddress', placeholder: 'Адрес доставки (Адрес определен)' }, { id: 'cargoFrom', placeholder: 'Адрес погрузки (Адрес определен)' }, { id: 'soberDriverFrom', placeholder: 'Адрес авто (Адрес определен)' }, { id: 'assistanceAddress', placeholder: 'Адрес помощи (Адрес определен)' }, { id: 'auctionFrom', placeholder: 'Откуда (Адрес определен)' } ];
+            fieldsToFill.forEach(field => {
+                const input = document.getElementById(field.id);
+                if (input) { input.value = locationText; input.placeholder = field.placeholder; }
+            });
+            updateTaxiPrice();
         }
 
         const forms = document.querySelectorAll('form');
@@ -2081,5 +2088,3 @@
     </script>
 </body>
 </html>
-
-

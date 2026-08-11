@@ -825,29 +825,29 @@
         const FULL_HISTORY_KEY = 'taxi_full_orders_history';
 
         const INTERCITY_RATES = [
-            { keys: ["усть-каменогорск", "устькаменогорск", "ука", "oskemen"], min: 4800, max: 6210 },
-            { keys: ["аэропорт"], min: 5500, max: 5500 },
-            { keys: ["защита"], min: 4800, max: 4800 },
-            { keys: ["глубокое"], min: 4200, max: 4200 },
-            { keys: ["новая бухтарма", "бухтарма"], min: 24150, max: 24150 },
-            { keys: ["риддер", "лениногорск"], min: 25300, max: 25300 },
-            { keys: ["шемонаиха"], min: 20700, max: 20700 },
-            { keys: ["алтай", "зыряновск"], min: 45540, max: 45540 },
-            { keys: ["усть-таловка", "устьталовка", "таловка"], min: 19780, max: 19780 },
-            { keys: ["секисовка"], min: 6440, max: 6440 },
-            { keys: ["белокаменка"], min: 3500, max: 3500 },
-            { keys: ["михайловка"], min: 4000, max: 4000 },
-            { keys: ["прогресс"], min: 2990, max: 3500 },
-            { keys: ["черногорка"], min: 2100, max: 3000 },
-            { keys: ["красный партизан", "партизан"], min: 1800, max: 2500 },
-            { keys: ["планидовка"], min: 2100, max: 2500 },
-            { keys: ["тарханка"], min: 11270, max: 12200 },
-            { keys: ["предгорное"], min: 8500, max: 10000 },
-            { keys: ["алтайский", "поселок алтайский", "п. алтайский"], min: 6000, max: 8000 },
-            { keys: ["зевакино"], min: 15000, max: 15000 },
-            { keys: ["опытное поле", "опытное"], min: 4800, max: 4800 },
-            { keys: ["первомайский"], min: 12000, max: 12000 },
-            { keys: ["верхнеберезовский", "верхнеберёзовский"], min: 8500, max: 8500 }
+            { name: "Усть-Каменогорск", keys: ["усть-каменогорск", "устькаменогорск", "ука", "oskemen", "усть каменогорск", "усть-камен"], min: 4800, max: 6210 },
+            { name: "Аэропорт", keys: ["аэропорт", "аэрапорт", "аеропорт"], min: 5500, max: 5500 },
+            { name: "Защита", keys: ["защита", "защитные", "зощита"], min: 4800, max: 4800 },
+            { name: "Глубокое", keys: ["глубокое", "глубокая", "глубоков"], min: 4200, max: 4200 },
+            { name: "Новая Бухтарма", keys: ["новая бухтарма", "бухтарма", "нов бухтарма"], min: 24150, max: 24150 },
+            { name: "Риддер", keys: ["риддер", "лениногорск", "ридер"], min: 25300, max: 25300 },
+            { name: "Шемонаиха", keys: ["шемонаиха", "шемонеиха", "шемонайка"], min: 20700, max: 20700 },
+            { name: "Алтай (Зыряновск)", keys: ["алтай", "зыряновск", "зырян"], min: 45540, max: 45540 },
+            { name: "Усть-Таловка", keys: ["усть-таловка", "устьталовка", "таловка", "усть таловка"], min: 19780, max: 19780 },
+            { name: "Секисовка", keys: ["секисовка", "секисовк"], min: 6440, max: 6440 },
+            { name: "Белокаменка", keys: ["белокаменка", "белокаменк"], min: 3500, max: 3500 },
+            { name: "Михайловка", keys: ["михайловка", "михайловк"], min: 4000, max: 4000 },
+            { name: "Прогресс", keys: ["прогресс", "прогрес"], min: 2990, max: 3500 },
+            { name: "Черногорка", keys: ["черногорка", "черногорк"], min: 2100, max: 3000 },
+            { name: "Красный Партизан", keys: ["красный партизан", "партизан", "красный партизан"], min: 1800, max: 2500 },
+            { name: "Планидовка", keys: ["планидовка", "планидовк"], min: 2100, max: 2500 },
+            { name: "Тарханка", keys: ["тарханка", "тарханк"], min: 11270, max: 12200 },
+            { name: "Предгорное", keys: ["предгорное", "предгорн"], min: 8500, max: 10000 },
+            { name: "посёлок Алтайский", keys: ["посёлок алтайский", "поселок алтайский", "алтайский"], min: 6000, max: 8000 },
+            { name: "Зевакино", keys: ["зевакино", "зевакин"], min: 15000, max: 15000 },
+            { name: "Опытное поле", keys: ["опытное поле", "опытное", "опытное поле"], min: 4800, max: 4800 },
+            { name: "Первомайский", keys: ["первомайский", "первомайск"], min: 12000, max: 12000 },
+            { name: "Верхнеберёзовский", keys: ["верхнеберёзовский", "верхнеберезовский", "верхнеберезовск"], min: 8500, max: 8500 }
         ];
 
         function levenshtein(a, b) {
@@ -871,16 +871,30 @@
         function findIntercityRate(input) {
             const cleanInput = input.trim().toLowerCase();
             if (cleanInput.length < 3) return null;
+            
+            // 1. Точное или частичное совпадение по ключевым словам
             for (const rate of INTERCITY_RATES) {
                 for (const key of rate.keys) {
                     if (cleanInput.includes(key)) return rate;
-                    if (key.length > 4) {
-                        const dist = levenshtein(cleanInput, key);
-                        if (dist <= 2) return rate;
+                }
+            }
+
+            // 2. Нечеткий поиск (Levenshtein distance) для исправления опечаток
+            let bestMatch = null;
+            let lowestDist = 999;
+            for (const rate of INTERCITY_RATES) {
+                for (const key of rate.keys) {
+                    // Проверяем расстояние Левенштейна для каждого ключевого слова
+                    const dist = levenshtein(cleanInput, key);
+                    // Допускаем опечатку пропорционально длине слова (обычно 2-3 символа)
+                    const threshold = Math.max(2, Math.floor(key.length / 3));
+                    if (dist <= threshold && dist < lowestDist) {
+                        lowestDist = dist;
+                        bestMatch = rate;
                     }
                 }
             }
-            return null;
+            return bestMatch;
         }
 
         function checkShopStatus() {
@@ -1042,7 +1056,6 @@
                 dotColor = 'red';
             }
             else {
-                // Config logic: Cars < 4
                 if (cars < 4) {
                     message = `<b>МАЛО МАШИН (${cars} АВТО)</b><br><span class="font-normal text-xs opacity-90">Цена временно увеличена</span>`;
                     style = 'bg-orange-100/50 border-orange-400 text-orange-900 backdrop-blur-md dark:bg-orange-900/40 dark:border-orange-500 dark:text-orange-100';
@@ -1099,9 +1112,7 @@
             return null;
         }
 
-        // --- LUCKY DISCOUNT LOGIC ---
         window.initLuckyMode = function() {
-            // Check chance (30% chance for demonstration)
             if (Math.random() < CONFIG.LUCKY_DISCOUNT.CHANCE) {
                 isLuckyDiscount = true;
                 const banner = document.getElementById('luckyBanner');
@@ -1130,10 +1141,9 @@
                     price = price * priceMultiplier;
                     price = Math.ceil(price / 10) * 10;
                     
-                    // APPLY DISCOUNT
                     if (isLuckyDiscount) {
                         price -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
-                        if (price < 500) price = 500; // Minimum floor
+                        if (price < 500) price = 500;
                     }
 
                     priceEl.innerText = `~${distKm} км • ${price} ₸`;
@@ -1146,7 +1156,6 @@
             baseMin = Math.ceil((baseMin * priceMultiplier) / 10) * 10;
             baseMax = Math.ceil((baseMax * priceMultiplier) / 10) * 10;
             
-            // APPLY DISCOUNT (Default)
             if (isLuckyDiscount) {
                 baseMin -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
                 baseMax -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
@@ -1234,7 +1243,6 @@
             localStorage.setItem(FULL_HISTORY_KEY, JSON.stringify(orders));
         };
 
-        // === UPDATED POPULATE DATALIST (SMART SUGGESTIONS) ===
         async function populateDatalist(datalistId) {
             const historyArray = await loadAddresses();
             const datalist = document.getElementById(datalistId);
@@ -1242,14 +1250,12 @@
             datalist.innerHTML = ''; 
             
             if (historyArray.length === 0) {
-                // If history is empty, show popular places from CONFIG
                 CONFIG.POPULAR_PLACES.forEach(place => {
                     const option = document.createElement('option');
                     option.value = place;
                     datalist.appendChild(option);
                 });
             } else {
-                // Show history
                 historyArray.forEach(address => {
                     const option = document.createElement('option');
                     option.value = address;
@@ -1615,7 +1621,6 @@
             const toInput = document.getElementById('taxiTo');
             const destination = toInput ? toInput.value.trim() : '';
             
-            // WAIT TIME LOGIC
             if (waitTimeEl) {
                 if (priceMultiplier > 1) {
                     waitTimeEl.textContent = "Подача: 10-25 мин (Спрос/Погода)";
@@ -1635,7 +1640,7 @@
                 if (priceMultiplier > 1) priceText += " (Тариф повышен)";
                 if (isLuckyDiscount) priceText += " (Скидка применена)";
                 
-                priceEl.textContent = priceText;
+                priceEl.textContent = `${priceText} (${rate.name})`;
                 return; 
             }
             const addressCount = countFilledAddresses();
@@ -1644,7 +1649,6 @@
             baseMin = Math.ceil((baseMin * priceMultiplier) / 10) * 10;
             baseMax = Math.ceil((baseMax * priceMultiplier) / 10) * 10;
             
-            // APPLY DISCOUNT (Local Default)
             if (isLuckyDiscount) {
                 baseMin -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
                 baseMax -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
@@ -1705,7 +1709,6 @@
                       const dtInput = document.getElementById('taxiDateTime');
                       dtInput.value = formattedNow; dtInput.min = minTime; 
                       
-                      // Try Lucky Mode on open
                       initLuckyMode();
                       updateTaxiPrice(); 
                  }
@@ -1741,7 +1744,6 @@
                     document.getElementById('assistanceType').value = '';
                 }
                 if (modalId === 'taxiModal') {
-                      // Reset Lucky Mode
                       isLuckyDiscount = false;
                       const banner = document.getElementById('luckyBanner');
                       if (banner) banner.classList.add('hidden');
@@ -1787,19 +1789,6 @@
                 if (input) { input.value = locationText; input.placeholder = field.placeholder; }
             });
             updateTaxiPrice();
-        }
-        
-        window.updateCargoPrice = function() {
-            const cargoMoversSelect = document.getElementById('cargoMovers');
-            const cargoTotalPriceEl = document.getElementById('cargoTotalPrice');
-            const cargoPriceNoteEl = document.getElementById('cargoPriceNote');
-            if (!cargoMoversSelect || !cargoTotalPriceEl || !cargoPriceNoteEl) return;
-            const moversCount = parseInt(cargoMoversSelect.value) || 0;
-            const totalPrice = CONFIG.CARGO.HOURLY_RATE + (moversCount * CONFIG.CARGO.MOVER_RATE);
-            const formattedPrice = totalPrice.toLocaleString('ru-RU');
-            cargoTotalPriceEl.textContent = `${formattedPrice} тг`;
-            if (moversCount > 0) cargoPriceNoteEl.innerHTML = `Базовая стоимость ${CONFIG.CARGO.HOURLY_RATE.toLocaleString('ru-RU')} тг + доплата за ${moversCount} чел.`;
-            else cargoPriceNoteEl.textContent = 'Минимальный заказ - 1 час.';
         }
 
         window.togglePreorder = function() {
@@ -1855,11 +1844,20 @@
         }
         
         window.shareApp = async function() {
-            const shareData = { title: 'Такси «Успех»', text: 'Заказывай такси в Белоусовке быстро и удобно!', url: window.location.href };
+            const shareUrl = window.location.protocol.startsWith('http') ? window.location.href : 'https://taxiuspeh.github.io/landing-/';
+            const shareData = { title: 'Такси «Успех»', text: 'Заказывай такси в Белоусовке быстро и удобно!', url: shareUrl };
             try {
-                if (navigator.share) await navigator.share(shareData);
-                else { copyToClipboard(window.location.href); displayMessageModal('Ссылка скопирована', 'Ссылка на приложение скопирована в буфер обмена.', false); }
-            } catch (err) { console.error(err); }
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    copyToClipboard(shareUrl);
+                    displayMessageModal('Ссылка скопирована', 'Ссылка на приложение скопирована в буфер обмена.', false);
+                }
+            } catch (err) { 
+                console.warn('Share error or cancelled, falling back to clipboard:', err);
+                copyToClipboard(shareUrl);
+                displayMessageModal('Ссылка скопирована', 'Ссылка на приложение скопирована в буфер обмена.', false);
+            }
         }
         
         document.querySelectorAll('.service-btn').forEach(button => {
@@ -1959,12 +1957,18 @@
                 switch (modalKey) {
                     case 'taxi':
                         const fromAddress = document.getElementById('taxiFrom').value.trim();
-                        const toAddress = document.getElementById('taxiTo').value.trim();
+                        let toAddress = document.getElementById('taxiTo').value.trim();
                         const wishes = document.getElementById('taxiWishes').value.trim();
                         const passengerPhone = document.getElementById('passengerPhone').value.trim(); 
                         const preorderContent = document.getElementById('preorderContent');
                         const isPreorderOpen = preorderContent && !preorderContent.classList.contains('hidden');
                         
+                        // Автокоррекция по смыслу/базе населенных пунктов с опечатками
+                        const matchedRate = findIntercityRate(toAddress);
+                        if (matchedRate) {
+                            toAddress = `${matchedRate.name} (Авто-уточнено из: "${toAddress}")`;
+                        }
+
                         if (isPreorderOpen) message = handlePreorder('taxiDateTime', modalConfig.prefix);
                         else message = `${modalConfig.prefix}\n\n`;
                         
@@ -1988,7 +1992,6 @@
                         const currentPriceText = document.getElementById('taxiPriceEstimate').textContent;
                         message += `💰 Примерная цена: ${currentPriceText} (уточнит водитель)`;
                         
-                        // ADD DISCOUNT INFO TO MESSAGE
                         if (isLuckyDiscount) {
                             message += `\n🎁 (Применена скидка клиента -${CONFIG.LUCKY_DISCOUNT.AMOUNT} тг)`;
                         }
@@ -2001,6 +2004,11 @@
                         }
                         break;
                     case 'auction':
+                        let auctionToAddress = document.getElementById('auctionTo').value.trim();
+                        const matchedAuctionRate = findIntercityRate(auctionToAddress);
+                        if (matchedAuctionRate) {
+                            auctionToAddress = `${matchedAuctionRate.name} (Авто-уточнено)`;
+                        }
                         const auctionPrice = document.getElementById('auctionPrice').value;
                         if (!auctionPrice || parseInt(auctionPrice) < CONFIG.AUCTION.MIN_PRICE) {
                             requiredFieldsMissing = true;
@@ -2008,12 +2016,12 @@
                             return;
                         }
                         message += getVal('auctionFrom', 'Откуда', true);
-                        message += getVal('auctionTo', 'Куда', true);
+                        message += `*Куда*:\n${auctionToAddress}\n\n`;
                         message += collectStops('additionalStopsAuction');
                         message += `*Предлагаемая цена*:\n${auctionPrice} KZT\n\n`;
                         message += '⚠️ ПРИМЕЧАНИЕ: Это цена клиента. Примите решение по заказу самостоятельно.';
                         if (document.getElementById('auctionFrom').value.trim()) addressesToSave.push(document.getElementById('auctionFrom').value.trim());
-                        if (document.getElementById('auctionTo').value.trim()) addressesToSave.push(document.getElementById('auctionTo').value.trim());
+                        if (auctionToAddress) addressesToSave.push(auctionToAddress);
                         break;
                     case 'delivery':
                         message += getVal('deliveryItems', 'Список товаров', true);

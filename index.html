@@ -1653,7 +1653,9 @@
             const waitTimeEl = document.getElementById('taxiWaitTime');
             if (!priceEl) return;
             const toInput = document.getElementById('taxiTo');
+            const fromInput = document.getElementById('taxiFrom');
             const destination = toInput ? toInput.value.trim() : '';
+            const origin = fromInput ? fromInput.value.trim() : '';
             
             if (waitTimeEl) {
                 if (priceMultiplier > 1) {
@@ -1665,7 +1667,11 @@
                 }
             }
 
-            const rate = findIntercityRate(destination);
+            let rate = findIntercityRate(destination);
+            if (!rate) {
+                rate = findIntercityRate(origin);
+            }
+            
             if (rate) {
                 const minPrice = Math.ceil((rate.min * priceMultiplier) / 50) * 50;
                 const maxPrice = Math.ceil((rate.max * priceMultiplier) / 50) * 50;
@@ -1990,16 +1996,20 @@
 
                 switch (modalKey) {
                     case 'taxi':
-                        const fromAddress = document.getElementById('taxiFrom').value.trim();
+                        let fromAddress = document.getElementById('taxiFrom').value.trim();
                         let toAddress = document.getElementById('taxiTo').value.trim();
                         const wishes = document.getElementById('taxiWishes').value.trim();
                         const passengerPhone = document.getElementById('passengerPhone').value.trim(); 
                         const preorderContent = document.getElementById('preorderContent');
                         const isPreorderOpen = preorderContent && !preorderContent.classList.contains('hidden');
                         
-                        const matchedRate = findIntercityRate(toAddress);
-                        if (matchedRate) {
-                            toAddress = `${matchedRate.name} (Авто-уточнено из: "${toAddress}")`;
+                        const matchedToRate = findIntercityRate(toAddress);
+                        if (matchedToRate) {
+                            toAddress = `${matchedToRate.name} (Авто-уточнено из: "${toAddress}")`;
+                        }
+                        const matchedFromRate = findIntercityRate(fromAddress);
+                        if (matchedFromRate) {
+                            fromAddress = `${matchedFromRate.name} (Авто-уточнено из: "${fromAddress}")`;
                         }
 
                         if (isPreorderOpen) message = handlePreorder('taxiDateTime', modalConfig.prefix);

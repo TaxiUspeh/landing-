@@ -862,9 +862,25 @@
                     HIGH_DEMAND: 1.2,
                     SCARCE_CARS: 1.3, // "Мало машин"
                     SNOW: 1.5,
-                    EXTREME_COLD: 1.6
+                    EXTREME_COLD: 1.6,
+                    HOLIDAY: 1.25     // <--- Праздничный коэффициент (+25%)
                 }
             },
+            // Список государственных праздников РК (месяц: 0-11, день: 1-31, длительность в днях)
+            HOLIDAYS: [
+                { name: "Новый год", month: 0, day: 1, duration: 4 },
+                { name: "Рождество Христово", month: 0, day: 7, duration: 1 },
+                { name: "Международный женский день", month: 2, day: 8, duration: 1 },
+                { name: "Наурыз мейрамы", month: 2, day: 21, duration: 5 },
+                { name: "Праздник единства народа Казахстана", month: 4, day: 1, duration: 1 },
+                { name: "День защитника Отечества", month: 4, day: 7, duration: 1 },
+                { name: "День Победы", month: 4, day: 9, duration: 3 },
+                { name: "Курбан айт", month: 4, day: 27, duration: 1 },
+                { name: "День Столицы", month: 6, day: 6, duration: 1 },
+                { name: "День Конституции Республики Казахстан", month: 7, day: 30, duration: 3 },
+                { name: "День Республики", month: 9, day: 25, duration: 3 },
+                { name: "День Независимости", month: 11, day: 16, duration: 1 }
+            ],
             DELIVERY: {
                 BASE_PRICE: 1200
             },
@@ -965,7 +981,6 @@
             const cleanInput = input.trim().toLowerCase();
             if (cleanInput.length < 3) return null;
             
-            // Защита от ошибочного срабатывания на местную улицу Алтайская
             if (cleanInput.includes("алтайская")) return null;
             
             for (const rate of INTERCITY_RATES) {
@@ -1083,6 +1098,19 @@
             iconEl.className = `fas ${iconClass} icon`;
         }
 
+        // Функция проверки сегодняшнего дня на праздник из массива
+        function checkHolidayToday() {
+            const now = new Date();
+            for (const h of CONFIG.HOLIDAYS) {
+                const startDate = new Date(now.getFullYear(), h.month, h.day);
+                const endDate = new Date(now.getFullYear(), h.month, h.day + h.duration - 1);
+                if (now >= startDate && now <= endDate) {
+                    return h.name;
+                }
+            }
+            return null;
+        }
+
         const SIM_KEY = 'taxi_sim_state_v2'; 
         window.checkLineStatus = async function() {
             checkShopStatus();
@@ -1120,6 +1148,23 @@
                 window.updateTaxiPrice();
                 window.updateDeliveryPrice();
                 return; 
+            }
+
+            // Проверка на праздник
+            const holidayName = checkHolidayToday();
+            if (holidayName) {
+                message = `<i class="fas fa-glass-cheers mr-2"></i> <b>ПРАЗДНИЧНЫЙ ДЕНЬ: ${holidayName.toUpperCase()}</b><br><span class="font-normal text-xs opacity-90">Действует праздничный тариф (+25%)</span>`;
+                style = 'bg-amber-100/50 border-amber-400 text-amber-900 backdrop-blur-md dark:bg-amber-900/40 dark:border-amber-500 dark:text-amber-100';
+                priceMultiplier = CONFIG.TAXI.MULTIPLIERS.HOLIDAY;
+                
+                if(statusEl) {
+                    statusEl.innerHTML = `<div class="flex items-center justify-center gap-3"><span class="status-dot yellow" style="animation: pulse-yellow 2s infinite;"></span> <div class="text-left leading-tight">${message}</div></div>`;
+                    statusEl.className = `mb-3 p-3 rounded-xl border shadow-lg backdrop-blur-md transition-all duration-500 text-center text-sm font-bold ${style}`;
+                    statusEl.classList.remove('hidden');
+                }
+                window.updateTaxiPrice();
+                window.updateDeliveryPrice();
+                return;
             }
 
             let cars = 0;
@@ -1734,7 +1779,7 @@
             
             if (waitTimeEl) {
                 if (priceMultiplier > 1) {
-                    waitTimeEl.textContent = "Подача: 10-25 мин (Спрос/Погода)";
+                    waitTimeEl.textContent = "Подача: 10-25 мин (Спрос/Погода/Праздник)";
                     waitTimeEl.parentElement.classList.add('text-red-500'); 
                 } else {
                     waitTimeEl.textContent = "Подача: 5-10 мин";
@@ -1792,7 +1837,7 @@
             let base = CONFIG.DELIVERY.BASE_PRICE;
             let final = Math.ceil((base * priceMultiplier) / 50) * 50;
             let text = `от ${final} тг`;
-            if (priceMultiplier > 1) text += " (Высокий спрос)";
+            if (priceMultiplier > 1) text += " (Повышенный тариф)";
             priceEl.textContent = text;
         }
 
@@ -1896,8 +1941,8 @@
             if (existingModal) existingModal.remove();
             if (!isError && (title === 'Заказ сформирован!' || title === 'Готово!')) {
                  const modalHtml = `<div id="alertModal" class="fixed inset-0 bg-black bg-opacity-60 z-[2000] flex items-center justify-center p-4"><div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center transform transition-all scale-100"><div class="success-checkmark mb-4"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130.2 130.2"><circle class="path circle" fill="none" stroke="#10b981" stroke-width="6" stroke-miterlimit="10" cx="65.1" cy="65.1" r="62.1"/><polyline class="path check" fill="none" stroke="#10b981" stroke-width="6" stroke-linecap="round" stroke-miterlimit="10" points="100.2,40.2 51.5,88.8 29.8,67.5 "/></svg></div><h3 class="text-2xl font-bold mb-2 text-gray-800 dark:text-white">${title}</h3><p class="mb-6 text-gray-600 dark:text-gray-300 text-sm">${message}</p><button onclick="document.getElementById('alertModal').remove()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition transform hover:scale-105 btn-active">Отлично</button></div></div>`;
-                document.body.insertAdjacentHTML('beforeend', modalHtml);
-                return;
+                 document.body.insertAdjacentHTML('beforeend', modalHtml);
+                 return;
             }
             const modalHtml = `<div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-[2000] flex items-center justify-center p-4"><div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-sm text-center"><h3 class="text-xl font-bold mb-4 ${isError ? 'text-red-600' : 'text-indigo-600'}">${title}</h3><p class="mb-6 text-gray-700 dark:text-gray-300">${message}</p><button onclick="document.getElementById('alertModal').remove()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">OK</button></div></div>`;
             document.body.insertAdjacentHTML('beforeend', modalHtml);

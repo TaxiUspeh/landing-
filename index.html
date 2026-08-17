@@ -157,7 +157,6 @@
 </head>
 <body class="text-gray-900 min-h-screen flex flex-col">
 
-    <!-- HEADER -->
     <header class="header-bg text-white py-4 rounded-b-lg shadow-lg sticky top-0 z-50">
         <div class="absolute top-2 left-2">
             <div id="weatherWidget" class="weather-widget hidden btn-active" onclick="window.fetchRealWeather()">
@@ -186,7 +185,6 @@
         </div>
     </header>
     
-    <!-- MAIN -->
     <main class="max-w-3xl mx-auto px-4 py-8 flex-grow">
         
         <!-- MAIN BLOCK (TRANSPARENT GLASS) -->
@@ -314,69 +312,15 @@
             </div>
         </div>
 
-        <!-- FAQ BLOCK WITH FULL PRICES -->
-        <div class="mt-10 border-t pt-6 max-w-lg mx-auto border-gray-400 border-opacity-30">
-            <h3 class="text-2xl font-bold text-center text-white text-shadow-md mb-6">Вопросы и Цены</h3>
-            <div id="faq-accordion" class="space-y-4">
-                <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
-                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none btn-active" onclick="toggleAccordion('faq-1')">
-                        <span>💰 Какая минимальная стоимость поездки?</span><i id="icon-faq-1" class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                    </button>
-                    <div id="faq-1" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
-                        <p>Минимальная стоимость поездки по Белоусовке составляет **700 тенге**. Окончательная цена зависит от расстояния и текущей дорожной ситуации.</p>
-                    </div>
+        <!-- FAQ SINGLE BUTTON BLOCK -->
+        <div class="mt-10 border-t pt-6 max-w-md mx-auto border-gray-400 border-opacity-30">
+            <button onclick="openModal('faqModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white font-bold py-4 px-6 rounded-2xl shadow-xl flex items-center justify-between text-lg border border-amber-300/40">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-question-circle text-2xl text-yellow-200"></i>
+                    <span>Вопросы и Цены</span>
                 </div>
-                 <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
-                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none btn-active" onclick="toggleAccordion('faq-4')">
-                        <span>📦 Сколько стоит услуга Доставки?</span><i id="icon-faq-4" class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                    </button>
-                    <div id="faq-4" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
-                        <p>Стоимость услуги доставки начинается **от 1200 KZT**.</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
-                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none btn-active" onclick="toggleAccordion('faq-2')">
-                        <span>⏰ Какой у вас график работы?</span><i id="icon-faq-2" class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                    </button>
-                    <div id="faq-2" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
-                        <p>**Мы работаем круглосуточно (24/7)**, чтобы вы могли уехать в любое время дня и ночи.</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
-                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none btn-active" onclick="toggleAccordion('faq-3')">
-                        <span>📍 Примерные цены на Межгород и пригород</span><i id="icon-faq-3" class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                    </button>
-                    <div id="faq-3" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
-                         <p class="font-bold text-red-600 mb-2">⚠️ ВНИМАНИЕ: Цены ориентировочные!</p>
-                        <ul class="list-disc list-inside mt-2 space-y-1">
-                            <li>**Базовый тариф:** **230 ₸** за 1 км.</li>
-                            <li>Усть-Каменогорск: **4800—6210 ₸**</li>
-                            <li>Аэропорт: **5500 ₸**</li>
-                            <li>Защита: **4800 ₸**</li>
-                            <li>Глубокое: **4200 ₸**</li>
-                            <li>Новая Бухтарма: **24150 ₸**</li>
-                            <li>Риддер: **25300 ₸**</li>
-                            <li>Шемонаиха: **20700 ₸**</li>
-                            <li>Алтай (Зыряновск): **45540 ₸**</li>
-                            <li>Усть-Таловка: **19780 ₸**</li>
-                            <li>Секисовка: **6440 ₸**</li>
-                            <li>Белокаменка: **3500 ₸**</li>
-                            <li>Михайловка: **4000 ₸**</li>
-                            <li>Прогресс: **2990—3500 ₸**</li>
-                            <li>Черногорка: **2100—3000 ₸**</li>
-                            <li>Красный Партизан: **1800—2500 ₸**</li>
-                            <li>Планидовка: **2100—2500 ₸**</li>
-                            <li>Тарханка: **11270—12200 ₸**</li>
-                            <li>Предгорное: **8500—10000 ₸**</li>
-                            <li>посёлок Алтайский: **6000—8000 ₸**</li>
-                            <li>Зевакино: **15000 ₸**</li>
-                            <li>Опытное поле: **4800 ₸**</li>
-                            <li>Первомайский: **12000 ₸**</li>
-                            <li>Верхнеберёзовский: **8500 ₸**</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+                <i class="fas fa-chevron-right text-white opacity-80"></i>
+            </button>
         </div>
         
         <!-- DRIVERS BLOCK -->
@@ -847,6 +791,84 @@
             </div>
         </div>
     </div>
+
+    <!-- === FAQ & PRICES MODAL === -->
+    <div id="faqModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-question-circle text-amber-500"></i> Вопросы и Цены
+                    </h3>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="faqModal">×</button>
+                </div>
+
+                <div id="faq-accordion" class="space-y-4 text-left">
+                    <div class="bg-white dark:bg-gray-700 rounded-xl shadow-md overflow-hidden faq-item border border-gray-100 dark:border-gray-600">
+                        <button class="w-full text-left p-4 flex justify-between items-center text-base font-semibold text-gray-800 dark:text-gray-200 focus:outline-none btn-active" onclick="toggleAccordion('faq-1')">
+                            <span>💰 Минимальная стоимость поездки</span><i id="icon-faq-1" class="fas fa-chevron-down transform transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq-1" class="hidden p-4 pt-0 text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-600 faq-item-content text-sm">
+                            <p>Минимальная стоимость поездки по Белоусовке составляет **700 тенге**. Окончательная цена зависит от расстояния и текущей дорожной ситуации.</p>
+                        </div>
+                    </div>
+                     <div class="bg-white dark:bg-gray-700 rounded-xl shadow-md overflow-hidden faq-item border border-gray-100 dark:border-gray-600">
+                        <button class="w-full text-left p-4 flex justify-between items-center text-base font-semibold text-gray-800 dark:text-gray-200 focus:outline-none btn-active" onclick="toggleAccordion('faq-4')">
+                            <span>📦 Стоимость услуги Доставки</span><i id="icon-faq-4" class="fas fa-chevron-down transform transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq-4" class="hidden p-4 pt-0 text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-600 faq-item-content text-sm">
+                            <p>Стоимость услуги доставки начинается **от 1200 KZT**.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-700 rounded-xl shadow-md overflow-hidden faq-item border border-gray-100 dark:border-gray-600">
+                        <button class="w-full text-left p-4 flex justify-between items-center text-base font-semibold text-gray-800 dark:text-gray-200 focus:outline-none btn-active" onclick="toggleAccordion('faq-2')">
+                            <span>⏰ График работы</span><i id="icon-faq-2" class="fas fa-chevron-down transform transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq-2" class="hidden p-4 pt-0 text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-600 faq-item-content text-sm">
+                            <p>**Мы работаем круглосуточно (24/7)**, чтобы вы могли уехать в любое время дня и ночи.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-700 rounded-xl shadow-md overflow-hidden faq-item border border-gray-100 dark:border-gray-600">
+                        <button class="w-full text-left p-4 flex justify-between items-center text-base font-semibold text-gray-800 dark:text-gray-200 focus:outline-none btn-active" onclick="toggleAccordion('faq-3')">
+                            <span>📍 Цены на Межгород и пригород</span><i id="icon-faq-3" class="fas fa-chevron-down transform transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq-3" class="hidden p-4 pt-0 text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-600 faq-item-content text-sm">
+                             <p class="font-bold text-red-600 dark:text-red-400 mb-2">⚠️ ВНИМАНИЕ: Цены ориентировочные!</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1 text-xs">
+                                <li>**Базовый тариф:** **230 ₸** за 1 км.</li>
+                                <li>Усть-Каменогорск: **4800—6210 ₸**</li>
+                                <li>Аэропорт: **5500 ₸**</li>
+                                <li>Защита: **4800 ₸**</li>
+                                <li>Глубокое: **4200 ₸**</li>
+                                <li>Новая Бухтарма: **24150 ₸**</li>
+                                <li>Риддер: **25300 ₸**</li>
+                                <li>Шемонаиха: **20700 ₸**</li>
+                                <li>Алтай (Зыряновск): **45540 ₸**</li>
+                                <li>Усть-Таловка: **19780 ₸**</li>
+                                <li>Секисовка: **6440 ₸**</li>
+                                <li>Белокаменка: **3500 ₸**</li>
+                                <li>Михайловка: **4000 ₸**</li>
+                                <li>Прогресс: **2990—3500 ₸**</li>
+                                <li>Черногорка: **2100—3000 ₸**</li>
+                                <li>Красный Партизан: **1800—2500 ₸**</li>
+                                <li>Планидовка: **2100—2500 ₸**</li>
+                                <li>Тарханка: **11270—12200 ₸**</li>
+                                <li>Предгорное: **8500—10000 ₸**</li>
+                                <li>посёлок Алтайский: **6000—8000 ₸**</li>
+                                <li>Зевакино: **15000 ₸**</li>
+                                <li>Опытное поле: **4800 ₸**</li>
+                                <li>Первомайский: **12000 ₸**</li>
+                                <li>Верхнеберёзовский: **8500 ₸**</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="closeModal('faqModal')" class="mt-6 w-full bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold py-3 rounded-xl btn-active">Закрыть</button>
+            </div>
+        </div>
+    </div>
+    <!-- === END FAQ MODAL === -->
 
     <!-- PWA & PARTNER MODALS -->
     <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4"><div class="modal"><div class="p-6"><h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните как приложение!</h3><p class="mb-4 text-gray-700">Инструкция...</p><button onclick="document.getElementById('pwaModal').classList.add('hidden')" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-4 rounded-xl btn-active btn-hover">Понятно</button></div></div></div>

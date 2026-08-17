@@ -326,7 +326,9 @@
         <!-- DRIVERS BLOCK -->
         <div class="mt-10 border-t pt-6 text-center border-gray-400 border-opacity-30">
             <h3 class="text-2xl font-bold text-white text-shadow-md mb-4">Приглашаем Водителей!</h3>
-            <a href="https://wa.me/77770649648?text=Хочу%20стать%20водителем..." target="_blank" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover btn-active"><i class="fas fa-car-side mr-2"></i> Отправить Заявку</a>
+            <button onclick="openModal('driverModal')" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover btn-active cursor-pointer">
+                <i class="fas fa-car-side mr-2"></i> Отправить Заявку
+            </button>
         </div>
          <div class="mt-6 border-t pt-6 text-center border-gray-400 border-opacity-30">
             <h3 class="text-xl font-bold text-white text-shadow-md mb-4">Для действующих водителей</h3>
@@ -361,6 +363,53 @@
 
     <!-- MENUS & MODALS -->
     
+    <!-- === DRIVER APPLICATION MODAL === -->
+    <div id="driverModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-car text-indigo-600"></i> Работа водителем
+                    </h3>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="driverModal">×</button>
+                </div>
+                
+                <div class="space-y-4 text-left text-gray-700 dark:text-gray-300">
+                    <p class="text-sm">Приглашаем водителей с личным автомобилем для работы в службе Такси «Успех» (Белоусовка).</p>
+                    
+                    <div class="bg-indigo-50 dark:bg-gray-700 p-4 rounded-xl border border-indigo-200 dark:border-gray-600 space-y-2">
+                        <h4 class="font-bold text-sm text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+                            <i class="fas fa-file-alt">></i> Необходимые документы:
+                        </h4>
+                        <ul class="list-disc list-inside space-y-1.5 text-xs">
+                            <li><b>Удостоверение личности</b></li>
+                            <li><b>Водительское удостоверение</b> (соответствующей категории)</li>
+                            <li><b>Технический паспорт</b> на автомобиль (СРТС)</li>
+                            <li>Смартфон для работы с заказами</li>
+                        </ul>
+                    </div>
+
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Нажмите на кнопку ниже, чтобы отправить заявку или заказать обратный звонок через WhatsApp.</p>
+
+                    <div class="flex flex-col gap-3 pt-4 border-t">
+                        <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20стать%20водителем%20Такси%20Успех.%20Готов(а)%20предоставить%20документы." target="_blank" 
+                           class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
+                            <i class="fab fa-whatsapp text-lg"></i> Отправить заявку (WhatsApp)
+                        </a>
+                        
+                        <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20по%20вопросу%20трудоустройства%20водителем!" target="_blank" 
+                           class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
+                            <i class="fas fa-phone-alt text-lg"></i> Заказать обратный звонок
+                        </a>
+                    </div>
+                </div>
+                
+                <button onclick="closeModal('driverModal')" class="mt-6 text-gray-400 underline hover:text-gray-600 block mx-auto text-sm">Закрыть</button>
+            </div>
+        </div>
+    </div>
+    <!-- === END DRIVER APPLICATION MODAL === -->
+
     <!-- === AUTO INSURANCE MODAL === -->
     <div id="insuranceModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">

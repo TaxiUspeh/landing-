@@ -326,7 +326,7 @@
         <!-- DRIVERS BLOCK -->
         <div class="mt-10 border-t pt-6 text-center border-gray-400 border-opacity-30">
             <h3 class="text-2xl font-bold text-white text-shadow-md mb-4">Приглашаем Водителей!</h3>
-            <a href="https://wa.me/77770649648?text=Хочу%20стать%20водителем..." target="_blank" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover btn-active"><i class="fas fa-car-side mr-2"></i> Отправить Заявку</a>
+            <button onclick="openModal('driverModal')" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover btn-active"><i class="fas fa-car-side mr-2"></i> Отправить Заявку</button>
         </div>
          <div class="mt-6 border-t pt-6 text-center border-gray-400 border-opacity-30">
             <h3 class="text-xl font-bold text-white text-shadow-md mb-4">Для действующих водителей</h3>
@@ -366,41 +366,118 @@
         <div class="modal">
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                         <i class="fas fa-shield-alt text-teal-600"></i> Автострахование
                     </h3>
                     <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="insuranceModal">×</button>
                 </div>
                 
-                <div class="space-y-4 text-left text-gray-700 dark:text-gray-300">
+                <form id="insuranceForm" onsubmit="submitInsuranceForm(event)" class="space-y-4 text-left text-gray-700 dark:text-gray-300">
                     <p class="text-sm">Для оформления обязательного автострахования (ОСАГО) подготовьте следующие документы:</p>
                     
                     <ul class="list-disc list-inside space-y-2 text-sm bg-teal-50 dark:bg-gray-700 p-4 rounded-xl border border-teal-200 dark:border-gray-600">
                         <li><b>Удостоверение личности</b> собственника автомобиля</li>
-                        <li><b>Техпаспорт</b> (Свидетельство о регистрации транспортного средства — СРТС)</li>
-                        <li><b>Водительские удостоверения</b> всех лиц, допущенных к управлению авто</li>
+                        <li><b>Техпаспорт</b> (СРТС)</li>
+                        <li><b>Водительские удостоверения</b> допущенных лиц</li>
                     </ul>
 
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Вы можете отправить фото документов через WhatsApp для быстрого расчета и оформления полиса.</p>
+                    <div class="flex flex-col">
+                        <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Прикрепите фото документов или файл:</label>
+                        <div class="flex items-center gap-2">
+                            <input type="file" id="insuranceFile" accept="image/*,.pdf" capture="environment" class="hidden" onchange="handleFileSelect('insuranceFile', 'insuranceFileLabel')">
+                            <button type="button" onclick="document.getElementById('insuranceFile').click()" class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 text-gray-700 dark:text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 btn-active">
+                                <i class="fas fa-paperclip text-lg text-teal-600"></i> <span id="insuranceFileLabel">Выбрать файл / Сделать фото</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col pt-2">
+                        <label for="insurancePhone" class="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Ваш номер телефона:</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-phone input-icon"></i>
+                            <input id="insurancePhone" name="insurancePhone" type="tel" pattern="[0-9+() -]*" class="form-input-control pl-10" required placeholder="+7 (XXX) XXX-XX-XX">
+                        </div>
+                    </div>
 
                     <div class="flex flex-col gap-3 pt-4 border-t">
-                        <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20оформить%20автостраховку.%20Вот%20мои%20документы:" target="_blank" 
+                        <button type="submit" 
                            class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
-                            <i class="fab fa-whatsapp text-lg"></i> Заказать страховку в WhatsApp
-                        </a>
-                        
-                        <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20по%20вопросу%20автострахования!" target="_blank" 
-                           class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
-                            <i class="fas fa-phone-alt text-lg"></i> Заказать обратный звонок
+                            <i class="fab fa-whatsapp text-lg"></i> Отправить заявку
+                        </button>
+                        <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20по%20вопросу%20автострахования!" target="_blank"
+                           class="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
+                            <i class="fas fa-headset text-lg"></i> Заказать звонок
                         </a>
                     </div>
-                </div>
+                </form>
                 
                 <button onclick="closeModal('insuranceModal')" class="mt-6 text-gray-400 underline hover:text-gray-600 block mx-auto text-sm">Закрыть</button>
             </div>
         </div>
     </div>
     <!-- === END AUTO INSURANCE MODAL === -->
+
+    <!-- === DRIVER APPLICATION MODAL === -->
+    <div id="driverModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-car-side text-indigo-600"></i> Заявка для водителей
+                    </h3>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="driverModal">×</button>
+                </div>
+                
+                <form id="driverForm" onsubmit="submitDriverForm(event)" class="space-y-4 text-left text-gray-700 dark:text-gray-300">
+                    <p class="text-sm">Для работы в Такси «Успех» необходимы следующие документы:</p>
+                    
+                    <ul class="list-disc list-inside space-y-2 text-sm bg-indigo-50 dark:bg-gray-700 p-4 rounded-xl border border-indigo-200 dark:border-gray-600">
+                        <li><b>Водительское удостоверение</b></li>
+                        <li><b>Технический паспорт автомобиля</b> (СРТС)</li>
+                    </ul>
+
+                    <p class="text-xs text-gray-500 dark:text-gray-400">После отправки с вами свяжутся наши менеджеры.</p>
+
+                    <div class="flex flex-col">
+                        <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Прикрепите фото документов или файл:</label>
+                        <div class="flex items-center gap-2">
+                            <input type="file" id="driverFile" accept="image/*,.pdf" capture="environment" class="hidden" onchange="handleFileSelect('driverFile', 'driverFileLabel')">
+                            <button type="button" onclick="document.getElementById('driverFile').click()" class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 text-gray-700 dark:text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 btn-active">
+                                <i class="fas fa-paperclip text-lg text-indigo-600"></i> <span id="driverFileLabel">Выбрать файл / Сделать фото</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col pt-2">
+                        <label for="driverName" class="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Ваше имя:</label>
+                        <input type="text" id="driverName" required placeholder="Введите ваше имя" class="form-input-control">
+                    </div>
+
+                    <div class="flex flex-col pt-2">
+                        <label for="driverPhone" class="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Номер телефона:</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-phone input-icon"></i>
+                            <input id="driverPhone" name="driverPhone" type="tel" pattern="[0-9+() -]*" class="form-input-control pl-10" required placeholder="+7 (XXX) XXX-XX-XX">
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-3 pt-4 border-t">
+                        <button type="submit" 
+                           class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
+                            <i class="fab fa-whatsapp text-lg"></i> Отправить заявку
+                        </button>
+                        <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20по%20заявке%20водителя!" target="_blank"
+                           class="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
+                            <i class="fas fa-headset text-lg"></i> Заказать звонок
+                        </a>
+                    </div>
+                </form>
+                
+                <button onclick="closeModal('driverModal')" class="mt-6 text-gray-400 underline hover:text-gray-600 block mx-auto text-sm">Закрыть</button>
+            </div>
+        </div>
+    </div>
+    <!-- === END DRIVER MODAL === -->
 
     <!-- === NEW FOOD MENU MODAL (ЗАКАЗ ЕДЫ) === -->
     <div id="foodModal" class="modal-overlay" aria-hidden="true" role="dialog">
@@ -1721,6 +1798,24 @@
                     e.target.value = '+7 (' + x[2] + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
                 });
             }
+            
+            const insurancePhoneInput = document.getElementById('insurancePhone');
+            if(insurancePhoneInput) {
+                insurancePhoneInput.addEventListener('input', function (e) {
+                    let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+                    if (!x[2]) { e.target.value = x[1] ? '+7' : ''; return; }
+                    e.target.value = '+7 (' + x[2] + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+                });
+            }
+
+            const driverPhoneInput = document.getElementById('driverPhone');
+            if(driverPhoneInput) {
+                driverPhoneInput.addEventListener('input', function (e) {
+                    let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+                    if (!x[2]) { e.target.value = x[1] ? '+7' : ''; return; }
+                    e.target.value = '+7 (' + x[2] + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+                });
+            }
         }
         
         document.addEventListener('click', (e) => {
@@ -2415,6 +2510,41 @@
         window.showPartnerModal = function() {
             document.getElementById('partnerModal').classList.remove('hidden');
         }
+
+        window.handleFileSelect = function(inputId, labelId) {
+            const input = document.getElementById(inputId);
+            const label = document.getElementById(labelId);
+            if (input && input.files && input.files.length > 0) {
+                const fileName = input.files[0].name;
+                label.textContent = fileName.length > 20 ? fileName.substring(0, 20) + '...' : fileName;
+                label.classList.add('text-green-600', 'font-bold');
+            }
+        };
+
+        window.submitInsuranceForm = function(e) {
+            e.preventDefault();
+            const phone = document.getElementById('insurancePhone').value;
+            const fileInput = document.getElementById('insuranceFile');
+            const hasFile = fileInput.files && fileInput.files.length > 0 ? `Прикреплен файл: ${fileInput.files[0].name}` : 'Файл не прикреплен';
+            
+            const message = `🛡️ ЗАЯВКА НА АВТОСТРАХОВАНИЕ\n\n*Телефон*: ${phone}\n*Документы*: ${hasFile}`;
+            const waLink = `https://wa.me/${CONFIG.PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
+            window.open(waLink, '_blank');
+            closeModal('insuranceModal');
+        };
+
+        window.submitDriverForm = function(e) {
+            e.preventDefault();
+            const name = document.getElementById('driverName').value;
+            const phone = document.getElementById('driverPhone').value;
+            const fileInput = document.getElementById('driverFile');
+            const hasFile = fileInput.files && fileInput.files.length > 0 ? `Прикреплен файл: ${fileInput.files[0].name}` : 'Файл не прикреплен';
+
+            const message = `🚗 ЗАЯВКА НА ВАКАНСИЮ ВОДИТЕЛЯ\n\n*Имя*: ${name}\n*Телефон*: ${phone}\n*Документы (ВУ и техпаспорт)*: ${hasFile}\n\nПосле отправки с вами свяжутся.`;
+            const waLink = `https://wa.me/${CONFIG.PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
+            window.open(waLink, '_blank');
+            closeModal('driverModal');
+        };
     </script>
 </body>
 </html>

@@ -23,7 +23,7 @@
     
     <link rel="icon" type="image/png" href="https://img.icons8.com/color/512/taxi.png">
     <link rel="apple-touch-icon" href="https://img.icons8.com/color/512/taxi.png">
-    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%D0%A2%D0%B0%D0%BA%D1%81%D0%B8%20%D0%A3%D1%81%D0%BF%D0%B5%D1%85%22%2C%22short_name%22%3A%22%D0%A3%D1%81%D0%BF%D0%B5%D1%85%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23ffffff%22%2C%22theme_color%22%3A%22%231d4ed8%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fimg.icons8.com%2Fcolor%2F512%2Ftaxi.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%D0%A2%D0%B0%D0%BA%D1%81%D0%B8%20%D0%A3%D1%81%D0%BF%D0%B5%D1%85%22%2C%22short_name%22%3A%22%D0%A3%D1%81%D0%BF%D0%B5%D1%8х%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23ffffff%22%2C%22theme_color%22%3A%22%231d4ed8%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fimg.icons8.com%2Fcolor%2F512%2Ftaxi.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 
     <!-- Tailwind CSS & Font Awesome -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -45,10 +45,11 @@
         }
         
         .header-bg { background: linear-gradient(135deg, rgba(245, 158, 11, 0.95) 0%, rgba(29, 78, 216, 0.95) 100%); backdrop-filter: blur(10px); transition: background 0.3s; }
-        .btn-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
+        .btn-hover { transition: transform 0.2s, filter 0.2s; }
+        .btn-hover:hover { transform: translateY(-2px); filter: brightness(1.1); }
         .btn-active:active { transform: scale(0.97); }
-        .service-card, .main-card, .auction-cta, .faq-item { transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, border-color 0.3s, color 0.3s; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .service-card:hover { transform: scale(1.03); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .service-card, .main-card, .auction-cta, .faq-item { transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, border-color 0.3s, color 0.3s; border-radius: 14px; box-shadow: 0 6px 15px rgba(0,0,0,0.08); }
+        .service-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
         .auction-cta { background-color: #fff; border: 2px solid #f59e0b; }
         
         .glass-panel {
@@ -192,22 +193,29 @@
         <div class="max-w-md mx-auto p-4 mb-6 glass-panel border-t-4 border-green-500 shadow-2xl">
             <div id="lineStatus" class="mb-3 p-3 rounded-lg text-center text-sm font-bold border hidden shadow-sm transition-all duration-500 bg-white/80"></div>
             
-            <button data-service="taxi" class="service-btn btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center space-x-2 w-full py-3 text-lg mb-3 blink-btn">
-                <i class="fas fa-car-side text-lg"></i><span>Заказать Taxi</span>
+            <button data-service="taxi" class="service-btn btn-hover btn-active bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black py-4 px-4 rounded-xl w-full shadow-lg text-lg flex items-center justify-center space-x-2.5 mb-3.5 blink-btn">
+                <i class="fas fa-car-side text-2xl"></i>
+                <span>Заказать Taxi</span>
             </button>
             
-            <div class="split-btn mb-3">
-                <button onclick="openServicesMenu('whatsapp')" class="btn-hover btn-active split-btn-part split-btn-taxi"><span>Меню услуг</span></button>
-                <button onclick="openModal('foodModal')" class="btn-hover btn-active split-btn-part split-btn-food"><span>Заказ Еды</span></button>
+            <div class="grid grid-cols-2 gap-3 mb-3.5">
+                <button onclick="openServicesMenu('whatsapp')" class="btn-hover btn-active bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-md flex items-center justify-center space-x-2 text-sm">
+                    <i class="fas fa-bars"></i>
+                    <span>Меню услуг</span>
+                </button>
+                <button onclick="openModal('foodModal')" class="btn-hover btn-active bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-md flex items-center justify-center space-x-2 text-sm">
+                    <i class="fas fa-utensils"></i>
+                    <span>Заказ Еды</span>
+                </button>
             </div>
             
-            <div class="grid grid-cols-3 gap-2 mb-4">
-                <button onclick="shareApp()" class="btn-hover btn-active bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-share-alt mb-0.5"></i><span>Поделиться</span></button>
-                <button onclick="openServicesMenu('telegram')" class="btn-hover btn-active bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fab fa-telegram-plane mb-0.5"></i><span>Telegram</span></button>
-                <button data-service="auction" class="service-btn btn-hover btn-active bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-gavel mb-0.5"></i><span>Аукцион</span></button>
+            <div class="grid grid-cols-3 gap-2.5 mb-4">
+                <button onclick="shareApp()" class="btn-hover btn-active bg-gradient-to-br from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-share-alt mb-1 text-base"></i><span>Поделиться</span></button>
+                <button onclick="openServicesMenu('telegram')" class="btn-hover btn-active bg-gradient-to-br from-sky-500 to-sky-700 hover:from-sky-600 hover:to-sky-800 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fab fa-telegram-plane mb-1 text-base"></i><span>Telegram</span></button>
+                <button data-service="auction" class="service-btn btn-hover btn-active bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-gavel mb-1 text-base"></i><span>Аукцион</span></button>
             </div>
             
-            <button type="button" onclick="getCurrentLocation('main')" id="locationBtn" class="w-full glass-mode font-semibold transition flex items-center justify-center space-x-3 shadow-sm btn-active">
+            <button type="button" onclick="getCurrentLocation('main')" id="locationBtn" class="w-full glass-mode font-semibold transition flex items-center justify-center space-x-3 shadow-sm btn-active py-3.5 rounded-xl border border-white/40">
                 <i class="fas fa-location-arrow"></i><span id="locationBtnText">Использовать мое местоположение</span>
             </button>
             <p id="locationResult" class="text-xs text-center text-white mt-2 hidden" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
@@ -215,33 +223,33 @@
             </p>
             
             <div class="mt-4 pt-3 border-t border-white/30 flex justify-center space-x-6 glass-text">
-                <div class="flex items-center space-x-1"><i class="fas fa-money-bill-wave text-xl text-green-400"></i><span class="font-semibold text-xs">Наличные</span></div>
-                <div class="flex items-center space-x-1"><i class="fas fa-exchange-alt text-xl text-blue-400"></i><span class="font-semibold text-xs">Перевод (Kaspi)</span></div>
+                <div class="flex items-center space-x-1.5"><i class="fas fa-money-bill-wave text-xl text-green-400"></i><span class="font-semibold text-xs">Наличные</span></div>
+                <div class="flex items-center space-x-1.5"><i class="fas fa-exchange-alt text-xl text-blue-400"></i><span class="font-semibold text-xs">Перевод (Kaspi)</span></div>
             </div>
         </div>
         
         <!-- SERVICES BLOCK -->
         <h3 class="text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-8 border-gray-400 border-opacity-30">Дополнительные Услуги</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
-            <button id="deliveryBtn" data-service="delivery" class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500 relative overflow-hidden transition-all duration-300">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
+            <button id="deliveryBtn" data-service="delivery" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500 relative overflow-hidden transition-all duration-300">
                 <div id="deliveryStatusBadge" class="absolute top-2 right-2 w-3 h-3 rounded-full bg-gray-300"></div>
                 <i id="deliveryIcon" class="fas fa-box-open text-2xl mb-1 text-green-600 transition-colors"></i><span class="text-sm">Доставка</span>
                 <span id="deliverySubtext" class="text-[9px] text-gray-500 font-normal mt-1 leading-tight min-h-[1.5em] block"></span>
             </button>
-            <button data-service="cargo" class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
+            <button data-service="cargo" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
                 <i class="fas fa-truck-loading text-2xl mb-1 text-yellow-600"></i><span class="text-sm">Грузовой</span>
             </button>
-            <button data-service="soberDriver" class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-red-500">
+            <button data-service="soberDriver" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-red-500">
                 <i class="fas fa-cocktail text-2xl mb-1 text-red-600"></i><span class="text-sm">Трезвый водитель</span>
             </button>
-            <button data-service="assistance" class="service-btn btn-active service-card bg-white p-3 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-indigo-500">
+            <button data-service="assistance" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-indigo-500">
                 <i class="fas fa-life-ring text-2xl mb-1 text-indigo-600"></i><span class="text-sm">Помощь</span>
             </button>
         </div>
         
         <!-- AUTO INSURANCE QUICK BUTTON -->
         <div class="max-w-md mx-auto mb-8">
-            <button onclick="openModal('insuranceModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl font-bold py-3 px-4 shadow-lg flex items-center justify-center space-x-2 text-base">
+            <button onclick="openModal('insuranceModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-teal-600 via-cyan-600 to-teal-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-lg flex items-center justify-center space-x-2.5 text-base border border-teal-400/30">
                 <i class="fas fa-shield-alt text-xl text-yellow-300"></i>
                 <span>Автострахование (ОСАГО / Обязательная)</span>
             </button>
@@ -249,11 +257,11 @@
         
         <!-- QUICK ACTIONS BLOCK -->
         <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md border-t pt-4 border-gray-400 border-opacity-30">Быстрые Действия</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-md mx-auto mb-8">
-            <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" class="btn-hover btn-active bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-star text-xl mb-1"></i><span>Оценка</span></a>
-            <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank" class="btn-hover btn-active bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span></a>
-            <button onclick="showPartnerModal()" class="btn-hover btn-active bg-pink-600 hover:bg-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span></button>
-            <button onclick="installApp()" class="btn-hover btn-active bg-gray-700 hover:bg-gray-800 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span></button>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
+            <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" class="btn-hover btn-active bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-star text-xl mb-1"></i><span>Оценка</span></a>
+            <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank" class="btn-hover btn-active bg-gradient-to-br from-orange-500 to-orange-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span></a>
+            <button onclick="showPartnerModal()" class="btn-hover btn-active bg-gradient-to-br from-pink-500 to-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span></button>
+            <button onclick="installApp()" class="btn-hover btn-active bg-gradient-to-br from-gray-700 to-gray-900 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span></button>
         </div>
         
         <!-- PARTNER INFO -->
@@ -267,10 +275,10 @@
                     <span class="text-xl block leading-tight font-black text-red-600">ТЕХОСМОТР В БЕЛОУСОВКЕ!</span>
                     <span class="text-sm text-gray-700 block mt-1">Официальный ТО: <span class="font-bold">ул. Молодежная, 37</span></span>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                    <a href="https://wa.me/77771383856?text=Здравствуйте!%20Хочу%20записаться%20на%20Технический%20Осмотр" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active"><i class="fab fa-whatsapp mr-2"></i> WhatsApp</a>
-                    <a href="https://yandex.kz/navi/-/CLGK5Sli" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active"><i class="fas fa-map-marked-alt mr-2"></i> Навигатор</a>
-                    <a href="tel:+77771383856" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active"><i class="fas fa-phone-alt mr-2"></i> Звонок</a>
+                <div class="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto mt-2 sm:mt-0">
+                    <a href="https://wa.me/77771383856?text=Здравствуйте!%20Хочу%20записаться%20на%20Технический%20Осмотр" target="_blank" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active btn-hover"><i class="fab fa-whatsapp mr-2 text-base"></i> WhatsApp</a>
+                    <a href="https://yandex.kz/navi/-/CLGK5Sli" target="_blank" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active btn-hover"><i class="fas fa-map-marked-alt mr-2"></i> Навигатор</a>
+                    <a href="tel:+77771383856" class="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active btn-hover"><i class="fas fa-phone-alt mr-2"></i> Звонок</a>
                 </div>
             </div>
         </div>
@@ -311,7 +319,7 @@
             <h3 class="text-2xl font-bold text-center text-white text-shadow-md mb-6">Вопросы и Цены</h3>
             <div id="faq-accordion" class="space-y-4">
                 <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
-                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-1')">
+                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none btn-active" onclick="toggleAccordion('faq-1')">
                         <span>💰 Какая минимальная стоимость поездки?</span><i id="icon-faq-1" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
                     <div id="faq-1" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
@@ -319,7 +327,7 @@
                     </div>
                 </div>
                  <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
-                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-4')">
+                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none btn-active" onclick="toggleAccordion('faq-4')">
                         <span>📦 Сколько стоит услуга Доставки?</span><i id="icon-faq-4" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
                     <div id="faq-4" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
@@ -327,7 +335,7 @@
                     </div>
                 </div>
                 <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
-                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-2')">
+                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none btn-active" onclick="toggleAccordion('faq-2')">
                         <span>⏰ Какой у вас график работы?</span><i id="icon-faq-2" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
                     <div id="faq-2" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
@@ -335,7 +343,7 @@
                     </div>
                 </div>
                 <div class="bg-white rounded-xl shadow-md overflow-hidden faq-item">
-                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none" onclick="toggleAccordion('faq-3')">
+                    <button class="w-full text-left p-4 flex justify-between items-center text-lg font-semibold text-gray-800 focus:outline-none btn-active" onclick="toggleAccordion('faq-3')">
                         <span>📍 Примерные цены на Межгород и пригород</span><i id="icon-faq-3" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                     </button>
                     <div id="faq-3" class="hidden p-4 pt-0 text-gray-600 border-t border-gray-100 faq-item-content">
@@ -374,26 +382,26 @@
         <!-- DRIVERS BLOCK -->
         <div class="mt-10 border-t pt-6 text-center border-gray-400 border-opacity-30">
             <h3 class="text-2xl font-bold text-white text-shadow-md mb-4">Приглашаем Водителей!</h3>
-            <a href="https://wa.me/77770649648?text=Хочу%20стать%20водителем..." target="_blank" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover btn-active"><i class="fas fa-car-side mr-2"></i> Отправить Заявку</a>
+            <a href="https://wa.me/77770649648?text=Хочу%20стать%20водителем..." target="_blank" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover btn-active"><i class="fas fa-car-side mr-2"></i> Отправить Заявку</a>
         </div>
          <div class="mt-6 border-t pt-6 text-center border-gray-400 border-opacity-30">
             <h3 class="text-xl font-bold text-white text-shadow-md mb-4">Для действующих водителей</h3>
-            <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" class="inline-block bg-pink-600 hover:bg-pink-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-lg transition-all btn-active"><i class="fas fa-user-shield mr-2"></i> Вход в режим Водителя</a>
+            <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" class="inline-block bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white px-8 py-3.5 rounded-xl text-lg font-semibold shadow-lg transition-all btn-hover btn-active"><i class="fas fa-user-shield mr-2"></i> Вход в режим Водителя</a>
         </div>
         
     </main>
     
-    <section class="bg-blue-700 py-6 text-center mt-10 shadow-inner">
+    <section class="bg-gradient-to-r from-blue-700 to-indigo-800 py-6 text-center mt-10 shadow-inner">
         <h3 class="text-xl font-bold text-white mb-3">🗺 Откройте Яндекс.Навигатор</h3>
-        <a href="https://yandex.kz/navi" target="_blank" class="inline-block bg-yellow-400 hover:bg-yellow-500 text-blue-900 px-8 py-3 rounded-xl text-lg font-semibold shadow-lg transition-all btn-active"><i class="fas fa-location-arrow mr-2"></i> Открыть Навигатор</a>
+        <a href="https://yandex.kz/navi" target="_blank" class="inline-block bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500 text-blue-950 font-bold px-8 py-3.5 rounded-xl text-lg shadow-lg transition-all btn-active btn-hover"><i class="fas fa-location-arrow mr-2"></i> Открыть Навигатор</a>
     </section>
     
     <div class="fixed bottom-0 left-0 right-0 bottom-bar-glass shadow-2xl z-40 sm:hidden">
         <div class="flex justify-around items-center h-16">
-            <a href="https://wa.me/77770649648?text=Заказ..." class="flex flex-col items-center text-green-600 hover:text-green-700 btn-active p-1 rounded-lg"><i class="fab fa-whatsapp text-2xl"></i><span class="text-xs mt-0.5">Заказ</span></a>
-            <a href="tel:+77770649648" class="flex flex-col items-center text-red-600 hover:text-red-700 btn-active p-1 rounded-lg"><i class="fas fa-phone-alt text-2xl"></i><span class="text-xs mt-0.5">Звонок</span></a>
-            <button onclick="installApp()" class="flex flex-col items-center text-yellow-600 hover:text-yellow-700 btn-active p-1 rounded-lg"><i class="fas fa-mobile-alt text-2xl"></i><span class="text-xs mt-0.5">На экран</span></button>
-            <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" class="flex flex-col items-center text-pink-600 hover:text-pink-700 btn-active p-1 rounded-lg"><i class="fas fa-user-shield text-2xl"></i><span class="text-xs mt-0.5">Водитель</span></a>
+            <a href="https://wa.me/77770649648?text=Заказ..." class="flex flex-col items-center text-green-600 hover:text-green-700 btn-active p-1.5 rounded-xl"><i class="fab fa-whatsapp text-2xl"></i><span class="text-[11px] mt-0.5 font-medium">Заказ</span></a>
+            <a href="tel:+77770649648" class="flex flex-col items-center text-red-600 hover:text-red-700 btn-active p-1.5 rounded-xl"><i class="fas fa-phone-alt text-2xl"></i><span class="text-[11px] mt-0.5 font-medium">Звонок</span></a>
+            <button onclick="installApp()" class="flex flex-col items-center text-yellow-600 hover:text-yellow-700 btn-active p-1.5 rounded-xl"><i class="fas fa-mobile-alt text-2xl"></i><span class="text-[11px] mt-0.5 font-medium">На экран</span></button>
+            <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" class="flex flex-col items-center text-pink-600 hover:text-pink-700 btn-active p-1.5 rounded-xl"><i class="fas fa-user-shield text-2xl"></i><span class="text-[11px] mt-0.5 font-medium">Водитель</span></a>
         </div>
     </div>
     
@@ -433,12 +441,12 @@
 
                     <div class="flex flex-col gap-3 pt-4 border-t">
                         <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20оформить%20автостраховку.%20Вот%20мои%20документы:" target="_blank" 
-                           class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active">
+                           class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
                             <i class="fab fa-whatsapp text-lg"></i> Заказать страховку в WhatsApp
                         </a>
                         
                         <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20по%20вопросу%20автострахования!" target="_blank" 
-                           class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active">
+                           class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
                             <i class="fas fa-phone-alt text-lg"></i> Заказать обратный звонок
                         </a>
                     </div>
@@ -461,9 +469,9 @@
                 
                 <div class="space-y-4">
                     <a href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html" target="_blank"
-                       class="block w-full p-6 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition transform hover:scale-105 shadow-md flex items-center justify-between group">
+                       class="block w-full p-5 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition transform hover:scale-[1.02] shadow-md flex items-center justify-between group">
                         <div class="flex items-center gap-4">
-                            <div class="bg-red-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl group-hover:bg-red-600 transition">
+                            <div class="bg-red-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl group-hover:bg-red-600 transition shadow-md">
                                 <i class="fas fa-fire"></i>
                             </div>
                             <div class="text-left">
@@ -475,9 +483,9 @@
                     </a>
 
                     <a href="https://taxiuspeh.github.io/landing-/food.html" target="_blank"
-                       class="block w-full p-6 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-xl transition transform hover:scale-105 shadow-md flex items-center justify-between group">
+                       class="block w-full p-5 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-xl transition transform hover:scale-[1.02] shadow-md flex items-center justify-between group">
                         <div class="flex items-center gap-4">
-                            <div class="bg-orange-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl group-hover:bg-orange-600 transition">
+                            <div class="bg-orange-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl group-hover:bg-orange-600 transition shadow-md">
                                 <i class="fas fa-utensils"></i>
                             </div>
                             <div class="text-left">
@@ -502,16 +510,16 @@
                     <h3 class="text-xl font-bold text-gray-800">📋 Все услуги</h3>
                     <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="servicesMenuModal">×</button>
                 </div>
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <button onclick="openServiceFromMenu('taxi')" class="p-4 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 flex flex-col items-center text-center transition btn-active"><i class="fas fa-car-side text-2xl text-blue-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Такси</span></button>
-                    <button onclick="openServiceFromMenu('auction')" class="p-4 bg-yellow-50 hover:bg-yellow-100 rounded-xl border border-yellow-200 flex flex-col items-center text-center transition btn-active"><i class="fas fa-gavel text-2xl text-yellow-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Аукцион</span></button>
-                    <button onclick="openServiceFromMenu('delivery')" class="p-4 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 flex flex-col items-center text-center transition btn-active"><i class="fas fa-box-open text-2xl text-green-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Доставка</span></button>
-                    <button onclick="openServiceFromMenu('cargo')" class="p-4 bg-orange-50 hover:bg-orange-100 rounded-xl border border-orange-200 flex flex-col items-center text-center transition btn-active"><i class="fas fa-truck-loading text-2xl text-orange-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Грузовой</span></button>
-                    <button onclick="openServiceFromMenu('soberDriver')" class="p-4 bg-red-50 hover:bg-red-100 rounded-xl border border-red-200 flex flex-col items-center text-center transition btn-active"><i class="fas fa-cocktail text-2xl text-red-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Трезвый</span></button>
-                    <button onclick="openServiceFromMenu('assistance')" class="p-4 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 flex flex-col items-center text-center transition btn-active"><i class="fas fa-life-ring text-2xl text-indigo-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Помощь</span></button>
+                <div class="grid grid-cols-2 gap-3.5 mb-6">
+                    <button onclick="openServiceFromMenu('taxi')" class="p-4 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 flex flex-col items-center text-center transition btn-active btn-hover"><i class="fas fa-car-side text-2xl text-blue-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Такси</span></button>
+                    <button onclick="openServiceFromMenu('auction')" class="p-4 bg-yellow-50 hover:bg-yellow-100 rounded-xl border border-yellow-200 flex flex-col items-center text-center transition btn-active btn-hover"><i class="fas fa-gavel text-2xl text-yellow-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Аукцион</span></button>
+                    <button onclick="openServiceFromMenu('delivery')" class="p-4 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 flex flex-col items-center text-center transition btn-active btn-hover"><i class="fas fa-box-open text-2xl text-green-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Доставка</span></button>
+                    <button onclick="openServiceFromMenu('cargo')" class="p-4 bg-orange-50 hover:bg-orange-100 rounded-xl border border-orange-200 flex flex-col items-center text-center transition btn-active btn-hover"><i class="fas fa-truck-loading text-2xl text-orange-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Грузовой</span></button>
+                    <button onclick="openServiceFromMenu('soberDriver')" class="p-4 bg-red-50 hover:bg-red-100 rounded-xl border border-red-200 flex flex-col items-center text-center transition btn-active btn-hover"><i class="fas fa-cocktail text-2xl text-red-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Трезвый</span></button>
+                    <button onclick="openServiceFromMenu('assistance')" class="p-4 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 flex flex-col items-center text-center transition btn-active btn-hover"><i class="fas fa-life-ring text-2xl text-indigo-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Помощь</span></button>
                 </div>
                 <div id="servicesMenuFooter" class="border-t pt-4 text-center hidden">
-                     <a href="https://t.me/TaxiUspehk" target="_blank" class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg shadow transition btn-active"><i class="fab fa-telegram-plane mr-2"></i> Перейти в Telegram</a>
+                     <a href="https://t.me/TaxiUspehk" target="_blank" class="inline-block bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white font-semibold py-3 px-6 rounded-xl shadow transition btn-active btn-hover"><i class="fab fa-telegram-plane mr-2"></i> Перейти в Telegram</a>
                 </div>
             </div>
         </div>
@@ -524,8 +532,8 @@
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800">🚕 Заказать Такси</h3>
                     <div class="flex gap-2">
-                        <button onclick="window.openModal('historyModal'); window.renderOrderHistory();" class="text-gray-400 hover:text-blue-600 text-2xl" title="Полная история"><i class="fas fa-list-alt"></i></button>
-                        <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="taxiModal">×</button>
+                        <button onclick="window.openModal('historyModal'); window.renderOrderHistory();" class="text-gray-400 hover:text-blue-600 text-2xl p-1 btn-active" title="Полная история"><i class="fas fa-list-alt"></i></button>
+                        <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="taxiModal">×</button>
                     </div>
                 </div>
                 <form id="taxiForm" class="space-y-4">
@@ -549,7 +557,7 @@
                             <div id="taxiHistoryChips" class="history-chips-container mt-2"></div>
                         </div>
                         <div class="relative flex justify-center -my-3 z-10">
-                             <button type="button" onclick="swapTaxiAddresses()" class="bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-full p-2 shadow-md border border-white transition transform hover:rotate-180 focus:outline-none btn-active" title="Поменять местами"><i class="fas fa-exchange-alt rotate-90"></i></button>
+                             <button type="button" onclick="swapTaxiAddresses()" class="bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-full p-2.5 shadow-md border border-white transition transform hover:rotate-180 focus:outline-none btn-active" title="Поменять местами"><i class="fas fa-exchange-alt rotate-90"></i></button>
                         </div>
                         <div class="flex flex-col">
                             <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
@@ -562,8 +570,8 @@
                                 <button type="button" onclick="addStop('additionalStops', 'taxi')" class="add-stop-btn btn-active" title="Добавить адрес"><i class="fas fa-plus"></i></button>
                             </div>
 
-                            <div class="flex flex-col bg-slate-800 dark:bg-gray-700 p-2.5 rounded-xl border border-slate-700 dark:border-gray-600 mt-2">
-                                <label for="taxiCitySelect" class="text-xs font-bold text-white dark:text-blue-200 mb-1 flex items-center gap-1">
+                            <div class="flex flex-col bg-slate-800 dark:bg-gray-700 p-3 rounded-xl border border-slate-700 dark:border-gray-600 mt-2.5">
+                                <label for="taxiCitySelect" class="text-xs font-bold text-white dark:text-blue-200 mb-1.5 flex items-center gap-1">
                                     <i class="fas fa-city text-amber-400"></i> Выберите город / направление (межгород или пригород):
                                 </label>
                                 <select id="taxiCitySelect" name="citySelect" class="form-input-control py-2 text-sm bg-slate-900 text-white dark:bg-gray-800 border-slate-600" onchange="onCitySelectChange()">
@@ -594,23 +602,23 @@
                                 </select>
                             </div>
 
-                            <div id="additionalStops" class="mt-2 space-y-2" oninput="updateTaxiPrice()"></div>
+                            <div id="additionalStops" class="mt-2.5 space-y-2.5" oninput="updateTaxiPrice()"></div>
                         </div>
                     </div>
-                    <div class="border border-blue-200 rounded-lg overflow-hidden">
-                        <button type="button" onclick="togglePreorder()" class="w-full p-3 bg-blue-50 flex justify-between items-center text-left focus:outline-none btn-active">
+                    <div class="border border-blue-200 rounded-xl overflow-hidden">
+                        <button type="button" onclick="togglePreorder()" class="w-full p-3.5 bg-blue-50 flex justify-between items-center text-left focus:outline-none btn-active">
                             <span class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)</span>
                             <i id="preorderIcon" class="fas fa-chevron-down text-blue-500 transition-transform duration-300"></i>
                         </button>
-                        <div id="preorderContent" class="hidden p-3 bg-white border-t border-blue-100 space-y-3">
+                        <div id="preorderContent" class="hidden p-3.5 bg-white border-t border-blue-100 space-y-3">
                             <div class="flex flex-col"><label for="taxiDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время поездки</label><input id="taxiDateTime" name="dateTime" type="datetime-local" class="form-input-control"></div>
                             <div class="flex flex-col"><label for="taxiWishes" class="text-xs font-medium text-gray-600 mb-1">Пожелания</label><textarea id="taxiWishes" name="wishes" rows="2" class="form-input-control" placeholder="Например: Нужно детское кресло..."></textarea>
                                 <div class="flex flex-wrap gap-2 mt-2">
-                                    <button type="button" onclick="addWish('Детское кресло')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">👶 Детское кресло</button>
-                                    <button type="button" onclick="addWish('Пустой багажник')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">🧳 Пустой багажник</button>
-                                    <button type="button" onclick="addWish('С животным')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">🐕 С животным</button>
-                                    <button type="button" onclick="addWish('Кондиционер')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">❄️ Кондиционер</button>
-                                    <button type="button" onclick="addWish('Сдача с 5000/10000')" class="wish-tag px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border hover:bg-blue-100 hover:border-blue-300 transition">💵 Сдача</button>
+                                    <button type="button" onclick="addWish('Детское кресло')" class="wish-tag px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg border hover:bg-blue-100 hover:border-blue-300 transition btn-active">👶 Детское кресло</button>
+                                    <button type="button" onclick="addWish('Пустой багажник')" class="wish-tag px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg border hover:bg-blue-100 hover:border-blue-300 transition btn-active">🧳 Пустой багажник</button>
+                                    <button type="button" onclick="addWish('С животным')" class="wish-tag px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg border hover:bg-blue-100 hover:border-blue-300 transition btn-active">🐕 С животным</button>
+                                    <button type="button" onclick="addWish('Кондиционер')" class="wish-tag px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg border hover:bg-blue-100 hover:border-blue-300 transition btn-active">❄️ Кондиционер</button>
+                                    <button type="button" onclick="addWish('Сдача с 5000/10000')" class="wish-tag px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg border hover:bg-blue-100 hover:border-blue-300 transition btn-active">💵 Сдача</button>
                                 </div>
                             </div>
                         </div>
@@ -632,7 +640,7 @@
                             </div>
                             <div class="price-note text-red-600 font-semibold mt-1 text-xs">Внимание: точная цена после подтверждения.</div>
                         </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Заказать</button>
+                        <button type="submit" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg transition duration-200 btn-active btn-hover">Заказать</button>
                     </div>
                 </form>
             </div>
@@ -643,7 +651,7 @@
     <div id="deliveryModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🛍️ Доставка Товаров</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="deliveryModal">×</button></div>
+                <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🛍️ Доставка Товаров</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="deliveryModal">×</button></div>
                 <form id="deliveryForm" class="space-y-4">
                     <div class="flex flex-col"><label for="deliveryItems" class="text-sm font-medium text-gray-700 mb-1">Список товаров *</label><textarea id="deliveryItems" name="items" rows="3" class="form-input-control" placeholder="Например: хлеб, пиво..." required></textarea></div>
                     <div class="flex flex-col"><label for="deliveryStore" class="text-sm font-medium text-gray-700 mb-1">Пожелания по магазину</label>
@@ -670,7 +678,7 @@
                                 <i class="fas fa-clock mr-1"></i> <span id="deliveryWaitTime">15-30 мин</span>
                             </div>
                         </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Оформить</button>
+                        <button type="submit" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg transition duration-200 btn-active btn-hover">Оформить</button>
                     </div>
                 </form>
             </div>
@@ -681,7 +689,7 @@
     <div id="cargoModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🚚 Грузовые Перевозки</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="cargoModal">×</button></div>
+                <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🚚 Грузовые Перевозки</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="cargoModal">×</button></div>
                 <form id="cargoForm" class="space-y-4">
                     <div class="flex flex-col"><label for="cargoFrom" class="text-sm font-medium text-gray-700 mb-1">Адрес погрузки *</label>
                         <div class="input-with-plus-btn">
@@ -699,7 +707,7 @@
                         </div>
                     </div>
                     <div class="flex flex-col"><label for="cargoDescription" class="text-sm font-medium text-gray-700 mb-1">Описание груза *</label><textarea id="cargoDescription" name="description" rows="2" class="form-input-control" required></textarea></div>
-                    <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3"><p class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Предзаказ</p><div class="flex flex-col"><label for="cargoDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время</label><input id="cargoDateTime" name="dateTime" type="datetime-local" class="form-input-control"></div></div>
+                    <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl space-y-3"><p class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Предзаказ</p><div class="flex flex-col"><label for="cargoDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время</label><input id="cargoDateTime" name="dateTime" type="datetime-local" class="form-input-control"></div></div>
                     <div class="flex flex-col"><label for="cargoMovers" class="text-sm font-medium text-gray-700 mb-1">Грузчики</label><div class="input-with-plus-btn"><select id="cargoMovers" name="movers" class="form-input-control" required onchange="updateCargoPrice()"><option value="0">Не требуются</option><option value="1">1 человек</option><option value="2">2 человека</option></select><span class="text-sm font-bold text-red-600">(+доплата)</span></div></div>
                     <div id="cargoStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
@@ -711,7 +719,7 @@
                             </div>
                             <div id="cargoPriceNote" class="price-note font-semibold text-xs text-gray-500 mt-1"></div>
                         </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Заказать</button>
+                        <button type="submit" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg transition duration-200 btn-active btn-hover">Заказать</button>
                     </div>
                 </form>
             </div>
@@ -722,7 +730,7 @@
     <div id="soberDriverModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🔑 Трезвый Водитель</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="soberDriverModal">×</button></div>
+                <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🔑 Трезвый Водитель</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="soberDriverModal">×</button></div>
                 <form id="soberDriverForm" class="space-y-4">
                     <div class="flex flex-col"><label for="soberDriverFrom" class="text-sm font-medium text-gray-700 mb-1">Где авто *</label>
                         <div class="input-with-plus-btn">
@@ -748,7 +756,7 @@
                     <div id="soberDriverStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div><div class="price-note text-xs text-gray-500">Примерная стоимость:</div><div class="text-xl font-black text-indigo-700">от 3800 тг</div></div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Вызвать</button>
+                        <button type="submit" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg transition duration-200 btn-active btn-hover">Вызвать</button>
                     </div>
                 </form>
             </div>
@@ -759,10 +767,10 @@
     <div id="assistanceModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🙋 Помощь</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="assistanceModal">×</button></div>
+                <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🙋 Помощь</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="assistanceModal">×</button></div>
                 <form id="assistanceForm" class="space-y-4">
                     <div class="flex flex-col"><label for="assistanceType" class="text-sm font-medium text-gray-700 mb-1">Тип помощи *</label><select id="assistanceType" name="type" class="form-input-control" required><option value="">Выберите...</option><option value="Подкачать колесо">Подкачать колесо</option><option value="Прикурить автомобиль">Прикурить автомобиль</option><option value="Прочее поручение/помощь">Прочее</option></select></div>
-                    <div id="carDetails" class="space-y-4 p-3 bg-teal-50 rounded-lg border border-dashed border-teal-300 hidden"><div class="flex flex-col"><label for="carModel" class="text-sm font-medium text-gray-700 mb-1">Марка авто</label>
+                    <div id="carDetails" class="space-y-4 p-3.5 bg-teal-50 rounded-xl border border-dashed border-teal-300 hidden"><div class="flex flex-col"><label for="carModel" class="text-sm font-medium text-gray-700 mb-1">Марка авто</label>
                         <div class="input-wrapper">
                             <i class="fas fa-car input-icon"></i>
                             <input id="carModel" name="carModel" type="text" class="form-input-control pl-10">
@@ -781,7 +789,7 @@
                     <div id="assistanceStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div><div class="price-note text-xs text-gray-500">Стоимость:</div><div class="text-xl font-black text-indigo-700">от 1500 тг</div></div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Оформить</button>
+                        <button type="submit" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg transition duration-200 btn-active btn-hover">Оформить</button>
                     </div>
                 </form>
             </div>
@@ -792,7 +800,7 @@
     <div id="auctionModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🔨 Аукцион</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="auctionModal">×</button></div>
+                <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🔨 Аукцион</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="auctionModal">×</button></div>
                 <form id="auctionForm" class="space-y-4">
                     <div id="addressInputsAuction">
                         <div class="flex flex-col"><label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда</label>
@@ -811,7 +819,7 @@
                                     <input id="auctionTo" name="to" type="text" autocomplete="off" class="form-input-control pl-10" required>
                                 </div>
                                 <button type="button" onclick="addStop('additionalStopsAuction', 'auction')" class="add-stop-btn btn-active"><i class="fas fa-plus"></i></button>
-                            </div><div id="additionalStopsAuction" class="mt-2 space-y-2"></div>
+                            </div><div id="additionalStopsAuction" class="mt-2.5 space-y-2.5"></div>
                         </div>
                     </div>
                     <div class="flex flex-col"><label for="auctionPrice" class="text-sm font-medium text-gray-700 mb-1">Ваша цена</label>
@@ -823,7 +831,7 @@
                     <div id="auctionStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div><div class="price-estimate text-yellow-600 font-bold">Начните от 500 тг</div></div>
-                        <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 btn-active">Предложить</button>
+                        <button type="submit" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg transition duration-200 btn-active btn-hover">Предложить</button>
                     </div>
                 </form>
             </div>
@@ -834,15 +842,15 @@
     <div id="historyModal" class="modal-overlay" aria-hidden="true">
         <div class="modal">
             <div class="p-6">
-                <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black text-gray-800 dark:text-white uppercase tracking-tighter">📜 ИСТОРИЯ ЗАКАЗОВ</h3><button onclick="window.closeModal('historyModal')" class="text-2xl text-gray-400 hover:text-gray-600 btn-active">&times;</button></div>
+                <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black text-gray-800 dark:text-white uppercase tracking-tighter">📜 ИСТОРИЯ ЗАКАЗОВ</h3><button onclick="window.closeModal('historyModal')" class="text-2xl text-gray-400 hover:text-gray-600 btn-active p-1">&times;</button></div>
                 <div id="fullHistoryContainer" class="space-y-4 max-h-[60vh] overflow-y-auto"><div class="text-center text-gray-400 py-10">Пока нет истории поездок</div></div>
             </div>
         </div>
     </div>
 
     <!-- PWA & PARTNER MODALS -->
-    <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4"><div class="modal"><div class="p-6"><h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните как приложение!</h3><p class="mb-4 text-gray-700">Инструкция...</p><button onclick="document.getElementById('pwaModal').classList.add('hidden')" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">Понятно</button></div></div></div>
-    <div id="partnerModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4"><div class="modal"><div class="p-6"><h3 class="text-2xl font-bold mb-4 text-pink-600 flex items-center justify-center">Партнеры</h3><p class="mb-4 text-gray-800">Здесь будет реклама...</p><button onclick="document.getElementById('partnerModal').classList.add('hidden')" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg btn-active">Закрыть</button></div></div></div>
+    <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4"><div class="modal"><div class="p-6"><h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните как приложение!</h3><p class="mb-4 text-gray-700">Инструкция...</p><button onclick="document.getElementById('pwaModal').classList.add('hidden')" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-4 rounded-xl btn-active btn-hover">Понятно</button></div></div></div>
+    <div id="partnerModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4"><div class="modal"><div class="p-6"><h3 class="text-2xl font-bold mb-4 text-pink-600 flex items-center justify-center">Партнеры</h3><p class="mb-4 text-gray-800">Здесь будет реклама...</p><button onclick="document.getElementById('partnerModal').classList.add('hidden')" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-4 rounded-xl btn-active btn-hover">Закрыть</button></div></div></div>
 
     <!-- ========================================================= -->
     <!-- JAVASCRIPT LOGIC -->
@@ -1125,7 +1133,6 @@
                 pushBtn.classList.remove('hidden');
                 updatePushIconState();
                 
-                // Проверить праздники или ночное время для автоматической отправки уведомления при первом запущенном сеансе
                 checkForAutoNotifications();
             } else {
                 pushBtn.classList.add('hidden');
@@ -1193,12 +1200,11 @@
             const todayStr = new Date().toDateString();
             const lastPush = localStorage.getItem(lastPushKey);
 
-            if (lastPush === todayStr) return; // Уже отправляли сегодня
+            if (lastPush === todayStr) return;
 
             const holiday = checkHolidayToday();
             const hour = new Date().getHours();
 
-            // Проверяем погоду для пуш-уведомлений о непогоде
             window.fetchRealWeather().then(weather => {
                 if (weather) {
                     const temp = weather.temperature;
@@ -1264,7 +1270,6 @@
                 return; 
             }
 
-            // Проверка на праздник
             const holidayName = checkHolidayToday();
             if (holidayName) {
                 message = `<i class="fas fa-glass-cheers mr-2"></i> <b>ПРАЗДНИЧНЫЙ ДЕНЬ: ${holidayName.toUpperCase()}</b><br><span class="font-normal text-xs opacity-90">Действует праздничный тариф (+25%)</span>`;
@@ -1722,7 +1727,7 @@
              initPhoneMask(); 
              setAddressHistory(); 
              checkLineStatus(); 
-             initPwaPushNotifications(); // Инициализация Push-уведомлений
+             initPwaPushNotifications();
              setInterval(checkLineStatus, 60000); 
              
              const formattedNow = getFormattedCurrentTime();

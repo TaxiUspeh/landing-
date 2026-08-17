@@ -166,6 +166,11 @@
                 </div>
             </div>
         </div>
+        <div class="absolute top-2 right-14">
+            <button id="pushToggleBtn" onclick="togglePushNotifications()" title="Уведомления" class="text-white p-2 rounded-full bg-black bg-opacity-10 hover:bg-opacity-30 transition-all focus:outline-none z-50 btn-active hidden">
+                <i id="pushIcon" class="fas fa-bell text-lg"></i>
+            </button>
+        </div>
         <div class="absolute top-2 right-2">
             <button id="themeToggle" onclick="toggleTheme()" class="text-white p-2 rounded-full bg-black bg-opacity-10 hover:bg-opacity-30 transition-all focus:outline-none z-50 btn-active">
                 <i id="themeIcon" class="fas fa-moon text-lg"></i>
@@ -1098,7 +1103,6 @@
             iconEl.className = `fas ${iconClass} icon`;
         }
 
-        // Функция проверки сегодняшнего дня на праздник из массива
         function checkHolidayToday() {
             const now = new Date();
             for (const h of CONFIG.HOLIDAYS) {
@@ -1110,6 +1114,116 @@
             }
             return null;
         }
+
+        // === PUSH NOTIFICATIONS / PWA SYSTEM LOGIC ===
+        function initPwaPushNotifications() {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            const pushBtn = document.getElementById('pushToggleBtn');
+            if (!pushBtn) return;
+
+            if (isStandalone) {
+                pushBtn.classList.remove('hidden');
+                updatePushIconState();
+                
+                // Проверить праздники или ночное время для автоматической отправки уведомления при первом запущенном сеансе
+                checkForAutoNotifications();
+            } else {
+                pushBtn.classList.add('hidden');
+            }
+        }
+
+        function updatePushIconState() {
+            const icon = document.getElementById('pushIcon');
+            if (!icon) return;
+            if (Notification.permission === 'granted') {
+                icon.className = 'fas fa-bell text-lg text-yellow-300';
+            } else {
+                icon.className = 'fas fa-bell-slash text-lg text-gray-300';
+            }
+        }
+
+        window.togglePushNotifications = async function() {
+            if (!("Notification" in window)) {
+                displayMessageModal('Уведомления', 'Ваш браузер не поддерживает уведомления.', true);
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                displayMessageModal('Уведомления', 'Уведомления уже включены! Мы будем присылать вам информацию о выгодных тарифах и акциях.', false);
+                sendLocalPushNotification("Такси «Успех»", "Уведомления активны. Вы первыми узнаете о праздничных акциях!");
+            } else if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                updatePushIconState();
+                if (permission === 'granted') {
+                    displayMessageModal('Успешно!', 'Уведомления успешно включены!', false);
+                    sendLocalPushNotification("Такси «Успех»", "Спасибо! Теперь вы будете получать уведомления о ночных тарифах и праздниках.");
+                } else {
+                    displayMessageModal('Внимание', 'Вы заблокировали уведомления в браузере.', true);
+                }
+            } else {
+                displayMessageModal('Внимание', 'Уведомления заблокированы в настройках браузера. Разрешите их в адресной строке.', true);
+            }
+        }
+
+        function sendLocalPushNotification(title, bodyText) {
+            if (Notification.permission === 'granted') {
+                try {
+                    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.ready.then(registration => {
+                            registration.showNotification(title, {
+                                body: bodyText,
+                                icon: 'https://img.icons8.com/color/512/taxi.png',
+                                badge: 'https://img.icons8.com/color/512/taxi.png',
+                                vibrate: [200, 100, 200]
+                            });
+                        });
+                    } else {
+                        new Notification(title, {
+                            body: bodyText,
+                            icon: 'https://img.icons8.com/color/512/taxi.png'
+                        });
+                    }
+                } catch(e) { console.warn("Push error:", e); }
+            }
+        }
+
+        function checkForAutoNotifications() {
+            if (Notification.permission !== 'granted') return;
+            const lastPushKey = 'taxi_last_push_date';
+            const todayStr = new Date().toDateString();
+            const lastPush = localStorage.getItem(lastPushKey);
+
+            if (lastPush === todayStr) return; // Уже отправляли сегодня
+
+            const holiday = checkHolidayToday();
+            const hour = new Date().getHours();
+
+            // Проверяем погоду для пуш-уведомлений о непогоде
+            window.fetchRealWeather().then(weather => {
+                if (weather) {
+                    const temp = weather.temperature;
+                    const code = weather.weathercode;
+                    if (temp <= -25) {
+                        sendLocalPushNotification("🥶 Сильный мороз в Белоусовке!", `Температура упала до ${temp}°C. Машин на линии меньше, тариф повышен. Рекомендуем заказывать заранее!`);
+                        localStorage.setItem(lastPushKey, todayStr);
+                        return;
+                    } else if (code === 73 || code === 75 || code === 85 || code === 86) {
+                        sendLocalPushNotification("❄️ Снегопад и метель!", `На дорогах сложные условия. Возрос спрос на такси и доставка может занимать больше времени.`);
+                        localStorage.setItem(lastPushKey, todayStr);
+                        return;
+                    }
+                }
+
+                if (holiday) {
+                    sendLocalPushNotification("Праздничный тариф!", `Сегодня праздник: ${holiday}. Действует специальный комфортный тариф Такси «Успех».`);
+                    localStorage.setItem(lastPushKey, todayStr);
+                } else if (hour >= 22 || hour < 5) {
+                    sendLocalPushNotification("Ночные поездки в Белоусовке", "Работаем круглосуточно! Заказывайте такси в один клик.");
+                    localStorage.setItem(lastPushKey, todayStr);
+                }
+            });
+        }
+        // =========================================================
 
         const SIM_KEY = 'taxi_sim_state_v2'; 
         window.checkLineStatus = async function() {
@@ -1608,6 +1722,7 @@
              initPhoneMask(); 
              setAddressHistory(); 
              checkLineStatus(); 
+             initPwaPushNotifications(); // Инициализация Push-уведомлений
              setInterval(checkLineStatus, 60000); 
              
              const formattedNow = getFormattedCurrentTime();

@@ -539,13 +539,15 @@
                     <div id="addressInputsTaxi">
                         <div class="flex flex-col">
                             <label for="taxiFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес) *</label>
-                            <div class="input-with-plus-btn">
-                                <div class="input-wrapper">
+                            <div class="flex gap-1.5 w-full">
+                                <div class="input-wrapper flex-grow min-w-0">
                                     <i class="fas fa-map-marker-alt input-icon"></i>
-                                    <input id="taxiFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control pl-10" placeholder="Улица, дом" required oninput="updateTaxiPrice()">
+                                    <input id="taxiFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required oninput="updateTaxiPrice()">
                                 </div>
                                 <datalist id="fromHistory"></datalist>
-                                <button type="button" onclick="getCurrentLocation('taxi')" class="geo-btn btn-active" title="Использовать мое местоположение"><i id="taxiGeoIcon" class="fas fa-compass"></i></button>
+                                <input id="taxiHouse" name="taxiHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
+                                <input id="taxiApt" name="taxiApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
+                                <button type="button" onclick="getCurrentLocation('taxi')" class="geo-btn btn-active flex-shrink-0" title="Использовать мое местоположение"><i id="taxiGeoIcon" class="fas fa-compass"></i></button>
                             </div>
                             <div id="taxiHistoryChips" class="history-chips-container mt-2"></div>
                         </div>
@@ -565,20 +567,32 @@
 
                             <div class="flex flex-col bg-slate-800 dark:bg-gray-700 p-3 rounded-xl border border-slate-700 dark:border-gray-600 mt-2.5">
                                 <label for="taxiCitySelect" class="text-xs font-bold text-white dark:text-blue-200 mb-1.5 flex items-center gap-1">
-                                    <i class="fas fa-city text-amber-400"></i> Выберите город / направление (межгород или пригород):
+                                    <i class="fas fa-city text-amber-400"></i> Выберите направление или город:
                                 </label>
                                 <select id="taxiCitySelect" name="citySelect" class="form-input-control py-2 text-sm bg-slate-900 text-white dark:bg-gray-800 border-slate-600" onchange="onCitySelectChange()">
                                     <option value="">🏠 Посёлок Белоусовка (Внутри посёлка / Улица)</option>
                                     <option value="Усть-Каменогорск">🌆 Усть-Каменогорск (4800—6210 ₸)</option>
+                                    <option value="Кшт">🏙️ КШТ (8600—10000 ₸)</option>
                                     <option value="Аэропорт">✈️ Аэропорт (5500 ₸)</option>
                                     <option value="Защита">🚂 Защита (4800 ₸)</option>
+                                    <option value="Аблакетка">🏘️ Аблакетка (8280—9000 ₸)</option>
+                                    <option value="Меновное">🏘️ Меновное (6500—6800 ₸)</option>
+                                    <option value="Ахмирово">🏘️ Ахмирово (6200—6500 ₸)</option>
+                                    <option value="Опытное поле">🏡 Опытное поле (4800 ₸)</option>
                                     <option value="Глубокое">🏘️ Глубокое (4200 ₸)</option>
+                                    <option value="Прапорщиково">🏘️ Прапорщиково (3800—5100 ₸)</option>
+                                    <option value="Уварово">🏘️ Уварово (3500—4500 ₸)</option>
                                     <option value="Новая Бухтарма">🌊 Новая Бухтарма (24150 ₸)</option>
                                     <option value="Риддер">🏔️ Риддер (25300 ₸)</option>
                                     <option value="Шемонаиха">🏙️ Шемонаиха (20700 ₸)</option>
                                     <option value="Алтай (Зыряновск)">⛰️ Алтай / Зыряновск (45540 ₸)</option>
                                     <option value="Усть-Таловка">🏡 Усть-Таловка (19780 ₸)</option>
                                     <option value="Секисовка">🌲 Секисовка (6440 ₸)</option>
+                                    <option value="Быструха">🏘️ Быструха (9200—10150 ₸)</option>
+                                    <option value="Черемшанка">🏘️ Черемшанка (16330—18500 ₸)</option>
+                                    <option value="Верх-Уба">🏘️ Верх-Уба (11500—12000 ₸)</option>
+                                    <option value="Выдриха">🏘️ Выдриха (15500—25760 ₸)</option>
+                                    <option value="Малоубинка">🏘️ Малоубинка (10120—11000 ₸)</option>
                                     <option value="Белокаменка">🏡 Белокаменка (3500 ₸)</option>
                                     <option value="Михайловка">🏡 Михайловка (4000 ₸)</option>
                                     <option value="Прогресс">🏡 Прогресс (2990—3500 ₸)</option>
@@ -589,9 +603,11 @@
                                     <option value="Предгорное">🏡 Предгорное (8500—10000 ₸)</option>
                                     <option value="посёлок Алтайский">🏡 посёлок Алтайский (6000—8000 ₸)</option>
                                     <option value="Зевакино">🏡 Зевакино (15000 ₸)</option>
-                                    <option value="Опытное поле">🏡 Опытное поле (4800 ₸)</option>
                                     <option value="Первомайский">🏡 Первомайский (12000 ₸)</option>
                                     <option value="Верхнеберёзовский">🏡 Верхнеберёзовский (8500 ₸)</option>
+                                    <option value="Калбатау">🏘️ Калбатау (25800—30000 ₸)</option>
+                                    <option value="Гагарино">🏘️ Гагарино (19800—20500 ₸)</option>
+                                    <option value="Касым Кайсенов">🏘️ Касым Кайсенов (8800—9660 ₸)</option>
                                 </select>
                             </div>
 
@@ -654,12 +670,14 @@
                         </div>
                     </div>
                     <div class="flex flex-col"><label for="deliveryAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес доставки *</label>
-                        <div class="input-with-plus-btn">
-                            <div class="input-wrapper">
+                        <div class="flex gap-1.5 w-full">
+                            <div class="input-wrapper flex-grow min-w-0">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
-                                <input id="deliveryAddress" name="address" type="text" class="form-input-control pl-10" placeholder="Адрес" required />
+                                <input id="deliveryAddress" name="address" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required />
                             </div>
-                            <button type="button" onclick="getCurrentLocation('delivery')" class="geo-btn btn-active"><i id="deliveryGeoIcon" class="fas fa-compass"></i></button>
+                            <input id="deliveryHouse" name="deliveryHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
+                            <input id="deliveryApt" name="deliveryApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
+                            <button type="button" onclick="getCurrentLocation('delivery')" class="geo-btn btn-active flex-shrink-0"><i id="deliveryGeoIcon" class="fas fa-compass"></i></button>
                         </div>
                     </div>
                     <div id="deliveryStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
@@ -685,12 +703,14 @@
                 <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🚚 Грузовые Перевозки</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="cargoModal">×</button></div>
                 <form id="cargoForm" class="space-y-4">
                     <div class="flex flex-col"><label for="cargoFrom" class="text-sm font-medium text-gray-700 mb-1">Адрес погрузки *</label>
-                        <div class="input-with-plus-btn">
-                            <div class="input-wrapper">
+                        <div class="flex gap-1.5 w-full">
+                            <div class="input-wrapper flex-grow min-w-0">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
-                                <input id="cargoFrom" name="from" type="text" class="form-input-control pl-10" required>
+                                <input id="cargoFrom" name="from" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
                             </div>
-                            <button type="button" onclick="getCurrentLocation('cargo')" class="geo-btn btn-active"><i id="cargoGeoIcon" class="fas fa-compass"></i></button>
+                            <input id="cargoHouse" name="cargoHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
+                            <input id="cargoApt" name="cargoApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
+                            <button type="button" onclick="getCurrentLocation('cargo')" class="geo-btn btn-active flex-shrink-0"><i id="cargoGeoIcon" class="fas fa-compass"></i></button>
                         </div>
                     </div>
                     <div class="flex flex-col"><label for="cargoTo" class="text-sm font-medium text-gray-700 mb-1">Адрес выгрузки *</label>
@@ -726,12 +746,14 @@
                 <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🔑 Трезвый Водитель</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="soberDriverModal">×</button></div>
                 <form id="soberDriverForm" class="space-y-4">
                     <div class="flex flex-col"><label for="soberDriverFrom" class="text-sm font-medium text-gray-700 mb-1">Где авто *</label>
-                        <div class="input-with-plus-btn">
-                            <div class="input-wrapper">
+                        <div class="flex gap-1.5 w-full">
+                            <div class="input-wrapper flex-grow min-w-0">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
-                                <input id="soberDriverFrom" name="from" type="text" class="form-input-control pl-10" required>
+                                <input id="soberDriverFrom" name="from" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
                             </div>
-                            <button type="button" onclick="getCurrentLocation('soberDriver')" class="geo-btn btn-active"><i id="soberDriverGeoIcon" class="fas fa-compass"></i></button>
+                            <input id="soberDriverHouse" name="soberDriverHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
+                            <input id="soberDriverApt" name="soberDriverApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
+                            <button type="button" onclick="getCurrentLocation('soberDriver')" class="geo-btn btn-active flex-shrink-0"><i id="soberDriverGeoIcon" class="fas fa-compass"></i></button>
                         </div>
                     </div>
                     <div class="flex flex-col"><label for="soberDriverCarModel" class="text-sm font-medium text-gray-700 mb-1">Марка авто *</label>
@@ -771,12 +793,14 @@
                     </div><div class="flex flex-col"><label for="licencePlate" class="text-sm font-medium text-gray-700 mb-1">Гос. номер</label><input id="licencePlate" name="licencePlate" type="text" class="form-input-control"></div></div>
                     <div class="flex flex-col"><label for="assistanceTask" class="text-sm font-medium text-gray-700 mb-1">Детали</label><textarea id="assistanceTask" name="task" rows="3" class="form-input-control"></textarea></div>
                     <div class="flex flex-col"><label for="assistanceAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес *</label>
-                        <div class="input-with-plus-btn">
-                            <div class="input-wrapper">
+                        <div class="flex gap-1.5 w-full">
+                            <div class="input-wrapper flex-grow min-w-0">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
-                                <input id="assistanceAddress" name="address" type="text" class="form-input-control pl-10" required />
+                                <input id="assistanceAddress" name="address" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required />
                             </div>
-                            <button type="button" onclick="getCurrentLocation('assistance')" class="geo-btn btn-active"><i id="assistanceGeoIcon" class="fas fa-compass"></i></button>
+                            <input id="assistanceHouse" name="assistanceHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
+                            <input id="assistanceApt" name="assistanceApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
+                            <button type="button" onclick="getCurrentLocation('assistance')" class="geo-btn btn-active flex-shrink-0"><i id="assistanceGeoIcon" class="fas fa-compass"></i></button>
                         </div>
                     </div>
                     <div id="assistanceStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
@@ -797,12 +821,14 @@
                 <form id="auctionForm" class="space-y-4">
                     <div id="addressInputsAuction">
                         <div class="flex flex-col"><label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда</label>
-                            <div class="input-with-plus-btn">
-                                <div class="input-wrapper">
+                            <div class="flex gap-1.5 w-full">
+                                <div class="input-wrapper flex-grow min-w-0">
                                     <i class="fas fa-map-marker-alt input-icon"></i>
-                                    <input id="auctionFrom" name="from" type="text" autocomplete="off" class="form-input-control pl-10" required>
+                                    <input id="auctionFrom" name="from" type="text" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
                                 </div>
-                                <button type="button" onclick="getCurrentLocation('auction')" class="geo-btn btn-active"><i id="auctionGeoIcon" class="fas fa-compass"></i></button>
+                                <input id="auctionHouse" name="auctionHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
+                                <input id="auctionApt" name="auctionApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
+                                <button type="button" onclick="getCurrentLocation('auction')" class="geo-btn btn-active flex-shrink-0"><i id="auctionGeoIcon" class="fas fa-compass"></i></button>
                             </div>
                         </div>
                         <div class="flex flex-col"><label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда *</label>
@@ -886,15 +912,27 @@
                             <ul class="list-disc list-inside mt-2 space-y-1 text-xs">
                                 <li>**Базовый тариф:** **230 ₸** за 1 км.</li>
                                 <li>Усть-Каменогорск: **4800—6210 ₸**</li>
+                                <li>КШТ: **8600—10000 ₸**</li>
                                 <li>Аэропорт: **5500 ₸**</li>
                                 <li>Защита: **4800 ₸**</li>
+                                <li>Аблакетка: **8280—9000 ₸**</li>
+                                <li>Меновное: **6500—6800 ₸**</li>
+                                <li>Ахмирово: **6200—6500 ₸**</li>
+                                <li>Опытное поле: **4800 ₸**</li>
                                 <li>Глубокое: **4200 ₸**</li>
+                                <li>Прапорщиково: **3800—5100 ₸**</li>
+                                <li>Уварово: **3500—4500 ₸**</li>
                                 <li>Новая Бухтарма: **24150 ₸**</li>
                                 <li>Риддер: **25300 ₸**</li>
                                 <li>Шемонаиха: **20700 ₸**</li>
                                 <li>Алтай (Зыряновск): **45540 ₸**</li>
                                 <li>Усть-Таловка: **19780 ₸**</li>
                                 <li>Секисовка: **6440 ₸**</li>
+                                <li>Быструха: **9200—10150 ₸**</li>
+                                <li>Черемшанка: **16330—18500 ₸**</li>
+                                <li>Верх-Уба: **11500—12000 ₸**</li>
+                                <li>Выдриха: **15500—25760 ₸**</li>
+                                <li>Малоубинка: **10120—11000 ₸**</li>
                                 <li>Белокаменка: **3500 ₸**</li>
                                 <li>Михайловка: **4000 ₸**</li>
                                 <li>Прогресс: **2990—3500 ₸**</li>
@@ -905,9 +943,11 @@
                                 <li>Предгорное: **8500—10000 ₸**</li>
                                 <li>посёлок Алтайский: **6000—8000 ₸**</li>
                                 <li>Зевакино: **15000 ₸**</li>
-                                <li>Опытное поле: **4800 ₸**</li>
                                 <li>Первомайский: **12000 ₸**</li>
                                 <li>Верхнеберёзовский: **8500 ₸**</li>
+                                <li>Калбатау: **25800—30000 ₸**</li>
+                                <li>Гагарино: **19800—20500 ₸**</li>
+                                <li>Касым Кайсенов: **8800—9660 ₸**</li>
                             </ul>
                         </div>
                     </div>
@@ -1019,15 +1059,27 @@
 
         const INTERCITY_RATES = [
             { name: "Усть-Каменогорск", keys: ["усть-каменогорск", "устькаменогорск", "ука", "oskemen", "усть каменогорск", "усть-камен"], min: 4800, max: 6210 },
+            { name: "Кшт", keys: ["кшт", "кшд", "на кшт"], min: 8600, max: 10000 },
             { name: "Аэропорт", keys: ["аэропорт", "аэрапорт", "аеропорт"], min: 5500, max: 5500 },
             { name: "Защита", keys: ["защита", "защитные", "зощита"], min: 4800, max: 4800 },
+            { name: "Аблакетка", keys: ["аблакетка", "аблакетку", "аблокетка"], min: 8280, max: 9000 },
+            { name: "Меновное", keys: ["меновное", "меновноя", "меновной"], min: 6500, max: 6800 },
+            { name: "Ахмирово", keys: ["ахмирово", "ахмирова"], min: 6200, max: 6500 },
+            { name: "Опытное поле", keys: ["опытное поле", "опытное"], min: 4800, max: 4800 },
             { name: "Глубокое", keys: ["глубокое", "глубокая", "глубоков"], min: 4200, max: 4200 },
+            { name: "Прапорщиково", keys: ["прапорщиково", "прапорщикова"], min: 3800, max: 5100 },
+            { name: "Уварово", keys: ["уварово", "уварова", "уваров"], min: 3500, max: 4500 },
             { name: "Новая Бухтарма", keys: ["новая бухтарма", "бухтарма", "нов бухтарма"], min: 24150, max: 24150 },
             { name: "Риддер", keys: ["риддер", "лениногорск", "ридер"], min: 25300, max: 25300 },
             { name: "Шемонаиха", keys: ["шемонаиха", "шемонеиха", "шемонайка"], min: 20700, max: 20700 },
             { name: "Алтай (Зыряновск)", keys: ["г. алтай", "город алтай", "в алтай", "до алтая", "зыряновск", "зырян"], min: 45540, max: 45540 },
             { name: "Усть-Таловка", keys: ["усть-таловка", "устьталовка", "таловка", "усть таловка"], min: 19780, max: 19780 },
             { name: "Секисовка", keys: ["секисовка", "секисовк"], min: 6440, max: 6440 },
+            { name: "Быструха", keys: ["быструха", "быструху", "быструх"], min: 9200, max: 10150 },
+            { name: "Черемшанка", keys: ["черемшанка", "черемшанку"], min: 16330, max: 18500 },
+            { name: "Верх-Уба", keys: ["верх-уба", "верх уба", "верхуба", "верх-убу"], min: 11500, max: 12000 },
+            { name: "Выдриха", keys: ["выдриха", "выдриху", "выдрих"], min: 15500, max: 25760 },
+            { name: "Малоубинка", keys: ["малоубинка", "малоубинку", "мало убинка"], min: 10120, max: 11000 },
             { name: "Белокаменка", keys: ["белокаменка", "белокаменк"], min: 3500, max: 3500 },
             { name: "Михайловка", keys: ["михайловка", "михайловк"], min: 4000, max: 4000 },
             { name: "Прогресс", keys: ["прогресс", "прогрес"], min: 2990, max: 3500 },
@@ -1038,9 +1090,11 @@
             { name: "Предгорное", keys: ["предгорное", "предгорн"], min: 8500, max: 10000 },
             { name: "посёлок Алтайский", keys: ["посёлок алтайский", "поселок алтайский"], min: 6000, max: 8000 },
             { name: "Зевакино", keys: ["зевакино", "зевакин"], min: 15000, max: 15000 },
-            { name: "Опытное поле", keys: ["опытное поле", "опытное"], min: 4800, max: 4800 },
             { name: "Первомайский", keys: ["первомайский", "первомайск"], min: 12000, max: 12000 },
-            { name: "Верхнеберёзовский", keys: ["верхнеберёзовский", "верхнеберезовский", "верхнеберезовск"], min: 8500, max: 8500 }
+            { name: "Верхнеберёзовский", keys: ["верхнеберёзовский", "верхнеберезовский", "верхнеберезовск"], min: 8500, max: 8500 },
+            { name: "Калбатау", keys: ["калбатау", "калбатав"], min: 25800, max: 30000 },
+            { name: "Гагарино", keys: ["гагарино", "гагарина"], min: 19800, max: 20500 },
+            { name: "Касым Кайсенов", keys: ["касым кайсенов", "касым-кайсенов", "молодежный", "кайсенов"], min: 8800, max: 9660 }
         ];
 
         function levenshtein(a, b) {
@@ -1095,11 +1149,13 @@
             const toInput = document.getElementById('taxiTo');
             if (!select || !toInput) return;
             const val = select.value;
+            
             if (val) {
-                toInput.value = val;
+                toInput.placeholder = `Улица или объект в: ${val}`;
             } else {
-                toInput.value = '';
+                toInput.placeholder = 'Улица, дом или объект (Белоусовка)';
             }
+            
             updateTaxiPrice();
         }
 
@@ -1978,28 +2034,50 @@
                 }
             }
 
-            let rate = null;
+            let rateTo = null;
             if (citySelect && citySelect.value) {
-                rate = INTERCITY_RATES.find(r => r.name === citySelect.value);
+                rateTo = INTERCITY_RATES.find(r => r.name === citySelect.value);
             }
-            if (!rate) {
-                rate = findIntercityRate(destination);
-            }
-            if (!rate) {
-                rate = findIntercityRate(origin);
+            if (!rateTo) {
+                rateTo = findIntercityRate(destination);
             }
             
-            if (rate) {
-                const minPrice = Math.ceil((rate.min * priceMultiplier) / 50) * 50;
-                const maxPrice = Math.ceil((rate.max * priceMultiplier) / 50) * 50;
+            let rateFrom = findIntercityRate(origin);
+            
+            if (rateFrom || rateTo) {
+                let totalMin = 0;
+                let totalMax = 0;
+                let routeNames = [];
+
+                if (rateFrom && rateTo && rateFrom.name !== rateTo.name) {
+                    totalMin = rateFrom.min + rateTo.min;
+                    totalMax = rateFrom.max + rateTo.max;
+                    routeNames.push(`${rateFrom.name} ➔ ${rateTo.name}`);
+                } else if (rateFrom) {
+                    totalMin = rateFrom.min;
+                    totalMax = rateFrom.max;
+                    routeNames.push(rateFrom.name);
+                } else if (rateTo) {
+                    totalMin = rateTo.min;
+                    totalMax = rateTo.max;
+                    routeNames.push(rateTo.name);
+                } else if (rateFrom && rateTo && rateFrom.name === rateTo.name) {
+                    totalMin = rateFrom.min;
+                    totalMax = rateFrom.max;
+                    routeNames.push(rateFrom.name);
+                }
+
+                const minPrice = Math.ceil((totalMin * priceMultiplier) / 50) * 50;
+                const maxPrice = Math.ceil((totalMax * priceMultiplier) / 50) * 50;
                 let priceText = (minPrice === maxPrice) ? `~ ${minPrice} ₸` : `от ${minPrice}–${maxPrice} ₸`;
                 
                 if (priceMultiplier > 1) priceText += " (Тариф повышен)";
                 if (isLuckyDiscount) priceText += " (Скидка применена)";
                 
-                priceEl.textContent = `${priceText} (${rate.name})`;
+                priceEl.textContent = `${priceText} (${routeNames.join('')})`;
                 return; 
             }
+
             const addressCount = countFilledAddresses();
             let baseMin = (addressCount >= 3) ? CONFIG.TAXI.MANY_STOPS_MIN : CONFIG.TAXI.BASE_PRICE;
             let baseMax = (addressCount >= 3) ? CONFIG.TAXI.MANY_STOPS_MAX : (CONFIG.TAXI.BASE_PRICE + CONFIG.TAXI.MIN_PRICE_RANGE_OFFSET);
@@ -2272,6 +2350,15 @@
                 let message = `${modalConfig.prefix}\n\n`;
                 let requiredFieldsMissing = false;
 
+                const appendHouseAndApt = (baseStr, houseId, aptId) => {
+                    let h = document.getElementById(houseId) ? document.getElementById(houseId).value.trim() : '';
+                    let a = document.getElementById(aptId) ? document.getElementById(aptId).value.trim() : '';
+                    let res = baseStr;
+                    if(h) res += `, д. ${h}`;
+                    if(a) res += `, кв. ${a}`;
+                    return res;
+                };
+
                 const getVal = (id, label, isRequired = false) => {
                     const input = document.getElementById(id);
                     let value = input ? input.value.trim() : '';
@@ -2313,8 +2400,17 @@
 
                 switch (modalKey) {
                     case 'taxi':
-                        let fromAddress = document.getElementById('taxiFrom').value.trim();
-                        let toAddress = document.getElementById('taxiTo').value.trim();
+                        let fromAddressRaw = document.getElementById('taxiFrom').value.trim();
+                        let fromAddress = appendHouseAndApt(fromAddressRaw, 'taxiHouse', 'taxiApt');
+                        
+                        let streetAddress = document.getElementById('taxiTo').value.trim();
+                        const citySelectVal = document.getElementById('taxiCitySelect').value;
+                        
+                        let toAddress = streetAddress;
+                        if (citySelectVal) {
+                            toAddress = streetAddress ? `${citySelectVal}, ${streetAddress}` : citySelectVal;
+                        }
+                        
                         const wishes = document.getElementById('taxiWishes').value.trim();
                         const passengerPhone = document.getElementById('passengerPhone').value.trim(); 
                         const preorderContent = document.getElementById('preorderContent');
@@ -2322,17 +2418,17 @@
                         
                         const matchedToRate = findIntercityRate(toAddress);
                         if (matchedToRate) {
-                            toAddress = `${matchedToRate.name} (Авто-уточнено из: "${toAddress}")`;
+                            toAddress = `${matchedToRate.name} ${streetAddress ? '(' + streetAddress + ')' : ''} (Авто-уточнено)`;
                         }
-                        const matchedFromRate = findIntercityRate(fromAddress);
+                        const matchedFromRate = findIntercityRate(fromAddressRaw);
                         if (matchedFromRate) {
-                            fromAddress = `${matchedFromRate.name} (Авто-уточнено из: "${fromAddress}")`;
+                            fromAddress = `${matchedFromRate.name} (Авто-уточнено из: "${fromAddressRaw}")`;
                         }
 
                         if (isPreorderOpen) message = handlePreorder('taxiDateTime', modalConfig.prefix);
                         else message = `${modalConfig.prefix}\n\n`;
                         
-                        if (!fromAddress) requiredFieldsMissing = true;
+                        if (!fromAddressRaw) requiredFieldsMissing = true;
                         if (!toAddress) requiredFieldsMissing = true;
                         
                         message += `Откуда:\n${fromAddress}\n\n`;
@@ -2356,10 +2452,10 @@
                             message += `\n🎁 (Применена скидка клиента -${CONFIG.LUCKY_DISCOUNT.AMOUNT} тг)`;
                         }
 
-                        if (fromAddress) addressesToSave.push(fromAddress);
+                        if (fromAddressRaw) addressesToSave.push(fromAddressRaw);
                         if (toAddress) addressesToSave.push(toAddress);
                         
-                        if (fromAddress && toAddress) {
+                        if (fromAddressRaw && toAddress) {
                             saveOrderToFullHistory(fromAddress, toAddress, currentPriceText);
                         }
                         break;
@@ -2375,57 +2471,85 @@
                             showStatus(modalId, `Пожалуйста, введите корректную цену (минимум ${CONFIG.AUCTION.MIN_PRICE} KZT).`);
                             return;
                         }
-                        message += getVal('auctionFrom', 'Откуда', true);
+                        
+                        let auctionFromRaw = document.getElementById('auctionFrom').value.trim();
+                        if (!auctionFromRaw) requiredFieldsMissing = true;
+                        let auctionFromFull = appendHouseAndApt(auctionFromRaw, 'auctionHouse', 'auctionApt');
+                        
+                        message += `*Откуда*:\n${auctionFromFull || '—'}\n\n`;
                         message += `*Куда*:\n${auctionToAddress}\n\n`;
                         message += collectStops('additionalStopsAuction');
                         message += `*Предлагаемая цена*:\n${auctionPrice} KZT\n\n`;
                         message += '⚠️ ПРИМЕЧАНИЕ: Это цена клиента. Примите решение по заказу самостоятельно.';
-                        if (document.getElementById('auctionFrom').value.trim()) addressesToSave.push(document.getElementById('auctionFrom').value.trim());
+                        
+                        if (auctionFromRaw) addressesToSave.push(auctionFromRaw);
                         if (auctionToAddress) addressesToSave.push(auctionToAddress);
                         break;
                     case 'delivery':
+                        let deliveryAddressRaw = document.getElementById('deliveryAddress').value.trim();
+                        if (!deliveryAddressRaw) requiredFieldsMissing = true;
+                        let deliveryAddressFull = appendHouseAndApt(deliveryAddressRaw, 'deliveryHouse', 'deliveryApt');
+                        
                         message += getVal('deliveryItems', 'Список товаров', true);
-                        message += getVal('deliveryAddress', 'Адрес доставки', true);
+                        message += `*Адрес доставки*:\n${deliveryAddressFull || '—'}\n\n`;
                         message += getVal('deliveryStore', 'Пожелания по магазину');
                         const deliveryPriceText = document.getElementById('deliveryPriceEstimate').textContent;
                         message += `💰 Примерная цена: ${deliveryPriceText}`;
-                        if (document.getElementById('deliveryAddress').value.trim()) addressesToSave.push(document.getElementById('deliveryAddress').value.trim());
+                        
+                        if (deliveryAddressRaw) addressesToSave.push(deliveryAddressRaw);
                         break;
                     case 'cargo':
+                        let cargoFromRaw = document.getElementById('cargoFrom').value.trim();
+                        if (!cargoFromRaw) requiredFieldsMissing = true;
+                        let cargoFromFull = appendHouseAndApt(cargoFromRaw, 'cargoHouse', 'cargoApt');
+                        
                         const cargoMoversSelect = document.getElementById('cargoMovers');
                         const moversCount = parseInt(cargoMoversSelect.value);
                         const totalPrice = CONFIG.CARGO.HOURLY_RATE + (moversCount * CONFIG.CARGO.MOVER_RATE);
                         const formattedPrice = totalPrice.toLocaleString('ru-RU');
                         const moversText = (moversCount > 0) ? `${moversCount} чел. (Доплата: ${moversCount * CONFIG.CARGO.MOVER_RATE} тг/час)` : 'Не требуются';
+                        
                         message = handlePreorder('cargoDateTime', modalConfig.prefix);
-                        message += getVal('cargoFrom', 'Адрес погрузки', true);
+                        message += `*Адрес погрузки*:\n${cargoFromFull || '—'}\n\n`;
                         message += getVal('cargoTo', 'Адрес выгрузки', true);
                         message += getVal('cargoDescription', 'Описание груза', true);
                         message += `*Количество грузчиков*:\n${moversText}\n\n`;
                         message += `*ИТОГОВАЯ СУММА (за 1 час)*:\n${formattedPrice} тг\n\n`;
                         message += `💰 Базовая цена: ${CONFIG.CARGO.HOURLY_RATE.toLocaleString('ru-RU')} тг/час`;
-                        if (document.getElementById('cargoFrom').value.trim()) addressesToSave.push(document.getElementById('cargoFrom').value.trim());
+                        
+                        if (cargoFromRaw) addressesToSave.push(cargoFromRaw);
                         if (document.getElementById('cargoTo').value.trim()) addressesToSave.push(document.getElementById('cargoTo').value.trim());
                         break;
                     case 'soberDriver':
-                        message += getVal('soberDriverFrom', 'Текущий адрес (Авто)', true);
+                        let soberDriverFromRaw = document.getElementById('soberDriverFrom').value.trim();
+                        if (!soberDriverFromRaw) requiredFieldsMissing = true;
+                        let soberDriverFromFull = appendHouseAndApt(soberDriverFromRaw, 'soberDriverHouse', 'soberDriverApt');
+                        
+                        message += `*Текущий адрес (Авто)*:\n${soberDriverFromFull || '—'}\n\n`;
                         message += getVal('soberDriverCarModel', 'Марка и модель авто', true); 
                         message += getVal('soberDriverTo', 'Адрес доставки авто', true);
                         message += `💰 Примерная цена: от ${CONFIG.SOBER_DRIVER.MIN_PRICE} тг (зависит от расстояния)`;
-                        if (document.getElementById('soberDriverFrom').value.trim()) addressesToSave.push(document.getElementById('soberDriverFrom').value.trim());
+                        
+                        if (soberDriverFromRaw) addressesToSave.push(soberDriverFromRaw);
                         break;
                     case 'assistance':
                         const type = document.getElementById('assistanceType').value;
                         if (!type) { requiredFieldsMissing = true; break; }
+                        
+                        let assistanceAddressRaw = document.getElementById('assistanceAddress').value.trim();
+                        if (!assistanceAddressRaw) requiredFieldsMissing = true;
+                        let assistanceAddressFull = appendHouseAndApt(assistanceAddressRaw, 'assistanceHouse', 'assistanceApt');
+                        
                         message += getVal('assistanceType', 'Тип помощи');
                         if (type === 'Подкачать колесо' || type === 'Прикурить автомобиль') {
                             message += getVal('carModel', 'Марка и модель авто');
                             message += getVal('licencePlate', 'Гос. номер');
                         }
                         message += getVal('assistanceTask', 'Детали и уточнения');
-                        message += getVal('assistanceAddress', 'Адрес (где нужна помощь)', true);
+                        message += `*Адрес (где нужна помощь)*:\n${assistanceAddressFull || '—'}\n\n`;
                         message += `💰 Примерная цена: от ${CONFIG.ASSISTANCE.MIN_PRICE} тг (зависит от характера требуемой помощи)`;
-                        if (document.getElementById('assistanceAddress').value.trim()) addressesToSave.push(document.getElementById('assistanceAddress').value.trim());
+                        
+                        if (assistanceAddressRaw) addressesToSave.push(assistanceAddressRaw);
                         break;
                 } 
 

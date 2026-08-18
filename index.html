@@ -247,7 +247,7 @@
         
         <!-- AUTO INSURANCE QUICK BUTTON -->
         <div class="max-w-md mx-auto mb-8">
-            <button onclick="openModal('insuranceModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-teal-600 via-cyan-600 to-teal-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-lg flex items-center justify-center space-x-2.5 text-base border border-teal-400/30">
+            <button onclick="openModal('insuranceModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-teal-600 via-cyan-600 to-teal-700 text-white font-bold py-3.5 px-4 shadow-lg flex items-center justify-center space-x-2.5 text-base border border-teal-400/30">
                 <i class="fas fa-shield-alt text-xl text-yellow-300"></i>
                 <span>Автострахование (ОСАГО / Обязательная)</span>
             </button>
@@ -326,9 +326,7 @@
         <!-- DRIVERS BLOCK -->
         <div class="mt-10 border-t pt-6 text-center border-gray-400 border-opacity-30">
             <h3 class="text-2xl font-bold text-white text-shadow-md mb-4">Приглашаем Водителей!</h3>
-            <button onclick="openModal('driverModal')" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover btn-active cursor-pointer">
-                <i class="fas fa-car-side mr-2"></i> Отправить Заявку
-            </button>
+            <button type="button" onclick="openModal('driverModal')" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover btn-active"><i class="fas fa-car-side mr-2"></i> Отправить Заявку</button>
         </div>
          <div class="mt-6 border-t pt-6 text-center border-gray-400 border-opacity-30">
             <h3 class="text-xl font-bold text-white text-shadow-md mb-4">Для действующих водителей</h3>
@@ -363,54 +361,50 @@
 
     <!-- MENUS & MODALS -->
     
-    <!-- === DRIVER APPLICATION MODAL === -->
     <div id="driverModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-car text-indigo-600"></i> Работа водителем
+                        <i class="fas fa-car-side text-indigo-600"></i> Заявка для водителей
                     </h3>
                     <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="driverModal">×</button>
                 </div>
                 
-                <div class="space-y-4 text-left text-gray-700 dark:text-gray-300">
-                    <p class="text-sm">Приглашаем водителей с личным автомобилем для работы в службе Такси «Успех» (Белоусовка).</p>
+                <form id="driverForm" class="space-y-4">
+                    <p class="text-sm text-gray-700 dark:text-gray-300">Для работы в Такси «Успех» подготовьте и отправьте заявку. После отправки с вами свяжутся.</p>
                     
-                    <div class="bg-indigo-50 dark:bg-gray-700 p-4 rounded-xl border border-indigo-200 dark:border-gray-600 space-y-2">
-                        <h4 class="font-bold text-sm text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
-                            <i class="fas fa-file-alt">></i> Необходимые документы:
-                        </h4>
-                        <ul class="list-disc list-inside space-y-1.5 text-xs">
-                            <li><b>Удостоверение личности</b></li>
-                            <li><b>Водительское удостоверение</b> (соответствующей категории)</li>
-                            <li><b>Технический паспорт</b> на автомобиль (СРТС)</li>
-                            <li>Смартфон для работы с заказами</li>
-                        </ul>
+                    <ul class="list-disc list-inside space-y-1.5 text-sm bg-indigo-50 dark:bg-gray-700 p-3.5 rounded-xl border border-indigo-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
+                        <li><b>Водительское удостоверение</b></li>
+                        <li><b>Техпаспорт автомобиля</b> (СРТС)</li>
+                    </ul>
+                    
+                    <div class="flex flex-col">
+                        <label for="driverPhone" class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Телефон для связи *</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-phone input-icon"></i>
+                            <input id="driverPhone" name="driverPhone" type="tel" pattern="[0-9+() -]*" class="form-input-control pl-10" placeholder="+7 (XXX) XXX-XX-XX" required>
+                        </div>
                     </div>
 
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Нажмите на кнопку ниже, чтобы отправить заявку или заказать обратный звонок через WhatsApp.</p>
-
-                    <div class="flex flex-col gap-3 pt-4 border-t">
-                        <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20стать%20водителем%20Такси%20Успех.%20Готов(а)%20предоставить%20документы." target="_blank" 
-                           class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
-                            <i class="fab fa-whatsapp text-lg"></i> Отправить заявку (WhatsApp)
-                        </a>
+                    <div class="flex flex-col gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <button type="submit" 
+                           class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
+                            <i class="fab fa-whatsapp text-lg"></i> Отправить заявку в WhatsApp
+                        </button>
                         
-                        <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20по%20вопросу%20трудоустройства%20водителем!" target="_blank" 
+                        <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20по%20поводу%20работы%20водителем!" target="_blank" 
                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
                             <i class="fas fa-phone-alt text-lg"></i> Заказать обратный звонок
                         </a>
                     </div>
-                </div>
+                </form>
                 
                 <button onclick="closeModal('driverModal')" class="mt-6 text-gray-400 underline hover:text-gray-600 block mx-auto text-sm">Закрыть</button>
             </div>
         </div>
     </div>
-    <!-- === END DRIVER APPLICATION MODAL === -->
 
-    <!-- === AUTO INSURANCE MODAL === -->
     <div id="insuranceModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
@@ -421,37 +415,35 @@
                     <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="insuranceModal">×</button>
                 </div>
                 
-                <div class="space-y-4 text-left text-gray-700 dark:text-gray-300">
-                    <p class="text-sm">Для оформления обязательного автострахования (ОСАГО) подготовьте следующие документы:</p>
+                <form id="insuranceForm" class="space-y-4">
+                    <p class="text-sm text-gray-700 dark:text-gray-300">Для оформления обязательного автострахования (ОСАГО) подготовьте документы (удостоверение личности, техпаспорт, водительские удостоверения).</p>
                     
-                    <ul class="list-disc list-inside space-y-2 text-sm bg-teal-50 dark:bg-gray-700 p-4 rounded-xl border border-teal-200 dark:border-gray-600">
-                        <li><b>Удостоверение личности</b> собственника автомобиля</li>
-                        <li><b>Техпаспорт</b> (Свидетельство о регистрации транспортного средства — СРТС)</li>
-                        <li><b>Водительские удостоверения</b> всех лиц, допущенных к управлению авто</li>
-                    </ul>
-
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Вы можете отправить фото документов через WhatsApp для быстрого расчета и оформления полиса.</p>
+                    <div class="flex flex-col">
+                        <label for="insurancePhone" class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Телефон для связи *</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-phone input-icon"></i>
+                            <input id="insurancePhone" name="insurancePhone" type="tel" pattern="[0-9+() -]*" class="form-input-control pl-10" placeholder="+7 (XXX) XXX-XX-XX" required>
+                        </div>
+                    </div>
 
                     <div class="flex flex-col gap-3 pt-4 border-t">
-                        <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20оформить%20автостраховку.%20Вот%20мои%20документы:" target="_blank" 
+                        <button type="submit" 
                            class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
                             <i class="fab fa-whatsapp text-lg"></i> Заказать страховку в WhatsApp
-                        </a>
+                        </button>
                         
                         <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20по%20вопросу%20автострахования!" target="_blank" 
                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
                             <i class="fas fa-phone-alt text-lg"></i> Заказать обратный звонок
                         </a>
                     </div>
-                </div>
+                </form>
                 
                 <button onclick="closeModal('insuranceModal')" class="mt-6 text-gray-400 underline hover:text-gray-600 block mx-auto text-sm">Закрыть</button>
             </div>
         </div>
     </div>
-    <!-- === END AUTO INSURANCE MODAL === -->
 
-    <!-- === NEW FOOD MENU MODAL (ЗАКАЗ ЕДЫ) === -->
     <div id="foodModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6 text-center">
@@ -494,7 +486,6 @@
             </div>
         </div>
     </div>
-    <!-- === END FOOD MODAL === -->
 
     <div id="servicesMenuModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
@@ -518,7 +509,6 @@
         </div>
     </div>
     
-    <!-- TAXI MODAL -->
     <div id="taxiModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
@@ -539,15 +529,18 @@
                     <div id="addressInputsTaxi">
                         <div class="flex flex-col">
                             <label for="taxiFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда (адрес) *</label>
-                            <div class="flex gap-1.5 w-full">
+                            <div class="flex gap-1.5 w-full items-center">
                                 <div class="input-wrapper flex-grow min-w-0">
                                     <i class="fas fa-map-marker-alt input-icon"></i>
-                                    <input id="taxiFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required oninput="updateTaxiPrice()">
+                                    <input id="taxiFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица или объект" required oninput="updateTaxiPrice()">
                                 </div>
                                 <datalist id="fromHistory"></datalist>
-                                <input id="taxiHouse" name="taxiHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
-                                <input id="taxiApt" name="taxiApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
                                 <button type="button" onclick="getCurrentLocation('taxi')" class="geo-btn btn-active flex-shrink-0" title="Использовать мое местоположение"><i id="taxiGeoIcon" class="fas fa-compass"></i></button>
+                            </div>
+                            <!-- ДОМ И КВ ПЕРЕНЕСЕНЫ ПОД УЛИЦУ -->
+                            <div class="flex gap-2 mt-2">
+                                <input id="taxiHouse" name="taxiHouse" type="text" class="form-input-control w-1/2 text-sm" placeholder="Номер дома">
+                                <input id="taxiApt" name="taxiApt" type="text" class="form-input-control w-1/2 text-sm" placeholder="Кв. / Подъезд">
                             </div>
                             <div id="taxiHistoryChips" class="history-chips-container mt-2"></div>
                         </div>
@@ -555,14 +548,19 @@
                              <button type="button" onclick="swapTaxiAddresses()" class="bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-full p-2.5 shadow-md border border-white transition transform hover:rotate-180 focus:outline-none btn-active" title="Поменять местами"><i class="fas fa-exchange-alt rotate-90"></i></button>
                         </div>
                         <div class="flex flex-col">
-                            <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (адрес) *</label>
+                            <label for="taxiTo" class="text-sm font-medium text-gray-700 mb-1">Куда (улица, дом / направление) *</label>
                             <div class="input-with-plus-btn">
                                 <div class="input-wrapper">
                                     <i class="fas fa-flag-checkered input-icon"></i>
-                                    <input id="taxiTo" name="to" type="text" list="toHistory" autocomplete="off" class="form-input-control pl-10" placeholder="Улица, дом/объект" required oninput="updateTaxiPrice()">
+                                    <input id="taxiTo" name="to" type="text" list="toHistory" autocomplete="off" class="form-input-control pl-10" placeholder="Улица или объект" required oninput="updateTaxiPrice()">
                                 </div>
                                 <datalist id="toHistory"></datalist>
                                 <button type="button" onclick="addStop('additionalStops', 'taxi')" class="add-stop-btn btn-active" title="Добавить адрес"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <!-- ДОМ И КВ ДЛЯ КУДА ТАКЖЕ ПОД УЛИЦЕЙ -->
+                            <div class="flex gap-2 mt-2">
+                                <input id="taxiToHouse" name="taxiToHouse" type="text" class="form-input-control w-1/2 text-sm" placeholder="Номер дома">
+                                <input id="taxiToApt" name="taxiToApt" type="text" class="form-input-control w-1/2 text-sm" placeholder="Кв. / Подъезд">
                             </div>
 
                             <div class="flex flex-col bg-slate-800 dark:bg-gray-700 p-3 rounded-xl border border-slate-700 dark:border-gray-600 mt-2.5">
@@ -632,11 +630,16 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex flex-col">
-                        <label for="passengerPhone" class="text-sm font-medium text-gray-700 mb-1">Телефон для связи</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-phone input-icon"></i>
-                            <input id="passengerPhone" name="passengerPhone" type="tel" pattern="[0-9+() -]*" class="form-input-control pl-10" placeholder="+7 (XXX) XXX-XX-XX">
+                    <!-- ЗАМЕНА ПОЛЯ ТЕЛЕФОНА НА ЗАКАЗ ДРУГОМУ ЧЕЛОВЕКУ -->
+                    <div class="mt-1">
+                        <button type="button" onclick="toggleAnotherPerson('taxi')" class="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1 btn-active">
+                            <i class="fas fa-user-plus"></i> Заказать другому человеку
+                        </button>
+                        <div id="taxiAnotherWrapper" class="hidden mt-2">
+                            <div class="input-wrapper">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input id="taxiAnotherPhone" name="anotherPhone" type="tel" class="form-input-control pl-10 text-sm" placeholder="Телефон пассажира (+7 ...)">
+                            </div>
                         </div>
                     </div>
                     <div id="taxiStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
@@ -656,7 +659,6 @@
         </div>
     </div>
 
-    <!-- DELIVERY MODAL -->
     <div id="deliveryModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
@@ -670,14 +672,29 @@
                         </div>
                     </div>
                     <div class="flex flex-col"><label for="deliveryAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес доставки *</label>
-                        <div class="flex gap-1.5 w-full">
+                        <div class="flex gap-1.5 w-full items-center">
                             <div class="input-wrapper flex-grow min-w-0">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
                                 <input id="deliveryAddress" name="address" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required />
                             </div>
-                            <input id="deliveryHouse" name="deliveryHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
-                            <input id="deliveryApt" name="deliveryApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
                             <button type="button" onclick="getCurrentLocation('delivery')" class="geo-btn btn-active flex-shrink-0"><i id="deliveryGeoIcon" class="fas fa-compass"></i></button>
+                        </div>
+                        <!-- ДОМ И КВ ПОД УЛИЦЕЙ -->
+                        <div class="flex gap-2 mt-2">
+                            <input id="deliveryHouse" name="deliveryHouse" type="text" class="form-input-control w-1/2 text-sm" placeholder="Номер дома">
+                            <input id="deliveryApt" name="deliveryApt" type="text" class="form-input-control w-1/2 text-sm" placeholder="Кв. / Подъезд">
+                        </div>
+                    </div>
+                    <!-- ЗАМЕНА ПОЛЯ ТЕЛЕФОНА НА ЗАКАЗ ДРУГОМУ ЧЕЛОВЕКУ -->
+                    <div class="mt-1">
+                        <button type="button" onclick="toggleAnotherPerson('delivery')" class="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1 btn-active">
+                            <i class="fas fa-user-plus"></i> Заказать другому человеку
+                        </button>
+                        <div id="deliveryAnotherWrapper" class="hidden mt-2">
+                            <div class="input-wrapper">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input id="deliveryAnotherPhone" name="anotherPhone" type="tel" class="form-input-control pl-10 text-sm" placeholder="Телефон получателя (+7 ...)">
+                            </div>
                         </div>
                     </div>
                     <div id="deliveryStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
@@ -696,21 +713,23 @@
         </div>
     </div>
 
-    <!-- CARGO MODAL -->
     <div id="cargoModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🚚 Грузовые Перевозки</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="cargoModal">×</button></div>
                 <form id="cargoForm" class="space-y-4">
                     <div class="flex flex-col"><label for="cargoFrom" class="text-sm font-medium text-gray-700 mb-1">Адрес погрузки *</label>
-                        <div class="flex gap-1.5 w-full">
+                        <div class="flex gap-1.5 w-full items-center">
                             <div class="input-wrapper flex-grow min-w-0">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
                                 <input id="cargoFrom" name="from" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
                             </div>
-                            <input id="cargoHouse" name="cargoHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
-                            <input id="cargoApt" name="cargoApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
                             <button type="button" onclick="getCurrentLocation('cargo')" class="geo-btn btn-active flex-shrink-0"><i id="cargoGeoIcon" class="fas fa-compass"></i></button>
+                        </div>
+                        <!-- ДОМ И КВ ПОД УЛИЦЕЙ -->
+                        <div class="flex gap-2 mt-2">
+                            <input id="cargoHouse" name="cargoHouse" type="text" class="form-input-control w-1/2 text-sm" placeholder="Номер дома">
+                            <input id="cargoApt" name="cargoApt" type="text" class="form-input-control w-1/2 text-sm" placeholder="Кв. / Подъезд">
                         </div>
                     </div>
                     <div class="flex flex-col"><label for="cargoTo" class="text-sm font-medium text-gray-700 mb-1">Адрес выгрузки *</label>
@@ -722,6 +741,18 @@
                     <div class="flex flex-col"><label for="cargoDescription" class="text-sm font-medium text-gray-700 mb-1">Описание груза *</label><textarea id="cargoDescription" name="description" rows="2" class="form-input-control" required></textarea></div>
                     <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl space-y-3"><p class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Предзаказ</p><div class="flex flex-col"><label for="cargoDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время</label><input id="cargoDateTime" name="dateTime" type="datetime-local" class="form-input-control"></div></div>
                     <div class="flex flex-col"><label for="cargoMovers" class="text-sm font-medium text-gray-700 mb-1">Грузчики</label><div class="input-with-plus-btn"><select id="cargoMovers" name="movers" class="form-input-control" required onchange="updateCargoPrice()"><option value="0">Не требуются</option><option value="1">1 человек</option><option value="2">2 человека</option></select><span class="text-sm font-bold text-red-600">(+доплата)</span></div></div>
+                    <!-- ЗАМЕНА ПОЛЯ ТЕЛЕФОНА НА ЗАКАЗ ДРУГОМУ ЧЕЛОВЕКУ -->
+                    <div class="mt-1">
+                        <button type="button" onclick="toggleAnotherPerson('cargo')" class="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1 btn-active">
+                            <i class="fas fa-user-plus"></i> Заказать другому человеку
+                        </button>
+                        <div id="cargoAnotherWrapper" class="hidden mt-2">
+                            <div class="input-wrapper">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input id="cargoAnotherPhone" name="anotherPhone" type="tel" class="form-input-control pl-10 text-sm" placeholder="Телефон контактного лица (+7 ...)">
+                            </div>
+                        </div>
+                    </div>
                     <div id="cargoStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div>
@@ -739,21 +770,23 @@
         </div>
     </div>
     
-    <!-- SOBER DRIVER MODAL -->
     <div id="soberDriverModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🔑 Трезвый Водитель</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="soberDriverModal">×</button></div>
                 <form id="soberDriverForm" class="space-y-4">
                     <div class="flex flex-col"><label for="soberDriverFrom" class="text-sm font-medium text-gray-700 mb-1">Где авто *</label>
-                        <div class="flex gap-1.5 w-full">
+                        <div class="flex gap-1.5 w-full items-center">
                             <div class="input-wrapper flex-grow min-w-0">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
                                 <input id="soberDriverFrom" name="from" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
                             </div>
-                            <input id="soberDriverHouse" name="soberDriverHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
-                            <input id="soberDriverApt" name="soberDriverApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
                             <button type="button" onclick="getCurrentLocation('soberDriver')" class="geo-btn btn-active flex-shrink-0"><i id="soberDriverGeoIcon" class="fas fa-compass"></i></button>
+                        </div>
+                        <!-- ДОМ И КВ ПОД УЛИЦЕЙ -->
+                        <div class="flex gap-2 mt-2">
+                            <input id="soberDriverHouse" name="soberDriverHouse" type="text" class="form-input-control w-1/2 text-sm" placeholder="Номер дома">
+                            <input id="soberDriverApt" name="soberDriverApt" type="text" class="form-input-control w-1/2 text-sm" placeholder="Кв. / Подъезд">
                         </div>
                     </div>
                     <div class="flex flex-col"><label for="soberDriverCarModel" class="text-sm font-medium text-gray-700 mb-1">Марка авто *</label>
@@ -768,6 +801,18 @@
                             <input id="soberDriverTo" name="to" type="text" class="form-input-control pl-10" required>
                         </div>
                     </div>
+                    <!-- ЗАМЕНА ПОЛЯ ТЕЛЕФОНА НА ЗАКАЗ ДРУГОМУ ЧЕЛОВЕКУ -->
+                    <div class="mt-1">
+                        <button type="button" onclick="toggleAnotherPerson('soberDriver')" class="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1 btn-active">
+                            <i class="fas fa-user-plus"></i> Заказать другому человеку
+                        </button>
+                        <div id="soberDriverAnotherWrapper" class="hidden mt-2">
+                            <div class="input-wrapper">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input id="soberDriverAnotherPhone" name="anotherPhone" type="tel" class="form-input-control pl-10 text-sm" placeholder="Телефон владельца авто (+7 ...)">
+                            </div>
+                        </div>
+                    </div>
                     <div id="soberDriverStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
                         <div><div class="price-note text-xs text-gray-500">Примерная стоимость:</div><div class="text-xl font-black text-indigo-700">от 3800 тг</div></div>
@@ -778,7 +823,6 @@
         </div>
     </div>
 
-    <!-- ASSISTANCE MODAL -->
     <div id="assistanceModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
@@ -793,14 +837,29 @@
                     </div><div class="flex flex-col"><label for="licencePlate" class="text-sm font-medium text-gray-700 mb-1">Гос. номер</label><input id="licencePlate" name="licencePlate" type="text" class="form-input-control"></div></div>
                     <div class="flex flex-col"><label for="assistanceTask" class="text-sm font-medium text-gray-700 mb-1">Детали</label><textarea id="assistanceTask" name="task" rows="3" class="form-input-control"></textarea></div>
                     <div class="flex flex-col"><label for="assistanceAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес *</label>
-                        <div class="flex gap-1.5 w-full">
+                        <div class="flex gap-1.5 w-full items-center">
                             <div class="input-wrapper flex-grow min-w-0">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
                                 <input id="assistanceAddress" name="address" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required />
                             </div>
-                            <input id="assistanceHouse" name="assistanceHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
-                            <input id="assistanceApt" name="assistanceApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
                             <button type="button" onclick="getCurrentLocation('assistance')" class="geo-btn btn-active flex-shrink-0"><i id="assistanceGeoIcon" class="fas fa-compass"></i></button>
+                        </div>
+                        <!-- ДОМ И КВ ПОД УЛИЦЕЙ -->
+                        <div class="flex gap-2 mt-2">
+                            <input id="assistanceHouse" name="assistanceHouse" type="text" class="form-input-control w-1/2 text-sm" placeholder="Номер дома">
+                            <input id="assistanceApt" name="assistanceApt" type="text" class="form-input-control w-1/2 text-sm" placeholder="Кв. / Подъезд">
+                        </div>
+                    </div>
+                    <!-- ЗАМЕНА ПОЛЯ ТЕЛЕФОНА НА ЗАКАЗ ДРУГОМУ ЧЕЛОВЕКУ -->
+                    <div class="mt-1">
+                        <button type="button" onclick="toggleAnotherPerson('assistance')" class="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1 btn-active">
+                            <i class="fas fa-user-plus"></i> Заказать другому человеку
+                        </button>
+                        <div id="assistanceAnotherWrapper" class="hidden mt-2">
+                            <div class="input-wrapper">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input id="assistanceAnotherPhone" name="anotherPhone" type="tel" class="form-input-control pl-10 text-sm" placeholder="Телефон человека на месте (+7 ...)">
+                            </div>
                         </div>
                     </div>
                     <div id="assistanceStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
@@ -813,7 +872,6 @@
         </div>
     </div>
     
-    <!-- AUCTION MODAL -->
     <div id="auctionModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
@@ -821,14 +879,17 @@
                 <form id="auctionForm" class="space-y-4">
                     <div id="addressInputsAuction">
                         <div class="flex flex-col"><label for="auctionFrom" class="text-sm font-medium text-gray-700 mb-1">Откуда</label>
-                            <div class="flex gap-1.5 w-full">
+                            <div class="flex gap-1.5 w-full items-center">
                                 <div class="input-wrapper flex-grow min-w-0">
                                     <i class="fas fa-map-marker-alt input-icon"></i>
                                     <input id="auctionFrom" name="from" type="text" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
                                 </div>
-                                <input id="auctionHouse" name="auctionHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
-                                <input id="auctionApt" name="auctionApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
                                 <button type="button" onclick="getCurrentLocation('auction')" class="geo-btn btn-active flex-shrink-0"><i id="auctionGeoIcon" class="fas fa-compass"></i></button>
+                            </div>
+                            <!-- ДОМ И КВ ПОД УЛИЦЕЙ -->
+                            <div class="flex gap-2 mt-2">
+                                <input id="auctionHouse" name="auctionHouse" type="text" class="form-input-control w-1/2 text-sm" placeholder="Номер дома">
+                                <input id="auctionApt" name="auctionApt" type="text" class="form-input-control w-1/2 text-sm" placeholder="Кв. / Подъезд">
                             </div>
                         </div>
                         <div class="flex flex-col"><label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда *</label>
@@ -845,6 +906,18 @@
                         <div class="input-wrapper">
                             <i class="fas fa-tenge-sign input-icon"></i>
                             <input id="auctionPrice" name="price" type="number" inputmode="numeric" pattern="[0-9]*" min="500" class="form-input-control pl-10" placeholder="Мин. 500 KZT" required>
+                        </div>
+                    </div>
+                    <!-- ЗАМЕНА ПОЛЯ ТЕЛЕФОНА НА ЗАКАЗ ДРУГОМУ ЧЕЛОВЕКУ -->
+                    <div class="mt-1">
+                        <button type="button" onclick="toggleAnotherPerson('auction')" class="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1 btn-active">
+                            <i class="fas fa-user-plus"></i> Заказать другому человеку
+                        </button>
+                        <div id="auctionAnotherWrapper" class="hidden mt-2">
+                            <div class="input-wrapper">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input id="auctionAnotherPhone" name="anotherPhone" type="tel" class="form-input-control pl-10 text-sm" placeholder="Телефон пассажира (+7 ...)">
+                            </div>
                         </div>
                     </div>
                     <div id="auctionStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
@@ -910,7 +983,6 @@
                         <div id="faq-3" class="hidden p-4 pt-0 text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-600 faq-item-content text-sm">
                              <p class="font-bold text-red-600 dark:text-red-400 mb-2">⚠️ ВНИМАНИЕ: Цены ориентировочные!</p>
                             <ul class="list-disc list-inside mt-2 space-y-1 text-xs">
-                                <li>**Базовый тариф:** **230 ₸** за 1 км.</li>
                                 <li>Усть-Каменогорск: **4800—6210 ₸**</li>
                                 <li>КШТ: **8600—10000 ₸**</li>
                                 <li>Аэропорт: **5500 ₸**</li>
@@ -987,10 +1059,9 @@
                     SCARCE_CARS: 1.3, // "Мало машин"
                     SNOW: 1.5,
                     EXTREME_COLD: 1.6,
-                    HOLIDAY: 1.25     // <--- Праздничный коэффициент (+25%)
+                    HOLIDAY: 1.25      // <--- Праздничный коэффициент (+25%)
                 }
             },
-            // Список государственных праздников РК (месяц: 0-11, день: 1-31, длительность в днях)
             HOLIDAYS: [
                 { name: "Новый год", month: 0, day: 1, duration: 4 },
                 { name: "Рождество Христово", month: 0, day: 7, duration: 1 },
@@ -1149,13 +1220,15 @@
             const toInput = document.getElementById('taxiTo');
             if (!select || !toInput) return;
             const val = select.value;
-            
             if (val) {
-                toInput.placeholder = `Улица или объект в: ${val}`;
+                if (val === 'Усть-Каменогорск' || val === 'Глубокое' || val === 'Риддер') {
+                    toInput.placeholder = 'Улица, дом (в городе)';
+                } else {
+                    toInput.placeholder = 'Точный адрес или ориентир';
+                }
             } else {
-                toInput.placeholder = 'Улица, дом или объект (Белоусовка)';
+                toInput.placeholder = 'Улица или объект';
             }
-            
             updateTaxiPrice();
         }
 
@@ -1250,7 +1323,6 @@
             return null;
         }
 
-        // === PUSH NOTIFICATIONS / PWA SYSTEM LOGIC ===
         function initPwaPushNotifications() {
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
             const pushBtn = document.getElementById('pushToggleBtn');
@@ -1259,7 +1331,6 @@
             if (isStandalone) {
                 pushBtn.classList.remove('hidden');
                 updatePushIconState();
-                
                 checkForAutoNotifications();
             } else {
                 pushBtn.classList.add('hidden');
@@ -1356,8 +1427,7 @@
                 }
             });
         }
-        // =========================================================
-
+        
         const SIM_KEY = 'taxi_sim_state_v2'; 
         window.checkLineStatus = async function() {
             checkShopStatus();
@@ -1817,17 +1887,6 @@
              return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
         
-        function initPhoneMask() {
-            const phoneInput = document.getElementById('passengerPhone');
-            if(phoneInput) {
-                phoneInput.addEventListener('input', function (e) {
-                    let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
-                    if (!x[2]) { e.target.value = x[1] ? '+7' : ''; return; }
-                    e.target.value = '+7 (' + x[2] + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
-                });
-            }
-        }
-        
         document.addEventListener('click', (e) => {
             if (e.target.closest('button') || e.target.closest('a')) {
                  if (navigator.vibrate) navigator.vibrate(5); 
@@ -1851,7 +1910,6 @@
 
         document.addEventListener('DOMContentLoaded', () => {
              loadTheme(); 
-             initPhoneMask(); 
              setAddressHistory(); 
              checkLineStatus(); 
              initPwaPushNotifications();
@@ -2333,11 +2391,45 @@
             });
         }
 
+        window.toggleAnotherPerson = function(serviceType) {
+            const wrapper = document.getElementById(`${serviceType}AnotherWrapper`);
+            if (wrapper) {
+                if (wrapper.classList.contains('hidden')) {
+                    wrapper.classList.remove('hidden');
+                    const input = wrapper.querySelector('input');
+                    if (input) input.focus();
+                } else {
+                    wrapper.classList.add('hidden');
+                    const input = wrapper.querySelector('input');
+                    if (input) input.value = '';
+                }
+            }
+        };
+
         const forms = document.querySelectorAll('form');
         forms.forEach(form => {
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const formId = this.id;
+                
+                if (formId === 'insuranceForm') {
+                    const phone = document.getElementById('insurancePhone').value;
+                    const text = `🛡️ ЗАЯВКА НА АВТОСТРАХОВАНИЕ\n\nТелефон: ${phone}`;
+                    window.open(`https://wa.me/${CONFIG.PHONE_NUMBER}?text=${encodeURIComponent(text)}`, '_blank');
+                    closeModal('insuranceModal');
+                    this.reset();
+                    return;
+                }
+                
+                if (formId === 'driverForm') {
+                    const phone = document.getElementById('driverPhone').value;
+                    const text = `🚗 ЗАЯВКА НА РАБОТУ ВОДИТЕЛЕМ\n\nТелефон: ${phone}`;
+                    window.open(`https://wa.me/${CONFIG.PHONE_NUMBER}?text=${encodeURIComponent(text)}`, '_blank');
+                    closeModal('driverModal');
+                    this.reset();
+                    return;
+                }
+
                 const modalKey = Object.keys(MODALS).find(key => MODALS[key].formId === formId);
                 const modalConfig = MODALS[modalKey];
                 
@@ -2355,7 +2447,7 @@
                     let a = document.getElementById(aptId) ? document.getElementById(aptId).value.trim() : '';
                     let res = baseStr;
                     if(h) res += `, д. ${h}`;
-                    if(a) res += `, кв. ${a}`;
+                    if(a) res += `, кв./под. ${a}`;
                     return res;
                 };
 
@@ -2365,6 +2457,16 @@
                     if (isRequired && !value) requiredFieldsMissing = true;
                     if (input && input.type === 'checkbox') value = input.checked ? 'Да' : 'Нет';
                     return `*${label}*:\n${value || '—'}\n\n`;
+                };
+
+                const getAnotherPersonInfo = (servicePrefix) => {
+                    let anotherField = document.getElementById(`${servicePrefix}AnotherPhone`);
+                    let anotherPhone = anotherField ? anotherField.value.trim() : '';
+                    let res = '';
+                    if (anotherPhone) {
+                        res += `📞 КОНТАКТЫ:\n*🚨 Заказ другому человеку (телефон пассажира)*:\n${anotherPhone}\n\n`;
+                    }
+                    return res;
                 };
 
                 const collectStops = (containerId) => {
@@ -2404,21 +2506,21 @@
                         let fromAddress = appendHouseAndApt(fromAddressRaw, 'taxiHouse', 'taxiApt');
                         
                         let streetAddress = document.getElementById('taxiTo').value.trim();
+                        let toAddressRaw = appendHouseAndApt(streetAddress, 'taxiToHouse', 'taxiToApt');
                         const citySelectVal = document.getElementById('taxiCitySelect').value;
                         
-                        let toAddress = streetAddress;
+                        let toAddress = toAddressRaw;
                         if (citySelectVal) {
-                            toAddress = streetAddress ? `${citySelectVal}, ${streetAddress}` : citySelectVal;
+                            toAddress = toAddressRaw ? `${citySelectVal}, ${toAddressRaw}` : citySelectVal;
                         }
                         
                         const wishes = document.getElementById('taxiWishes').value.trim();
-                        const passengerPhone = document.getElementById('passengerPhone').value.trim(); 
                         const preorderContent = document.getElementById('preorderContent');
                         const isPreorderOpen = preorderContent && !preorderContent.classList.contains('hidden');
                         
                         const matchedToRate = findIntercityRate(toAddress);
                         if (matchedToRate) {
-                            toAddress = `${matchedToRate.name} ${streetAddress ? '(' + streetAddress + ')' : ''} (Авто-уточнено)`;
+                            toAddress = `${matchedToRate.name} ${toAddressRaw ? '(' + toAddressRaw + ')' : ''} (Авто-уточнено)`;
                         }
                         const matchedFromRate = findIntercityRate(fromAddressRaw);
                         if (matchedFromRate) {
@@ -2441,10 +2543,7 @@
                             message += stopMessage;
                             message += '---------------------------\n\n';
                         }
-                        if (passengerPhone) {
-                            message += '📞 КОНТАКТЫ:\n';
-                            message += `*Телефон для связи*:\n${passengerPhone}\n\n`;
-                        }
+                        message += getAnotherPersonInfo('taxi');
                         const currentPriceText = document.getElementById('taxiPriceEstimate').textContent;
                         message += `💰 Примерная цена: ${currentPriceText} (уточнит водитель)`;
                         
@@ -2479,6 +2578,7 @@
                         message += `*Откуда*:\n${auctionFromFull || '—'}\n\n`;
                         message += `*Куда*:\n${auctionToAddress}\n\n`;
                         message += collectStops('additionalStopsAuction');
+                        message += getAnotherPersonInfo('auction');
                         message += `*Предлагаемая цена*:\n${auctionPrice} KZT\n\n`;
                         message += '⚠️ ПРИМЕЧАНИЕ: Это цена клиента. Примите решение по заказу самостоятельно.';
                         
@@ -2493,6 +2593,7 @@
                         message += getVal('deliveryItems', 'Список товаров', true);
                         message += `*Адрес доставки*:\n${deliveryAddressFull || '—'}\n\n`;
                         message += getVal('deliveryStore', 'Пожелания по магазину');
+                        message += getAnotherPersonInfo('delivery');
                         const deliveryPriceText = document.getElementById('deliveryPriceEstimate').textContent;
                         message += `💰 Примерная цена: ${deliveryPriceText}`;
                         
@@ -2514,6 +2615,7 @@
                         message += getVal('cargoTo', 'Адрес выгрузки', true);
                         message += getVal('cargoDescription', 'Описание груза', true);
                         message += `*Количество грузчиков*:\n${moversText}\n\n`;
+                        message += getAnotherPersonInfo('cargo');
                         message += `*ИТОГОВАЯ СУММА (за 1 час)*:\n${formattedPrice} тг\n\n`;
                         message += `💰 Базовая цена: ${CONFIG.CARGO.HOURLY_RATE.toLocaleString('ru-RU')} тг/час`;
                         
@@ -2528,6 +2630,7 @@
                         message += `*Текущий адрес (Авто)*:\n${soberDriverFromFull || '—'}\n\n`;
                         message += getVal('soberDriverCarModel', 'Марка и модель авто', true); 
                         message += getVal('soberDriverTo', 'Адрес доставки авто', true);
+                        message += getAnotherPersonInfo('soberDriver');
                         message += `💰 Примерная цена: от ${CONFIG.SOBER_DRIVER.MIN_PRICE} тг (зависит от расстояния)`;
                         
                         if (soberDriverFromRaw) addressesToSave.push(soberDriverFromRaw);
@@ -2547,6 +2650,7 @@
                         }
                         message += getVal('assistanceTask', 'Детали и уточнения');
                         message += `*Адрес (где нужна помощь)*:\n${assistanceAddressFull || '—'}\n\n`;
+                        message += getAnotherPersonInfo('assistance');
                         message += `💰 Примерная цена: от ${CONFIG.ASSISTANCE.MIN_PRICE} тг (зависит от характера требуемой помощи)`;
                         
                         if (assistanceAddressRaw) addressesToSave.push(assistanceAddressRaw);
@@ -2579,15 +2683,7 @@
                 closeModal(modalId);
                 this.reset();
             }); 
-        }); 
-
-        window.showPWAInstructions = function() {
-            document.getElementById('pwaModal').classList.remove('hidden');
-        }
-        
-        window.showPartnerModal = function() {
-            document.getElementById('partnerModal').classList.remove('hidden');
-        }
+        });
     </script>
 </body>
 </html>

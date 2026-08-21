@@ -545,9 +545,11 @@
                                     <input id="taxiFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required oninput="updateTaxiPrice()">
                                 </div>
                                 <datalist id="fromHistory"></datalist>
-                                <input id="taxiHouse" name="taxiHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
-                                <input id="taxiApt" name="taxiApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
                                 <button type="button" onclick="getCurrentLocation('taxi')" class="geo-btn btn-active flex-shrink-0" title="Использовать мое местоположение"><i id="taxiGeoIcon" class="fas fa-compass"></i></button>
+                            </div>
+                            <div class="flex gap-2 mt-2">
+                                <input id="taxiHouse" name="taxiHouse" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Дом">
+                                <input id="taxiApt" name="taxiApt" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Подъезд">
                             </div>
                             <div id="taxiHistoryChips" class="history-chips-container mt-2"></div>
                         </div>
@@ -633,10 +635,15 @@
                         </div>
                     </div>
                     <div class="flex flex-col">
-                        <label for="passengerPhone" class="text-sm font-medium text-gray-700 mb-1">Телефон для связи</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-phone input-icon"></i>
-                            <input id="passengerPhone" name="passengerPhone" type="tel" pattern="[0-9+() -]*" class="form-input-control pl-10" placeholder="+7 (XXX) XXX-XX-XX">
+                        <button type="button" onclick="togglePhoneInput()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold py-2.5 px-4 rounded-xl shadow-md transition btn-active flex items-center justify-center gap-2">
+                            <i class="fas fa-user-plus"></i> Заказать другому человеку
+                        </button>
+                        <div id="phoneInputContainer" class="hidden mt-3">
+                            <label for="passengerPhone" class="text-sm font-medium text-gray-700 mb-1 block">Телефон для связи (когда заказываете другому)</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input id="passengerPhone" name="passengerPhone" type="tel" pattern="[0-9+() -]*" class="form-input-control pl-10" placeholder="+7 (XXX) XXX-XX-XX">
+                            </div>
                         </div>
                     </div>
                     <div id="taxiStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
@@ -675,9 +682,11 @@
                                 <i class="fas fa-map-marker-alt input-icon"></i>
                                 <input id="deliveryAddress" name="address" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required />
                             </div>
-                            <input id="deliveryHouse" name="deliveryHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
-                            <input id="deliveryApt" name="deliveryApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
                             <button type="button" onclick="getCurrentLocation('delivery')" class="geo-btn btn-active flex-shrink-0"><i id="deliveryGeoIcon" class="fas fa-compass"></i></button>
+                        </div>
+                        <div class="flex gap-2 mt-2">
+                            <input id="deliveryHouse" name="deliveryHouse" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Дом">
+                            <input id="deliveryApt" name="deliveryApt" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Кв.">
                         </div>
                     </div>
                     <div id="deliveryStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
@@ -708,9 +717,11 @@
                                 <i class="fas fa-map-marker-alt input-icon"></i>
                                 <input id="cargoFrom" name="from" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
                             </div>
-                            <input id="cargoHouse" name="cargoHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
-                            <input id="cargoApt" name="cargoApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
                             <button type="button" onclick="getCurrentLocation('cargo')" class="geo-btn btn-active flex-shrink-0"><i id="cargoGeoIcon" class="fas fa-compass"></i></button>
+                        </div>
+                        <div class="flex gap-2 mt-2">
+                            <input id="cargoHouse" name="cargoHouse" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Дом">
+                            <input id="cargoApt" name="cargoApt" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Подъезд">
                         </div>
                     </div>
                     <div class="flex flex-col"><label for="cargoTo" class="text-sm font-medium text-gray-700 mb-1">Адрес выгрузки *</label>
@@ -751,9 +762,11 @@
                                 <i class="fas fa-map-marker-alt input-icon"></i>
                                 <input id="soberDriverFrom" name="from" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
                             </div>
-                            <input id="soberDriverHouse" name="soberDriverHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
-                            <input id="soberDriverApt" name="soberDriverApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
                             <button type="button" onclick="getCurrentLocation('soberDriver')" class="geo-btn btn-active flex-shrink-0"><i id="soberDriverGeoIcon" class="fas fa-compass"></i></button>
+                        </div>
+                        <div class="flex gap-2 mt-2">
+                            <input id="soberDriverHouse" name="soberDriverHouse" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Дом">
+                            <input id="soberDriverApt" name="soberDriverApt" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Подъезд">
                         </div>
                     </div>
                     <div class="flex flex-col"><label for="soberDriverCarModel" class="text-sm font-medium text-gray-700 mb-1">Марка авто *</label>
@@ -798,9 +811,11 @@
                                 <i class="fas fa-map-marker-alt input-icon"></i>
                                 <input id="assistanceAddress" name="address" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required />
                             </div>
-                            <input id="assistanceHouse" name="assistanceHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
-                            <input id="assistanceApt" name="assistanceApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
                             <button type="button" onclick="getCurrentLocation('assistance')" class="geo-btn btn-active flex-shrink-0"><i id="assistanceGeoIcon" class="fas fa-compass"></i></button>
+                        </div>
+                        <div class="flex gap-2 mt-2">
+                            <input id="assistanceHouse" name="assistanceHouse" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Дом">
+                            <input id="assistanceApt" name="assistanceApt" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Подъезд">
                         </div>
                     </div>
                     <div id="assistanceStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
@@ -826,9 +841,11 @@
                                     <i class="fas fa-map-marker-alt input-icon"></i>
                                     <input id="auctionFrom" name="from" type="text" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
                                 </div>
-                                <input id="auctionHouse" name="auctionHouse" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Дом">
-                                <input id="auctionApt" name="auctionApt" type="text" class="form-input-control w-16 !px-1 text-center text-sm flex-shrink-0" placeholder="Кв.">
                                 <button type="button" onclick="getCurrentLocation('auction')" class="geo-btn btn-active flex-shrink-0"><i id="auctionGeoIcon" class="fas fa-compass"></i></button>
+                            </div>
+                            <div class="flex gap-2 mt-2">
+                                <input id="auctionHouse" name="auctionHouse" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Дом">
+                                <input id="auctionApt" name="auctionApt" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Подъезд">
                             </div>
                         </div>
                         <div class="flex flex-col"><label for="auctionTo" class="text-sm font-medium text-gray-700 mb-1">Куда *</label>
@@ -1751,6 +1768,19 @@
             }
         }
 
+        window.togglePhoneInput = function() {
+            const container = document.getElementById('phoneInputContainer');
+            if (container) {
+                if (container.classList.contains('hidden')) {
+                    container.classList.remove('hidden');
+                    document.getElementById('passengerPhone').focus();
+                } else {
+                    container.classList.add('hidden');
+                    document.getElementById('passengerPhone').value = '';
+                }
+            }
+        }
+
         const locationBtnTextEl = document.getElementById('locationBtnText');
         const locationResultEl = document.getElementById('locationResult');
         const locationAddressEl = document.getElementById('locationAddress');
@@ -2187,11 +2217,10 @@
                       const icon = document.getElementById('preorderIcon');
                       if (content && !content.classList.contains('hidden')) content.classList.add('hidden');
                       if (icon && icon.classList.contains('rotate-180')) icon.classList.remove('rotate-180');
-                      const formattedNow = getFormattedCurrentTime();
-                      document.getElementById('taxiDateTime').value = formattedNow;
-                      updateTaxiPrice(); 
-                }
-                 if (modalId === 'cargoModal') {
+                      
+                      const phoneContainer = document.getElementById('phoneInputContainer');
+                      if (phoneContainer) phoneContainer.classList.add('hidden');
+
                       const formattedNow = getFormattedCurrentTime();
                       document.getElementById('cargoDateTime').value = formattedNow;
                       document.getElementById('cargoMovers').value = '0'; 
@@ -2350,12 +2379,14 @@
                 let message = `${modalConfig.prefix}\n\n`;
                 let requiredFieldsMissing = false;
 
-                const appendHouseAndApt = (baseStr, houseId, aptId) => {
+                const appendHouseAndApt = (baseStr, houseId, aptId, isDelivery = false) => {
                     let h = document.getElementById(houseId) ? document.getElementById(houseId).value.trim() : '';
                     let a = document.getElementById(aptId) ? document.getElementById(aptId).value.trim() : '';
                     let res = baseStr;
                     if(h) res += `, д. ${h}`;
-                    if(a) res += `, кв. ${a}`;
+                    if(a) {
+                        res += isDelivery ? `, кв. ${a}` : `, подъезд ${a}`;
+                    }
                     return res;
                 };
 
@@ -2488,7 +2519,7 @@
                     case 'delivery':
                         let deliveryAddressRaw = document.getElementById('deliveryAddress').value.trim();
                         if (!deliveryAddressRaw) requiredFieldsMissing = true;
-                        let deliveryAddressFull = appendHouseAndApt(deliveryAddressRaw, 'deliveryHouse', 'deliveryApt');
+                        let deliveryAddressFull = appendHouseAndApt(deliveryAddressRaw, 'deliveryHouse', 'deliveryApt', true);
                         
                         message += getVal('deliveryItems', 'Список товаров', true);
                         message += `*Адрес доставки*:\n${deliveryAddressFull || '—'}\n\n`;

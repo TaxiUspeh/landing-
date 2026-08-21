@@ -680,7 +680,7 @@
                         <div class="flex gap-1.5 w-full">
                             <div class="input-wrapper flex-grow min-w-0">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
-                                <input id="deliveryAddress" name="address" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required />
+                                <input id="deliveryAddress" name="address" type="text" list="fromHistory" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required />
                             </div>
                             <button type="button" onclick="getCurrentLocation('delivery')" class="geo-btn btn-active flex-shrink-0"><i id="deliveryGeoIcon" class="fas fa-compass"></i></button>
                         </div>
@@ -715,7 +715,7 @@
                         <div class="flex gap-1.5 w-full">
                             <div class="input-wrapper flex-grow min-w-0">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
-                                <input id="cargoFrom" name="from" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
+                                <input id="cargoFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
                             </div>
                             <button type="button" onclick="getCurrentLocation('cargo')" class="geo-btn btn-active flex-shrink-0"><i id="cargoGeoIcon" class="fas fa-compass"></i></button>
                         </div>
@@ -727,7 +727,7 @@
                     <div class="flex flex-col"><label for="cargoTo" class="text-sm font-medium text-gray-700 mb-1">Адрес выгрузки *</label>
                         <div class="input-wrapper">
                             <i class="fas fa-flag-checkered input-icon"></i>
-                            <input id="cargoTo" name="to" type="text" class="form-input-control pl-10" required>
+                            <input id="cargoTo" name="to" type="text" list="toHistory" autocomplete="off" class="form-input-control pl-10" required>
                         </div>
                     </div>
                     <div class="flex flex-col"><label for="cargoDescription" class="text-sm font-medium text-gray-700 mb-1">Описание груза *</label><textarea id="cargoDescription" name="description" rows="2" class="form-input-control" required></textarea></div>
@@ -760,7 +760,7 @@
                         <div class="flex gap-1.5 w-full">
                             <div class="input-wrapper flex-grow min-w-0">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
-                                <input id="soberDriverFrom" name="from" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
+                                <input id="soberDriverFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
                             </div>
                             <button type="button" onclick="getCurrentLocation('soberDriver')" class="geo-btn btn-active flex-shrink-0"><i id="soberDriverGeoIcon" class="fas fa-compass"></i></button>
                         </div>
@@ -778,7 +778,7 @@
                     <div class="flex flex-col"><label for="soberDriverTo" class="text-sm font-medium text-gray-700 mb-1">Куда везти *</label>
                         <div class="input-wrapper">
                             <i class="fas fa-flag-checkered input-icon"></i>
-                            <input id="soberDriverTo" name="to" type="text" class="form-input-control pl-10" required>
+                            <input id="soberDriverTo" name="to" type="text" list="toHistory" autocomplete="off" class="form-input-control pl-10" required>
                         </div>
                     </div>
                     <div id="soberDriverStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
@@ -809,7 +809,7 @@
                         <div class="flex gap-1.5 w-full">
                             <div class="input-wrapper flex-grow min-w-0">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
-                                <input id="assistanceAddress" name="address" type="text" class="form-input-control pl-10 text-sm" placeholder="Улица" required />
+                                <input id="assistanceAddress" name="address" type="text" list="fromHistory" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required />
                             </div>
                             <button type="button" onclick="getCurrentLocation('assistance')" class="geo-btn btn-active flex-shrink-0"><i id="assistanceGeoIcon" class="fas fa-compass"></i></button>
                         </div>
@@ -839,7 +839,7 @@
                             <div class="flex gap-1.5 w-full">
                                 <div class="input-wrapper flex-grow min-w-0">
                                     <i class="fas fa-map-marker-alt input-icon"></i>
-                                    <input id="auctionFrom" name="from" type="text" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
+                                    <input id="auctionFrom" name="from" type="text" list="fromHistory" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required>
                                 </div>
                                 <button type="button" onclick="getCurrentLocation('auction')" class="geo-btn btn-active flex-shrink-0"><i id="auctionGeoIcon" class="fas fa-compass"></i></button>
                             </div>
@@ -852,7 +852,7 @@
                             <div class="input-with-plus-btn">
                                 <div class="input-wrapper">
                                     <i class="fas fa-flag-checkered input-icon"></i>
-                                    <input id="auctionTo" name="to" type="text" autocomplete="off" class="form-input-control pl-10" required>
+                                    <input id="auctionTo" name="to" type="text" list="toHistory" autocomplete="off" class="form-input-control pl-10" required>
                                 </div>
                                 <button type="button" onclick="addStop('additionalStopsAuction', 'auction')" class="add-stop-btn btn-active"><i class="fas fa-plus"></i></button>
                             </div><div id="additionalStopsAuction" class="mt-2.5 space-y-2.5"></div>

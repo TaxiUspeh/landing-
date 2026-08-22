@@ -680,13 +680,58 @@
                         <div class="flex gap-1.5 w-full">
                             <div class="input-wrapper flex-grow min-w-0">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
-                                <input id="deliveryAddress" name="address" type="text" list="fromHistory" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required />
+                                <input id="deliveryAddress" name="address" type="text" list="fromHistory" autocomplete="off" class="form-input-control pl-10 text-sm" placeholder="Улица" required oninput="updateDeliveryPrice()" />
                             </div>
                             <button type="button" onclick="getCurrentLocation('delivery')" class="geo-btn btn-active flex-shrink-0"><i id="deliveryGeoIcon" class="fas fa-compass"></i></button>
                         </div>
                         <div class="flex gap-2 mt-2">
-                            <input id="deliveryHouse" name="deliveryHouse" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Дом">
-                            <input id="deliveryApt" name="deliveryApt" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Кв.">
+                            <input id="deliveryHouse" name="deliveryHouse" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Дом" oninput="updateDeliveryPrice()">
+                            <input id="deliveryApt" name="deliveryApt" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Кв." oninput="updateDeliveryPrice()">
+                        </div>
+                        <div class="flex flex-col bg-slate-800 dark:bg-gray-700 p-3 rounded-xl border border-slate-700 dark:border-gray-600 mt-2.5">
+                            <label for="deliveryCitySelect" class="text-xs font-bold text-white dark:text-blue-200 mb-1.5 flex items-center gap-1">
+                                <i class="fas fa-city text-amber-400"></i> Выберите направление или город:
+                            </label>
+                            <select id="deliveryCitySelect" name="deliveryCitySelect" class="form-input-control py-2 text-sm bg-slate-900 text-white dark:bg-gray-800 border-slate-600" onchange="onDeliveryCitySelectChange()">
+                                <option value="">🏠 Посёлок Белоусовка (Внутри посёлка / Улица)</option>
+                                <option value="Усть-Каменогорск">🌆 Усть-Каменогорск (6000—7410 ₸)</option>
+                                <option value="Кшт">🏙️ КШТ (9800—11200 ₸)</option>
+                                <option value="Аэропорт">✈️ Аэропорт (6700 ₸)</option>
+                                <option value="Защита">🚂 Защита (6000 ₸)</option>
+                                <option value="Аблакетка">🏘️ Аблакетка (9480—10200 ₸)</option>
+                                <option value="Меновное">🏘️ Меновное (7700—8000 ₸)</option>
+                                <option value="Ахмирово">🏘️ Ахмирово (7400—7700 ₸)</option>
+                                <option value="Опытное поле">🏡 Опытное поле (6000 ₸)</option>
+                                <option value="Глубокое">🏘️ Глубокое (5400 ₸)</option>
+                                <option value="Прапорщиково">🏘️ Прапорщиково (5000—6300 ₸)</option>
+                                <option value="Уварово">🏘️ Уварово (4700—5700 ₸)</option>
+                                <option value="Новая Бухтарма">🌊 Новая Бухтарма (25350 ₸)</option>
+                                <option value="Риддер">🏔️ Риддер (26500 ₸)</option>
+                                <option value="Шемонаиха">🏙️ Шемонаиха (21900 ₸)</option>
+                                <option value="Алтай (Зыряновск)">⛰️ Алтай / Зыряновск (46740 ₸)</option>
+                                <option value="Усть-Таловка">🏡 Усть-Таловка (20980 ₸)</option>
+                                <option value="Секисовка">🌲 Секисовка (7640 ₸)</option>
+                                <option value="Быструха">🏘️ Быструха (10400—11350 ₸)</option>
+                                <option value="Черемшанка">🏘️ Черемшанка (17530—19700 ₸)</option>
+                                <option value="Верх-Уба">🏘️ Верх-Уба (12700—13200 ₸)</option>
+                                <option value="Выдриха">🏘️ Выдриха (16700—26960 ₸)</option>
+                                <option value="Малоубинка">🏘️ Малоубинка (11320—12200 ₸)</option>
+                                <option value="Белокаменка">🏡 Белокаменка (4700 ₸)</option>
+                                <option value="Михайловка">🏡 Михайловка (5200 ₸)</option>
+                                <option value="Прогресс">🏡 Прогресс (4190—4700 ₸)</option>
+                                <option value="Черногорка">🏡 Черногорка (3300—4200 ₸)</option>
+                                <option value="Красный Партизан">🏡 Красный Партизан (3000—3700 ₸)</option>
+                                <option value="Планидовка">🏡 Планидовка (3300—3700 ₸)</option>
+                                <option value="Тарханка">🏡 Тарханка (12470—13400 ₸)</option>
+                                <option value="Предгорное">🏡 Предгорное (9700—11200 ₸)</option>
+                                <option value="посёлок Алтайский">🏡 посёлок Алтайский (7200—9200 ₸)</option>
+                                <option value="Зевакино">🏡 Зевакино (16200 ₸)</option>
+                                <option value="Первомайский">🏡 Первомайский (13200 ₸)</option>
+                                <option value="Верхнеберёзовский">🏡 Верхнеберёзовский (9700 ₸)</option>
+                                <option value="Калбатау">🏘️ Калбатау (27000—31200 ₸)</option>
+                                <option value="Гагарино">🏘️ Гагарино (21000—21700 ₸)</option>
+                                <option value="Касым Кайсенов">🏘️ Касым Кайсенов (10000—10860 ₸)</option>
+                            </select>
                         </div>
                     </div>
                     <div id="deliveryStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
@@ -1174,6 +1219,21 @@
             }
             
             updateTaxiPrice();
+        }
+
+        window.onDeliveryCitySelectChange = function() {
+            const select = document.getElementById('deliveryCitySelect');
+            const addressInput = document.getElementById('deliveryAddress');
+            if (!select || !addressInput) return;
+            const val = select.value;
+            
+            if (val) {
+                addressInput.placeholder = `Улица в: ${val}`;
+            } else {
+                addressInput.placeholder = 'Улица';
+            }
+            
+            updateDeliveryPrice();
         }
 
         function checkShopStatus() {
@@ -2130,9 +2190,33 @@
         window.updateDeliveryPrice = function() {
             const priceEl = document.getElementById('deliveryPriceEstimate');
             const waitTimeEl = document.getElementById('deliveryWaitTime');
+            const citySelect = document.getElementById('deliveryCitySelect');
             if(waitTimeEl) waitTimeEl.textContent = "Ожидание: 15-30 мин";
 
             if (!priceEl) return;
+            
+            const addressInput = document.getElementById('deliveryAddress');
+            const destination = addressInput ? addressInput.value.trim() : '';
+
+            let rateTo = null;
+            if (citySelect && citySelect.value) {
+                rateTo = INTERCITY_RATES.find(r => r.name === citySelect.value);
+            }
+            if (!rateTo) {
+                rateTo = findIntercityRate(destination);
+            }
+
+            if (rateTo) {
+                const minPrice = Math.ceil(((rateTo.min + CONFIG.DELIVERY.BASE_PRICE) * priceMultiplier) / 50) * 50;
+                const maxPrice = Math.ceil(((rateTo.max + CONFIG.DELIVERY.BASE_PRICE) * priceMultiplier) / 50) * 50;
+                
+                let priceText = (minPrice === maxPrice) ? `~ ${minPrice} ₸` : `от ${minPrice}–${maxPrice} ₸`;
+                if (priceMultiplier > 1) priceText += " (Повышенный тариф)";
+                
+                priceEl.textContent = `${priceText} (${rateTo.name})`;
+                return;
+            }
+
             let base = CONFIG.DELIVERY.BASE_PRICE;
             let final = Math.ceil((base * priceMultiplier) / 50) * 50;
             let text = `от ${final} тг`;
@@ -2517,9 +2601,27 @@
                         if (auctionToAddress) addressesToSave.push(auctionToAddress);
                         break;
                     case 'delivery':
-                        let deliveryAddressRaw = document.getElementById('deliveryAddress').value.trim();
-                        if (!deliveryAddressRaw) requiredFieldsMissing = true;
-                        let deliveryAddressFull = appendHouseAndApt(deliveryAddressRaw, 'deliveryHouse', 'deliveryApt', true);
+                        let deliveryStreetAddressRaw = document.getElementById('deliveryAddress').value.trim();
+                        const deliveryCitySelectVal = document.getElementById('deliveryCitySelect') ? document.getElementById('deliveryCitySelect').value : '';
+
+                        let baseDeliveryAddress = deliveryStreetAddressRaw;
+                        if (deliveryCitySelectVal) {
+                            baseDeliveryAddress = deliveryStreetAddressRaw ? `${deliveryCitySelectVal}, ${deliveryStreetAddressRaw}` : deliveryCitySelectVal;
+                        }
+
+                        if (!baseDeliveryAddress) requiredFieldsMissing = true;
+                        
+                        let deliveryAddressFull = appendHouseAndApt(baseDeliveryAddress, 'deliveryHouse', 'deliveryApt', true);
+                        
+                        const matchedDeliveryRate = findIntercityRate(baseDeliveryAddress);
+                        if (matchedDeliveryRate) {
+                            let extraAddr = '';
+                            let dh = document.getElementById('deliveryHouse') ? document.getElementById('deliveryHouse').value.trim() : '';
+                            let da = document.getElementById('deliveryApt') ? document.getElementById('deliveryApt').value.trim() : '';
+                            if(dh) extraAddr += `, д. ${dh}`;
+                            if(da) extraAddr += `, кв. ${da}`;
+                            deliveryAddressFull = `${matchedDeliveryRate.name} ${deliveryStreetAddressRaw ? '(' + deliveryStreetAddressRaw + ')' : ''} (Авто-уточнено)${extraAddr}`;
+                        }
                         
                         message += getVal('deliveryItems', 'Список товаров', true);
                         message += `*Адрес доставки*:\n${deliveryAddressFull || '—'}\n\n`;
@@ -2527,7 +2629,7 @@
                         const deliveryPriceText = document.getElementById('deliveryPriceEstimate').textContent;
                         message += `💰 Примерная цена: ${deliveryPriceText}`;
                         
-                        if (deliveryAddressRaw) addressesToSave.push(deliveryAddressRaw);
+                        if (deliveryStreetAddressRaw) addressesToSave.push(deliveryStreetAddressRaw);
                         break;
                     case 'cargo':
                         let cargoFromRaw = document.getElementById('cargoFrom').value.trim();

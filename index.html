@@ -279,23 +279,21 @@
             </button>
         </div>
 
-        <!-- PARTNER INFO -->
-        <div class="mt-8 border-t pt-6 border-gray-400 border-opacity-30">
-             <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Нашим Партнерам: ТехОсмотр</h3>
-             
-             <!-- ТЕХОСМОТР -->
-             <div class="auction-cta p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between text-blue-900 font-extrabold transition-all duration-300 border-indigo-500 border-2">
-                <div class="flex flex-col items-center sm:items-start text-center sm:text-left mb-3 sm:mb-0">
-                    <i class="fas fa-wrench text-3xl mb-1 text-red-600"></i>
-                    <span class="text-xl block leading-tight font-black text-red-600">ТЕХОСМОТР В БЕЛОУСОВКЕ!</span>
-                    <span class="text-sm text-gray-700 block mt-1">Официальный ТО: <span class="font-bold">ул. Молодежная, 37</span></span>
+        <!-- PARTNER INFO (TECH INSPECTION) -->
+        <div class="mt-8 border-t pt-6 max-w-md mx-auto border-gray-400 border-opacity-30">
+            <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Партнеры (Официальный ТО)</h3>
+            <button onclick="openModal('techInspectionModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between border border-red-400/30">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/20 p-2.5 rounded-xl shadow-inner">
+                        <i class="fas fa-wrench text-2xl text-yellow-300"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="block text-lg font-black leading-tight text-shadow-md uppercase">Пройти Техосмотр</span>
+                        <span class="block text-xs text-red-100 mt-0.5">В Белоусовке (ул. Молодежная, 37)</span>
+                    </div>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto mt-2 sm:mt-0">
-                    <a href="https://wa.me/77771383856?text=Здравствуйте!%20Хочу%20записаться%20на%20Технический%20Осмотр" target="_blank" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active btn-hover"><i class="fab fa-whatsapp mr-2 text-base"></i> WhatsApp</a>
-                    <a href="https://yandex.kz/navi/-/CLGK5Sli" target="_blank" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active btn-hover"><i class="fas fa-map-marked-alt mr-2"></i> Навигатор</a>
-                    <a href="tel:+77771383856" class="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md text-sm whitespace-nowrap transition-all flex items-center justify-center btn-active btn-hover"><i class="fas fa-phone-alt mr-2"></i> Звонок</a>
-                </div>
-            </div>
+                <i class="fas fa-chevron-right text-white opacity-80 text-xl"></i>
+            </button>
         </div>
 
         <!-- ADVERTISING BLOCK -->
@@ -585,6 +583,54 @@
         </div>
     </div>
     <!-- === END AUTO INSURANCE MODAL === -->
+
+    <!-- === TECH INSPECTION MODAL === -->
+    <div id="techInspectionModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2 uppercase">
+                        <i class="fas fa-wrench text-red-600"></i> Техосмотр
+                    </h3>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="techInspectionModal">×</button>
+                </div>
+                
+                <div class="text-center mb-6">
+                    <h4 class="text-2xl font-black text-gray-900 dark:text-white leading-tight mb-2">ОФИЦИАЛЬНЫЙ ТО<br><span class="text-red-600">В БЕЛОУСОВКЕ</span></h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 inline-block px-3 py-1.5 rounded-lg font-bold shadow-inner"><i class="fas fa-map-marker-alt text-red-500 mr-1"></i> ул. Молодежная, 37</p>
+                </div>
+
+                <div class="bg-blue-50 dark:bg-gray-800 p-4 rounded-xl border border-blue-100 dark:border-gray-700 mb-6 shadow-sm">
+                    <h5 class="font-bold text-blue-900 dark:text-blue-300 text-sm mb-3 text-center border-b border-blue-200 dark:border-blue-800 pb-2"><i class="far fa-clock mr-1"></i> График работы</h5>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div class="flex justify-between items-center"><span class="text-gray-500 dark:text-gray-400 font-medium">Понедельник</span><span class="text-red-500 font-bold text-[10px] bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-md uppercase">Выходной</span></div>
+                        <div class="flex justify-between items-center"><span class="text-gray-800 dark:text-gray-200 font-bold">Вторник</span><span class="text-green-600 dark:text-green-400 font-bold">9:00–18:00</span></div>
+                        <div class="flex justify-between items-center"><span class="text-gray-500 dark:text-gray-400 font-medium">Среда</span><span class="text-red-500 font-bold text-[10px] bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-md uppercase">Выходной</span></div>
+                        <div class="flex justify-between items-center"><span class="text-gray-800 dark:text-gray-200 font-bold">Четверг</span><span class="text-green-600 dark:text-green-400 font-bold">9:00–18:00</span></div>
+                        <div class="flex justify-between items-center"><span class="text-gray-500 dark:text-gray-400 font-medium">Пятница</span><span class="text-red-500 font-bold text-[10px] bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-md uppercase">Выходной</span></div>
+                        <div class="flex justify-between items-center"><span class="text-gray-800 dark:text-gray-200 font-bold">Суббота</span><span class="text-green-600 dark:text-green-400 font-bold">9:00–18:00</span></div>
+                        <div class="flex justify-between items-center col-span-2 mt-2 pt-2 border-t border-blue-200 dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 font-medium">Воскресенье</span><span class="text-red-500 font-bold text-[10px] bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-md uppercase">Выходной</span></div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <a href="https://wa.me/77771383856?text=Здравствуйте!%20Хочу%20записаться%20на%20Технический%20Осмотр" target="_blank" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center btn-active btn-hover">
+                        <i class="fab fa-whatsapp mr-2 text-xl"></i> Записаться в WhatsApp
+                    </a>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <a href="https://yandex.kz/navi/-/CLGK5Sli" target="_blank" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-2 rounded-xl shadow-md text-sm transition-all flex items-center justify-center btn-active btn-hover">
+                            <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
+                        </a>
+                        <a href="tel:+77771383856" class="bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-bold py-3 px-2 rounded-xl shadow-md text-sm transition-all flex items-center justify-center btn-active btn-hover">
+                            <i class="fas fa-phone-alt mr-2"></i> Позвонить
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- === END TECH INSPECTION MODAL === -->
 
     <!-- === NEW FOOD MENU MODAL (ЗАКАЗ ЕДЫ) === -->
     <div id="foodModal" class="modal-overlay" aria-hidden="true" role="dialog">

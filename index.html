@@ -355,7 +355,7 @@
         </div>
          <div class="mt-6 border-t pt-6 text-center border-gray-400 border-opacity-30">
             <h3 class="text-xl font-bold text-white text-shadow-md mb-4">Для действующих водителей</h3>
-            <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" class="inline-block bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white px-8 py-3.5 rounded-xl text-lg font-semibold shadow-lg transition-all btn-hover btn-active"><i class="fas fa-user-shield mr-2"></i> Вход в режим Водителя</a>
+            <button onclick="openModal('driverLoginModal')" class="inline-block bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white px-8 py-3.5 rounded-xl text-lg font-semibold shadow-lg transition-all btn-hover btn-active"><i class="fas fa-user-shield mr-2"></i> Вход в режим Водителя</button>
         </div>
         
     </main>
@@ -370,7 +370,7 @@
             <a href="https://wa.me/77770649648?text=Заказ..." class="flex flex-col items-center text-green-600 hover:text-green-700 btn-active p-1.5 rounded-xl"><i class="fab fa-whatsapp text-2xl"></i><span class="text-[11px] mt-0.5 font-medium">Заказ</span></a>
             <a href="tel:+77770649648" class="flex flex-col items-center text-red-600 hover:text-red-700 btn-active p-1.5 rounded-xl"><i class="fas fa-phone-alt text-2xl"></i><span class="text-[11px] mt-0.5 font-medium">Звонок</span></a>
             <button onclick="installApp()" class="flex flex-col items-center text-yellow-600 hover:text-yellow-700 btn-active p-1.5 rounded-xl"><i class="fas fa-mobile-alt text-2xl"></i><span class="text-[11px] mt-0.5 font-medium">На экран</span></button>
-            <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" class="flex flex-col items-center text-pink-600 hover:text-pink-700 btn-active p-1.5 rounded-xl"><i class="fas fa-user-shield text-2xl"></i><span class="text-[11px] mt-0.5 font-medium">Водитель</span></a>
+            <button onclick="openModal('driverLoginModal')" class="flex flex-col items-center text-pink-600 hover:text-pink-700 btn-active p-1.5 rounded-xl"><i class="fas fa-user-shield text-2xl"></i><span class="text-[11px] mt-0.5 font-medium">Водитель</span></button>
         </div>
     </div>
     
@@ -550,6 +550,37 @@
         </div>
     </div>
     <!-- === END DRIVER APPLICATION MODAL === -->
+
+    <!-- === DRIVER LOGIN / PAYMENT MODAL === -->
+    <div id="driverLoginModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-user-shield text-pink-600"></i> Режим водителя
+                    </h3>
+                    <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="driverLoginModal">×</button>
+                </div>
+                
+                <div class="space-y-4 text-center">
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Выберите необходимое действие:</p>
+
+                    <div class="grid grid-cols-1 gap-3">
+                        <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" 
+                           class="w-full bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-bold py-4 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 btn-active btn-hover">
+                            <i class="fab fa-whatsapp text-xl"></i> Войти в чат (WhatsApp)
+                        </a>
+                        
+                        <button onclick="window.payKaspi()" 
+                           class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-4 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 btn-active btn-hover">
+                            <img src="https://kaspi.kz/favicon.ico" class="w-5 h-5 bg-white rounded-full p-0.5" alt="Kaspi" onerror="this.src='https://img.icons8.com/color/48/bank-cards.png'"> Оплатить (Kaspi)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- === END DRIVER LOGIN MODAL === -->
 
     <!-- === AUTO INSURANCE MODAL === -->
     <div id="insuranceModal" class="modal-overlay" aria-hidden="true" role="dialog">
@@ -2728,6 +2759,19 @@
             if (!currentText) wishEl.value = text;
             else if (!currentText.includes(text)) wishEl.value = currentText + ', ' + text;
         }
+
+        window.payKaspi = function() {
+            copyToClipboard('+77714398846');
+            displayMessageModal('Переход в Kaspi', 'Номер телефона +77714398846 скопирован! Вставьте его в приложении Kaspi для перевода.', false);
+            setTimeout(() => {
+                // Пытаемся открыть приложение Kaspi (на мобильных устройствах)
+                window.location.href = 'kaspi://';
+                setTimeout(() => {
+                    // Если не открылось (например, ПК или нет приложения), открываем сайт
+                    window.open('https://kaspi.kz/', '_blank');
+                }, 1000);
+            }, 2000);
+        };
         
         window.shareApp = async function() {
             const shareUrl = window.location.protocol.startsWith('http') ? window.location.href : 'https://taxiuspeh.github.io/landing-/';

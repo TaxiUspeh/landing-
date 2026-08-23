@@ -29,6 +29,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
+    <!-- Leaflet Map (Для карты с машинками) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
@@ -153,6 +157,10 @@
         .weather-widget .icon { font-size: 1rem; color: #fbbf24; margin-bottom: -2px; }
         .weather-widget.cold .icon { color: #60a5fa; }
         .weather-widget.snow .icon { color: white; }
+        
+        .leaflet-container { z-index: 10 !important; border-radius: 0 0 12px 12px; }
+        .leaflet-control-container { z-index: 20 !important; }
+        .custom-taxi-icon { transition: transform 0.2s linear !important; margin-left: -12px !important; margin-top: -12px !important; }
     </style>
 </head>
 <body class="text-gray-900 min-h-screen flex flex-col">
@@ -1202,6 +1210,25 @@
     </div>
     <!-- === END FAQ MODAL === -->
 
+    <!-- === MAP SIMULATION MODAL === -->
+    <div id="mapModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal" style="max-width: 600px; width: 95%;">
+            <div class="p-4 border-b flex justify-between items-center bg-gray-50 dark:bg-gray-800 rounded-t-xl">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2 uppercase tracking-tight">
+                    <i class="fas fa-map-marked-alt text-blue-500"></i> Авто на линии
+                </h3>
+                <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="mapModal">×</button>
+            </div>
+            <div class="p-0 relative rounded-b-xl overflow-hidden shadow-inner">
+                <div id="simulationMap" style="height: 60vh; width: 100%; background: #e5e5e5;" class="z-0"></div>
+                <div id="mapOverlayText" class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/95 dark:bg-gray-800/95 px-5 py-2 rounded-full shadow-lg font-bold text-sm z-[1000] text-gray-800 dark:text-gray-200 backdrop-blur-md pointer-events-none border border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                    Загрузка...
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- === END MAP SIMULATION MODAL === -->
+
     <!-- PWA & PARTNER MODALS -->
     <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4"><div class="modal"><div class="p-6"><h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните как приложение!</h3><p class="mb-4 text-gray-700">Инструкция...</p><button onclick="document.getElementById('pwaModal').classList.add('hidden')" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-4 rounded-xl btn-active btn-hover">Понятно</button></div></div></div>
     <div id="partnerModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4"><div class="modal"><div class="p-6"><h3 class="text-2xl font-bold mb-4 text-pink-600 flex items-center justify-center">Партнеры</h3><p class="mb-4 text-gray-800">Здесь будет реклама...</p><button onclick="document.getElementById('partnerModal').classList.add('hidden')" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-4 rounded-xl btn-active btn-hover">Закрыть</button></div></div></div>
@@ -1646,8 +1673,10 @@
 
             if (isSevereWeather) {
                  if(statusEl) {
-                    statusEl.innerHTML = message;
-                    statusEl.className = `mb-3 p-4 rounded-xl border shadow-lg backdrop-blur-md transition-all duration-500 text-center text-sm font-bold ${style}`;
+                    const mapHint = `<div class="mt-1 text-[10px] opacity-75 flex items-center justify-center font-normal"><i class="fas fa-map-marker-alt mr-1"></i> Нажмите, чтобы посмотреть на карте</div>`;
+                    statusEl.innerHTML = message + mapHint;
+                    statusEl.className = `mb-3 p-4 rounded-xl border shadow-lg backdrop-blur-md transition-all duration-300 text-center text-sm font-bold cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${style}`;
+                    statusEl.setAttribute('onclick', 'window.openMapModal()');
                     statusEl.classList.remove('hidden');
                 }
                 window.updateTaxiPrice();
@@ -1662,8 +1691,10 @@
                 priceMultiplier = CONFIG.TAXI.MULTIPLIERS.HOLIDAY;
                 
                 if(statusEl) {
-                    statusEl.innerHTML = `<div class="flex items-center justify-center gap-3"><span class="status-dot yellow" style="animation: pulse-yellow 2s infinite;"></span> <div class="text-left leading-tight">${message}</div></div>`;
-                    statusEl.className = `mb-3 p-3 rounded-xl border shadow-lg backdrop-blur-md transition-all duration-500 text-center text-sm font-bold ${style}`;
+                    const mapHint = `<div class="mt-1 text-[10px] opacity-75 flex items-center justify-center font-normal"><i class="fas fa-map-marker-alt mr-1"></i> Нажмите, чтобы посмотреть на карте</div>`;
+                    statusEl.innerHTML = `<div class="flex items-center justify-center gap-3"><span class="status-dot yellow" style="animation: pulse-yellow 2s infinite;"></span> <div class="text-left leading-tight">${message}${mapHint}</div></div>`;
+                    statusEl.className = `mb-3 p-3 rounded-xl border shadow-lg backdrop-blur-md transition-all duration-300 text-center text-sm font-bold cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${style}`;
+                    statusEl.setAttribute('onclick', 'window.openMapModal()');
                     statusEl.classList.remove('hidden');
                 }
                 window.updateTaxiPrice();
@@ -1727,9 +1758,11 @@
             }
 
             if(statusEl) {
+                const mapHint = `<div class="mt-1 text-[10px] opacity-75 flex items-center justify-center font-normal"><i class="fas fa-map-marker-alt mr-1"></i> Нажмите, чтобы посмотреть на карте</div>`;
                 const dotHtml = `<span class="status-dot ${dotColor}" style="animation: pulse-${dotColor} 2s infinite;"></span>`;
-                statusEl.innerHTML = `<div class="flex items-center justify-center gap-3">${dotHtml} <div class="text-left leading-tight">${message}</div></div>`;
-                statusEl.className = `mb-3 p-3 rounded-xl border shadow-lg backdrop-blur-md transition-all duration-500 text-center text-sm font-bold ${style}`;
+                statusEl.innerHTML = `<div class="flex items-center justify-center gap-3">${dotHtml} <div class="text-left leading-tight">${message}${mapHint}</div></div>`;
+                statusEl.className = `mb-3 p-3 rounded-xl border shadow-lg backdrop-blur-md transition-all duration-300 text-center text-sm font-bold cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${style}`;
+                statusEl.setAttribute('onclick', 'window.openMapModal()');
                 statusEl.classList.remove('hidden');
             }
             window.updateTaxiPrice();
@@ -2475,6 +2508,9 @@
             if (modal) {
                 modal.classList.remove('active');
                 modal.setAttribute('aria-hidden', 'true');
+                if (modalId === 'mapModal') {
+                    if (window.simInterval) clearInterval(window.simInterval);
+                }
                 if (modalId === 'taxiModal' || modalId === 'auctionModal') {
                     const stopsContainerTaxi = document.getElementById('additionalStops');
                     const stopsContainerAuction = document.getElementById('additionalStopsAuction');
@@ -2538,6 +2574,108 @@
             });
             updateTaxiPrice();
         }
+
+        window.simMap = null;
+        window.carMarkers = [];
+        window.simInterval = null;
+
+        window.openMapModal = function() {
+            window.openModal('mapModal');
+            // Даем время на CSS анимацию открытия окна перед рендером карты
+            setTimeout(window.initSimulationMap, 300); 
+        };
+
+        window.initSimulationMap = function() {
+            if (!window.simMap) {
+                // Инициализируем карту (Voyager стиль очень похож на Yandex/Google)
+                window.simMap = L.map('simulationMap', { zoomControl: false, attributionControl: false }).setView([50.130, 82.545], 14);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 18
+                }).addTo(window.simMap);
+                L.control.zoom({ position: 'bottomright' }).addTo(window.simMap);
+                L.control.attribution({position: 'bottomleft', prefix: '<a href="https://leafletjs.com">Leaflet</a> | © OpenStreetMap'}).addTo(window.simMap);
+            }
+
+            // Очищаем старые маркеры и интервалы
+            if (window.simInterval) clearInterval(window.simInterval);
+            window.carMarkers.forEach(m => window.simMap.removeLayer(m.marker));
+            window.carMarkers = [];
+
+            let cars = 0;
+            try {
+                const stored = JSON.parse(localStorage.getItem('taxi_sim_state_v2'));
+                if (stored) cars = stored.cars;
+            } catch(e){}
+
+            const overlay = document.getElementById('mapOverlayText');
+            if (cars === 0) {
+                overlay.innerHTML = '<i class="fas fa-moon text-blue-500 mr-2"></i> Свободных машин нет';
+                window.simMap.invalidateSize();
+                return;
+            }
+
+            overlay.innerHTML = `<i class="fas fa-car-side text-green-500 mr-2"></i> На линии: ${cars} авто`;
+
+            // Создаем иконку такси
+            const taxiIcon = L.divIcon({
+                className: 'custom-taxi-icon',
+                html: `<div style="background-color: #facc15; border: 2px solid #374151; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                        <i class="fas fa-taxi" style="font-size: 11px; color: #111827;"></i>
+                       </div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+
+            // Координаты улиц Белоусовки (примерный прямоугольник)
+            const bounds = {
+                latMin: 50.120, latMax: 50.145,
+                lngMin: 82.525, lngMax: 82.565
+            };
+
+            // Спавним машинки
+            for(let i=0; i<cars; i++) {
+                const startLat = bounds.latMin + Math.random() * (bounds.latMax - bounds.latMin);
+                const startLng = bounds.lngMin + Math.random() * (bounds.lngMax - bounds.lngMin);
+                const marker = L.marker([startLat, startLng], {icon: taxiIcon}).addTo(window.simMap);
+
+                window.carMarkers.push({
+                    marker: marker,
+                    lat: startLat,
+                    lng: startLng,
+                    targetLat: startLat,
+                    targetLng: startLng,
+                    speed: 0.00001 + Math.random() * 0.000005 // Уменьшили скорость до реалистичной (ок. 40-50 км/ч)
+                });
+            }
+
+            // Перерисовываем контейнер после загрузки
+            window.simMap.invalidateSize();
+
+            // Запускаем цикл движения
+            window.simInterval = setInterval(() => {
+                window.carMarkers.forEach(car => {
+                    const distLat = car.targetLat - car.lat;
+                    const distLng = car.targetLng - car.lng;
+                    const dist = Math.sqrt(distLat*distLat + distLng*distLng);
+
+                    // Если машинка достигла точки, даем ей новую
+                    if (dist < 0.00005) { // Уменьшили порог достижения цели
+                        car.targetLat = car.lat + (Math.random() - 0.5) * 0.005; // Короткие дистанции для более частых и плавных "поворотов"
+                        car.targetLng = car.lng + (Math.random() - 0.5) * 0.005;
+                        car.targetLat = Math.max(bounds.latMin, Math.min(bounds.latMax, car.targetLat));
+                        car.targetLng = Math.max(bounds.lngMin, Math.min(bounds.lngMax, car.targetLng));
+                    }
+
+                    // Плавно двигаем
+                    const angle = Math.atan2(car.targetLng - car.lng, car.targetLat - car.lat);
+                    car.lat += Math.cos(angle) * car.speed;
+                    car.lng += Math.sin(angle) * car.speed;
+
+                    // Обновляем позицию (CSS transition сглаживает)
+                    car.marker.setLatLng([car.lat, car.lng]);
+                });
+            }, 100);
+        };
 
         window.togglePreorder = function() {
             const content = document.getElementById('preorderContent');

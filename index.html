@@ -2618,13 +2618,53 @@
 
         window.initSimulationMap = function() {
             if (!window.simMap) {
-                // Инициализируем карту (Voyager стиль очень похож на Yandex/Google)
+                // Инициализируем карту (сменили слой на стандартный OSM, где четко видны дома, магазины и нет машин на озере)
                 window.simMap = L.map('simulationMap', { zoomControl: false, attributionControl: false }).setView([50.130, 82.545], 14);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 18
                 }).addTo(window.simMap);
                 L.control.zoom({ position: 'bottomright' }).addTo(window.simMap);
-                L.control.attribution({position: 'bottomleft', prefix: '<a href="https://leafletjs.com">Leaflet</a> | © OpenStreetMap'}).addTo(window.simMap);
+                
+                // Добавляем маркеры популярных заведений (Магазины/Кафе)
+                const poiIcon = (color, iconClass) => L.divIcon({
+                    className: 'custom-poi-icon',
+                    html: `<div style="background-color: ${color}; border: 2px solid white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.4);"><i class="${iconClass}" style="font-size: 10px; color: white;"></i></div>`,
+                    iconSize: [20, 20], iconAnchor: [10, 10]
+                });
+                
+                L.marker([50.1343, 82.5407], {icon: poiIcon('#ef4444', 'fas fa-fire')}).bindPopup('Шашлычный двор').addTo(window.simMap);
+                L.marker([50.1322, 82.5501], {icon: poiIcon('#f97316', 'fas fa-utensils')}).bindPopup('Домашний праздник').addTo(window.simMap);
+                L.marker([50.1305, 82.5375], {icon: poiIcon('#3b82f6', 'fas fa-shopping-cart')}).bindPopup('Супермаркет').addTo(window.simMap);
+                L.marker([50.1290, 82.5450], {icon: poiIcon('#10b981', 'fas fa-shopping-basket')}).bindPopup('Магазин продуктов').addTo(window.simMap);
+            }
+
+            // Запрос геопозиции пользователя (показываем "синюю точку")
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    
+                    // Иконка для местоположения клиента
+                    const userIcon = L.divIcon({
+                        className: 'user-location-icon',
+                        html: `<div style="background-color: #2563eb; border: 3px solid #ffffff; border-radius: 50%; width: 20px; height: 20px; box-shadow: 0 0 12px rgba(37, 99, 235, 0.9);"></div>`,
+                        iconSize: [20, 20], 
+                        iconAnchor: [10, 10]
+                    });
+                    
+                    // Удаляем старый маркер пользователя, если он был
+                    if (window.userMarker) window.simMap.removeLayer(window.userMarker);
+                    
+                    // Добавляем новый маркер поверх остальных машин (zIndexOffset)
+                    window.userMarker = L.marker([userLat, userLng], {icon: userIcon, zIndexOffset: 1000})
+                        .addTo(window.simMap)
+                        .bindPopup('<b style="font-size: 14px;">📍 Вы здесь</b>');
+                        
+                    // Если клиент находится недалеко от Белоусовки, центрируем карту на нем
+                    if (Math.abs(userLat - 50.13) < 0.1 && Math.abs(userLng - 82.54) < 0.1) {
+                        window.simMap.setView([userLat, userLng], 15);
+                    }
+                }, (err) => { console.warn('Не удалось получить геопозицию пользователя:', err); }, {timeout: 5000, maximumAge: 60000});
             }
 
             // Очищаем старые маркеры и интервалы
@@ -2657,52 +2697,91 @@
                 iconAnchor: [12, 12]
             });
 
-            // Координаты улиц Белоусовки (примерный прямоугольник)
-            const bounds = {
-                latMin: 50.120, latMax: 50.145,
-                lngMin: 82.525, lngMax: 82.565
-            };
+            // Граф основных перекрестков (расширенный для реалистичного разброса по всему поселку)
+            const roadNodes = [
+                { id: 0, lat: 50.1430, lng: 82.5350, links: [1, 13] }, // Дальний Север
+                { id: 1, lat: 50.1384, lng: 82.5352, links: [0, 2] },
+                { id: 2, lat: 50.1343, lng: 82.5407, links: [1, 3, 4] }, // Центр
+                { id: 3, lat: 50.1355, lng: 82.5475, links: [2, 5, 14] },
+                { id: 4, lat: 50.1305, lng: 82.5375, links: [2, 6, 9] },
+                { id: 5, lat: 50.1322, lng: 82.5501, links: [3, 7, 8] },
+                { id: 6, lat: 50.1265, lng: 82.5350, links: [4, 10, 11] },
+                { id: 7, lat: 50.1290, lng: 82.5450, links: [5, 9, 12] },
+                { id: 8, lat: 50.1300, lng: 82.5550, links: [5, 15] }, // Восток
+                { id: 9, lat: 50.1295, lng: 82.5410, links: [4, 7] },
+                { id: 10, lat: 50.1240, lng: 82.5320, links: [6, 16] }, // Юго-Запад
+                { id: 11, lat: 50.1250, lng: 82.5420, links: [6, 12] },
+                { id: 12, lat: 50.1265, lng: 82.5480, links: [7, 11, 17] }, // Юго-Восток
+                { id: 13, lat: 50.1400, lng: 82.5250, links: [0] }, // Северо-Запад
+                { id: 14, lat: 50.1380, lng: 82.5550, links: [3] }, // Северо-Восток
+                { id: 15, lat: 50.1280, lng: 82.5650, links: [8] }, // Дальний Восток
+                { id: 16, lat: 50.1180, lng: 82.5300, links: [10] }, // Дальний Юг (Трасса)
+                { id: 17, lat: 50.1190, lng: 82.5500, links: [12] }  // Дальний Юго-Восток
+            ];
 
-            // Спавним машинки
+            // Спавним машинки строго на дорогах
             for(let i=0; i<cars; i++) {
-                const startLat = bounds.latMin + Math.random() * (bounds.latMax - bounds.latMin);
-                const startLng = bounds.lngMin + Math.random() * (bounds.lngMax - bounds.lngMin);
-                const marker = L.marker([startLat, startLng], {icon: taxiIcon}).addTo(window.simMap);
+                const startNodeIdx = Math.floor(Math.random() * roadNodes.length);
+                const startNode = roadNodes[startNodeIdx];
+                const nextNodeIdx = startNode.links[Math.floor(Math.random() * startNode.links.length)];
+                const targetNode = roadNodes.find(n => n.id === nextNodeIdx);
+
+                const marker = L.marker([startNode.lat, startNode.lng], {icon: taxiIcon}).addTo(window.simMap);
 
                 window.carMarkers.push({
                     marker: marker,
-                    lat: startLat,
-                    lng: startLng,
-                    targetLat: startLat,
-                    targetLng: startLng,
-                    speed: 0.00001 + Math.random() * 0.000005 // Уменьшили скорость до реалистичной (ок. 40-50 км/ч)
+                    currentNode: startNode,
+                    targetNode: targetNode,
+                    lat: startNode.lat,
+                    lng: startNode.lng,
+                    speed: 0.000006 + Math.random() * 0.000004, // Медленная, реалистичная скорость (30-40 км/ч)
+                    pauseLeft: Math.floor(Math.random() * 100) // Случайная стартовая пауза: некоторые машины уже стоят на месте
                 });
             }
 
             // Перерисовываем контейнер после загрузки
             window.simMap.invalidateSize();
 
-            // Запускаем цикл движения
+            // Запускаем цикл движения по дорогам
             window.simInterval = setInterval(() => {
                 window.carMarkers.forEach(car => {
-                    const distLat = car.targetLat - car.lat;
-                    const distLng = car.targetLng - car.lng;
-                    const dist = Math.sqrt(distLat*distLat + distLng*distLng);
-
-                    // Если машинка достигла точки, даем ей новую
-                    if (dist < 0.00005) { // Уменьшили порог достижения цели
-                        car.targetLat = car.lat + (Math.random() - 0.5) * 0.005; // Короткие дистанции для более частых и плавных "поворотов"
-                        car.targetLng = car.lng + (Math.random() - 0.5) * 0.005;
-                        car.targetLat = Math.max(bounds.latMin, Math.min(bounds.latMax, car.targetLat));
-                        car.targetLng = Math.max(bounds.lngMin, Math.min(bounds.lngMax, car.targetLng));
+                    // Если машина стоит (пауза) - просто уменьшаем счетчик
+                    if (car.pauseLeft > 0) {
+                        car.pauseLeft--;
+                        return;
                     }
 
-                    // Плавно двигаем
-                    const angle = Math.atan2(car.targetLng - car.lng, car.targetLat - car.lat);
-                    car.lat += Math.cos(angle) * car.speed;
-                    car.lng += Math.sin(angle) * car.speed;
+                    const distLat = car.targetNode.lat - car.lat;
+                    const distLng = car.targetNode.lng - car.lng;
+                    const dist = Math.sqrt(distLat*distLat + distLng*distLng);
 
-                    // Обновляем позицию (CSS transition сглаживает)
+                    // Достигли перекрестка/адреса -> выбираем следующий
+                    if (dist < car.speed) {
+                        car.lat = car.targetNode.lat;
+                        car.lng = car.targetNode.lng;
+                        
+                        const prevNodeId = car.currentNode.id;
+                        car.currentNode = car.targetNode;
+                        
+                        // Выбираем куда ехать дальше (стараемся не ехать обратно, если есть выбор)
+                        let nextLinks = car.currentNode.links.filter(id => id !== prevNodeId);
+                        if (nextLinks.length === 0) nextLinks = car.currentNode.links; // Тупик -> разворот
+                        
+                        const nextNodeIdx = nextLinks[Math.floor(Math.random() * nextLinks.length)];
+                        car.targetNode = roadNodes.find(n => n.id === nextNodeIdx);
+
+                        // С вероятностью 40% машина останавливается на "заказе" или "ожидании" (от 3 до 15 секунд)
+                        if (Math.random() < 0.4) {
+                            car.pauseLeft = 30 + Math.floor(Math.random() * 120);
+                        }
+                    } else {
+                        // Едем к следующему перекрестку
+                        const angle = Math.atan2(distLng, distLat);
+                        car.lat += Math.cos(angle) * car.speed;
+                        car.lng += Math.sin(angle) * car.speed;
+                    }
+
+                    // Обновляем позицию на карте
                     car.marker.setLatLng([car.lat, car.lng]);
                 });
             }, 100);

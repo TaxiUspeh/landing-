@@ -281,6 +281,28 @@
         <!-- SERVICES BLOCK -->
         <h3 class="text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-2 border-gray-400 border-opacity-30">Дополнительные Услуги</h3>
         
+        <div class="grid grid-cols-2 gap-3 mb-8 max-w-md mx-auto">
+            <button onclick="openModal('deliveryModal')" class="service-card bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border-b-4 border-green-500 flex flex-col items-center text-center group btn-active">
+                <i class="fas fa-box-open text-3xl text-green-500 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="font-bold text-gray-800 dark:text-white">Доставка</span>
+                <span class="text-[10px] text-gray-500 mt-1">Продукты и товары</span>
+            </button>
+            <button onclick="openModal('cargoModal')" class="service-card bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border-b-4 border-orange-500 flex flex-col items-center text-center group btn-active">
+                <i class="fas fa-truck-loading text-3xl text-orange-500 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="font-bold text-gray-800 dark:text-white">Грузовой</span>
+                <span class="text-[10px] text-gray-500 mt-1">Перевозка грузов</span>
+            </button>
+            <button onclick="openModal('soberDriverModal')" class="service-card bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border-b-4 border-red-500 flex flex-col items-center text-center group btn-active">
+                <i class="fas fa-user-shield text-3xl text-red-500 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="font-bold text-gray-800 dark:text-white leading-tight">Трезвый<br>водитель</span>
+            </button>
+            <button onclick="openModal('assistanceModal')" class="service-card bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border-b-4 border-indigo-500 flex flex-col items-center text-center group btn-active">
+                <i class="fas fa-life-ring text-3xl text-indigo-500 mb-2 group-hover:scale-110 transition-transform"></i>
+                <span class="font-bold text-gray-800 dark:text-white">Помощь</span>
+                <span class="text-[10px] text-gray-500 mt-1">Прикурить, колесо</span>
+            </button>
+        </div>
+
         <div class="max-w-md mx-auto mb-6">
             <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Полезная информация</h3>
             <button onclick="openModal('busScheduleModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between border border-blue-400/30">

@@ -289,7 +289,7 @@
 
         <!-- PARTNER INFO (TECH INSPECTION) -->
         <div class="mt-8 border-t pt-6 max-w-md mx-auto border-gray-400 border-opacity-30">
-            <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Партнеры (Официальный ТО)</h3>
+            <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Партнёрские сервисы</h3>
             <button onclick="openModal('techInspectionModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between border border-red-400/30">
                 <div class="flex items-center gap-3">
                     <div class="bg-white/20 p-2.5 rounded-xl shadow-inner">
@@ -302,6 +302,19 @@
                 </div>
                 <i class="fas fa-chevron-right text-white opacity-80 text-xl"></i>
             </button>
+            
+            <button onclick="openModal('stroyDomModal')" class="w-full mt-4 btn-hover btn-active bg-gradient-to-r from-[#849b5c] via-[#758a51] to-[#6b8254] text-white rounded-2xl p-4 shadow-xl flex items-center justify-between border border-[#849b5c]/50">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/20 p-2.5 rounded-xl shadow-inner">
+                        <i class="fas fa-home text-2xl text-yellow-300"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="block text-lg font-black leading-tight text-shadow-md uppercase">СтройДом</span>
+                        <span class="block text-xs text-green-100 mt-0.5">Всё для ремонта и уюта</span>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right text-white opacity-80 text-xl"></i>
+            </button>
         </div>
 
         <!-- ADVERTISING BLOCK -->
@@ -309,13 +322,23 @@
             <h3 class="text-xl font-bold text-white text-shadow-md mb-2 text-center">📢 Реклама вашего бизнеса в Такси «Успех»</h3>
             <p class="text-xs text-center text-gray-200 mb-6 px-4" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Разместите свой бизнес у нас! Вашу рекламу увидят пассажиры такси и жители Белоусовки:</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20бизнеса%20(Автомойка)%20в%20приложении%20Такси%20Успех..." target="_blank" class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-blue-500 flex flex-col items-center text-center relative overflow-hidden group">
-                    <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider animate-pulse">Свободно</div>
-                    <i class="fas fa-car-wash text-4xl text-blue-500 mb-2 mt-2 group-hover:scale-110 transition-transform"></i>
-                    <p class="text-lg font-bold text-gray-800">Автомойка</p>
-                    <p class="text-sm text-gray-600 mt-1">Отличное место для привлечения клиентов из такси.</p>
-                    <span class="mt-3 text-xs font-semibold text-blue-600 flex items-center gap-1"><i class="fab fa-whatsapp"></i> Занять место (WhatsApp)</span>
-                </a>
+                <button onclick="openModal('stroyDomModal')" class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-2 border-[#849b5c] flex flex-col items-center text-center relative overflow-hidden group">
+                    <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-green-200">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Открыто
+                    </div>
+                    <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-[#f0f4eb] text-[#6b8254] border border-[#d1dec1] text-[10px] font-bold uppercase tracking-wider">Наш партнер</div>
+                    
+                    <div class="relative mt-4 mb-2 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-home text-4xl text-[#849b5c]"></i>
+                        <i class="fas fa-heart text-red-400 absolute text-sm bottom-0 right-[-6px] bg-white rounded-full p-0.5 shadow-sm"></i>
+                    </div>
+                    
+                    <p class="text-lg font-black text-gray-800 uppercase tracking-tight mt-1">СтройДом</p>
+                    <p class="text-[13px] text-gray-600 mt-1 leading-tight font-medium">Всё для ремонта и уюта в вашем доме.</p>
+                    <span class="mt-3 text-xs font-bold text-white bg-[#849b5c] hover:bg-[#72874e] transition-colors px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md w-full justify-center">
+                        <i class="fas fa-store"></i> В магазин
+                    </span>
+                </button>
                 
                 <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20бизнеса%20(СТО)%20в%20приложении%20Такси%20Успех..." target="_blank" class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-amber-500 flex flex-col items-center text-center relative overflow-hidden group">
                     <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider animate-pulse">Свободно</div>
@@ -325,45 +348,13 @@
                     <span class="mt-3 text-xs font-semibold text-amber-600 flex items-center gap-1"><i class="fab fa-whatsapp"></i> Занять место (WhatsApp)</span>
                 </a>
 
-                <!-- STROY DOM PARTNER CARD -->
-                <div class="partner-card service-card bg-gradient-to-b from-orange-50 to-white p-0 rounded-xl shadow-lg border-2 border-orange-500 flex flex-col items-center text-center relative overflow-hidden group">
-                    <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-orange-500 text-white text-[10px] font-black uppercase tracking-wider z-10 shadow-sm"><i class="fas fa-star text-yellow-200"></i> Партнер</div>
-                    
-                    <div class="bg-gradient-to-r from-orange-600 to-red-600 w-full pt-6 pb-4 flex flex-col items-center relative overflow-hidden">
-                        <!-- Decorative background elements -->
-                        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white opacity-10 rounded-full"></div>
-                        <div class="absolute -left-4 -bottom-4 w-16 h-16 bg-yellow-400 opacity-20 rounded-full"></div>
-                        
-                        <i class="fas fa-hammer text-4xl text-white mb-1 group-hover:scale-110 transition-transform drop-shadow-md"></i>
-                        <p class="text-xl font-black text-white uppercase tracking-tight drop-shadow-md">СтройДом</p>
-                        <p class="text-orange-100 text-xs font-semibold px-2">Строительный магазин</p>
-                    </div>
-
-                    <div class="p-4 w-full flex flex-col items-center">
-                        <div class="text-sm text-gray-700 w-full space-y-2 mb-4 text-left px-2">
-                            <p class="flex items-start gap-2"><i class="far fa-clock text-orange-500 mt-1 w-4 text-center"></i> <span>Ежедневно<br><span class="font-bold text-gray-900">с 9:00 до 18:00</span></span></p>
-                            <p class="flex items-start gap-2"><i class="fas fa-map-marker-alt text-red-500 mt-1 w-4 text-center"></i> <span>п. Белоусовка<br><span class="font-bold text-gray-900">ул. Юбилейная 10</span></span></p>
-                        </div>
-                        
-                        <div class="flex gap-2 w-full mb-3">
-                            <a href="https://yandex.kz/navi/-/CTwku69A" target="_blank" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg py-2 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm border border-gray-200">
-                                <i class="fas fa-route text-blue-500"></i> Маршрут
-                            </a>
-                            <a href="https://www.instagram.com/stroy_dom_bk" target="_blank" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg py-2 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm border border-gray-200">
-                                <i class="fab fa-instagram text-pink-500"></i> Instagram
-                            </a>
-                        </div>
-                        
-                        <div class="flex gap-2 w-full">
-                            <a href="tel:+77764764606" class="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-lg py-2.5 text-sm font-bold transition shadow-md flex items-center justify-center gap-1.5 btn-active">
-                                <i class="fas fa-phone-alt"></i> Звонок
-                            </a>
-                            <a href="https://wa.me/77764764606" target="_blank" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg py-2.5 text-sm font-bold transition shadow-md flex items-center justify-center gap-1.5 btn-active">
-                                <i class="fab fa-whatsapp text-lg"></i> WhatsApp
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20бизнеса%20в%20приложении%20Такси%20Успех..." target="_blank" class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-pink-500 flex flex-col items-center text-center relative overflow-hidden group">
+                    <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[10px] font-bold uppercase tracking-wider">Ваш бизнес</div>
+                    <i class="fas fa-bullhorn text-4xl text-pink-500 mb-2 mt-2 group-hover:scale-110 transition-transform"></i>
+                    <p class="text-lg font-bold text-gray-800">Здесь мог быть ваш бизнес</p>
+                    <p class="text-sm text-gray-600 mt-1">Магазин, кафе, услуги — покажите себя всем жителям.</p>
+                    <span class="mt-3 text-xs font-semibold text-pink-600 flex items-center gap-1"><i class="fab fa-whatsapp"></i> Разместить рекламу</span>
+                </a>
             </div>
         </div>
 
@@ -1291,6 +1282,96 @@
         </div>
     </div>
     <!-- === END MAP SIMULATION MODAL === -->
+
+    <!-- === STROYDOM MODAL === -->
+    <div id="stroyDomModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal sm:max-w-md w-[95%]">
+            <div class="relative rounded-t-xl overflow-hidden bg-[#f7f9f2] dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <!-- Баннер из файла -->
+                <img src="WhatsApp Image 2026-08-24 at 12.27.36.jpeg" alt="СтройДом Баннер" class="w-full h-auto object-cover max-h-56" onerror="this.src='https://placehold.co/600x300/849b5c/ffffff?text=СтройДом'">
+                <button class="close-btn absolute top-2 right-2 text-2xl text-gray-800 bg-white/70 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center btn-active backdrop-blur-sm shadow-md" data-modal="stroyDomModal">×</button>
+            </div>
+            
+            <div class="p-5">
+                <div class="text-center mb-5">
+                    <h3 class="text-2xl font-black text-gray-800 dark:text-white tracking-tight flex items-center justify-center gap-2 uppercase">
+                        <i class="fas fa-home text-[#849b5c]"></i> СтройДом
+                    </h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 italic mt-1 font-medium">ВСЁ ДЛЯ РЕМОНТА и уюта в вашем доме</p>
+                </div>
+
+                <!-- Info blocks -->
+                <div class="grid grid-cols-1 gap-2.5 mb-5 text-sm">
+                    <div class="flex items-center gap-3 bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border border-gray-100 dark:border-gray-600 shadow-sm">
+                        <div class="bg-white dark:bg-gray-600 p-2 rounded-full shadow-sm text-[#849b5c]"><i class="far fa-clock text-lg w-6 text-center"></i></div>
+                        <div>
+                            <p class="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wide">Режим работы</p>
+                            <p class="font-bold text-gray-800 dark:text-gray-100">Ежедневно, с 9:00 до 18:00</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border border-gray-100 dark:border-gray-600 shadow-sm">
+                        <div class="bg-white dark:bg-gray-600 p-2 rounded-full shadow-sm text-red-500"><i class="fas fa-map-marker-alt text-lg w-6 text-center"></i></div>
+                        <div>
+                            <p class="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wide">Магазин в Белоусовке</p>
+                            <p class="font-bold text-gray-800 dark:text-gray-100">ул. Юбилейная 10</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assortment -->
+                <h4 class="font-extrabold text-gray-800 dark:text-white text-sm mb-3 border-b border-gray-200 dark:border-gray-600 pb-2 flex items-center gap-2">
+                    <i class="fas fa-shopping-basket text-[#849b5c]"></i> В нашем ассортименте:
+                </h4>
+                <div class="flex justify-between items-start mb-5 text-center text-[10px] font-bold text-gray-700 dark:text-gray-300 gap-1 uppercase">
+                    <div class="flex flex-col items-center gap-1.5 w-1/5">
+                        <div class="bg-[#f5e1e1] text-[#b06161] w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-sm border border-[#e8cece]"><i class="fas fa-scroll"></i></div>
+                        <span class="leading-tight">Обои</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1.5 w-1/5">
+                        <div class="bg-[#e4ebd9] text-[#718b56] w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-sm border border-[#d6e0c9]"><i class="fas fa-door-closed"></i></div>
+                        <span class="leading-tight">Двери</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1.5 w-1/5">
+                        <div class="bg-[#f2ead7] text-[#9c8454] w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-sm border border-[#e6dcc5]"><i class="fas fa-layer-group"></i></div>
+                        <span class="leading-tight">Ламинат</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1.5 w-1/5">
+                        <div class="bg-[#dce9eb] text-[#557e85] w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-sm border border-[#cddbde]"><i class="fas fa-paint-roller"></i></div>
+                        <span class="leading-tight">Краски</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1.5 w-1/5">
+                        <div class="bg-gray-200 text-gray-600 w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-sm border border-gray-300"><i class="fas fa-ellipsis-h"></i></div>
+                        <span class="leading-tight">Прочее</span>
+                    </div>
+                </div>
+
+                <!-- Advantages -->
+                <ul class="space-y-2 text-sm text-gray-700 dark:text-gray-200 mb-6 bg-[#f7f9f2] dark:bg-gray-700/50 p-4 rounded-xl border border-[#e6ebd9] dark:border-gray-600 font-medium">
+                    <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-[#849b5c] text-base"></i> Широкий ассортимент</li>
+                    <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-[#849b5c] text-base"></i> Доступные цены</li>
+                    <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-[#849b5c] text-base"></i> Профессиональная консультация</li>
+                    <li class="flex items-center gap-2.5"><i class="fas fa-check-circle text-[#849b5c] text-base"></i> Доставка и помощь в выборе</li>
+                </ul>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-2 gap-3">
+                    <a href="https://wa.me/77764764606" target="_blank" class="w-full bg-gradient-to-r from-[#25D366] to-[#1ebe57] text-white font-bold py-3.5 px-2 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm btn-active btn-hover">
+                        <i class="fab fa-whatsapp text-xl"></i> WhatsApp
+                    </a>
+                    <a href="tel:+77764764606" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold py-3.5 px-2 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm btn-active btn-hover">
+                        <i class="fas fa-phone-alt text-xl"></i> Позвонить
+                    </a>
+                    <a href="https://yandex.kz/navi/-/CTDAMU3r" target="_blank" class="w-full bg-gradient-to-r from-[#ffcc00] to-[#e6b800] text-gray-900 font-bold py-3.5 px-2 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm btn-active btn-hover">
+                        <i class="fas fa-map-marked-alt text-xl"></i> Навигатор
+                    </a>
+                    <a href="https://www.instagram.com/stroy_dom_bk?igsi=MWNldmk2M2kwMzNsZA==" target="_blank" class="w-full bg-gradient-to-tr from-[#feda75] via-[#d62976] to-[#4f5bd5] text-white font-bold py-3.5 px-2 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm btn-active btn-hover">
+                        <i class="fab fa-instagram text-xl"></i> Instagram
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- === END STROYDOM MODAL === -->
 
     <!-- PWA & PARTNER MODALS -->
     <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4"><div class="modal"><div class="p-6"><h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните как приложение!</h3><p class="mb-4 text-gray-700">Инструкция...</p><button onclick="document.getElementById('pwaModal').classList.add('hidden')" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-4 rounded-xl btn-active btn-hover">Понятно</button></div></div></div>
@@ -3009,211 +3090,140 @@
                 switch (modalKey) {
                     case 'taxi':
                         let fromAddressRaw = document.getElementById('taxiFrom').value.trim();
-                        let fromAddress = appendHouseAndApt(fromAddressRaw, 'taxiHouse', 'taxiApt');
+                        let toAddressRaw = document.getElementById('taxiTo').value.trim();
+                        if(!fromAddressRaw) requiredFieldsMissing = true;
+                        if(!toAddressRaw) requiredFieldsMissing = true;
                         
-                        let streetAddress = document.getElementById('taxiTo').value.trim();
-                        const citySelectVal = document.getElementById('taxiCitySelect').value;
+                        let taxiFrom = appendHouseAndApt(fromAddressRaw, 'taxiHouse', 'taxiApt');
+                        message = handlePreorder('taxiDateTime', message);
+                        message += `*Откуда*:\n${taxiFrom}\n\n`;
+                        message += `*Куда*:\n${toAddressRaw}\n\n`;
+                        message += collectStops('additionalStops');
                         
-                        let toAddress = streetAddress;
-                        if (citySelectVal) {
-                            toAddress = streetAddress ? `${citySelectVal}, ${streetAddress}` : citySelectVal;
+                        let wishes = document.getElementById('taxiWishes').value.trim();
+                        if(wishes) message += `*Пожелания*:\n${wishes}\n\n`;
+                        
+                        let phoneContainer = document.getElementById('phoneInputContainer');
+                        if(phoneContainer && !phoneContainer.classList.contains('hidden')){
+                            let phone = document.getElementById('passengerPhone').value.trim();
+                            if(phone) message += `*Телефон пассажира*:\n${phone}\n\n`;
                         }
                         
-                        const wishes = document.getElementById('taxiWishes').value.trim();
-                        const passengerPhone = document.getElementById('passengerPhone').value.trim(); 
-                        const preorderContent = document.getElementById('preorderContent');
-                        const isPreorderOpen = preorderContent && !preorderContent.classList.contains('hidden');
-                        
-                        const matchedToRate = findIntercityRate(toAddress);
-                        if (matchedToRate) {
-                            toAddress = `${matchedToRate.name} ${streetAddress ? '(' + streetAddress + ')' : ''} (Авто-уточнено)`;
-                        }
-                        const matchedFromRate = findIntercityRate(fromAddressRaw);
-                        if (matchedFromRate) {
-                            fromAddress = `${matchedFromRate.name} (Авто-уточнено из: "${fromAddressRaw}")`;
-                        }
-
-                        if (isPreorderOpen) message = handlePreorder('taxiDateTime', modalConfig.prefix);
-                        else message = `${modalConfig.prefix}\n\n`;
-                        
-                        if (!fromAddressRaw) requiredFieldsMissing = true;
-                        if (!toAddress) requiredFieldsMissing = true;
-                        
-                        message += `Откуда:\n${fromAddress}\n\n`;
-                        message += `Куда:\n${toAddress}\n\n`;
-                        
-                        if (wishes) message += `*Пожелания*:\n${wishes}\n\n`;
-                        let stopMessage = collectStops('additionalStops');
-                        if (stopMessage) {
-                            message += '\n--- ДОП. АДРЕСА ПО ПУТИ ---\n\n';
-                            message += stopMessage;
-                            message += '---------------------------\n\n';
-                        }
-                        if (passengerPhone) {
-                            message += '📞 КОНТАКТЫ:\n';
-                            message += `*Телефон для связи*:\n${passengerPhone}\n\n`;
-                        }
-                        const currentPriceText = document.getElementById('taxiPriceEstimate').textContent;
-                        message += `💰 Примерная цена: ${currentPriceText} (уточнит водитель)`;
-                        
-                        if (isLuckyDiscount) {
-                            message += `\n🎁 (Применена скидка клиента -${CONFIG.LUCKY_DISCOUNT.AMOUNT} тг)`;
+                        let citySel = document.getElementById('taxiCitySelect');
+                        if(citySel && citySel.value) {
+                             message += `*Направление*:\n${citySel.value}\n\n`;
                         }
 
-                        if (fromAddressRaw) addressesToSave.push(fromAddressRaw);
-                        if (toAddress) addressesToSave.push(toAddress);
+                        let estPrice = document.getElementById('taxiPriceEstimate').innerText;
+                        message += `*Ориентировочная цена*: ${estPrice}\n`;
                         
-                        if (fromAddressRaw && toAddress) {
-                            saveOrderToFullHistory(fromAddress, toAddress, currentPriceText);
-                        }
-                        break;
-                    case 'auction':
-                        let auctionToAddress = document.getElementById('auctionTo').value.trim();
-                        const matchedAuctionRate = findIntercityRate(auctionToAddress);
-                        if (matchedAuctionRate) {
-                            auctionToAddress = `${matchedAuctionRate.name} (Авто-уточнено)`;
-                        }
-                        const auctionPrice = document.getElementById('auctionPrice').value;
-                        if (!auctionPrice || parseInt(auctionPrice) < CONFIG.AUCTION.MIN_PRICE) {
-                            requiredFieldsMissing = true;
-                            showStatus(modalId, `Пожалуйста, введите корректную цену (минимум ${CONFIG.AUCTION.MIN_PRICE} KZT).`);
-                            return;
-                        }
-                        
-                        let auctionFromRaw = document.getElementById('auctionFrom').value.trim();
-                        if (!auctionFromRaw) requiredFieldsMissing = true;
-                        let auctionFromFull = appendHouseAndApt(auctionFromRaw, 'auctionHouse', 'auctionApt');
-                        
-                        message += `*Откуда*:\n${auctionFromFull || '—'}\n\n`;
-                        message += `*Куда*:\n${auctionToAddress}\n\n`;
-                        message += collectStops('additionalStopsAuction');
-                        message += `*Предлагаемая цена*:\n${auctionPrice} KZT\n\n`;
-                        message += '⚠️ ПРИМЕЧАНИЕ: Это цена клиента. Примите решение по заказу самостоятельно.';
-                        
-                        if (auctionFromRaw) addressesToSave.push(auctionFromRaw);
-                        if (auctionToAddress) addressesToSave.push(auctionToAddress);
+                        addressesToSave.push(fromAddressRaw, toAddressRaw);
+                        window.saveOrderToFullHistory(taxiFrom, toAddressRaw, estPrice);
                         break;
                     case 'delivery':
-                        let deliveryStreetAddressRaw = document.getElementById('deliveryAddress').value.trim();
-                        const deliveryCitySelectVal = document.getElementById('deliveryCitySelect') ? document.getElementById('deliveryCitySelect').value : '';
-
-                        let baseDeliveryAddress = deliveryStreetAddressRaw;
-                        if (deliveryCitySelectVal) {
-                            baseDeliveryAddress = deliveryStreetAddressRaw ? `${deliveryCitySelectVal}, ${deliveryStreetAddressRaw}` : deliveryCitySelectVal;
-                        }
-
-                        if (!baseDeliveryAddress) requiredFieldsMissing = true;
-                        
-                        let deliveryAddressFull = appendHouseAndApt(baseDeliveryAddress, 'deliveryHouse', 'deliveryApt', true);
-                        
-                        const matchedDeliveryRate = findIntercityRate(baseDeliveryAddress);
-                        if (matchedDeliveryRate) {
-                            let extraAddr = '';
-                            let dh = document.getElementById('deliveryHouse') ? document.getElementById('deliveryHouse').value.trim() : '';
-                            let da = document.getElementById('deliveryApt') ? document.getElementById('deliveryApt').value.trim() : '';
-                            if(dh) extraAddr += `, д. ${dh}`;
-                            if(da) extraAddr += `, кв. ${da}`;
-                            deliveryAddressFull = `${matchedDeliveryRate.name} ${deliveryStreetAddressRaw ? '(' + deliveryStreetAddressRaw + ')' : ''} (Авто-уточнено)${extraAddr}`;
-                        }
+                        let delAddressRaw = document.getElementById('deliveryAddress').value.trim();
+                        if(!delAddressRaw) requiredFieldsMissing = true;
+                        let delAddress = appendHouseAndApt(delAddressRaw, 'deliveryHouse', 'deliveryApt', true);
                         
                         message += getVal('deliveryItems', 'Список товаров', true);
-                        message += `*Адрес доставки*:\n${deliveryAddressFull || '—'}\n\n`;
-                        message += getVal('deliveryStore', 'Пожелания по магазину');
-                        const deliveryPriceText = document.getElementById('deliveryPriceEstimate').textContent;
-                        message += `💰 Примерная цена: ${deliveryPriceText}`;
+                        message += getVal('deliveryStore', 'Магазин', false);
+                        message += `*Куда*:\n${delAddress}\n\n`;
                         
-                        if (deliveryStreetAddressRaw) addressesToSave.push(deliveryStreetAddressRaw);
+                        let delCitySel = document.getElementById('deliveryCitySelect');
+                        if(delCitySel && delCitySel.value) {
+                             message += `*Направление*:\n${delCitySel.value}\n\n`;
+                        }
+                        
+                        let delEstPrice = document.getElementById('deliveryPriceEstimate').innerText;
+                        message += `*Ориентировочная стоимость доставки*: ${delEstPrice}\n`;
+                        
+                        addressesToSave.push(delAddressRaw);
                         break;
                     case 'cargo':
                         let cargoFromRaw = document.getElementById('cargoFrom').value.trim();
-                        if (!cargoFromRaw) requiredFieldsMissing = true;
-                        let cargoFromFull = appendHouseAndApt(cargoFromRaw, 'cargoHouse', 'cargoApt');
+                        if(!cargoFromRaw) requiredFieldsMissing = true;
+                        let cargoFrom = appendHouseAndApt(cargoFromRaw, 'cargoHouse', 'cargoApt');
                         
-                        const cargoMoversSelect = document.getElementById('cargoMovers');
-                        const moversCount = parseInt(cargoMoversSelect.value);
-                        const totalPrice = CONFIG.CARGO.HOURLY_RATE + (moversCount * CONFIG.CARGO.MOVER_RATE);
-                        const formattedPrice = totalPrice.toLocaleString('ru-RU');
-                        const moversText = (moversCount > 0) ? `${moversCount} чел. (Доплата: ${moversCount * CONFIG.CARGO.MOVER_RATE} тг/час)` : 'Не требуются';
+                        message = handlePreorder('cargoDateTime', message);
+                        message += `*Откуда*:\n${cargoFrom}\n\n`;
+                        message += getVal('cargoTo', 'Куда', true);
+                        message += getVal('cargoDescription', 'Что везем', true);
                         
-                        message = handlePreorder('cargoDateTime', modalConfig.prefix);
-                        message += `*Адрес погрузки*:\n${cargoFromFull || '—'}\n\n`;
-                        message += getVal('cargoTo', 'Адрес выгрузки', true);
-                        message += getVal('cargoDescription', 'Описание груза', true);
-                        message += `*Количество грузчиков*:\n${moversText}\n\n`;
-                        message += `*ИТОГОВАЯ СУММА (за 1 час)*:\n${formattedPrice} тг\n\n`;
-                        message += `💰 Базовая цена: ${CONFIG.CARGO.HOURLY_RATE.toLocaleString('ru-RU')} тг/час`;
+                        let movers = document.getElementById('cargoMovers');
+                        let moversText = movers && movers.options[movers.selectedIndex].text;
+                        message += `*Грузчики*:\n${moversText}\n\n`;
                         
-                        if (cargoFromRaw) addressesToSave.push(cargoFromRaw);
-                        if (document.getElementById('cargoTo').value.trim()) addressesToSave.push(document.getElementById('cargoTo').value.trim());
+                        let cargoEstPrice = document.getElementById('cargoTotalPrice').innerText;
+                        message += `*Ориентировочная стоимость*: ${cargoEstPrice}\n`;
+                        
+                        addressesToSave.push(cargoFromRaw, document.getElementById('cargoTo').value.trim());
                         break;
                     case 'soberDriver':
-                        let soberDriverFromRaw = document.getElementById('soberDriverFrom').value.trim();
-                        if (!soberDriverFromRaw) requiredFieldsMissing = true;
-                        let soberDriverFromFull = appendHouseAndApt(soberDriverFromRaw, 'soberDriverHouse', 'soberDriverApt');
-                        
-                        message += `*Текущий адрес (Авто)*:\n${soberDriverFromFull || '—'}\n\n`;
-                        message += getVal('soberDriverCarModel', 'Марка и модель авто', true); 
-                        message += getVal('soberDriverTo', 'Адрес доставки авто', true);
-                        message += `💰 Примерная цена: от ${CONFIG.SOBER_DRIVER.MIN_PRICE} тг (зависит от расстояния)`;
-                        
-                        if (soberDriverFromRaw) addressesToSave.push(soberDriverFromRaw);
+                        let sdFromRaw = document.getElementById('soberDriverFrom').value.trim();
+                        if(!sdFromRaw) requiredFieldsMissing = true;
+                        let sdFrom = appendHouseAndApt(sdFromRaw, 'soberDriverHouse', 'soberDriverApt');
+
+                        message += `*Где авто*:\n${sdFrom}\n\n`;
+                        message += getVal('soberDriverCarModel', 'Марка авто', true);
+                        message += getVal('soberDriverTo', 'Куда везти', true);
+                        message += `*Стоимость*: от 3800 тг\n`;
+
+                        addressesToSave.push(sdFromRaw, document.getElementById('soberDriverTo').value.trim());
                         break;
                     case 'assistance':
-                        const type = document.getElementById('assistanceType').value;
-                        if (!type) { requiredFieldsMissing = true; break; }
-                        
-                        let assistanceAddressRaw = document.getElementById('assistanceAddress').value.trim();
-                        if (!assistanceAddressRaw) requiredFieldsMissing = true;
-                        let assistanceAddressFull = appendHouseAndApt(assistanceAddressRaw, 'assistanceHouse', 'assistanceApt');
-                        
-                        message += getVal('assistanceType', 'Тип помощи');
+                        message += getVal('assistanceType', 'Тип помощи', true);
+                        let type = document.getElementById('assistanceType').value;
                         if (type === 'Подкачать колесо' || type === 'Прикурить автомобиль') {
-                            message += getVal('carModel', 'Марка и модель авто');
-                            message += getVal('licencePlate', 'Гос. номер');
+                            message += getVal('carModel', 'Марка авто', false);
+                            message += getVal('licencePlate', 'Гос. номер', false);
                         }
-                        message += getVal('assistanceTask', 'Детали и уточнения');
-                        message += `*Адрес (где нужна помощь)*:\n${assistanceAddressFull || '—'}\n\n`;
-                        message += `💰 Примерная цена: от ${CONFIG.ASSISTANCE.MIN_PRICE} тг (зависит от характера требуемой помощи)`;
+                        message += getVal('assistanceTask', 'Детали', false);
                         
-                        if (assistanceAddressRaw) addressesToSave.push(assistanceAddressRaw);
+                        let astFromRaw = document.getElementById('assistanceAddress').value.trim();
+                        if(!astFromRaw) requiredFieldsMissing = true;
+                        let astFrom = appendHouseAndApt(astFromRaw, 'assistanceHouse', 'assistanceApt');
+                        message += `*Адрес*:\n${astFrom}\n\n`;
+                        message += `*Стоимость*: от 1500 тг\n`;
+
+                        addressesToSave.push(astFromRaw);
                         break;
-                } 
+                    case 'auction':
+                        let aucFromRaw = document.getElementById('auctionFrom').value.trim();
+                        let aucToRaw = document.getElementById('auctionTo').value.trim();
+                        if(!aucToRaw) requiredFieldsMissing = true;
+                        
+                        let aucFrom = aucFromRaw ? appendHouseAndApt(aucFromRaw, 'auctionHouse', 'auctionApt') : 'Не указан';
+                        message += `*Откуда*:\n${aucFrom}\n\n`;
+                        message += `*Куда*:\n${aucToRaw}\n\n`;
+                        message += collectStops('additionalStopsAuction');
+                        message += getVal('auctionPrice', 'Предложенная цена', true);
+                        
+                        if(aucFromRaw) addressesToSave.push(aucFromRaw);
+                        addressesToSave.push(aucToRaw);
+                        break;
+                }
 
                 if (requiredFieldsMissing) {
-                    showStatus(modalId, 'Пожалуйста, заполните все обязательные поля.');
+                    showStatus(modalId, 'Пожалуйста, заполните все обязательные поля (*)');
                     return;
                 }
-                
-                for (const address of addressesToSave) {
-                    await saveAddress(address);
+
+                for (const addr of addressesToSave) {
+                    if (addr) await saveAddress(addr);
                 }
 
-                if (navigator.vibrate) navigator.vibrate(200); 
-
+                const encodedMessage = encodeURIComponent(message);
+                
                 if (orderDestination === 'telegram') {
-                    copyToClipboard(message);
-                    displayMessageModal('Заказ сформирован!', 'Текст заказа скопирован. Сейчас откроется Telegram — просто вставьте текст в чат.', false);
-                    setTimeout(() => { window.open('https://t.me/TaxiUspehk', '_blank'); }, 1500); 
+                    window.open(`https://t.me/TaxiUspehk?text=${encodedMessage}`, '_blank');
                 } else {
-                    displayMessageModal('Заказ сформирован!', 'Переходим в WhatsApp для отправки сообщения...', false);
-                    setTimeout(() => {
-                         const waLink = `https://wa.me/${CONFIG.PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
-                         window.open(waLink, '_blank');
-                    }, 1000); 
+                    window.open(`https://wa.me/${PHONE_NUMBER}?text=${encodedMessage}`, '_blank');
                 }
                 
                 closeModal(modalId);
-                this.reset();
-            }); 
-        }); 
-
-        window.showPWAInstructions = function() {
-            document.getElementById('pwaModal').classList.remove('hidden');
-        }
-        
-        window.showPartnerModal = function() {
-            document.getElementById('partnerModal').classList.remove('hidden');
-        }
+                displayMessageModal('Заказ сформирован!', 'Ваш заказ передан в мессенджер. Пожалуйста, отправьте сообщение диспетчеру.', false);
+            });
+        });
     </script>
 </body>
 </html>

@@ -161,6 +161,14 @@
         .leaflet-container { z-index: 10 !important; border-radius: 0 0 12px 12px; }
         .leaflet-control-container { z-index: 20 !important; }
         .custom-taxi-icon { transition: transform 0.2s linear !important; margin-left: -12px !important; margin-top: -12px !important; }
+        
+        /* Стили для горизонтального скролла */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .snap-container { scroll-snap-type: x mandatory; scroll-behavior: smooth; }
+        .snap-item { scroll-snap-align: center; }
+        @keyframes bounce-x { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-25%); } }
+        .animate-bounce-x { animation: bounce-x 1.5s infinite ease-in-out; }
     </style>
 </head>
 <body class="text-gray-900 min-h-screen flex flex-col">
@@ -193,66 +201,102 @@
         </div>
     </header>
     
-    <main class="max-w-3xl mx-auto px-4 py-8 flex-grow">
+    <main class="max-w-3xl mx-auto px-4 py-8 flex-grow overflow-x-hidden">
         
-        <!-- MAIN BLOCK (TRANSPARENT GLASS) -->
-        <div class="max-w-md mx-auto p-4 mb-6 glass-panel border-t-4 border-green-500 shadow-2xl">
-            <div id="lineStatus" class="mb-3 p-3 rounded-lg text-center text-sm font-bold border hidden shadow-sm transition-all duration-500 bg-white/80"></div>
+        <!-- SWIPEABLE HORIZONTAL CAROUSEL (MAIN + QUICK ACTIONS) -->
+        <div id="mainCarousel" class="flex overflow-x-auto snap-container no-scrollbar pb-2 -mx-4 px-4 gap-4 items-stretch relative">
             
-            <button data-service="taxi" class="service-btn btn-hover btn-active bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black py-4 px-4 rounded-xl w-full shadow-lg text-lg flex items-center justify-center space-x-2.5 mb-3.5 blink-btn">
-                <i class="fas fa-car-side text-2xl"></i>
-                <span>Заказать Taxi</span>
-            </button>
-            
-            <div class="grid grid-cols-2 gap-3 mb-3.5">
-                <button onclick="openServicesMenu('whatsapp')" class="btn-hover btn-active bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-md flex items-center justify-center space-x-2 text-sm">
-                    <i class="fas fa-bars"></i>
-                    <span>Меню услуг</span>
-                </button>
-                <button onclick="openModal('foodModal')" class="btn-hover btn-active bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-md flex items-center justify-center space-x-2 text-sm">
-                    <i class="fas fa-utensils"></i>
-                    <span>Заказ Еды</span>
-                </button>
+            <!-- MAIN BLOCK (TRANSPARENT GLASS) -->
+            <div class="w-[88vw] sm:w-[420px] flex-shrink-0 snap-item relative mx-auto">
+                <div class="p-4 glass-panel border-t-4 border-green-500 shadow-2xl h-full flex flex-col justify-between">
+                    <div id="lineStatus" class="mb-3 p-3 rounded-lg text-center text-sm font-bold border hidden shadow-sm transition-all duration-500 bg-white/80"></div>
+                    
+                    <div>
+                        <button data-service="taxi" class="service-btn btn-hover btn-active bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black py-4 px-4 rounded-xl w-full shadow-lg text-lg flex items-center justify-center space-x-2.5 mb-3.5 blink-btn">
+                            <i class="fas fa-car-side text-2xl"></i>
+                            <span>Заказать Taxi</span>
+                        </button>
+                        
+                        <div class="grid grid-cols-2 gap-3 mb-3.5">
+                            <button onclick="openServicesMenu('whatsapp')" class="btn-hover btn-active bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-md flex items-center justify-center space-x-2 text-sm">
+                                <i class="fas fa-bars"></i>
+                                <span>Меню услуг</span>
+                            </button>
+                            <button onclick="openModal('foodModal')" class="btn-hover btn-active bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-md flex items-center justify-center space-x-2 text-sm">
+                                <i class="fas fa-utensils"></i>
+                                <span>Заказ Еды</span>
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-2.5 mb-4">
+                            <button onclick="shareApp()" class="btn-hover btn-active bg-gradient-to-br from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-share-alt mb-1 text-base"></i><span>Поделиться</span></button>
+                            <button onclick="openServicesMenu('telegram')" class="btn-hover btn-active bg-gradient-to-br from-sky-500 to-sky-700 hover:from-sky-600 hover:to-sky-800 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fab fa-telegram-plane mb-1 text-base"></i><span>Telegram</span></button>
+                            <button data-service="auction" class="service-btn btn-hover btn-active bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-gavel mb-1 text-base"></i><span>Аукцион</span></button>
+                        </div>
+                        
+                        <button type="button" onclick="getCurrentLocation('main')" id="locationBtn" class="w-full glass-mode font-semibold transition flex items-center justify-center space-x-3 shadow-sm btn-active py-3.5 rounded-xl border border-white/40">
+                            <i class="fas fa-location-arrow"></i><span id="locationBtnText">Использовать мое местоположение</span>
+                        </button>
+                        <p id="locationResult" class="text-xs text-center text-white mt-2 hidden" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
+                            <a id="locationAddress" href="#" target="_blank" class="coord-link text-white underline"></a>
+                        </p>
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-t border-white/30 flex justify-center space-x-6 glass-text">
+                        <div class="flex items-center space-x-1.5"><i class="fas fa-money-bill-wave text-xl text-green-400"></i><span class="font-semibold text-xs">Наличные</span></div>
+                        <div class="flex items-center space-x-1.5"><i class="fas fa-exchange-alt text-xl text-blue-400"></i><span class="font-semibold text-xs">Перевод (Kaspi)</span></div>
+                    </div>
+                </div>
             </div>
             
-            <div class="grid grid-cols-3 gap-2.5 mb-4">
-                <button onclick="shareApp()" class="btn-hover btn-active bg-gradient-to-br from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-share-alt mb-1 text-base"></i><span>Поделиться</span></button>
-                <button onclick="openServicesMenu('telegram')" class="btn-hover btn-active bg-gradient-to-br from-sky-500 to-sky-700 hover:from-sky-600 hover:to-sky-800 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fab fa-telegram-plane mb-1 text-base"></i><span>Telegram</span></button>
-                <button data-service="auction" class="service-btn btn-hover btn-active bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-gavel mb-1 text-base"></i><span>Аукцион</span></button>
+            <!-- QUICK ACTIONS BLOCK (CAROUSEL ITEM 2) -->
+            <div class="w-[88vw] sm:w-[420px] flex-shrink-0 snap-item mx-auto flex items-center">
+                <div class="glass-panel border-t-4 border-blue-500 shadow-2xl p-5 w-full h-full flex flex-col justify-center">
+                    <h3 class="text-xl font-bold text-center mb-5 text-white text-shadow-md border-b border-white/20 pb-3 flex items-center justify-center gap-2">
+                        <i class="fas fa-bolt text-yellow-400"></i> Быстрые Действия
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" class="btn-hover btn-active bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-xl shadow-lg transition-all compact-util-btn h-24"><i class="fas fa-star text-2xl mb-2"></i><span>Оставить отзыв</span></a>
+                        <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank" class="btn-hover btn-active bg-gradient-to-br from-orange-500 to-orange-700 text-white rounded-xl shadow-lg transition-all compact-util-btn h-24"><i class="fas fa-headset text-2xl mb-2"></i><span>Перезвонить</span></a>
+                        <button onclick="document.getElementById('partnerModal').classList.remove('hidden')" class="btn-hover btn-active bg-gradient-to-br from-pink-500 to-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn h-24"><i class="fas fa-handshake text-2xl mb-2"></i><span>Партнеры</span></button>
+                        <button onclick="installApp()" class="btn-hover btn-active bg-gradient-to-br from-gray-700 to-gray-900 text-white rounded-xl shadow-lg transition-all compact-util-btn h-24"><i class="fas fa-mobile-alt text-2xl mb-2"></i><span>На экран</span></button>
+                    </div>
+                    <div class="mt-6 text-center text-sm font-medium text-white/80 sm:hidden flex items-center justify-center gap-2">
+                        <i class="fas fa-arrow-left animate-bounce-x"></i> Свайпните назад к заказу
+                    </div>
+                </div>
             </div>
-            
-            <button type="button" onclick="getCurrentLocation('main')" id="locationBtn" class="w-full glass-mode font-semibold transition flex items-center justify-center space-x-3 shadow-sm btn-active py-3.5 rounded-xl border border-white/40">
-                <i class="fas fa-location-arrow"></i><span id="locationBtnText">Использовать мое местоположение</span>
-            </button>
-            <p id="locationResult" class="text-xs text-center text-white mt-2 hidden" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
-                <a id="locationAddress" href="#" target="_blank" class="coord-link text-white underline"></a>
-            </p>
-            
-            <div class="mt-4 pt-3 border-t border-white/30 flex justify-center space-x-6 glass-text">
-                <div class="flex items-center space-x-1.5"><i class="fas fa-money-bill-wave text-xl text-green-400"></i><span class="font-semibold text-xs">Наличные</span></div>
-                <div class="flex items-center space-x-1.5"><i class="fas fa-exchange-alt text-xl text-blue-400"></i><span class="font-semibold text-xs">Перевод (Kaspi)</span></div>
+
+        </div>
+
+        <!-- Indicator dots for Carousel -->
+        <div class="flex justify-center items-center gap-2 mb-6 mt-2 sm:hidden relative" id="carouselIndicators">
+            <div class="w-2.5 h-2.5 rounded-full bg-white shadow-md transition-all duration-300" id="dot1"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-white/30 shadow-md transition-all duration-300" id="dot2"></div>
+            <div class="absolute right-2 text-white/80 text-xs font-bold animate-pulse pointer-events-none flex items-center gap-1">
+                <i class="fas fa-exchange-alt"></i> Свайп
             </div>
         </div>
         
         <!-- SERVICES BLOCK -->
-        <h3 class="text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-8 border-gray-400 border-opacity-30">Дополнительные Услуги</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
-            <button id="deliveryBtn" data-service="delivery" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500 relative overflow-hidden transition-all duration-300">
-                <div id="deliveryStatusBadge" class="absolute top-2 right-2 w-3 h-3 rounded-full bg-gray-300"></div>
-                <i id="deliveryIcon" class="fas fa-box-open text-2xl mb-1 text-green-600 transition-colors"></i><span class="text-sm">Доставка</span>
-                <span id="deliverySubtext" class="text-[9px] text-gray-500 font-normal mt-1 leading-tight min-h-[1.5em] block"></span>
-            </button>
-            <button data-service="cargo" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
-                <i class="fas fa-truck-loading text-2xl mb-1 text-yellow-600"></i><span class="text-sm">Грузовой</span>
-            </button>
-            <button data-service="soberDriver" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-red-500">
-                <i class="fas fa-cocktail text-2xl mb-1 text-red-600"></i><span class="text-sm">Трезвый водитель</span>
-            </button>
-            <button data-service="assistance" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-indigo-500">
-                <i class="fas fa-life-ring text-2xl mb-1 text-indigo-600"></i><span class="text-sm">Помощь</span>
+        <h3 class="text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-2 border-gray-400 border-opacity-30">Дополнительные Услуги</h3>
+        
+        <div class="max-w-md mx-auto mb-6">
+            <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Полезная информация</h3>
+            <button onclick="openModal('busScheduleModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between border border-blue-400/30">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/20 p-2.5 rounded-xl shadow-inner">
+                        <i class="fas fa-bus-alt text-2xl text-yellow-300"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="block text-lg font-black leading-tight text-shadow-md uppercase">Расписание Автобусов</span>
+                        <span class="block text-xs text-blue-100 mt-0.5">В У-Ка и Глубокое</span>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right text-white opacity-80 text-xl"></i>
             </button>
         </div>
-        
+
         <!-- AUTO INSURANCE QUICK BUTTON -->
         <div class="max-w-md mx-auto mb-8">
             <button onclick="openModal('insuranceModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-teal-600 via-cyan-600 to-teal-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-lg flex items-center justify-center space-x-2.5 text-base border border-teal-400/30">
@@ -261,33 +305,7 @@
             </button>
         </div>
         
-        <!-- QUICK ACTIONS BLOCK -->
-        <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md border-t pt-4 border-gray-400 border-opacity-30">Быстрые Действия</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
-            <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" class="btn-hover btn-active bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-star text-xl mb-1"></i><span>Оставить отзыв</span></a>
-            <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank" class="btn-hover btn-active bg-gradient-to-br from-orange-500 to-orange-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span></a>
-            <button onclick="showPartnerModal()" class="btn-hover btn-active bg-gradient-to-br from-pink-500 to-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span></button>
-            <button onclick="installApp()" class="btn-hover btn-active bg-gradient-to-br from-gray-700 to-gray-900 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span></button>
-        </div>
-        
         <!-- BUS SCHEDULE BLOCK -->
-        <div class="mt-8 border-t pt-6 max-w-md mx-auto border-gray-400 border-opacity-30">
-            <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Полезная информация</h3>
-            <button onclick="openModal('busScheduleModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between border border-blue-400/30">
-                <div class="flex items-center gap-3">
-                    <div class="bg-white/20 p-2.5 rounded-xl shadow-inner">
-                        <i class="fas fa-bus-alt text-2xl text-yellow-300"></i>
-                    </div>
-                    <div class="text-left">
-                        <span class="block text-lg font-black leading-tight text-shadow-md">Расписание автобусов</span>
-                        <span class="block text-xs text-blue-100 mt-0.5">Белоусовка ⇄ У-Ка / Глубокое</span>
-                    </div>
-                </div>
-                <i class="fas fa-chevron-right text-white opacity-80 text-xl"></i>
-            </button>
-        </div>
-
-        <!-- PARTNER INFO (TECH INSPECTION) -->
         <div class="mt-8 border-t pt-6 max-w-md mx-auto border-gray-400 border-opacity-30">
             <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Партнёрские сервисы</h3>
             <button onclick="openModal('techInspectionModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between border border-red-400/30">
@@ -1269,7 +1287,7 @@
         <div class="modal" style="max-width: 600px; width: 95%;">
             <div class="p-4 border-b flex justify-between items-center bg-gray-50 dark:bg-gray-800 rounded-t-xl">
                 <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2 uppercase tracking-tight">
-                    <i class="fas fa-map-marked-alt text-blue-500"></i> Авто на линии
+                    <i class="fas fa-map-marked-alt text-blue-500"></i> Авто онлайн
                 </h3>
                 <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="mapModal">×</button>
             </div>
@@ -2338,6 +2356,23 @@
              updateCargoPrice(); 
              updateTaxiPrice(); 
              updateDeliveryPrice();
+             
+             // Скрипт для индикаторов карусели (Быстрые действия)
+             const carousel = document.getElementById('mainCarousel');
+             const dot1 = document.getElementById('dot1');
+             const dot2 = document.getElementById('dot2');
+             if (carousel && dot1 && dot2) {
+                 carousel.addEventListener('scroll', () => {
+                     const scrollRatio = carousel.scrollLeft / carousel.clientWidth;
+                     if (scrollRatio > 0.3) {
+                         dot1.classList.replace('bg-white', 'bg-white/30');
+                         dot2.classList.replace('bg-white/30', 'bg-white');
+                     } else {
+                         dot1.classList.replace('bg-white/30', 'bg-white');
+                         dot2.classList.replace('bg-white', 'bg-white/30');
+                     }
+                 });
+             }
         });
         
         function setGeoButtonLoading(mode, isLoading, isError = false) {
@@ -2749,6 +2784,9 @@
                 L.marker([50.1322, 82.5501], {icon: poiIcon('#f97316', 'fas fa-utensils')}).bindPopup('Домашний праздник').addTo(window.simMap);
                 L.marker([50.1305, 82.5375], {icon: poiIcon('#3b82f6', 'fas fa-shopping-cart')}).bindPopup('Супермаркет').addTo(window.simMap);
                 L.marker([50.1290, 82.5450], {icon: poiIcon('#10b981', 'fas fa-shopping-basket')}).bindPopup('Магазин продуктов').addTo(window.simMap);
+                
+                // Добавляем маркер СтройДом
+                L.marker([50.1335, 82.5420], {icon: poiIcon('#849b5c', 'fas fa-home')}).bindPopup('<b>Магазин «СтройДом»</b><br>ул. Юбилейная 10').addTo(window.simMap);
             }
 
             // Запрос геопозиции пользователя (показываем "синюю точку")
@@ -2810,26 +2848,33 @@
                 iconAnchor: [12, 12]
             });
 
-            // Граф основных перекрестков (расширенный для реалистичного разброса по всему поселку)
+            // Граф основных перекрестков и направлений (расширенный для реалистичного движения по всему поселку и соседним деревням)
             const roadNodes = [
                 { id: 0, lat: 50.1430, lng: 82.5350, links: [1, 13] }, // Дальний Север
-                { id: 1, lat: 50.1384, lng: 82.5352, links: [0, 2] },
-                { id: 2, lat: 50.1343, lng: 82.5407, links: [1, 3, 4] }, // Центр
+                { id: 1, lat: 50.1384, lng: 82.5352, links: [0, 2, 18] }, // + Направление к Фабрике
+                { id: 2, lat: 50.1343, lng: 82.5407, links: [1, 3, 4, 19, 20, 24] }, // Центр + Школы + СтройДом + Магазины
                 { id: 3, lat: 50.1355, lng: 82.5475, links: [2, 5, 14] },
                 { id: 4, lat: 50.1305, lng: 82.5375, links: [2, 6, 9] },
                 { id: 5, lat: 50.1322, lng: 82.5501, links: [3, 7, 8] },
                 { id: 6, lat: 50.1265, lng: 82.5350, links: [4, 10, 11] },
                 { id: 7, lat: 50.1290, lng: 82.5450, links: [5, 9, 12] },
                 { id: 8, lat: 50.1300, lng: 82.5550, links: [5, 15] }, // Восток
-                { id: 9, lat: 50.1295, lng: 82.5410, links: [4, 7] },
+                { id: 9, lat: 50.1295, lng: 82.5410, links: [4, 7, 20] }, // + СтройДом
                 { id: 10, lat: 50.1240, lng: 82.5320, links: [6, 16] }, // Юго-Запад
                 { id: 11, lat: 50.1250, lng: 82.5420, links: [6, 12] },
                 { id: 12, lat: 50.1265, lng: 82.5480, links: [7, 11, 17] }, // Юго-Восток
-                { id: 13, lat: 50.1400, lng: 82.5250, links: [0] }, // Северо-Запад
+                { id: 13, lat: 50.1400, lng: 82.5250, links: [0, 21] }, // Северо-Запад (Выезд на Черногорку, Прогресс, Кр.Партизан)
                 { id: 14, lat: 50.1380, lng: 82.5550, links: [3] }, // Северо-Восток
-                { id: 15, lat: 50.1280, lng: 82.5650, links: [8] }, // Дальний Восток
-                { id: 16, lat: 50.1180, lng: 82.5300, links: [10] }, // Дальний Юг (Трасса)
-                { id: 17, lat: 50.1190, lng: 82.5500, links: [12] }  // Дальний Юго-Восток
+                { id: 15, lat: 50.1280, lng: 82.5650, links: [8, 22] }, // Дальний Восток (Выезд на Белокаменку, Планидовку)
+                { id: 16, lat: 50.1180, lng: 82.5300, links: [10, 23] }, // Дальний Юг (Выезд на Опытное поле)
+                { id: 17, lat: 50.1190, lng: 82.5500, links: [12] },  // Дальний Юго-Восток
+                { id: 18, lat: 50.1410, lng: 82.5320, links: [1] }, // Фабрика
+                { id: 19, lat: 50.1360, lng: 82.5420, links: [2] }, // Школы / Детсады
+                { id: 20, lat: 50.1335, lng: 82.5420, links: [2, 9] }, // Магазин СтройДом
+                { id: 21, lat: 50.1550, lng: 82.4950, links: [13] }, // Черногорка, Прогресс, Краснопартизанское (за краем карты)
+                { id: 22, lat: 50.1200, lng: 82.5800, links: [15] }, // Белокаменка, Планидовка (за краем карты)
+                { id: 23, lat: 50.0800, lng: 82.5400, links: [16] }, // Опытное поле (за краем карты)
+                { id: 24, lat: 50.1340, lng: 82.5390, links: [2] } // Местные магазины
             ];
 
             // Спавним машинки строго на дорогах
@@ -2847,8 +2892,8 @@
                     targetNode: targetNode,
                     lat: startNode.lat,
                     lng: startNode.lng,
-                    speed: 0.000006 + Math.random() * 0.000004, // Медленная, реалистичная скорость (30-40 км/ч)
-                    pauseLeft: Math.floor(Math.random() * 100) // Случайная стартовая пауза: некоторые машины уже стоят на месте
+                    speed: 0.000008 + Math.random() * 0.000006, // Скорость немного увеличена для поездок в дальние деревни
+                    pauseLeft: Math.floor(Math.random() * 100) // Случайная стартовая пауза
                 });
             }
 

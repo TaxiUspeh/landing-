@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Такси «Успех» — Белоусовка</title>
+    <meta name="description" content="Заказ такси и местных услуг в Белоусовке, Глубоком и Усть-Каменогорске.">
+    <link rel="canonical" href="https://taxiuspeh.github.io/landing-/">
 
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NMCTD2Q8R2"></script>
@@ -21,9 +23,9 @@
     <meta name="theme-color" content="#1d4ed8" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
     
-    <link rel="icon" type="image/png" href="https://img.icons8.com/color/512/taxi.png">
-    <link rel="apple-touch-icon" href="https://img.icons8.com/color/512/taxi.png">
-    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%D0%A2%D0%B0%D0%BA%D1%81%D0%B8%20%D0%A3%D1%81%D0%BF%D0%B5%D1%85%22%2C%22short_name%22%3A%22%D0%A3%D1%81%D0%BF%D0%B5%D1%8х%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23ffffff%22%2C%22theme_color%22%3A%22%231d4ed8%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fimg.icons8.com%2Fcolor%2F512%2Ftaxi.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+    <link rel="icon" type="image/png" href="favicon-32x32.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
 
     <!-- Tailwind CSS & Font Awesome -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -225,7 +227,7 @@
                 <i class="fas fa-location-arrow"></i><span id="locationBtnText">Использовать мое местоположение</span>
             </button>
             <p id="locationResult" class="text-xs text-center text-white mt-2 hidden" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
-                <a id="locationAddress" href="#" target="_blank" class="coord-link text-white underline"></a>
+                <a id="locationAddress" href="#" target="_blank" rel="noopener noreferrer" class="coord-link text-white underline"></a>
             </p>
             
             <div class="mt-4 pt-3 border-t border-white/30 flex justify-center space-x-6 glass-text">
@@ -264,8 +266,8 @@
         <!-- QUICK ACTIONS BLOCK -->
         <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md border-t pt-4 border-gray-400 border-opacity-30">Быстрые Действия</h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
-            <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" class="btn-hover btn-active bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-star text-xl mb-1"></i><span>Оставить отзыв</span></a>
-            <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank" class="btn-hover btn-active bg-gradient-to-br from-orange-500 to-orange-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span></a>
+            <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" rel="noopener noreferrer" class="btn-hover btn-active bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-star text-xl mb-1"></i><span>Оставить отзыв</span></a>
+            <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank" rel="noopener noreferrer" class="btn-hover btn-active bg-gradient-to-br from-orange-500 to-orange-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span></a>
             <button onclick="showPartnerModal()" class="btn-hover btn-active bg-gradient-to-br from-pink-500 to-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span></button>
             <button onclick="installApp()" class="btn-hover btn-active bg-gradient-to-br from-gray-700 to-gray-900 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span></button>
         </div>
@@ -340,7 +342,7 @@
                     </span>
                 </button>
                 
-                <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20бизнеса%20(СТО)%20в%20приложении%20Такси%20Успех..." target="_blank" class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-amber-500 flex flex-col items-center text-center relative overflow-hidden group">
+                <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20бизнеса%20(СТО)%20в%20приложении%20Такси%20Успех..." target="_blank" rel="noopener noreferrer" class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-amber-500 flex flex-col items-center text-center relative overflow-hidden group">
                     <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider animate-pulse">Свободно</div>
                     <i class="fas fa-tools text-4xl text-amber-600 mb-2 mt-2 group-hover:scale-110 transition-transform"></i>
                     <p class="text-lg font-bold text-gray-800">СТО & Ремонт</p>
@@ -348,7 +350,7 @@
                     <span class="mt-3 text-xs font-semibold text-amber-600 flex items-center gap-1"><i class="fab fa-whatsapp"></i> Занять место (WhatsApp)</span>
                 </a>
 
-                <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20бизнеса%20в%20приложении%20Такси%20Успех..." target="_blank" class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-pink-500 flex flex-col items-center text-center relative overflow-hidden group">
+                <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20бизнеса%20в%20приложении%20Такси%20Успех..." target="_blank" rel="noopener noreferrer" class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-pink-500 flex flex-col items-center text-center relative overflow-hidden group">
                     <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[10px] font-bold uppercase tracking-wider">Ваш бизнес</div>
                     <i class="fas fa-bullhorn text-4xl text-pink-500 mb-2 mt-2 group-hover:scale-110 transition-transform"></i>
                     <p class="text-lg font-bold text-gray-800">Здесь мог быть ваш бизнес</p>
@@ -385,7 +387,7 @@
     
     <section class="bg-gradient-to-r from-blue-700 to-indigo-800 py-6 text-center mt-10 shadow-inner">
         <h3 class="text-xl font-bold text-white mb-3">🗺 Откройте Яндекс.Навигатор</h3>
-        <a href="https://yandex.kz/navi" target="_blank" class="inline-block bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500 text-blue-950 font-bold px-8 py-3.5 rounded-xl text-lg shadow-lg transition-all btn-active btn-hover"><i class="fas fa-location-arrow mr-2"></i> Открыть Навигатор</a>
+        <a href="https://yandex.kz/navi" target="_blank" rel="noopener noreferrer" class="inline-block bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500 text-blue-950 font-bold px-8 py-3.5 rounded-xl text-lg shadow-lg transition-all btn-active btn-hover"><i class="fas fa-location-arrow mr-2"></i> Открыть Навигатор</a>
     </section>
     
     <div class="fixed bottom-0 left-0 right-0 bottom-bar-glass shadow-2xl z-40 sm:hidden">
@@ -556,12 +558,12 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400">Нажмите на кнопку ниже, чтобы отправить заявку или заказать обратный звонок через WhatsApp.</p>
 
                     <div class="flex flex-col gap-3 pt-4 border-t">
-                        <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20стать%20водителем%20Такси%20Успех.%20Готов(а)%20предоставить%20документы." target="_blank" 
+                        <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20стать%20водителем%20Такси%20Успех.%20Готов(а)%20предоставить%20документы." target="_blank" rel="noopener noreferrer"
                            class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
                             <i class="fab fa-whatsapp text-lg"></i> Отправить заявку (WhatsApp)
                         </a>
                         
-                        <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20по%20вопросу%20трудоустройства%20водителем!" target="_blank" 
+                        <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20по%20вопросу%20трудоустройства%20водителем!" target="_blank" rel="noopener noreferrer"
                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
                             <i class="fas fa-phone-alt text-lg"></i> Заказать обратный звонок
                         </a>
@@ -589,7 +591,7 @@
                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Выберите необходимое действие:</p>
 
                     <div class="grid grid-cols-1 gap-3">
-                        <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" 
+                        <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" rel="noopener noreferrer"
                            class="w-full bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-bold py-4 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 btn-active btn-hover">
                             <i class="fab fa-whatsapp text-xl"></i> Войти в чат (WhatsApp)
                         </a>
@@ -628,12 +630,12 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400">Вы можете отправить фото документов через WhatsApp для быстрого расчета и оформления полиса.</p>
 
                     <div class="flex flex-col gap-3 pt-4 border-t">
-                        <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20оформить%20автостраховку.%20Вот%20мои%20документы:" target="_blank" 
+                        <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20оформить%20автостраховку.%20Вот%20мои%20документы:" target="_blank" rel="noopener noreferrer"
                            class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
                             <i class="fab fa-whatsapp text-lg"></i> Заказать страховку в WhatsApp
                         </a>
                         
-                        <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20по%20вопросу%20автострахования!" target="_blank" 
+                        <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20по%20вопросу%20автострахования!" target="_blank" rel="noopener noreferrer"
                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition text-center flex items-center justify-center gap-2 btn-active btn-hover">
                             <i class="fas fa-phone-alt text-lg"></i> Заказать обратный звонок
                         </a>
@@ -676,12 +678,12 @@
                 </div>
 
                 <div class="flex flex-col gap-3">
-                    <a href="https://wa.me/77771383856?text=Здравствуйте!%20Хочу%20записаться%20на%20Технический%20Осмотр" target="_blank" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center btn-active btn-hover">
+                    <a href="https://wa.me/77771383856?text=Здравствуйте!%20Хочу%20записаться%20на%20Технический%20Осмотр" target="_blank" rel="noopener noreferrer" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center btn-active btn-hover">
                         <i class="fab fa-whatsapp mr-2 text-xl"></i> Записаться в WhatsApp
                     </a>
                     
                     <div class="grid grid-cols-2 gap-3">
-                        <a href="https://yandex.kz/navi/-/CLGK5Sli" target="_blank" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-2 rounded-xl shadow-md text-sm transition-all flex items-center justify-center btn-active btn-hover">
+                        <a href="https://yandex.kz/navi/-/CLGK5Sli" target="_blank" rel="noopener noreferrer" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-2 rounded-xl shadow-md text-sm transition-all flex items-center justify-center btn-active btn-hover">
                             <i class="fas fa-map-marked-alt mr-2"></i> Навигатор
                         </a>
                         <a href="tel:+77771383856" class="bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-bold py-3 px-2 rounded-xl shadow-md text-sm transition-all flex items-center justify-center btn-active btn-hover">
@@ -704,7 +706,7 @@
                 </div>
                 
                 <div class="space-y-4">
-                    <a href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html" target="_blank"
+                    <a href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html" target="_blank" rel="noopener noreferrer"
                        class="block w-full p-5 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition transform hover:scale-[1.02] shadow-md flex items-center justify-between group">
                         <div class="flex items-center gap-4">
                             <div class="bg-red-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl group-hover:bg-red-600 transition shadow-md">
@@ -718,7 +720,7 @@
                         <i class="fas fa-chevron-right text-gray-400"></i>
                     </a>
 
-                    <a href="https://taxiuspeh.github.io/landing-/food.html" target="_blank"
+                    <a href="https://taxiuspeh.github.io/landing-/food.html" target="_blank" rel="noopener noreferrer"
                        class="block w-full p-5 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-xl transition transform hover:scale-[1.02] shadow-md flex items-center justify-between group">
                         <div class="flex items-center gap-4">
                             <div class="bg-orange-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl group-hover:bg-orange-600 transition shadow-md">
@@ -755,7 +757,7 @@
                     <button onclick="openServiceFromMenu('assistance')" class="p-4 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 flex flex-col items-center text-center transition btn-active btn-hover"><i class="fas fa-life-ring text-2xl text-indigo-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Помощь</span></button>
                 </div>
                 <div id="servicesMenuFooter" class="border-t pt-4 text-center hidden">
-                     <a href="https://t.me/TaxiUspehk" target="_blank" class="inline-block bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white font-semibold py-3 px-6 rounded-xl shadow transition btn-active btn-hover"><i class="fab fa-telegram-plane mr-2"></i> Перейти в Telegram</a>
+                     <a href="https://t.me/TaxiUspehk" target="_blank" rel="noopener noreferrer" class="inline-block bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white font-semibold py-3 px-6 rounded-xl shadow transition btn-active btn-hover"><i class="fab fa-telegram-plane mr-2"></i> Перейти в Telegram</a>
                 </div>
             </div>
         </div>
@@ -1189,7 +1191,7 @@
                             <span>💰 Минимальная стоимость поездки</span><i id="icon-faq-1" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                         </button>
                         <div id="faq-1" class="hidden p-4 pt-0 text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-600 faq-item-content text-sm">
-                            <p>Минимальная стоимость поездки по Белоусовке составляет **700 тенге**. Окончательная цена зависит от расстояния и текущей дорожной ситуации.</p>
+                            <p>Минимальная стоимость поездки по Белоусовке начинается от <strong>800 тенге</strong>. Окончательная цена зависит от расстояния и текущей дорожной ситуации.</p>
                         </div>
                     </div>
                      <div class="bg-white dark:bg-gray-700 rounded-xl shadow-md overflow-hidden faq-item border border-gray-100 dark:border-gray-600">
@@ -1197,7 +1199,7 @@
                             <span>📦 Стоимость услуги Доставки</span><i id="icon-faq-4" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                         </button>
                         <div id="faq-4" class="hidden p-4 pt-0 text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-600 faq-item-content text-sm">
-                            <p>Стоимость услуги доставки начинается **от 1200 KZT**.</p>
+                            <p>Стоимость услуги доставки начинается от <strong>1200 тенге</strong>.</p>
                         </div>
                     </div>
                     <div class="bg-white dark:bg-gray-700 rounded-xl shadow-md overflow-hidden faq-item border border-gray-100 dark:border-gray-600">
@@ -1205,7 +1207,7 @@
                             <span>⏰ График работы</span><i id="icon-faq-2" class="fas fa-chevron-down transform transition-transform duration-300"></i>
                         </button>
                         <div id="faq-2" class="hidden p-4 pt-0 text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-600 faq-item-content text-sm">
-                            <p>**Мы работаем круглосуточно (24/7)**, чтобы вы могли уехать в любое время дня и ночи.</p>
+                            <p><strong>Мы работаем круглосуточно (24/7)</strong>, чтобы вы могли уехать в любое время дня и ночи.</p>
                         </div>
                     </div>
                     <div class="bg-white dark:bg-gray-700 rounded-xl shadow-md overflow-hidden faq-item border border-gray-100 dark:border-gray-600">
@@ -1288,7 +1290,13 @@
         <div class="modal sm:max-w-md w-[95%]">
             <div class="relative rounded-t-xl overflow-hidden bg-[#f7f9f2] dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                 <!-- Баннер из файла -->
-                <img src="WhatsApp Image 2026-08-24 at 12.27.36.jpeg" alt="СтройДом Баннер" class="w-full h-auto object-cover max-h-56" onerror="this.src='https://placehold.co/600x300/849b5c/ffffff?text=СтройДом'">
+                <div class="h-44 sm:h-52 bg-gradient-to-br from-[#657a4b] via-[#849b5c] to-[#b1c58c] flex items-center justify-center" role="img" aria-label="СтройДом — всё для ремонта и уюта">
+                    <div class="text-center text-white drop-shadow-lg">
+                        <i class="fas fa-home text-5xl text-yellow-200 mb-2" aria-hidden="true"></i>
+                        <div class="text-3xl font-black uppercase tracking-wide">СтройДом</div>
+                        <div class="text-sm font-semibold mt-1">Всё для ремонта и уюта</div>
+                    </div>
+                </div>
                 <button class="close-btn absolute top-2 right-2 text-2xl text-gray-800 bg-white/70 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center btn-active backdrop-blur-sm shadow-md" data-modal="stroyDomModal">×</button>
             </div>
             
@@ -1355,16 +1363,16 @@
 
                 <!-- Action Buttons -->
                 <div class="grid grid-cols-2 gap-3">
-                    <a href="https://wa.me/77764764606" target="_blank" class="w-full bg-gradient-to-r from-[#25D366] to-[#1ebe57] text-white font-bold py-3.5 px-2 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm btn-active btn-hover">
+                    <a href="https://wa.me/77764764606" target="_blank" rel="noopener noreferrer" class="w-full bg-gradient-to-r from-[#25D366] to-[#1ebe57] text-white font-bold py-3.5 px-2 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm btn-active btn-hover">
                         <i class="fab fa-whatsapp text-xl"></i> WhatsApp
                     </a>
                     <a href="tel:+77764764606" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold py-3.5 px-2 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm btn-active btn-hover">
                         <i class="fas fa-phone-alt text-xl"></i> Позвонить
                     </a>
-                    <a href="https://yandex.kz/navi/-/CTDAMU3r" target="_blank" class="w-full bg-gradient-to-r from-[#ffcc00] to-[#e6b800] text-gray-900 font-bold py-3.5 px-2 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm btn-active btn-hover">
+                    <a href="https://yandex.kz/navi/-/CTDAMU3r" target="_blank" rel="noopener noreferrer" class="w-full bg-gradient-to-r from-[#ffcc00] to-[#e6b800] text-gray-900 font-bold py-3.5 px-2 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm btn-active btn-hover">
                         <i class="fas fa-map-marked-alt text-xl"></i> Навигатор
                     </a>
-                    <a href="https://www.instagram.com/stroy_dom_bk?igsi=MWNldmk2M2kwMzNsZA==" target="_blank" class="w-full bg-gradient-to-tr from-[#feda75] via-[#d62976] to-[#4f5bd5] text-white font-bold py-3.5 px-2 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm btn-active btn-hover">
+                    <a href="https://www.instagram.com/stroy_dom_bk?igsi=MWNldmk2M2kwMzNsZA==" target="_blank" rel="noopener noreferrer" class="w-full bg-gradient-to-tr from-[#feda75] via-[#d62976] to-[#4f5bd5] text-white font-bold py-3.5 px-2 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm btn-active btn-hover">
                         <i class="fab fa-instagram text-xl"></i> Instagram
                     </a>
                 </div>
@@ -2115,7 +2123,9 @@
                 chip.type = 'button';
                 chip.className = 'history-chip btn-active';
                 const displayAddr = addr.length > 20 ? addr.substring(0, 20) + '...' : addr;
-                chip.innerHTML = `<i class="fas fa-history"></i> ${displayAddr}`;
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-history';
+                chip.append(icon, document.createTextNode(` ${displayAddr}`));
                 chip.onclick = () => fillAddressFromChip(addr);
                 container.appendChild(chip);
             });
@@ -2144,23 +2154,38 @@
                 container.innerHTML = '<div class="text-center text-gray-400 py-10">История поездок пуста</div>';
                 return;
             }
-            container.innerHTML = orders.map(order => `
-                <div class="p-3 border-b flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700" onclick="window.repeatOrder('${order.from}', '${order.to}')">
-                    <div class="flex-grow">
-                        <div class="text-xs text-gray-400 font-bold mb-1">${order.date} в ${order.time}</div>
-                        <div class="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                            <i class="far fa-dot-circle text-blue-500 text-xs"></i> ${order.from}
-                        </div>
-                        <div class="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2 mt-1">
-                            <i class="fas fa-map-marker-alt text-red-500 text-xs"></i> ${order.to}
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-sm font-bold text-gray-900 dark:text-green-400">${order.price}</div>
-                        <div class="text-[10px] text-blue-500 uppercase mt-1">Повторить</div>
-                    </div>
-                </div>
-            `).join('');
+            container.replaceChildren();
+            orders.forEach(order => {
+                const row = document.createElement('button');
+                row.type = 'button';
+                row.className = 'w-full p-3 border-b flex justify-between items-center text-left hover:bg-gray-50 dark:hover:bg-gray-700';
+                row.addEventListener('click', () => window.repeatOrder(String(order.from || ''), String(order.to || '')));
+
+                const route = document.createElement('div');
+                route.className = 'flex-grow';
+                const date = document.createElement('div');
+                date.className = 'text-xs text-gray-400 font-bold mb-1';
+                date.textContent = `${String(order.date || '')} в ${String(order.time || '')}`;
+                const from = document.createElement('div');
+                from.className = 'text-sm font-semibold text-gray-800 dark:text-white';
+                from.textContent = `● ${String(order.from || '')}`;
+                const to = document.createElement('div');
+                to.className = 'text-sm font-semibold text-gray-800 dark:text-white mt-1';
+                to.textContent = `● ${String(order.to || '')}`;
+                route.append(date, from, to);
+
+                const summary = document.createElement('div');
+                summary.className = 'text-right ml-3';
+                const price = document.createElement('div');
+                price.className = 'text-sm font-bold text-gray-900 dark:text-green-400';
+                price.textContent = String(order.price || '');
+                const repeat = document.createElement('div');
+                repeat.className = 'text-[10px] text-blue-500 uppercase mt-1';
+                repeat.textContent = 'Повторить';
+                summary.append(price, repeat);
+                row.append(route, summary);
+                container.appendChild(row);
+            });
         };
 
         window.repeatOrder = function(from, to, openModalFlag = false) {
@@ -2322,6 +2347,9 @@
              setAddressHistory(); 
              checkLineStatus(); 
              initPwaPushNotifications();
+             if ('serviceWorker' in navigator) {
+                 navigator.serviceWorker.register('./service-worker.js').catch(error => console.warn('Service worker registration failed:', error));
+             }
              setInterval(checkLineStatus, 60000); 
              
              const formattedNow = getFormattedCurrentTime();
@@ -2960,7 +2988,7 @@
                 window.location.href = 'kaspi://';
                 setTimeout(() => {
                     // Если не открылось (например, ПК или нет приложения), открываем сайт
-                    window.open('https://kaspi.kz/', '_blank');
+                    window.open('https://kaspi.kz/', '_blank', 'noopener,noreferrer');
                 }, 1000);
             }, 2000);
         };
@@ -3215,13 +3243,13 @@
                 const encodedMessage = encodeURIComponent(message);
                 
                 if (orderDestination === 'telegram') {
-                    window.open(`https://t.me/TaxiUspehk?text=${encodedMessage}`, '_blank');
+                    window.open(`https://t.me/TaxiUspehk?text=${encodedMessage}`, '_blank', 'noopener,noreferrer');
                 } else {
-                    window.open(`https://wa.me/${PHONE_NUMBER}?text=${encodedMessage}`, '_blank');
+                    window.open(`https://wa.me/${PHONE_NUMBER}?text=${encodedMessage}`, '_blank', 'noopener,noreferrer');
                 }
                 
                 closeModal(modalId);
-                displayMessageModal('Заказ сформирован!', 'Ваш заказ передан в мессенджер. Пожалуйста, отправьте сообщение диспетчеру.', false);
+                displayMessageModal('Заказ сформирован!', 'Мессенджер открыт. Чтобы передать заказ диспетчеру, нажмите «Отправить» в WhatsApp или Telegram.', false);
             });
         });
     </script>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://taxiuspeh.github.io/landing-/sitemap.xml

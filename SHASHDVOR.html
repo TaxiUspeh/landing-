@@ -928,7 +928,7 @@
                 msg += `\n📍 *Адрес:* ${address}`;
                 if (comment) msg += `\n💬 *Коммент:* ${comment}`;
 
-                window.open(`https://wa.me/77055071640?text=${encodeURIComponent(msg)}`, '_blank');
+                window.open(`https://wa.me/77055071640?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
                 
                 // Cleanup
                 cart = []; activeDiscount = 0; localStorage.removeItem('shashlyk_cart');
@@ -1169,7 +1169,7 @@
             hideBookingModal();
             sendToGoogleSheets({ action:'booking', date:new Date().toLocaleString('ru-RU'), booking_date:date, booking_time:time, guests: guests, type: type, name:name });
             showSuccessAnimation("Бронь принята!", () => {
-                window.open(`https://wa.me/77055071640?text=${encodeURIComponent(`Здравствуйте! Хочу забронировать столик 🍽️.\n\n📅 *Дата:* ${date}\n⏰ *Время:* ${time}\n🎭 *Тип:* ${type}\n👥 *Гостей:* ${guests}\n👤 *Имя:* ${name}`)}`, '_blank');
+                window.open(`https://wa.me/77055071640?text=${encodeURIComponent(`Здравствуйте! Хочу забронировать столик 🍽️.\n\n📅 *Дата:* ${date}\n⏰ *Время:* ${time}\n🎭 *Тип:* ${type}\n👥 *Гостей:* ${guests}\n👤 *Имя:* ${name}`)}`, '_blank', 'noopener,noreferrer');
             });
         }
         function sendCallbackRequest() {
@@ -1181,7 +1181,7 @@
             showSuccessAnimation("Заявка отправлена!", () => {
                 let msg = `Здравствуйте! Перезвоните мне, пожалуйста 📞.\n\n👤 *Имя:* ${name}\n📱 *Телефон:* ${phone}`;
                 if(comment) msg += `\n💬 *Коммент:* ${comment}`;
-                window.open(`https://wa.me/77055071640?text=${encodeURIComponent(msg)}`, '_blank');
+                window.open(`https://wa.me/77055071640?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
             });
         }
         
@@ -1301,7 +1301,7 @@
                         <p class="flex items-center text-white">
                             <span class="mr-2 text-grill-red">📍</span>
                             Белоусовка
-                            <a href="https://yandex.kz/maps/-/CLwmUZ9a" target="_blank" class="ml-1 underline text-gray-400 hover:text-white text-xs">(Показать на карте)</a>
+                            <a href="https://yandex.kz/maps/-/CLwmUZ9a" target="_blank" rel="noopener noreferrer" class="ml-1 underline text-gray-400 hover:text-white text-xs">(Показать на карте)</a>
                         </p>
                         <p class="flex items-center text-white">
                             <span class="mr-2 text-grill-red">⏰</span>
@@ -1354,7 +1354,7 @@
                     <h4 class="text-2xl font-bold text-grill-accent mb-4">Свяжитесь с нами</h4>
                     <p class="text-white mb-2">📞 <a href="tel:+77055071640">+7 705 507 1640</a></p>
                     <p class="text-white mb-2">📍 Белоусовка</p>
-                    <a href="https://wa.me/77055071640" target="_blank" class="mt-8 primary-btn flex items-center justify-center bg-[#25D366] text-white text-xl font-bold px-6 py-3 rounded-full transition duration-300 shadow-lg hover:bg-[#1EBE57]">Написать в WhatsApp</a>
+                    <a href="https://wa.me/77055071640" target="_blank" rel="noopener noreferrer" class="mt-8 primary-btn flex items-center justify-center bg-[#25D366] text-white text-xl font-bold px-6 py-3 rounded-full transition duration-300 shadow-lg hover:bg-[#1EBE57]">Написать в WhatsApp</a>
                  </div>
                  <div class="bg-gray-800/90 p-8 rounded-xl shadow-2xl flex flex-col justify-center text-center backdrop-blur-md">
                     <h4 class="text-3xl font-bold text-white mb-4">Остались вопросы?</h4>
@@ -1385,12 +1385,12 @@
                 <span>Поделиться</span>
             </button>
             
-            <a href="https://taxiuspeh.github.io/landing-/" target="_blank" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1 active:scale-95">
+            <a href="https://taxiuspeh.github.io/landing-/" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-accent transition p-1 active:scale-95">
                 <svg class="nav-icon mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M14 10l2 1m-2-1l-2-1m2 1V7.5m0 3.5h.01M12 4v0m.01 0l.01.01M12 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM12 12a2 2 0 100-4 2 2 0 000 4z"></path></svg>
                 <span>Такси</span>
             </a>
             
-            <a href="https://wa.me/77055071640" target="_blank" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-green transition p-1 active:scale-95">
+            <a href="https://wa.me/77055071640" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center text-[10px] text-gray-400 hover:text-grill-green transition p-1 active:scale-95">
                 <svg class="nav-icon mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12.039 2C6.541 2 2 6.541 2 12.039c0 1.972.585 3.844 1.76 5.438L2.015 22l4.63-1.503A10.048 10.048 0 0012.039 22c5.498 0 10.039-4.541 10.039-10.039C22.078 6.541 17.537 2 12.039 2zm4.845 13.906c-.198.342-.81.603-1.39.81-.58.207-1.28.324-1.91.324-.63 0-1.26-.117-1.89-.324-.63-.207-1.242-.468-1.44-.81-.198-.342-.315-1.026-.117-1.39.198-.36.432-.612.63-.81.198-.198.324-.315.396-.468.072-.153.036-.585-.117-.81-.153-.225-.918-1.116-1.053-1.44-.135-.324-.27-.27-.468-.27-.198 0-.468-.027-.738.036-.27.063-.513.117-.756.396-.243.279-.693.684-.693 1.62 0 .936.729 1.836.837 1.989.108.153 1.413 2.16 3.483 3.096 2.07.936 2.07.693 2.457.657.387-.036 1.188-.486 1.35-1.008.162-.522.162-.972.117-1.143-.045-.171-.243-.27-.486-.36z"/></svg>
                 <span>WhatsApp</span>
             </a>

@@ -115,7 +115,7 @@
             </div>
             
             <div class="flex gap-2">
-                <a href="https://taxiuspeh.github.io/landing-/" target="_blank" class="hidden sm:flex bg-taxi-yellow text-black px-3 py-1.5 rounded-lg font-bold items-center hover:bg-yellow-300 transition shadow-lg text-xs">
+                <a href="https://taxiuspeh.github.io/landing-/" target="_blank" rel="noopener noreferrer" class="hidden sm:flex bg-taxi-yellow text-black px-3 py-1.5 rounded-lg font-bold items-center hover:bg-yellow-300 transition shadow-lg text-xs">
                     <i class="fas fa-taxi mr-2"></i> Такси
                 </a>
                 <a href="tel:+77771789852" class="text-white bg-green-600 w-9 h-9 rounded-full flex items-center justify-center hover:bg-green-700 transition shadow-lg active:scale-90 duration-200">
@@ -201,8 +201,8 @@
         <div class="max-w-7xl mx-auto px-4 text-center">
             <h3 class="text-2xl font-bold text-white mb-8">Контакты</h3>
             <div class="flex justify-center gap-6">
-                <a href="https://wa.me/77771789852" target="_blank" class="w-14 h-14 bg-[#1a1a1a] rounded-2xl flex items-center justify-center text-app-green text-3xl shadow-lg hover:scale-110 transition border border-gray-800"><i class="fab fa-whatsapp"></i></a>
-                <a href="https://www.instagram.com/domashniy_prazdnik_uka" target="_blank" class="w-14 h-14 bg-[#1a1a1a] rounded-2xl flex items-center justify-center text-pink-500 text-3xl shadow-lg hover:scale-110 transition border border-gray-800"><i class="fab fa-instagram"></i></a>
+                <a href="https://wa.me/77771789852" target="_blank" rel="noopener noreferrer" class="w-14 h-14 bg-[#1a1a1a] rounded-2xl flex items-center justify-center text-app-green text-3xl shadow-lg hover:scale-110 transition border border-gray-800"><i class="fab fa-whatsapp"></i></a>
+                <a href="https://www.instagram.com/domashniy_prazdnik_uka" target="_blank" rel="noopener noreferrer" class="w-14 h-14 bg-[#1a1a1a] rounded-2xl flex items-center justify-center text-pink-500 text-3xl shadow-lg hover:scale-110 transition border border-gray-800"><i class="fab fa-instagram"></i></a>
                 <a href="tel:+77771789852" class="w-14 h-14 bg-[#1a1a1a] rounded-2xl flex items-center justify-center text-blue-500 text-3xl shadow-lg hover:scale-110 transition border border-gray-800"><i class="fas fa-phone"></i></a>
             </div>
             <p class="mt-8 text-gray-600 text-xs">© 2024 Домашний Праздник. п. Белоусовка.</p>
@@ -217,7 +217,7 @@
                 <span class="text-[10px] font-medium">Меню</span>
             </button>
             
-            <a href="https://taxiuspeh.github.io/landing-/" target="_blank" class="flex flex-col items-center justify-center w-14 h-full text-gray-400 hover:text-taxi-yellow active:text-taxi-yellow transition group">
+            <a href="https://taxiuspeh.github.io/landing-/" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center justify-center w-14 h-full text-gray-400 hover:text-taxi-yellow active:text-taxi-yellow transition group">
                 <i class="fas fa-taxi text-lg mb-1 group-active:scale-110 transition"></i>
                 <span class="text-[10px] font-medium">Такси</span>
             </a>
@@ -229,7 +229,7 @@
                 </button>
             </div>
             
-            <a href="https://wa.me/77771789852" target="_blank" class="flex flex-col items-center justify-center w-14 h-full text-gray-400 hover:text-app-green active:text-app-green transition group">
+            <a href="https://wa.me/77771789852" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center justify-center w-14 h-full text-gray-400 hover:text-app-green active:text-app-green transition group">
                 <i class="fab fa-whatsapp text-xl mb-1 group-active:scale-110 transition"></i>
                 <span class="text-[10px] font-medium">WA</span>
             </a>
@@ -656,7 +656,7 @@
                     body: JSON.stringify(orderData) 
                 }).catch(err => console.error('Ошибка отправки в Google Sheets:', err));
 
-                window.open(`https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(msg)}`, '_blank');
+                window.open(`https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
                 cart = []; saveCart(); renderUI();
                 overlay.classList.add('opacity-0');
                 setTimeout(() => { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }, 300);
@@ -723,8 +723,8 @@
         function openMenuCategory(tab) { activeMenuTab = tab; renderFullMenu(); document.getElementById('full-menu-modal').classList.remove('hidden'); document.getElementById('full-menu-modal').classList.add('flex'); }
         function switchMenuTab(tab) { activeMenuTab = tab; renderFullMenu(); }
         
-        function openLink(url) { window.open(url, '_blank'); }
-        function openWhatsappDelivery() { window.open('https://api.whatsapp.com/send?phone=77771789852&text=Подскажите условия доставки', '_blank'); }
+        function openLink(url) { window.open(url, '_blank', 'noopener,noreferrer'); }
+        function openWhatsappDelivery() { window.open('https://api.whatsapp.com/send?phone=77771789852&text=Подскажите условия доставки', '_blank', 'noopener,noreferrer'); }
         function showCartModal() { hideFullMenuModal(); renderCartModal(); document.getElementById('cart-modal').classList.remove('hidden'); document.getElementById('cart-modal').classList.add('flex'); setTimeout(()=>document.getElementById('cart-modal').classList.add('modal-open'), 10); }
         function hideCartModal() { document.getElementById('cart-modal').classList.remove('modal-open'); setTimeout(()=>document.getElementById('cart-modal').classList.add('hidden'), 300); }
         function hideFullMenuModal() { document.getElementById('full-menu-modal').classList.add('hidden'); }
@@ -734,7 +734,7 @@
             const d = document.getElementById('chef-date').value;
             const e = document.getElementById('chef-event').value;
             hideChefModal(); 
-            window.open(`https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(`👨‍🍳 Заявка на повара\nДата: ${d}\nСобытие: ${e}`)}`, '_blank'); 
+            window.open(`https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(`👨‍🍳 Заявка на повара\nДата: ${d}\nСобытие: ${e}`)}`, '_blank', 'noopener,noreferrer');
         }
         function hidePWAInstructions() { document.getElementById('pwa-instructions-modal').classList.add('hidden'); }
         function installApp() { document.getElementById('pwa-instructions-modal').classList.remove('hidden'); document.getElementById('pwa-instructions-modal').classList.add('flex'); }

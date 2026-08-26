@@ -163,6 +163,40 @@
         .leaflet-container { z-index: 10 !important; border-radius: 0 0 12px 12px; }
         .leaflet-control-container { z-index: 20 !important; }
         .custom-taxi-icon { transition: transform 0.2s linear !important; margin-left: -12px !important; margin-top: -12px !important; }
+
+        .actions-services-carousel,
+        .actions-services-viewport,
+        .actions-services-track,
+        .action-service-panel,
+        .action-service-grid,
+        .action-service-grid > * { min-width: 0; box-sizing: border-box; }
+        .actions-services-carousel { width: 100%; max-width: 56rem; margin: 2rem auto; }
+        .actions-services-viewport { width: 100%; padding: 0.5rem; }
+        .actions-services-track { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: stretch; }
+        .action-service-panel { width: 100%; height: 100%; padding: 1rem; overflow: hidden; }
+        .action-service-grid { display: grid; gap: 0.75rem; }
+        .quick-actions-grid { grid-template-columns: 1fr; }
+        .extra-services-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .extra-services-grid > :last-child { grid-column: 1 / -1; }
+        .action-service-grid > * { width: 100%; min-height: 4.5rem; padding-left: 0.75rem; padding-right: 0.75rem; overflow-wrap: anywhere; }
+        .carousel-controls { display: none; }
+
+        @media (max-width: 899px) {
+            .actions-services-carousel { overflow: hidden; touch-action: pan-y; }
+            .actions-services-viewport { overflow: hidden; touch-action: pan-y; }
+            .actions-services-track { display: flex; gap: 0; align-items: stretch; transition: transform 0.3s ease; will-change: transform; touch-action: pan-y; }
+            .action-service-panel { flex: 0 0 100%; }
+            .carousel-controls { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 0.875rem; }
+            .carousel-arrow { width: 2.75rem; height: 2.75rem; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; background: rgba(255,255,255,0.92); color: #1e3a8a; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+            .carousel-dots { display: flex; gap: 0.5rem; }
+            .carousel-dot { width: 0.75rem; height: 0.75rem; padding: 0; border-radius: 9999px; background: rgba(255,255,255,0.45); border: 2px solid rgba(255,255,255,0.85); }
+            .carousel-dot[aria-current="true"] { background: #f59e0b; }
+        }
+
+        @media (max-width: 374px) {
+            .extra-services-grid { grid-template-columns: 1fr; }
+            .extra-services-grid > :last-child { grid-column: auto; }
+        }
     </style>
 </head>
 <body class="text-gray-900 min-h-screen flex flex-col">
@@ -236,9 +270,21 @@
             </div>
         </div>
         
-        <!-- SERVICES BLOCK -->
-        <h3 class="text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-8 border-gray-400 border-opacity-30">Дополнительные Услуги</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
+        <!-- QUICK ACTIONS AND SERVICES -->
+        <section id="actionsServicesCarousel" class="actions-services-carousel border-t pt-8 border-gray-400 border-opacity-30" aria-label="Быстрые действия и дополнительные услуги">
+          <div class="actions-services-viewport">
+           <div class="actions-services-track">
+            <article class="action-service-panel glass-panel" aria-labelledby="quickActionsTitle">
+             <h3 id="quickActionsTitle" class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Быстрые действия</h3>
+             <div class="action-service-grid quick-actions-grid">
+              <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" rel="noopener noreferrer" class="btn-hover btn-active bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-star text-xl mb-1"></i><span>Оставить отзыв</span></a>
+              <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank" rel="noopener noreferrer" class="btn-hover btn-active bg-gradient-to-br from-orange-500 to-orange-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span></a>
+              <button onclick="showPartnerModal()" class="btn-hover btn-active bg-gradient-to-br from-pink-500 to-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-handshake text-xl mb-1"></i><span>Партнёры</span></button>
+             </div>
+            </article>
+            <article class="action-service-panel glass-panel" aria-labelledby="extraServicesTitle">
+             <h3 id="extraServicesTitle" class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Дополнительные услуги</h3>
+             <div class="action-service-grid extra-services-grid">
             <button id="deliveryBtn" data-service="delivery" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500 relative overflow-hidden transition-all duration-300">
                 <div id="deliveryStatusBadge" class="absolute top-2 right-2 w-3 h-3 rounded-full bg-gray-300"></div>
                 <i id="deliveryIcon" class="fas fa-box-open text-2xl mb-1 text-green-600 transition-colors"></i><span class="text-sm">Доставка</span>
@@ -253,23 +299,27 @@
             <button data-service="assistance" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-indigo-500">
                 <i class="fas fa-life-ring text-2xl mb-1 text-indigo-600"></i><span class="text-sm">Помощь</span>
             </button>
-        </div>
-        
-        <!-- AUTO INSURANCE QUICK BUTTON -->
-        <div class="max-w-md mx-auto mb-8">
             <button onclick="openModal('insuranceModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-teal-600 via-cyan-600 to-teal-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-lg flex items-center justify-center space-x-2.5 text-base border border-teal-400/30">
                 <i class="fas fa-shield-alt text-xl text-yellow-300"></i>
-                <span>Автострахование (ОСАГО / Обязательная)</span>
+                <span>Автострахование</span>
             </button>
-        </div>
-        
-        <!-- QUICK ACTIONS BLOCK -->
-        <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md border-t pt-4 border-gray-400 border-opacity-30">Быстрые Действия</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
-            <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" rel="noopener noreferrer" class="btn-hover btn-active bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-star text-xl mb-1"></i><span>Оставить отзыв</span></a>
-            <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank" rel="noopener noreferrer" class="btn-hover btn-active bg-gradient-to-br from-orange-500 to-orange-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span></a>
-            <button onclick="showPartnerModal()" class="btn-hover btn-active bg-gradient-to-br from-pink-500 to-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span></button>
-            <button onclick="installApp()" class="btn-hover btn-active bg-gradient-to-br from-gray-700 to-gray-900 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span></button>
+             </div>
+            </article>
+           </div>
+          </div>
+          <div class="carousel-controls" aria-label="Управление каруселью">
+            <button type="button" class="carousel-arrow carousel-prev btn-active" aria-label="Предыдущая карточка"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
+            <div class="carousel-dots" role="group" aria-label="Выбор карточки">
+              <button type="button" class="carousel-dot" aria-label="Показать карточку «Быстрые действия»" aria-current="true"></button>
+              <button type="button" class="carousel-dot" aria-label="Показать карточку «Дополнительные услуги»" aria-current="false"></button>
+            </div>
+            <button type="button" class="carousel-arrow carousel-next btn-active" aria-label="Следующая карточка"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
+          </div>
+          <p class="sr-only" aria-live="polite" id="carouselStatus">Карточка 1 из 2: Быстрые действия</p>
+        </section>
+
+        <div class="max-w-md mx-auto mb-8">
+          <button onclick="installApp()" class="w-full btn-hover btn-active bg-gradient-to-br from-gray-700 to-gray-900 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span></button>
         </div>
         
         <!-- BUS SCHEDULE BLOCK -->
@@ -2341,12 +2391,55 @@
             }
         }
 
+        function initActionsServicesCarousel() {
+            const carousel = document.getElementById('actionsServicesCarousel');
+            if (!carousel) return;
+
+            const track = carousel.querySelector('.actions-services-track');
+            const dots = Array.from(carousel.querySelectorAll('.carousel-dot'));
+            const status = document.getElementById('carouselStatus');
+            const cardNames = ['Быстрые действия', 'Дополнительные услуги'];
+            let currentSlide = 0;
+            let touchStartX = 0;
+            let touchStartY = 0;
+
+            const showSlide = (index) => {
+                currentSlide = Math.max(0, Math.min(index, dots.length - 1));
+                track.style.transform = window.matchMedia('(max-width: 899px)').matches
+                    ? `translateX(-${currentSlide * 100}%)`
+                    : '';
+                dots.forEach((dot, dotIndex) => dot.setAttribute('aria-current', String(dotIndex === currentSlide)));
+                status.textContent = `Карточка ${currentSlide + 1} из ${dots.length}: ${cardNames[currentSlide]}`;
+            };
+
+            carousel.querySelector('.carousel-prev').addEventListener('click', () => showSlide(currentSlide - 1));
+            carousel.querySelector('.carousel-next').addEventListener('click', () => showSlide(currentSlide + 1));
+            dots.forEach((dot, index) => dot.addEventListener('click', () => showSlide(index)));
+
+            track.addEventListener('touchstart', (event) => {
+                const touch = event.changedTouches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+            }, { passive: true });
+            track.addEventListener('touchend', (event) => {
+                const touch = event.changedTouches[0];
+                const deltaX = touch.clientX - touchStartX;
+                const deltaY = touch.clientY - touchStartY;
+                if (Math.abs(deltaX) < 45 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+                showSlide(deltaX < 0 ? currentSlide + 1 : currentSlide - 1);
+            }, { passive: true });
+
+            window.addEventListener('resize', () => showSlide(currentSlide));
+            showSlide(0);
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
              loadTheme(); 
              initPhoneMask(); 
              setAddressHistory(); 
              checkLineStatus(); 
              initPwaPushNotifications();
+             initActionsServicesCarousel();
              if ('serviceWorker' in navigator) {
                  navigator.serviceWorker.register('./service-worker.js').catch(error => console.warn('Service worker registration failed:', error));
              }

@@ -3115,7 +3115,11 @@
                 modal.classList.remove('active');
                 modal.setAttribute('aria-hidden', 'true');
                 if (modalId === 'mapModal') {
-                    if (window.simInterval) clearInterval(window.simInterval);
+                    window.simInitToken = (window.simInitToken || 0) + 1;
+                    if (window.simAnimationFrame) {
+                        window.cancelAnimationFrame(window.simAnimationFrame);
+                        window.simAnimationFrame = null;
+                    }
                 }
                 if (modalId === 'taxiModal' || modalId === 'auctionModal') {
                     const stopsContainerTaxi = document.getElementById('additionalStops');
@@ -3183,183 +3187,472 @@
 
         window.simMap = null;
         window.carMarkers = [];
-        window.simInterval = null;
+        window.simAnimationFrame = null;
+        window.simInitToken = 0;
+        window.userMarker = null;
 
         window.openMapModal = function() {
             window.openModal('mapModal');
             // Даем время на CSS анимацию открытия окна перед рендером карты
-            setTimeout(window.initSimulationMap, 300); 
+            setTimeout(window.initSimulationMap, 300);
         };
 
-        window.initSimulationMap = function() {
+        window.initSimulationMap = async function() {
+            const initToken = ++window.simInitToken;
+            const overlay = document.getElementById('mapOverlayText');
+            if (!window.L) {
+                if (overlay) overlay.textContent = 'Карта временно недоступна';
+                return;
+            }
+
+            const villageCenter = [50.1320, 82.5330];
+            const districtDestinations = [
+                { name: 'Белокаменка', point: [50.181341, 82.584271] },
+                { name: 'Секисовка', point: [50.329764, 82.591197] },
+                { name: 'Прогресс', point: [50.142700, 82.390711] },
+                { name: 'Черногорка', point: [50.134069, 82.455138] },
+                { name: 'Краснопартизанское', point: [50.154444, 82.564722] }
+            ];
+
             if (!window.simMap) {
-                // Инициализируем карту (сменили слой на стандартный OSM, где четко видны дома, магазины и нет машин на озере)
-                window.simMap = L.map('simulationMap', { zoomControl: false, attributionControl: false }).setView([50.130, 82.545], 14);
+                window.simMap = L.map('simulationMap', {
+                    zoomControl: false,
+                    attributionControl: false
+                }).setView(villageCenter, 14);
+
                 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 18
                 }).addTo(window.simMap);
                 L.control.zoom({ position: 'bottomright' }).addTo(window.simMap);
-                
-                // Добавляем маркеры популярных заведений (Магазины/Кафе)
+
                 const poiIcon = (color, iconClass) => L.divIcon({
                     className: 'custom-poi-icon',
-                    html: `<div style="background-color: ${color}; border: 2px solid white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.4);"><i class="${iconClass}" style="font-size: 10px; color: white;"></i></div>`,
-                    iconSize: [20, 20], iconAnchor: [10, 10]
+                    html: '<div style="background-color:' + color + ';border:2px solid white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,0.4);"><i class="' + iconClass + '" style="font-size:10px;color:white;"></i></div>',
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
                 });
-                
-                L.marker([50.1343, 82.5407], {icon: poiIcon('#ef4444', 'fas fa-fire')}).bindPopup('Шашлычный двор').addTo(window.simMap);
-                L.marker([50.1322, 82.5501], {icon: poiIcon('#f97316', 'fas fa-utensils')}).bindPopup('Домашний праздник').addTo(window.simMap);
-                L.marker([50.1305, 82.5375], {icon: poiIcon('#3b82f6', 'fas fa-shopping-cart')}).bindPopup('Супермаркет').addTo(window.simMap);
-                L.marker([50.1290, 82.5450], {icon: poiIcon('#10b981', 'fas fa-shopping-basket')}).bindPopup('Магазин продуктов').addTo(window.simMap);
+
+                const localPlaces = [
+                    { name: 'Автостанция', point: [50.136915, 82.531136], color: '#2563eb', icon: 'fas fa-bus' },
+                    { name: 'Школа №1', point: [50.1265, 82.5350], color: '#7c3aed', icon: 'fas fa-school' },
+                    { name: 'Строй Дом', point: [50.137003, 82.529537], color: '#0f766e', icon: 'fas fa-store' },
+                    { name: 'Гермес', point: [50.135968, 82.533004], color: '#16a34a', icon: 'fas fa-shopping-cart' },
+                    { name: 'Леонид', point: [50.137562, 82.528800], color: '#0891b2', icon: 'fas fa-shopping-basket' },
+                    { name: 'Шашлычный двор', point: [50.1343, 82.5407], color: '#ef4444', icon: 'fas fa-utensils' }
+                ];
+
+                localPlaces.forEach(place => {
+                    L.marker(place.point, { icon: poiIcon(place.color, place.icon) })
+                        .bindPopup('<b>' + place.name + '</b><br>Популярная точка подачи')
+                        .addTo(window.simMap);
+                });
+
+                districtDestinations.forEach(destination => {
+                    L.circleMarker(destination.point, {
+                        radius: 6,
+                        color: '#1d4ed8',
+                        weight: 2,
+                        fillColor: '#60a5fa',
+                        fillOpacity: 0.9
+                    })
+                        .bindPopup('<b>' + destination.name + '</b><br>Направление поездок')
+                        .addTo(window.simMap);
+                });
+
+                const districtPoints = [villageCenter].concat(districtDestinations.map(item => item.point));
+                window.simDistrictBounds = L.latLngBounds(districtPoints).pad(0.12);
+
+                const viewControl = L.control({ position: 'topleft' });
+                viewControl.onAdd = function() {
+                    const container = L.DomUtil.create('div', 'leaflet-bar');
+                    container.style.background = 'white';
+                    container.innerHTML =
+                        '<a href="#" data-map-view="village" title="Показать Белоусовку" aria-label="Показать Белоусовку" style="width:34px;height:34px;line-height:34px;text-align:center;"><i class="fas fa-home"></i></a>' +
+                        '<a href="#" data-map-view="district" title="Показать весь район" aria-label="Показать весь район" style="width:34px;height:34px;line-height:34px;text-align:center;"><i class="fas fa-route"></i></a>';
+
+                    L.DomEvent.disableClickPropagation(container);
+                    L.DomEvent.disableScrollPropagation(container);
+
+                    container.querySelector('[data-map-view="village"]').addEventListener('click', event => {
+                        event.preventDefault();
+                        window.simMap.setView(villageCenter, 14);
+                    });
+                    container.querySelector('[data-map-view="district"]').addEventListener('click', event => {
+                        event.preventDefault();
+                        window.simMap.fitBounds(window.simDistrictBounds, { padding: [24, 24] });
+                    });
+                    return container;
+                };
+                viewControl.addTo(window.simMap);
             }
 
-            // Запрос геопозиции пользователя (показываем "синюю точку")
+            // Показываем геопозицию клиента отдельной синей точкой.
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((position) => {
+                navigator.geolocation.getCurrentPosition(position => {
                     const userLat = position.coords.latitude;
                     const userLng = position.coords.longitude;
-                    
-                    // Иконка для местоположения клиента
                     const userIcon = L.divIcon({
                         className: 'user-location-icon',
-                        html: `<div style="background-color: #2563eb; border: 3px solid #ffffff; border-radius: 50%; width: 20px; height: 20px; box-shadow: 0 0 12px rgba(37, 99, 235, 0.9);"></div>`,
-                        iconSize: [20, 20], 
+                        html: '<div style="background-color:#2563eb;border:3px solid #ffffff;border-radius:50%;width:20px;height:20px;box-shadow:0 0 12px rgba(37,99,235,0.9);"></div>',
+                        iconSize: [20, 20],
                         iconAnchor: [10, 10]
                     });
-                    
-                    // Удаляем старый маркер пользователя, если он был
+
                     if (window.userMarker) window.simMap.removeLayer(window.userMarker);
-                    
-                    // Добавляем новый маркер поверх остальных машин (zIndexOffset)
-                    window.userMarker = L.marker([userLat, userLng], {icon: userIcon, zIndexOffset: 1000})
+                    window.userMarker = L.marker([userLat, userLng], {
+                        icon: userIcon,
+                        zIndexOffset: 1000
+                    })
                         .addTo(window.simMap)
-                        .bindPopup('<b style="font-size: 14px;">📍 Вы здесь</b>');
-                        
-                    // Если клиент находится недалеко от Белоусовки, центрируем карту на нем
-                    if (Math.abs(userLat - 50.13) < 0.1 && Math.abs(userLng - 82.54) < 0.1) {
+                        .bindPopup('<b style="font-size:14px;">📍 Вы здесь</b>');
+
+                    if (Math.abs(userLat - villageCenter[0]) < 0.1 && Math.abs(userLng - villageCenter[1]) < 0.1) {
                         window.simMap.setView([userLat, userLng], 15);
                     }
-                }, (err) => { console.warn('Не удалось получить геопозицию пользователя:', err); }, {timeout: 5000, maximumAge: 60000});
+                }, error => {
+                    console.warn('Не удалось получить геопозицию пользователя:', error);
+                }, {
+                    timeout: 5000,
+                    maximumAge: 60000
+                });
             }
 
-            // Очищаем старые маркеры и интервалы
-            if (window.simInterval) clearInterval(window.simInterval);
-            window.carMarkers.forEach(m => window.simMap.removeLayer(m.marker));
+            // Полностью останавливаем предыдущий цикл перед повторным открытием карты.
+            if (window.simAnimationFrame) {
+                window.cancelAnimationFrame(window.simAnimationFrame);
+                window.simAnimationFrame = null;
+            }
+            window.carMarkers.forEach(car => window.simMap.removeLayer(car.marker));
             window.carMarkers = [];
 
             let cars = 0;
             try {
                 const stored = JSON.parse(localStorage.getItem('taxi_sim_state_v2'));
-                if (stored) cars = stored.cars;
-            } catch(e){}
+                if (stored) cars = Math.max(0, Math.min(12, Number(stored.cars) || 0));
+            } catch (error) {
+                console.warn('Не удалось прочитать число машин:', error);
+            }
 
-            const overlay = document.getElementById('mapOverlayText');
             if (cars === 0) {
-                overlay.innerHTML = '<i class="fas fa-moon text-blue-500 mr-2"></i> Свободных машин нет';
+                if (overlay) overlay.innerHTML = '<i class="fas fa-moon text-blue-500 mr-2"></i> Свободных машин нет';
                 window.simMap.invalidateSize();
                 return;
             }
 
-            overlay.innerHTML = `<i class="fas fa-car-side text-green-500 mr-2"></i> На линии: ${cars} авто`;
+            if (overlay) overlay.innerHTML = '<i class="fas fa-route text-blue-500 mr-2"></i> Прокладываем маршруты...';
 
-            // Создаем иконку такси
             const taxiIcon = L.divIcon({
                 className: 'custom-taxi-icon',
-                html: `<div style="background-color: #facc15; border: 2px solid #374151; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                        <i class="fas fa-taxi" style="font-size: 11px; color: #111827;"></i>
-                       </div>`,
+                html: '<div style="background-color:#facc15;border:2px solid #374151;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 6px rgba(0,0,0,0.3);"><i class="fas fa-taxi" style="font-size:11px;color:#111827;"></i></div>',
                 iconSize: [24, 24],
                 iconAnchor: [12, 12]
             });
 
-            // Граф основных перекрестков (расширенный для реалистичного разброса по всему поселку)
-            const roadNodes = [
-                { id: 0, lat: 50.1430, lng: 82.5350, links: [1, 13] }, // Дальний Север
-                { id: 1, lat: 50.1384, lng: 82.5352, links: [0, 2] },
-                { id: 2, lat: 50.1343, lng: 82.5407, links: [1, 3, 4] }, // Центр
-                { id: 3, lat: 50.1355, lng: 82.5475, links: [2, 5, 14] },
-                { id: 4, lat: 50.1305, lng: 82.5375, links: [2, 6, 9] },
-                { id: 5, lat: 50.1322, lng: 82.5501, links: [3, 7, 8] },
-                { id: 6, lat: 50.1265, lng: 82.5350, links: [4, 10, 11] },
-                { id: 7, lat: 50.1290, lng: 82.5450, links: [5, 9, 12] },
-                { id: 8, lat: 50.1300, lng: 82.5550, links: [5, 15] }, // Восток
-                { id: 9, lat: 50.1295, lng: 82.5410, links: [4, 7] },
-                { id: 10, lat: 50.1240, lng: 82.5320, links: [6, 16] }, // Юго-Запад
-                { id: 11, lat: 50.1250, lng: 82.5420, links: [6, 12] },
-                { id: 12, lat: 50.1265, lng: 82.5480, links: [7, 11, 17] }, // Юго-Восток
-                { id: 13, lat: 50.1400, lng: 82.5250, links: [0] }, // Северо-Запад
-                { id: 14, lat: 50.1380, lng: 82.5550, links: [3] }, // Северо-Восток
-                { id: 15, lat: 50.1280, lng: 82.5650, links: [8] }, // Дальний Восток
-                { id: 16, lat: 50.1180, lng: 82.5300, links: [10] }, // Дальний Юг (Трасса)
-                { id: 17, lat: 50.1190, lng: 82.5500, links: [12] }  // Дальний Юго-Восток
+            const hub = [50.136840, 82.535025];
+            const station = [50.136915, 82.531136];
+            const school = [50.1265, 82.5350];
+            const stroyDom = [50.137003, 82.529537];
+            const hermes = [50.135968, 82.533004];
+            const leonid = [50.137562, 82.528800];
+            const shashlyk = [50.1343, 82.5407];
+
+            // Все маршруты строятся по дорожной геометрии OSRM. Fallback-точки нужны только
+            // на случай временной недоступности сервиса маршрутизации.
+            const routeSpecs = [
+                {
+                    id: 'local-places',
+                    label: 'Магазины и школа',
+                    kind: 'local',
+                    waypoints: [station, stroyDom, leonid, hermes, school, shashlyk, station],
+                    fallback: [
+                        station, stroyDom, leonid, hermes,
+                        [50.1335, 82.5337], [50.1300, 82.5342], school,
+                        [50.1290, 82.5390], shashlyk,
+                        [50.1350, 82.5370], station
+                    ]
+                },
+                {
+                    id: 'belokamenka',
+                    label: 'Белоусовка — Белокаменка',
+                    kind: 'district',
+                    waypoints: [hub, [50.181341, 82.584271]],
+                    fallback: [hub, [50.1450, 82.5440], [50.1580, 82.5570], [50.1710, 82.5710], [50.181341, 82.584271]]
+                },
+                {
+                    id: 'sekisovka',
+                    label: 'Белоусовка — Секисовка',
+                    kind: 'district',
+                    waypoints: [hub, [50.329764, 82.591197]],
+                    fallback: [hub, [50.1580, 82.5570], [50.181341, 82.584271], [50.2250, 82.5940], [50.2750, 82.5900], [50.329764, 82.591197]]
+                },
+                {
+                    id: 'progress',
+                    label: 'Белоусовка — Прогресс',
+                    kind: 'district',
+                    waypoints: [hub, [50.142700, 82.390711]],
+                    fallback: [hub, [50.1350, 82.5050], [50.134069, 82.455138], [50.1380, 82.4230], [50.142700, 82.390711]]
+                },
+                {
+                    id: 'chernogorka',
+                    label: 'Белоусовка — Черногорка',
+                    kind: 'district',
+                    waypoints: [hub, [50.134069, 82.455138]],
+                    fallback: [hub, [50.1355, 82.5100], [50.1348, 82.4820], [50.134069, 82.455138]]
+                },
+                {
+                    id: 'krasnopartizanskoe',
+                    label: 'Белоусовка — Краснопартизанское',
+                    kind: 'district',
+                    waypoints: [hub, [50.154444, 82.564722]],
+                    fallback: [hub, [50.1410, 82.5420], [50.1475, 82.5530], [50.154444, 82.564722]]
+                }
             ];
 
-            // Спавним машинки строго на дорогах
-            for(let i=0; i<cars; i++) {
-                const startNodeIdx = Math.floor(Math.random() * roadNodes.length);
-                const startNode = roadNodes[startNodeIdx];
-                const nextNodeIdx = startNode.links[Math.floor(Math.random() * startNode.links.length)];
-                const targetNode = roadNodes.find(n => n.id === nextNodeIdx);
+            function haversineMeters(pointA, pointB) {
+                const earthRadius = 6371000;
+                const toRadians = degrees => degrees * Math.PI / 180;
+                const lat1 = toRadians(pointA[0]);
+                const lat2 = toRadians(pointB[0]);
+                const deltaLat = toRadians(pointB[0] - pointA[0]);
+                const deltaLng = toRadians(pointB[1] - pointA[1]);
+                const value =
+                    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                    Math.cos(lat1) * Math.cos(lat2) *
+                    Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+                return earthRadius * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
+            }
 
-                const marker = L.marker([startNode.lat, startNode.lng], {icon: taxiIcon}).addTo(window.simMap);
+            function simplifyRoute(points, minimumSpacing) {
+                if (!Array.isArray(points) || points.length < 2) return [];
+                const simplified = [points[0]];
+                for (let index = 1; index < points.length - 1; index++) {
+                    if (haversineMeters(simplified[simplified.length - 1], points[index]) >= minimumSpacing) {
+                        simplified.push(points[index]);
+                    }
+                }
+                simplified.push(points[points.length - 1]);
+                return simplified;
+            }
+
+            const routeCacheKey = 'taxi_sim_road_routes_v1';
+            let cachedRoutes = {};
+            try {
+                const parsedCache = JSON.parse(localStorage.getItem(routeCacheKey));
+                if (parsedCache && parsedCache.version === 1 && parsedCache.routes) {
+                    cachedRoutes = parsedCache.routes;
+                }
+            } catch (error) {
+                console.warn('Не удалось прочитать кэш маршрутов:', error);
+            }
+
+            let cacheChanged = false;
+            async function loadRoadRoute(spec) {
+                const cached = cachedRoutes[spec.id];
+                if (Array.isArray(cached) && cached.length > 1) {
+                    return Object.assign({}, spec, { points: cached, source: 'cache' });
+                }
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                try {
+                    const coordinates = spec.waypoints
+                        .map(point => point[1] + ',' + point[0])
+                        .join(';');
+                    const url = 'https://router.project-osrm.org/route/v1/driving/' +
+                        coordinates +
+                        '?overview=full&geometries=geojson&steps=false';
+                    const response = await fetch(url, {
+                        signal: controller.signal,
+                        headers: { Accept: 'application/json' }
+                    });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    const data = await response.json();
+                    const coordinatesList = data.routes &&
+                        data.routes[0] &&
+                        data.routes[0].geometry &&
+                        data.routes[0].geometry.coordinates;
+                    if (!Array.isArray(coordinatesList) || coordinatesList.length < 2) {
+                        throw new Error('Маршрут не найден');
+                    }
+
+                    const roadPoints = coordinatesList.map(point => [point[1], point[0]]);
+                    const simplified = simplifyRoute(roadPoints, spec.kind === 'district' ? 24 : 8);
+                    cachedRoutes[spec.id] = simplified;
+                    cacheChanged = true;
+                    return Object.assign({}, spec, { points: simplified, source: 'road' });
+                } catch (error) {
+                    console.warn('Используем резервный маршрут ' + spec.label + ':', error);
+                    return Object.assign({}, spec, {
+                        points: simplifyRoute(spec.fallback, 3),
+                        source: 'fallback'
+                    });
+                } finally {
+                    clearTimeout(timeoutId);
+                }
+            }
+
+            const routes = await Promise.all(routeSpecs.map(loadRoadRoute));
+            if (cacheChanged) {
+                try {
+                    localStorage.setItem(routeCacheKey, JSON.stringify({
+                        version: 1,
+                        routes: cachedRoutes
+                    }));
+                } catch (error) {
+                    console.warn('Не удалось сохранить кэш маршрутов:', error);
+                }
+            }
+
+            if (initToken !== window.simInitToken ||
+                document.getElementById('mapModal')?.getAttribute('aria-hidden') === 'true') {
+                return;
+            }
+
+            const usableRoutes = routes.filter(route => Array.isArray(route.points) && route.points.length > 1);
+            if (!usableRoutes.length) {
+                if (overlay) overlay.textContent = 'Маршруты временно недоступны';
+                window.simMap.invalidateSize();
+                return;
+            }
+
+            const localRoute = usableRoutes.find(route => route.kind === 'local') || usableRoutes[0];
+            const districtRoutes = usableRoutes.filter(route => route.kind === 'district');
+            const rotation = districtRoutes.length
+                ? Math.floor(Date.now() / 60000) % districtRoutes.length
+                : 0;
+            const animationStart = performance.now();
+
+            function carDescription(route, waiting) {
+                return '<b>Такси «Успех»</b><br>' +
+                    (waiting ? 'Ожидает пассажира' : 'В пути') +
+                    '<br><span style="font-size:12px;">' + route.label + '</span>';
+            }
+
+            for (let index = 0; index < cars; index++) {
+                const route = index === 0 || !districtRoutes.length
+                    ? localRoute
+                    : districtRoutes[(rotation + index - 1) % districtRoutes.length];
+                const points = route.points;
+                const direction = Math.random() < 0.5 ? 1 : -1;
+                const maxStartIndex = Math.max(1, points.length - 1);
+                const pointIndex = direction === 1
+                    ? Math.min(points.length - 2, Math.floor(Math.random() * maxStartIndex))
+                    : Math.max(1, 1 + Math.floor(Math.random() * maxStartIndex));
+                const safePointIndex = Math.max(0, Math.min(points.length - 1, pointIndex));
+                const nextPointIndex = safePointIndex + direction;
+                const safeNextIndex = nextPointIndex >= 0 && nextPointIndex < points.length
+                    ? nextPointIndex
+                    : safePointIndex - direction;
+                const segmentProgress = 0.15 + Math.random() * 0.7;
+                const startPoint = points[safePointIndex];
+                const nextPoint = points[safeNextIndex];
+                const lat = startPoint[0] + (nextPoint[0] - startPoint[0]) * segmentProgress;
+                const lng = startPoint[1] + (nextPoint[1] - startPoint[1]) * segmentProgress;
+
+                const marker = L.marker([lat, lng], { icon: taxiIcon })
+                    .addTo(window.simMap)
+                    .bindPopup(carDescription(route, false))
+                    .bindTooltip(route.label, {
+                        direction: 'top',
+                        offset: [0, -13],
+                        opacity: 0.9
+                    });
 
                 window.carMarkers.push({
-                    marker: marker,
-                    currentNode: startNode,
-                    targetNode: targetNode,
-                    lat: startNode.lat,
-                    lng: startNode.lng,
-                    speed: 0.000006 + Math.random() * 0.000004, // Медленная, реалистичная скорость (30-40 км/ч)
-                    pauseLeft: Math.floor(Math.random() * 100) // Случайная стартовая пауза: некоторые машины уже стоят на месте
+                    marker,
+                    route,
+                    pointIndex: safePointIndex,
+                    direction,
+                    lat,
+                    lng,
+                    baseSpeed: route.kind === 'district'
+                        ? 22 + Math.random() * 8
+                        : 6 + Math.random() * 4,
+                    speedFactor: 0.8 + Math.random() * 0.25,
+                    nextSpeedChange: animationStart + 4000 + Math.random() * 8000,
+                    pauseUntil: animationStart + Math.random() * 4500,
+                    waiting: false
                 });
             }
 
-            // Перерисовываем контейнер после загрузки
+            if (overlay) {
+                overlay.innerHTML = '<i class="fas fa-car-side text-green-500 mr-2"></i> На линии: ' +
+                    cars +
+                    ' · маршруты по дорогам';
+            }
             window.simMap.invalidateSize();
 
-            // Запускаем цикл движения по дорогам
-            window.simInterval = setInterval(() => {
-                window.carMarkers.forEach(car => {
-                    // Если машина стоит (пауза) - просто уменьшаем счетчик
-                    if (car.pauseLeft > 0) {
-                        car.pauseLeft--;
+            function advanceCar(car, distanceMeters, now) {
+                let remaining = distanceMeters;
+                let guard = 0;
+
+                while (remaining > 0 && guard < 80) {
+                    guard++;
+                    const points = car.route.points;
+                    const targetIndex = car.pointIndex + car.direction;
+
+                    if (targetIndex < 0 || targetIndex >= points.length) {
+                        car.direction *= -1;
+                        car.pauseUntil = now + 3000 + Math.random() * 9000;
+                        car.waiting = true;
+                        car.marker.setLatLng([car.lat, car.lng]);
+                        car.marker.setPopupContent(carDescription(car.route, true));
                         return;
                     }
 
-                    const distLat = car.targetNode.lat - car.lat;
-                    const distLng = car.targetNode.lng - car.lng;
-                    const dist = Math.sqrt(distLat*distLat + distLng*distLng);
+                    const target = points[targetIndex];
+                    const current = [car.lat, car.lng];
+                    const segmentRemaining = haversineMeters(current, target);
 
-                    // Достигли перекрестка/адреса -> выбираем следующий
-                    if (dist < car.speed) {
-                        car.lat = car.targetNode.lat;
-                        car.lng = car.targetNode.lng;
-                        
-                        const prevNodeId = car.currentNode.id;
-                        car.currentNode = car.targetNode;
-                        
-                        // Выбираем куда ехать дальше (стараемся не ехать обратно, если есть выбор)
-                        let nextLinks = car.currentNode.links.filter(id => id !== prevNodeId);
-                        if (nextLinks.length === 0) nextLinks = car.currentNode.links; // Тупик -> разворот
-                        
-                        const nextNodeIdx = nextLinks[Math.floor(Math.random() * nextLinks.length)];
-                        car.targetNode = roadNodes.find(n => n.id === nextNodeIdx);
-
-                        // С вероятностью 40% машина останавливается на "заказе" или "ожидании" (от 3 до 15 секунд)
-                        if (Math.random() < 0.4) {
-                            car.pauseLeft = 30 + Math.floor(Math.random() * 120);
-                        }
-                    } else {
-                        // Едем к следующему перекрестку
-                        const angle = Math.atan2(distLng, distLat);
-                        car.lat += Math.cos(angle) * car.speed;
-                        car.lng += Math.sin(angle) * car.speed;
+                    if (segmentRemaining <= 0.5) {
+                        car.lat = target[0];
+                        car.lng = target[1];
+                        car.pointIndex = targetIndex;
+                        continue;
                     }
 
-                    // Обновляем позицию на карте
-                    car.marker.setLatLng([car.lat, car.lng]);
+                    if (remaining >= segmentRemaining) {
+                        car.lat = target[0];
+                        car.lng = target[1];
+                        car.pointIndex = targetIndex;
+                        remaining -= segmentRemaining;
+                        continue;
+                    }
+
+                    const ratio = remaining / segmentRemaining;
+                    car.lat += (target[0] - car.lat) * ratio;
+                    car.lng += (target[1] - car.lng) * ratio;
+                    remaining = 0;
+                }
+
+                car.marker.setLatLng([car.lat, car.lng]);
+            }
+
+            let previousFrame = animationStart;
+            function animateCars(now) {
+                const elapsedSeconds = Math.min((now - previousFrame) / 1000, 0.25);
+                previousFrame = now;
+
+                window.carMarkers.forEach(car => {
+                    if (now < car.pauseUntil) return;
+
+                    if (car.waiting) {
+                        car.waiting = false;
+                        car.marker.setPopupContent(carDescription(car.route, false));
+                    }
+
+                    if (now >= car.nextSpeedChange) {
+                        car.speedFactor = 0.72 + Math.random() * 0.38;
+                        car.nextSpeedChange = now + 5000 + Math.random() * 9000;
+                    }
+
+                    advanceCar(car, car.baseSpeed * car.speedFactor * elapsedSeconds, now);
                 });
-            }, 100);
+
+                window.simAnimationFrame = window.requestAnimationFrame(animateCars);
+            }
+
+            window.simAnimationFrame = window.requestAnimationFrame(animateCars);
         };
 
         window.togglePreorder = function() {

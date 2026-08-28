@@ -1,0 +1,25 @@
+{
+  "id": "./SHASHDVOR.html",
+  "name": "Шашлычный Двор",
+  "short_name": "Шашлык",
+  "start_url": "./SHASHDVOR.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#2e1e1e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./shashlyk-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./shashlyk-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

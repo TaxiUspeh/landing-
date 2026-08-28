@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Шашлычный Двор</title>
+  <rect width="512" height="512" rx="112" fill="#2e1e1e"/>
+  <circle cx="256" cy="256" r="154" fill="#15100f" stroke="#ff8c00" stroke-width="16"/>
+  <path d="M134 366 378 122" stroke="#f4d6a0" stroke-width="20" stroke-linecap="round"/>
+  <g fill="#c53d24" stroke="#ff8c00" stroke-width="10">
+    <rect x="150" y="286" width="88" height="66" rx="20" transform="rotate(-45 194 319)"/>
+    <rect x="218" y="218" width="88" height="66" rx="20" transform="rotate(-45 262 251)"/>
+    <rect x="286" y="150" width="88" height="66" rx="20" transform="rotate(-45 330 183)"/>
+  </g>
+  <path d="M350 394h-188c-20 0-36-16-36-36h260c0 20-16 36-36 36z" fill="#ff8c00"/>
+</svg>

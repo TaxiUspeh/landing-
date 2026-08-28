@@ -2,7 +2,7 @@
 <html lang="ru" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     
     <!-- === PWA SETTINGS === -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -10,11 +10,19 @@
     <meta name="apple-mobile-web-app-title" content="Праздник">
     <meta name="theme-color" content="#1a0b0b">
     
-    <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/512/cutlery.png">
-    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/512/cutlery.png">
-    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Домашний Праздник","short_name":"Праздник","start_url":".","display":"standalone","background_color":"#1a0b0b","theme_color":"#1a0b0b","orientation":"portrait","icons":[{"src":"https://img.icons8.com/fluency/512/cutlery.png","sizes":"192x192","type":"image/png"}]}'>
+    <link rel="icon" type="image/png" sizes="192x192" href="./food-icon-192.png">
+    <link rel="apple-touch-icon" href="./food-icon-192.png">
+    <link rel="manifest" href="./food.webmanifest">
 
     <title>Домашний Праздник | Меню</title>
+    <meta name="description" content="Праздничные блюда, салаты и домашние полуфабрикаты с доставкой в Белоусовке и рядом.">
+    <link rel="canonical" href="https://taxiuspeh.github.io/landing-/food.html">
+    <meta property="og:title" content="Домашний Праздник | Меню">
+    <meta property="og:description" content="Праздничные блюда и домашние полуфабрикаты с доставкой.">
+    <meta property="og:image" content="https://taxiuspeh.github.io/landing-/food-icon-512.png">
+    <meta property="og:url" content="https://taxiuspeh.github.io/landing-/food.html">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ru_RU">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
@@ -264,10 +272,10 @@
                     <h5 class="text-white font-bold flex items-center text-sm uppercase tracking-wider text-gray-400"><i class="fas fa-truck mr-2"></i> Доставка</h5>
                     
                     <div class="space-y-3">
-                        <input type="text" id="order-name" placeholder="Ваше имя" class="w-full bg-[#1a1a1a] text-white p-3 rounded-xl border border-gray-700 focus:border-app-gold outline-none transition">
+                        <input type="text" id="order-name" autocomplete="name" placeholder="Ваше имя" class="w-full bg-[#1a1a1a] text-white p-3 rounded-xl border border-gray-700 focus:border-app-gold outline-none transition">
                         
                         <div class="relative">
-                            <select id="order-city" onchange="calculateDelivery()" class="w-full bg-[#1a1a1a] text-white p-3 rounded-xl border border-gray-700 focus:border-app-gold outline-none appearance-none">
+                            <select id="order-city" autocomplete="address-level2" onchange="calculateDelivery()" class="w-full bg-[#1a1a1a] text-white p-3 rounded-xl border border-gray-700 focus:border-app-gold outline-none appearance-none">
                                 <option value="" disabled selected>Выберите поселок/город</option>
                                 <option value="Белоусовка">Белоусовка</option>
                                 <option value="Глубокое">Глубокое</option>
@@ -278,8 +286,8 @@
                             <i class="fas fa-chevron-down absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
                         </div>
                         
-                        <input type="text" id="order-address" placeholder="Улица, дом" class="w-full bg-[#1a1a1a] text-white p-3 rounded-xl border border-gray-700 focus:border-app-gold outline-none transition">
-                        <input type="tel" id="order-phone" placeholder="+7 (___) ___-__-__" class="w-full bg-[#1a1a1a] text-white p-3 rounded-xl border border-gray-700 focus:border-app-gold outline-none transition">
+                        <input type="text" id="order-address" autocomplete="street-address" placeholder="Улица, дом" class="w-full bg-[#1a1a1a] text-white p-3 rounded-xl border border-gray-700 focus:border-app-gold outline-none transition">
+                        <input type="tel" id="order-phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" class="w-full bg-[#1a1a1a] text-white p-3 rounded-xl border border-gray-700 focus:border-app-gold outline-none transition">
                         <textarea id="order-comment" rows="2" placeholder="Комментарий..." class="w-full bg-[#1a1a1a] text-white p-3 rounded-xl border border-gray-700 focus:border-app-gold outline-none transition"></textarea>
                     </div>
                 </div>
@@ -377,9 +385,9 @@
     <!-- Success Overlay -->
     <div id="global-success-overlay" class="fixed inset-0 z-[3000] bg-black/95 hidden flex-col items-center justify-center opacity-0 transition-opacity duration-300">
         <div class="success-checkmark scale-150"><div class="check-icon"><span class="icon-line line-tip"></span><span class="icon-line line-long"></span></div></div>
-        <h2 id="success-title" class="text-3xl font-bold text-white mt-8 text-center px-4">Заказ принят!</h2>
+        <h2 id="success-title" class="text-3xl font-bold text-white mt-8 text-center px-4">Заказ подготовлен!</h2>
         <div id="confetti-container" class="absolute inset-0 pointer-events-none"></div>
-        <p id="success-subtitle" class="text-gray-400 mt-2 text-center">Открываем WhatsApp...</p>
+        <p id="success-subtitle" class="text-gray-400 mt-2 text-center px-4">Подтвердите отправку сообщения в WhatsApp</p>
     </div>
 
     <!-- SCRIPTS -->
@@ -588,79 +596,112 @@
             document.getElementById(`tab-${activeMenuTab}`).classList.add('active');
         }
 
+        function showFoodNotification(message) {
+            const box = document.getElementById('notification-box');
+            document.getElementById('notification-text').textContent = message;
+            box.classList.remove('-translate-y-[150%]');
+            clearTimeout(showFoodNotification.hideTimer);
+            showFoodNotification.hideTimer = setTimeout(() => box.classList.add('-translate-y-[150%]'), 2400);
+        }
+
+        function openWhatsAppUrl(url) {
+            const opened = window.open(url, '_blank');
+            if (opened) opened.opener = null;
+            else window.location.assign(url);
+        }
+
         function placeOrder() {
-            const name = document.getElementById('order-name').value;
+            const name = document.getElementById('order-name').value.trim();
             const city = document.getElementById('order-city').value;
-            const phone = document.getElementById('order-phone').value;
-            const address = document.getElementById('order-address').value;
-            const comment = document.getElementById('order-comment').value;
-            
-            if(!address || !city || !phone) { 
-                if(!address) document.getElementById('order-address').classList.add('border-red-500');
-                setTimeout(() => document.getElementById('order-address').classList.remove('border-red-500'), 2000);
-                return; 
+            const phone = document.getElementById('order-phone').value.trim();
+            const address = document.getElementById('order-address').value.trim();
+            const comment = document.getElementById('order-comment').value.trim();
+            const phoneDigits = phone.replace(/\D/g, '');
+            const invalidFields = [];
+
+            if (cart.length === 0) {
+                showFoodNotification('Добавьте блюда в корзину');
+                return;
             }
-            
+            if (!city) invalidFields.push(document.getElementById('order-city'));
+            if (!address) invalidFields.push(document.getElementById('order-address'));
+            if (phoneDigits.length !== 11) invalidFields.push(document.getElementById('order-phone'));
+            if (invalidFields.length) {
+                invalidFields.forEach(field => field.classList.add('border-red-500'));
+                invalidFields[0].focus();
+                showFoodNotification('Проверьте населённый пункт, адрес и телефон');
+                setTimeout(() => invalidFields.forEach(field => field.classList.remove('border-red-500')), 2400);
+                return;
+            }
+
             const isClosed = (new Date().getHours() < 10 || new Date().getHours() >= 23);
-            hideCartModal();
-            
-            // Lottery 30%
-            let discount = 0;
             const win = Math.random() < 0.3;
-            const title = document.getElementById('success-title');
-            
-            if(win) {
-                title.innerHTML = "🎉 <span class='text-app-gold'>СКИДКА 5%</span>";
-                startConfetti();
-            } else {
-                title.textContent = isClosed ? "Предзаказ принят!" : "Заказ принят!";
+            let msg = isClosed ? `🌙 *ПРЕДЗАКАЗ (Закрыто)*\n` : `🎉 *НОВЫЙ ЗАКАЗ*\n`;
+            msg += `👤 *Имя:* ${name || 'Не указано'}\n📱 *Тел:* ${phone}\n📍 *Пункт:* ${city}\n🏠 *Адрес:* ${address}\n`;
+            if (comment) msg += `📝 *Коммент:* ${comment}\n`;
+            msg += `\n--- Корзина ---\n`;
+
+            let total = 0;
+            const itemsList = [];
+            cart.forEach(item => {
+                const product = getProductById(item.id);
+                if (!product) return;
+                const sum = product.price * item.count;
+                total += sum;
+                msg += `🔸 ${product.name} x${item.count} = ${sum.toLocaleString()} ₸\n`;
+                itemsList.push({ name: product.name, count: item.count, price: product.price });
+            });
+
+            if (city === 'Белоусовка' || city === 'Глубокое' || city === 'Предгорное') {
+                msg += `🚕 *Доставка:* Оплачивается отдельно (Такси)\n`;
             }
+            if (win) {
+                const discountAmount = Math.floor(total * 0.05);
+                total -= discountAmount;
+                msg += `🎁 *СКИДКА 5%:* -${discountAmount.toLocaleString()} ₸\n`;
+            }
+            msg += `\n💰 *ИТОГО (Еда): ${total.toLocaleString()} ₸*`;
 
+            const orderData = {
+                status: 'prepared',
+                date: new Date().toLocaleString('ru-RU'),
+                name,
+                phone,
+                city,
+                address,
+                comment,
+                items: itemsList,
+                total,
+                discount: win ? '5%' : '0%'
+            };
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            }).catch(err => console.error('Ошибка отправки в Google Sheets:', err));
+
+            const title = document.getElementById('success-title');
+            title.innerHTML = win
+                ? "🎉 <span class='text-app-gold'>СКИДКА 5% ПРИМЕНЕНА</span>"
+                : (isClosed ? 'Предзаказ подготовлен!' : 'Заказ подготовлен!');
+            if (win) startConfetti();
+            hideCartModal();
             const overlay = document.getElementById('global-success-overlay');
-            overlay.classList.remove('hidden'); overlay.classList.add('flex');
-            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-            
+            overlay.classList.remove('hidden', 'opacity-0');
+            overlay.classList.add('flex');
+
+            openWhatsAppUrl(`https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(msg)}`);
+            cart = [];
+            saveCart();
+            renderUI();
             setTimeout(() => {
-                let msg = isClosed ? `🌙 *ПРЕДЗАКАЗ (Закрыто)*\n` : `🎉 *НОВЫЙ ЗАКАЗ*\n`;
-                msg += `👤 *Имя:* ${name}\n📱 *Тел:* ${phone}\n📍 *Пункт:* ${city}\n🏠 *Адрес:* ${address}\n`;
-                if(comment) msg += `📝 *Коммент:* ${comment}\n`;
-                msg += `\n--- Корзина ---\n`;
-                
-                let total = 0;
-                let itemsList = [];
-                cart.forEach(item => {
-                    const p = getProductById(item.id);
-                    const s = p.price * item.count;
-                    total += s;
-                    msg += `🔸 ${p.name} x${item.count} = ${s.toLocaleString()} ₸\n`;
-                    itemsList.push({ name: p.name, count: item.count, price: p.price });
-                });
-                
-                if(city === "Белоусовка" || city === "Глубокое" || city === "Предгорное") msg += `🚕 *Доставка:* Оплачивается отдельно (Такси)\n`;
-                
-                if(win) {
-                    let discAmount = Math.floor(total * 0.05);
-                    total -= discAmount;
-                    msg += `🎁 *СКИДКА 5%:* -${discAmount} ₸\n`;
-                }
-
-                msg += `\n💰 *ИТОГО (Еда): ${total.toLocaleString()} ₸*`;
-                
-                const orderData = { date: new Date().toLocaleString(), name, phone, city, address, comment, items: itemsList, total, discount: win ? '5%' : '0%' };
-                
-                // Google Sheets
-                fetch(GOOGLE_SCRIPT_URL, { 
-                    method: 'POST', 
-                    mode: 'no-cors', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(orderData) 
-                }).catch(err => console.error('Ошибка отправки в Google Sheets:', err));
-
-                window.open(`https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
-                cart = []; saveCart(); renderUI();
                 overlay.classList.add('opacity-0');
-                setTimeout(() => { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }, 300);
-            }, 3000);
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('flex');
+                }, 300);
+            }, 1800);
         }
 
         // --- Helpers ---
@@ -737,7 +778,6 @@
             window.open(`https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(`👨‍🍳 Заявка на повара\nДата: ${d}\nСобытие: ${e}`)}`, '_blank', 'noopener,noreferrer');
         }
         function hidePWAInstructions() { document.getElementById('pwa-instructions-modal').classList.add('hidden'); }
-        function installApp() { document.getElementById('pwa-instructions-modal').classList.remove('hidden'); document.getElementById('pwa-instructions-modal').classList.add('flex'); }
         function shareSiteUrl() { 
              const url = "https://taxiuspeh.github.io/landing-/food.html";
              if (navigator.share) {
@@ -754,16 +794,37 @@
              }
         }
 
-        let deferredPrompt; window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
-        function installApp() { if(deferredPrompt) deferredPrompt.prompt(); else document.getElementById('pwa-instructions-modal').classList.remove('hidden'); document.getElementById('pwa-instructions-modal').classList.add('flex'); }
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', event => {
+            event.preventDefault();
+            deferredPrompt = event;
+        });
+        async function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                return;
+            }
+            document.getElementById('pwa-instructions-modal').classList.remove('hidden');
+            document.getElementById('pwa-instructions-modal').classList.add('flex');
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             loadCart(); renderUI();
             const input = document.getElementById('order-phone');
             if(input) input.addEventListener('input', e => {
-                let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
-                e.target.value = !x[2] ? x[1] : '+7 (' + x[2] + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+                let digits = e.target.value.replace(/\D/g, '');
+                if (digits.startsWith('7') || digits.startsWith('8')) digits = digits.slice(1);
+                digits = digits.slice(0, 10);
+                e.target.value = digits.length
+                    ? '+7 (' + digits.slice(0, 3) + (digits.length > 3 ? ') ' + digits.slice(3, 6) : '') + (digits.length > 6 ? '-' + digits.slice(6, 8) : '') + (digits.length > 8 ? '-' + digits.slice(8, 10) : '')
+                    : '';
             });
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' })
+                    .catch(error => console.warn('Service worker registration failed:', error));
+            }
         });
     </script>
 </body>

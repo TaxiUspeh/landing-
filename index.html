@@ -460,6 +460,118 @@
                 font-size: 0.65rem !important;
             }
         }
+
+        /* Services/actions carousel: existing button and compact sizing stays unchanged. */
+        .services-actions-viewport {
+            width: 100%;
+        }
+
+        .services-actions-track {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .services-actions-panel {
+            min-width: 0;
+        }
+
+        .services-actions-panel .additional-services-grid,
+        .services-actions-panel .quick-actions-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            max-width: none;
+        }
+
+        .services-actions-controls {
+            display: none;
+        }
+
+        @media (max-width: 767px) {
+            .services-actions-viewport {
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                scroll-behavior: smooth;
+                overscroll-behavior-x: contain;
+                touch-action: pan-x pan-y;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+
+            .services-actions-viewport::-webkit-scrollbar {
+                display: none;
+            }
+
+            .services-actions-track {
+                display: flex;
+                gap: 0;
+            }
+
+            .services-actions-panel {
+                flex: 0 0 100%;
+                width: 100%;
+                scroll-snap-align: start;
+                scroll-snap-stop: always;
+            }
+
+            .services-actions-controls {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.35rem;
+                margin-top: -0.25rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .services-actions-arrow,
+            .services-actions-dot {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 44px;
+                min-height: 44px;
+                color: white;
+            }
+
+            .services-actions-arrow {
+                width: 44px;
+                height: 44px;
+                border-radius: 9999px;
+                background: rgba(15, 23, 42, 0.48);
+                border: 1px solid rgba(255, 255, 255, 0.24);
+                transition: opacity 0.2s ease, background-color 0.2s ease;
+            }
+
+            .services-actions-arrow:disabled {
+                opacity: 0.35;
+            }
+
+            .services-actions-dot::before {
+                content: "";
+                display: block;
+                width: 8px;
+                height: 8px;
+                border-radius: 9999px;
+                background: rgba(255, 255, 255, 0.45);
+                transition: width 0.2s ease, background-color 0.2s ease;
+            }
+
+            .services-actions-dot[aria-current="true"]::before {
+                width: 22px;
+                background: white;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .services-actions-viewport {
+                scroll-behavior: auto;
+            }
+
+            .services-actions-arrow,
+            .services-actions-dot::before {
+                transition: none;
+            }
+        }
     </style>
 </head>
 <body class="text-gray-900 min-h-screen flex flex-col">
@@ -533,8 +645,12 @@
             </div>
         </div>
         
-        <!-- SERVICES BLOCK -->
-        <h3 class="additional-services-title text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-8 border-gray-400 border-opacity-30">Дополнительные Услуги</h3>
+        <!-- SERVICES AND QUICK ACTIONS CAROUSEL -->
+        <section id="servicesActionsCarousel" class="services-actions-carousel" aria-label="Дополнительные услуги и быстрые действия" aria-roledescription="карусель">
+            <div class="services-actions-viewport" tabindex="0" aria-label="Листайте вправо или влево для выбора раздела">
+                <div class="services-actions-track">
+                    <article class="services-actions-panel" data-carousel-panel role="group" aria-roledescription="слайд" aria-label="1 из 2" aria-labelledby="additionalServicesTitle">
+        <h3 id="additionalServicesTitle" class="additional-services-title text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-8 border-gray-400 border-opacity-30">Дополнительные Услуги</h3>
         <div class="additional-services-grid grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
             <button id="deliveryBtn" data-service="delivery" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500 relative overflow-hidden transition-all duration-300">
                 <div id="deliveryStatusBadge" class="absolute top-2 right-2 w-3 h-3 rounded-full bg-gray-300"></div>
@@ -560,8 +676,10 @@
             </button>
         </div>
         
-        <!-- QUICK ACTIONS BLOCK -->
-        <h3 class="quick-actions-title text-xl font-bold text-center mb-4 text-white text-shadow-md border-t pt-4 border-gray-400 border-opacity-30">Быстрые Действия</h3>
+                    </article>
+
+                    <article class="services-actions-panel" data-carousel-panel role="group" aria-roledescription="слайд" aria-label="2 из 2" aria-labelledby="quickActionsTitle">
+        <h3 id="quickActionsTitle" class="quick-actions-title text-xl font-bold text-center mb-4 text-white text-shadow-md border-t pt-4 border-gray-400 border-opacity-30">Быстрые Действия</h3>
         <div class="quick-actions-grid grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
             <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" rel="noopener noreferrer" class="btn-hover btn-active bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-star text-xl mb-1"></i><span>Оставить отзыв</span></a>
             <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank" rel="noopener noreferrer" class="btn-hover btn-active bg-gradient-to-br from-orange-500 to-orange-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span></a>
@@ -569,6 +687,25 @@
             <button onclick="installApp()" class="btn-hover btn-active bg-gradient-to-br from-gray-700 to-gray-900 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span></button>
         </div>
         
+                    </article>
+                </div>
+            </div>
+
+            <div class="services-actions-controls" aria-label="Управление каруселью">
+                <button type="button" class="services-actions-arrow" data-carousel-prev aria-label="Показать предыдущий раздел">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <div class="services-actions-dots" role="group" aria-label="Выбор раздела">
+                    <button type="button" class="services-actions-dot" data-carousel-dot="0" aria-label="Дополнительные услуги" aria-current="true"></button>
+                    <button type="button" class="services-actions-dot" data-carousel-dot="1" aria-label="Быстрые действия" aria-current="false"></button>
+                </div>
+                <button type="button" class="services-actions-arrow" data-carousel-next aria-label="Показать следующий раздел">
+                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </button>
+            </div>
+            <p class="sr-only" data-carousel-status aria-live="polite">Показан раздел «Дополнительные услуги», 1 из 2</p>
+        </section>
+
         <!-- BUS SCHEDULE BLOCK -->
         <div class="mt-8 border-t pt-6 max-w-md mx-auto border-gray-400 border-opacity-30">
             <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Полезная информация</h3>
@@ -3549,6 +3686,104 @@
                 displayMessageModal('Заказ сформирован!', 'Мессенджер открыт. Чтобы передать заказ диспетчеру, нажмите «Отправить» в WhatsApp или Telegram.', false);
             });
         });
+
+        function initServicesActionsCarousel() {
+            const carousel = document.getElementById('servicesActionsCarousel');
+            if (!carousel) return;
+
+            const viewport = carousel.querySelector('.services-actions-viewport');
+            const panels = Array.from(carousel.querySelectorAll('[data-carousel-panel]'));
+            const dots = Array.from(carousel.querySelectorAll('[data-carousel-dot]'));
+            const previousButton = carousel.querySelector('[data-carousel-prev]');
+            const nextButton = carousel.querySelector('[data-carousel-next]');
+            const status = carousel.querySelector('[data-carousel-status]');
+            const mobileLayout = window.matchMedia('(max-width: 767px)');
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+            const panelNames = ['Дополнительные услуги', 'Быстрые действия'];
+            let activeIndex = 0;
+            let scrollFrame = null;
+
+            if (!viewport || panels.length !== 2 || !previousButton || !nextButton) return;
+
+            function panelLeft(index) {
+                return panels[index].offsetLeft - panels[0].offsetLeft;
+            }
+
+            function updateControls(index, announce) {
+                activeIndex = Math.max(0, Math.min(index, panels.length - 1));
+
+                dots.forEach(function(dot, dotIndex) {
+                    dot.setAttribute('aria-current', dotIndex === activeIndex ? 'true' : 'false');
+                });
+
+                previousButton.disabled = activeIndex === 0;
+                nextButton.disabled = activeIndex === panels.length - 1;
+
+                if (announce && status) {
+                    status.textContent = 'Показан раздел «' + panelNames[activeIndex] + '», ' + (activeIndex + 1) + ' из ' + panels.length;
+                }
+            }
+
+            function goToPanel(index, announce) {
+                if (!mobileLayout.matches) return;
+                const nextIndex = Math.max(0, Math.min(index, panels.length - 1));
+
+                viewport.scrollTo({
+                    left: panelLeft(nextIndex),
+                    behavior: reducedMotion.matches ? 'auto' : 'smooth'
+                });
+                updateControls(nextIndex, announce);
+            }
+
+            previousButton.addEventListener('click', function() {
+                goToPanel(activeIndex - 1, true);
+            });
+
+            nextButton.addEventListener('click', function() {
+                goToPanel(activeIndex + 1, true);
+            });
+
+            dots.forEach(function(dot, index) {
+                dot.addEventListener('click', function() {
+                    goToPanel(index, true);
+                });
+            });
+
+            viewport.addEventListener('keydown', function(event) {
+                if (!mobileLayout.matches || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
+                event.preventDefault();
+                goToPanel(activeIndex + (event.key === 'ArrowRight' ? 1 : -1), true);
+            });
+
+            viewport.addEventListener('scroll', function() {
+                if (!mobileLayout.matches || scrollFrame !== null) return;
+
+                scrollFrame = window.requestAnimationFrame(function() {
+                    scrollFrame = null;
+                    const closestIndex = panels.reduce(function(bestIndex, panel, index) {
+                        return Math.abs(panelLeft(index) - viewport.scrollLeft) < Math.abs(panelLeft(bestIndex) - viewport.scrollLeft)
+                            ? index
+                            : bestIndex;
+                    }, 0);
+
+                    if (closestIndex !== activeIndex) updateControls(closestIndex, true);
+                });
+            }, { passive: true });
+
+            window.addEventListener('resize', function() {
+                if (mobileLayout.matches) {
+                    viewport.scrollTo({ left: panelLeft(activeIndex), behavior: 'auto' });
+                } else {
+                    viewport.scrollLeft = 0;
+                    updateControls(0, false);
+                }
+            });
+
+            updateControls(0, false);
+        }
+
+        initServicesActionsCarousel();
+
     </script>
 </body>
 </html>

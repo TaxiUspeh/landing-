@@ -4,24 +4,39 @@ import { getHolidayForDate } from '../holiday-calendar.js';
 
 const htmlFiles = ['index.html', 'drivers.html', 'food.html', 'SHASHDVOR.html'];
 const failures = [];
+const htmlByFile = new Map();
 for (const file of htmlFiles) {
   const html = await readFile(file, 'utf8');
+  htmlByFile.set(file, html);
   for (const match of html.matchAll(/<a\b[^>]*target=["']_blank["'][^>]*>/gi)) {
     if (!/rel=["'][^"']*noopener[^"']*["']/i.test(match[0])) failures.push(file + ': target=_blank without noopener');
   }
-}
-const index = await readFile('index.html', 'utf8');
-const inlineModule = index.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1] || '';
-if (!inlineModule) {
-  failures.push('index.html: inline module script is missing');
-} else {
-  const parseableModule = inlineModule.replace(/^\s*import\s+[^;]+;\s*$/gm, '');
-  try {
-    Function(parseableModule);
-  } catch (error) {
-    failures.push('index.html: inline module syntax error: ' + error.message);
+
+  for (const scriptMatch of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+    const attributes = scriptMatch[1];
+    const source = scriptMatch[2];
+    if (/\bsrc\s*=/i.test(attributes)) continue;
+    if (/type=["']application\/ld\+json["']/i.test(attributes)) {
+      try {
+        JSON.parse(source);
+      } catch (error) {
+        failures.push(file + ': invalid JSON-LD: ' + error.message);
+      }
+      continue;
+    }
+    const parseableSource = /type=["']module["']/i.test(attributes)
+      ? source.replace(/^\s*import\s+[^;]+;\s*$/gm, '')
+      : source;
+    try {
+      Function(parseableSource);
+    } catch (error) {
+      failures.push(file + ': inline script syntax error: ' + error.message);
+    }
   }
 }
+const index = htmlByFile.get('index.html');
+const food = htmlByFile.get('food.html');
+const shashlyk = htmlByFile.get('SHASHDVOR.html');
 for (const expected of ['BASE_PRICE: 800', 'от <strong>800 тенге</strong>', "register('./service-worker.js', { updateViaCache: 'none' })", 'нажмите «Отправить»']) {
   if (!index.includes(expected)) failures.push('index.html: missing ' + expected);
 }
@@ -191,13 +206,68 @@ if (!mapOverlayTag || /whitespace-nowrap/.test(mapOverlayTag)) failures.push('in
 
 if (/WhatsApp Image 2026-08-24/.test(index)) failures.push('index.html: broken StroyDom image remains');
 if (/chip\.innerHTML\s*=/.test(index)) failures.push('index.html: address history uses innerHTML');
+
+for (const [file, html, expected] of [
+  ['food.html', food, {
+    manifest: '<link rel="manifest" href="./food.webmanifest">',
+    canonical: 'https://taxiuspeh.github.io/landing-/food.html'
+  }],
+  ['SHASHDVOR.html', shashlyk, {
+    manifest: '<link rel="manifest" href="./shashlyk.webmanifest">',
+    canonical: 'https://taxiuspeh.github.io/landing-/SHASHDVOR.html'
+  }]
+]) {
+  if (/user-scalable=no|maximum-scale=1(?:\.0)?/i.test(html)) failures.push(file + ': browser zoom is disabled');
+  if (!html.includes(expected.manifest)) failures.push(file + ': dedicated manifest is missing');
+  if (!html.includes(`rel="canonical" href="${expected.canonical}"`)) failures.push(file + ': canonical URL is missing');
+  if (!html.includes("register('./service-worker.js', { updateViaCache: 'none' })")) failures.push(file + ': service worker registration is missing');
+  for (const expectedText of [
+    'function openWhatsAppUrl(url)',
+    "const opened = window.open(url, '_blank')",
+    'window.location.assign(url)',
+    "status: 'prepared'",
+    'Подтвердите отправку сообщения в WhatsApp'
+  ]) {
+    if (!html.includes(expectedText)) failures.push(file + ': missing reliable order behavior ' + expectedText);
+  }
+}
+
+const foodOrderStart = food.indexOf('function placeOrder()');
+const foodOrderEnd = food.indexOf('// --- Helpers ---', foodOrderStart);
+const foodOrder = food.slice(foodOrderStart, foodOrderEnd);
+if (!foodOrder.includes('openWhatsAppUrl(`https://api.whatsapp.com/send')) failures.push('food.html: order does not open WhatsApp directly');
+if (!foodOrder.includes("phoneDigits.length !== 11")) failures.push('food.html: phone validation is missing');
+if (!food.includes('Предзаказ подготовлен!') || !food.includes('Заказ подготовлен!')) failures.push('food.html: prepared order wording is missing');
+if ((food.match(/function installApp\s*\(/g) || []).length !== 1) failures.push('food.html: installApp must be defined exactly once');
+
+const shashOrderStart = shashlyk.indexOf('function proceedWithOrder()');
+const shashOrderEnd = shashlyk.indexOf('// --- Standard Logic', shashOrderStart);
+const shashOrder = shashlyk.slice(shashOrderStart, shashOrderEnd);
+if (!shashlyk.includes('id="order-phone"')) failures.push('SHASHDVOR.html: customer phone field is missing');
+if (!shashOrder.includes('openWhatsAppUrl(`https://wa.me/77055071640')) failures.push('SHASHDVOR.html: order does not open WhatsApp directly');
+if (!shashOrder.includes("document.getElementById('order-phone').value = ''")) failures.push('SHASHDVOR.html: order phone cleanup is missing');
+if (!shashlyk.includes('Бронь подготовлена!') || !shashlyk.includes('Заявка подготовлена!')) failures.push('SHASHDVOR.html: prepared request wording is missing');
+
 const manifest = JSON.parse(await readFile('site.webmanifest', 'utf8'));
+const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
+const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v4-live-map'")) failures.push('service-worker.js: live map cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v5-food-pwa'")) failures.push('service-worker.js: food PWA cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v[123](?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v[1234](?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+for (const expected of [
+  "'./food.webmanifest'",
+  "'./shashlyk.webmanifest'",
+  "'./food-icon-192.png'",
+  "'./food-icon-512.png'",
+  "'./shashlyk-icon-192.png'",
+  "'./shashlyk-icon-512.png'",
+  'const cachedPage = await caches.match(event.request)'
+]) {
+  if (!serviceWorker.includes(expected)) failures.push('service-worker.js: missing ' + expected);
+}
 for (const expected of ['2026-03-09', '2026-03-24', '2026-03-25', '2026-05-11', '2026-05-27', '2026-10-26', "start: '03-15'", 'fromYear: 2026']) {
   if (!holidayCalendar.includes(expected)) failures.push('holiday-calendar.js: missing official 2026 date ' + expected);
 }
@@ -238,7 +308,18 @@ for (const testCase of [
   if (actualName !== expectedName) failures.push(`holiday-calendar.js: ${year}-${month}-${day} expected ${expectedName}, found ${actualName}`);
   if (holiday && holiday.observed !== expectedObserved) failures.push(`holiday-calendar.js: ${year}-${month}-${day} observed flag is incorrect`);
 }
-for (const icon of manifest.icons) await access(resolve(icon.src.replace(/^\/landing-\//, ''))).catch(() => failures.push('missing icon: ' + icon.src));
+for (const [name, appManifest, expectedStart] of [
+  ['site.webmanifest', manifest, '/landing-/'],
+  ['food.webmanifest', foodManifest, './food.html'],
+  ['shashlyk.webmanifest', shashlykManifest, './SHASHDVOR.html']
+]) {
+  if (appManifest.start_url !== expectedStart) failures.push(name + ': incorrect start_url');
+  if (name !== 'site.webmanifest' && appManifest.id !== expectedStart) failures.push(name + ': incorrect app id');
+  for (const icon of appManifest.icons) {
+    await access(resolve(icon.src.replace(/^\.\//, '').replace(/^\/landing-\//, '')))
+      .catch(() => failures.push('missing icon: ' + icon.src));
+  }
+}
 for (const file of ['service-worker.js', 'holiday-calendar.js', 'robots.txt', 'sitemap.xml']) await access(file).catch(() => failures.push('missing ' + file));
 if (failures.length) { console.error(failures.join('\n')); process.exit(1); }
 console.log('Site checks passed (' + htmlFiles.length + ' HTML pages).');

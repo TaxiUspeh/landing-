@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Домашний Праздник</title>
+  <rect width="512" height="512" rx="112" fill="#1a0b0b"/>
+  <circle cx="256" cy="256" r="154" fill="#b71c1c"/>
+  <circle cx="256" cy="256" r="106" fill="#fff8e7" stroke="#fbbf24" stroke-width="18"/>
+  <path d="M142 126v102c0 29 18 54 44 64v94h34v-94c26-10 44-35 44-64V126h-28v92h-18v-92h-28v92h-20v-92z" fill="#fbbf24"/>
+  <path d="M340 126c-42 0-70 44-70 96 0 38 17 67 42 80v84h34V126z" fill="#fbbf24"/>
+</svg>

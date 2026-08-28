@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v4-live-map';
+const CACHE_NAME = 'taxi-uspeh-v5-food-pwa';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,6 +6,12 @@ const APP_SHELL = [
   './drivers.html',
   './food.html',
   './SHASHDVOR.html',
+  './food.webmanifest',
+  './shashlyk.webmanifest',
+  './food-icon-192.png',
+  './food-icon-512.png',
+  './shashlyk-icon-192.png',
+  './shashlyk-icon-512.png',
   './site.webmanifest',
   './favicon-32x32.png',
   './favicon-192x192.png',
@@ -27,7 +33,12 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request).catch(() => caches.match('./index.html')));
+    event.respondWith(
+      fetch(event.request).catch(async () => {
+        const cachedPage = await caches.match(event.request);
+        return cachedPage || caches.match('./index.html');
+      })
+    );
     return;
   }
   event.respondWith(

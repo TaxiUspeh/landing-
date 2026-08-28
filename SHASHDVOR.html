@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <!-- Добавлено viewport-fit=cover для корректного отображения на iPhone с "челкой" -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Шашлычный Двор | Доставка по Белоусовке</title>
     
     <!-- PWA Settings start -->
@@ -15,18 +15,20 @@
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     
     <!-- Иконка приложения (Шашлык) -->
-    <link rel="icon" type="image/png" href="https://img.icons8.com/color/512/kebab.png">
-    <link rel="apple-touch-icon" href="https://img.icons8.com/color/512/kebab.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./shashlyk-icon-192.png">
+    <link rel="apple-touch-icon" href="./shashlyk-icon-192.png">
     
     <!-- Манифест для Android -->
-    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Шашлычный Двор","short_name":"Шашлык","start_url":".","display":"standalone","background_color":"#1a1a1a","theme_color":"#2E1E1E","icons":[{"src":"https://img.icons8.com/color/512/kebab.png","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="manifest" href="./shashlyk.webmanifest">
     <!-- PWA Settings end -->
 
     <!-- SEO и Social Media (Open Graph) -->
     <meta name="description" content="Сочный шашлык на углях, люля-кебаб и горячие блюда с доставкой в Белоусовке. Заказывайте онлайн!">
+    <link rel="canonical" href="https://taxiuspeh.github.io/landing-/SHASHDVOR.html">
     <meta property="og:title" content="Шашлычный Двор | Вкуснейший шашлык">
     <meta property="og:description" content="Свежее мясо, маринованное по секретным рецептам. Быстрая доставка и самовывоз.">
-    <meta property="og:image" content="https://img.icons8.com/color/512/kebab.png">
+    <meta property="og:image" content="https://taxiuspeh.github.io/landing-/shashlyk-icon-512.png">
+    <meta property="og:url" content="https://taxiuspeh.github.io/landing-/SHASHDVOR.html">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="ru_RU">
 
@@ -333,8 +335,8 @@
                 <span class="icon-line line-long"></span>
             </div>
         </div>
-        <h2 id="success-title" class="text-3xl md:text-4xl font-extrabold text-grill-green mt-10 animate-bounce text-center px-4">Заказ успешно оформлен!</h2>
-        <p class="text-gray-300 mt-4 text-lg text-center px-4">Перенаправляем в WhatsApp для подтверждения...</p>
+        <h2 id="success-title" class="text-3xl md:text-4xl font-extrabold text-grill-green mt-10 animate-bounce text-center px-4">Заказ подготовлен!</h2>
+        <p class="text-gray-300 mt-4 text-lg text-center px-4">Подтвердите отправку сообщения в WhatsApp</p>
     </div>
 
     <!-- Sticky Order Bar (Bottom Main Page) -->
@@ -388,12 +390,16 @@
                         <div>
                             <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Ваше имя</label>
                             <!-- text-base added to prevent iOS zoom -->
-                            <input type="text" id="order-name" placeholder="Как к вам обращаться?" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
-                        </div>
-                        <div>
-                            <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Адрес доставки <span class="text-red-500">*</span></label>
-                            <input type="text" id="order-address" placeholder="Улица, дом, квартира" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
-                        </div>
+                        <input type="text" id="order-name" autocomplete="name" placeholder="Как к вам обращаться?" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Адрес доставки <span class="text-red-500">*</span></label>
+                        <input type="text" id="order-address" autocomplete="street-address" placeholder="Улица, дом, квартира" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Телефон <span class="text-red-500">*</span></label>
+                        <input type="tel" id="order-phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent">
+                    </div>
                         <div>
                             <label class="block text-gray-400 text-xs font-bold uppercase mb-1">Комментарий к заказу</label>
                             <textarea id="order-comment" rows="2" placeholder="Например: 'Поострее', 'Не звонить в домофон'" class="w-full bg-gray-800 text-white text-base p-3 rounded-lg border border-gray-600 focus:border-grill-accent outline-none transition focus:ring-1 focus:ring-grill-accent"></textarea>
@@ -801,15 +807,30 @@
             fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: formData }).catch(e => console.error(e));
         }
 
+        function openWhatsAppUrl(url) {
+            const opened = window.open(url, '_blank');
+            if (opened) opened.opener = null;
+            else window.location.assign(url);
+        }
+
         // --- Lucky Modal Logic ---
         function tryPlaceOrder() {
+            const addressInput = document.getElementById('order-address');
+            const phoneInput = document.getElementById('order-phone');
             const address = document.getElementById('order-address').value.trim();
-            if (!address) {
-                const inp = document.getElementById('order-address');
-                inp.classList.add('border-red-500', 'ring-2', 'ring-red-500');
-                inp.focus();
-                showNotification('❗ Введите адрес!');
-                setTimeout(() => inp.classList.remove('border-red-500', 'ring-2', 'ring-red-500'), 2000);
+            const phoneDigits = phoneInput.value.replace(/\D/g, '');
+            const invalidInputs = [];
+            if (cart.length === 0) {
+                showNotification('Добавьте блюда в корзину');
+                return;
+            }
+            if (!address) invalidInputs.push(addressInput);
+            if (phoneDigits.length !== 11) invalidInputs.push(phoneInput);
+            if (invalidInputs.length) {
+                invalidInputs.forEach(input => input.classList.add('border-red-500', 'ring-2', 'ring-red-500'));
+                invalidInputs[0].focus();
+                showNotification('❗ Проверьте адрес и телефон');
+                setTimeout(() => invalidInputs.forEach(input => input.classList.remove('border-red-500', 'ring-2', 'ring-red-500')), 2400);
                 return;
             }
             hideCartModal();
@@ -879,6 +900,7 @@
             hideLuckyModal();
             
             const name = document.getElementById('order-name').value.trim();
+            const phone = document.getElementById('order-phone').value.trim();
             const address = document.getElementById('order-address').value.trim();
             const comment = document.getElementById('order-comment').value.trim();
             
@@ -899,11 +921,24 @@
                 finalTotal = total - discountAmount;
             }
 
-            // Google Sheets
+            let msg = "Здравствуйте! Хочу заказать доставку 🍢:\n\n";
+            cart.forEach(item => {
+                const product = getProductById(item.id);
+                if (product) msg += `🔹 *${product.name}*\n    ${item.count} шт. х ${product.price} = ${product.price * item.count} ₸\n`;
+            });
+            if (activeDiscount > 0) msg += `\n🏷 *Скидка:* ${activeDiscount}% (-${discountAmount} ₸)`;
+            msg += `\n💰 *ИТОГО: ${finalTotal} ₸*`;
+            if (name) msg += `\n👤 *Имя:* ${name}`;
+            msg += `\n📱 *Телефон:* ${phone}`;
+            msg += `\n📍 *Адрес:* ${address}`;
+            if (comment) msg += `\n💬 *Коммент:* ${comment}`;
+
             sendToGoogleSheets({
                 action: 'order',
+                status: 'prepared',
                 date: new Date().toLocaleString('ru-RU'),
                 name: name,
+                phone: phone,
                 address: address,
                 comment: comment,
                 items: orderItems.join(', '),
@@ -911,35 +946,27 @@
                 discount: activeDiscount > 0 ? `${activeDiscount}%` : 'Нет'
             });
 
-            // WhatsApp
             const overlay = document.getElementById('global-success-overlay');
-            overlay.classList.remove('hidden'); overlay.classList.add('flex', 'opacity-100');
-            
-            setTimeout(() => {
-                let msg = "Здравствуйте! Хочу заказать доставку 🍢:\n\n";
-                cart.forEach(item => {
-                    const p = getProductById(item.id);
-                    if (p) msg += `🔹 *${p.name}*\n    ${item.count} шт. х ${p.price} = ${p.price*item.count} ₸\n`;
-                });
-                
-                if (activeDiscount > 0) msg += `\n🏷 *Скидка:* ${activeDiscount}% (-${discountAmount} ₸)`;
-                msg += `\n💰 *ИТОГО: ${finalTotal} ₸*`;
-                if (name) msg += `\n👤 *Имя:* ${name}`;
-                msg += `\n📍 *Адрес:* ${address}`;
-                if (comment) msg += `\n💬 *Коммент:* ${comment}`;
+            document.getElementById('success-title').textContent = 'Заказ подготовлен!';
+            overlay.classList.remove('hidden', 'opacity-0');
+            overlay.classList.add('flex', 'opacity-100');
 
-                window.open(`https://wa.me/77055071640?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
-                
-                // Cleanup
-                cart = []; activeDiscount = 0; localStorage.removeItem('shashlyk_cart');
-                document.getElementById('order-address').value = '';
-                document.getElementById('order-comment').value = '';
-                document.getElementById('promo-input').value = '';
-                document.getElementById('promo-message').classList.add('hidden');
-                renderCartUI();
+            openWhatsAppUrl(`https://wa.me/77055071640?text=${encodeURIComponent(msg)}`);
+
+            cart = [];
+            activeDiscount = 0;
+            localStorage.removeItem('shashlyk_cart');
+            document.getElementById('order-address').value = '';
+            document.getElementById('order-phone').value = '';
+            document.getElementById('order-comment').value = '';
+            document.getElementById('promo-input').value = '';
+            document.getElementById('promo-message').classList.add('hidden');
+            renderCartUI();
+            setTimeout(() => {
                 overlay.classList.remove('opacity-100');
+                overlay.classList.add('opacity-0');
                 setTimeout(() => { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }, 300);
-            }, 2000);
+            }, 1800);
         }
 
         // --- Standard Logic (Cart, Menus, Modals) ---
@@ -1167,21 +1194,21 @@
             const type = document.getElementById('book-type').value; 
             
             hideBookingModal();
-            sendToGoogleSheets({ action:'booking', date:new Date().toLocaleString('ru-RU'), booking_date:date, booking_time:time, guests: guests, type: type, name:name });
-            showSuccessAnimation("Бронь принята!", () => {
-                window.open(`https://wa.me/77055071640?text=${encodeURIComponent(`Здравствуйте! Хочу забронировать столик 🍽️.\n\n📅 *Дата:* ${date}\n⏰ *Время:* ${time}\n🎭 *Тип:* ${type}\n👥 *Гостей:* ${guests}\n👤 *Имя:* ${name}`)}`, '_blank', 'noopener,noreferrer');
+            sendToGoogleSheets({ action:'booking', status:'prepared', date:new Date().toLocaleString('ru-RU'), booking_date:date, booking_time:time, guests: guests, type: type, name:name });
+            showSuccessAnimation("Бронь подготовлена!", () => {
+                openWhatsAppUrl(`https://wa.me/77055071640?text=${encodeURIComponent(`Здравствуйте! Хочу забронировать столик 🍽️.\n\n📅 *Дата:* ${date}\n⏰ *Время:* ${time}\n🎭 *Тип:* ${type}\n👥 *Гостей:* ${guests}\n👤 *Имя:* ${name}`)}`);
             });
         }
         function sendCallbackRequest() {
-            const name=document.getElementById('callback-name').value, phone=document.getElementById('callback-phone').value;
-            const comment = document.getElementById('callback-comment').value;
-            if(!name||!phone) return showNotification('Заполните данные');
+            const name=document.getElementById('callback-name').value.trim(), phone=document.getElementById('callback-phone').value.trim();
+            const comment = document.getElementById('callback-comment').value.trim();
+            if(!name || phone.replace(/\D/g, '').length !== 11) return showNotification('Проверьте имя и телефон');
             hideCallbackModal();
-            sendToGoogleSheets({ action:'callback', date:new Date().toLocaleString('ru-RU'), name:name, phone:phone, comment: comment });
-            showSuccessAnimation("Заявка отправлена!", () => {
+            sendToGoogleSheets({ action:'callback', status:'prepared', date:new Date().toLocaleString('ru-RU'), name:name, phone:phone, comment: comment });
+            showSuccessAnimation("Заявка подготовлена!", () => {
                 let msg = `Здравствуйте! Перезвоните мне, пожалуйста 📞.\n\n👤 *Имя:* ${name}\n📱 *Телефон:* ${phone}`;
                 if(comment) msg += `\n💬 *Коммент:* ${comment}`;
-                window.open(`https://wa.me/77055071640?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
+                openWhatsAppUrl(`https://wa.me/77055071640?text=${encodeURIComponent(msg)}`);
             });
         }
         
@@ -1198,10 +1225,9 @@
             overlay.classList.add('flex');
             overlay.classList.remove('opacity-0');
             overlay.classList.add('opacity-100');
-            
+
+            if (callback) callback();
             setTimeout(() => {
-                if (callback) callback();
-                
                 // Hide animation
                 overlay.classList.remove('opacity-100');
                 overlay.classList.add('opacity-0');
@@ -1210,7 +1236,7 @@
                     overlay.classList.remove('flex');
                     titleEl.textContent = originalTitle; // Reset title
                 }, 300);
-            }, 2500); // Wait 2.5s
+            }, 1800);
         }
 
         // Функция "Поделиться" с надежным копированием
@@ -1268,6 +1294,10 @@
                 } else {
                     showPWAInstructions();
                 }
+            }
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' })
+                    .catch(error => console.warn('Service worker registration failed:', error));
             }
         });
     </script>

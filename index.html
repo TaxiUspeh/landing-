@@ -168,6 +168,64 @@
         @media (max-width: 640px) {
             body { padding-bottom: 72px; }
 
+            .mobile-compact-header {
+                padding-top: max(0.55rem, env(safe-area-inset-top, 0px)) !important;
+                padding-bottom: 0.55rem !important;
+            }
+
+            .mobile-compact-header > .absolute {
+                top: 0.35rem !important;
+            }
+
+            .mobile-compact-header > .max-w-md {
+                padding-left: 3rem !important;
+                padding-right: 3rem !important;
+            }
+
+            .mobile-compact-header .max-w-md > .flex {
+                gap: 0.35rem !important;
+                margin-bottom: 0.15rem !important;
+            }
+
+            .mobile-compact-header h1 {
+                font-size: 1.15rem !important;
+                line-height: 1.1 !important;
+            }
+
+            .mobile-compact-header .fa-taxi {
+                font-size: 1.15rem !important;
+            }
+
+            .mobile-compact-header .max-w-md > p {
+                font-size: 0.72rem !important;
+                line-height: 1.15 !important;
+            }
+
+            .mobile-compact-header .weather-widget {
+                width: 40px;
+                height: 40px;
+            }
+
+            .mobile-compact-header .weather-widget .icon {
+                font-size: 0.85rem;
+            }
+
+            .mobile-compact-header .weather-widget .temp {
+                font-size: 0.62rem;
+            }
+
+            .mobile-compact-header #themeToggle,
+            .mobile-compact-header #pushToggleBtn {
+                width: 42px;
+                height: 42px;
+                padding: 0.3rem !important;
+            }
+
+            .mobile-compact-header #themeIcon,
+            .mobile-compact-header #pushIcon {
+                font-size: 1rem !important;
+            }
+
             .mobile-compact-main {
                 padding: 0.75rem 0.625rem 1rem !important;
             }
@@ -406,7 +464,7 @@
 </head>
 <body class="text-gray-900 min-h-screen flex flex-col">
 
-    <header class="header-bg text-white py-4 rounded-b-lg shadow-lg sticky top-0 z-50">
+    <header class="mobile-compact-header header-bg text-white py-4 rounded-b-lg shadow-lg sticky top-0 z-50">
         <div class="absolute top-2 left-2">
             <div id="weatherWidget" class="weather-widget hidden btn-active" onclick="window.fetchRealWeather()">
                 <div class="flex flex-col items-center">

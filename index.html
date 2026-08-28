@@ -268,7 +268,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
             <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" rel="noopener noreferrer" class="btn-hover btn-active bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-star text-xl mb-1"></i><span>Оставить отзыв</span></a>
             <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank" rel="noopener noreferrer" class="btn-hover btn-active bg-gradient-to-br from-orange-500 to-orange-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span></a>
-            <button onclick="showPartnerModal()" class="btn-hover btn-active bg-gradient-to-br from-pink-500 to-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span></button>
+            <button type="button" onclick="document.getElementById('partnerServices').scrollIntoView({ behavior: 'smooth', block: 'start' })" aria-label="Перейти к партнёрским сервисам" class="btn-hover btn-active bg-gradient-to-br from-pink-500 to-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span></button>
             <button onclick="installApp()" class="btn-hover btn-active bg-gradient-to-br from-gray-700 to-gray-900 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span></button>
         </div>
         
@@ -290,7 +290,7 @@
         </div>
 
         <!-- PARTNER INFO (TECH INSPECTION) -->
-        <div class="mt-8 border-t pt-6 max-w-md mx-auto border-gray-400 border-opacity-30">
+        <div id="partnerServices" class="mt-8 border-t pt-6 max-w-md mx-auto border-gray-400 border-opacity-30 scroll-mt-24">
             <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Партнёрские сервисы</h3>
             <button onclick="openModal('techInspectionModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between border border-red-400/30">
                 <div class="flex items-center gap-3">

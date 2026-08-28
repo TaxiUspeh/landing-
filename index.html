@@ -461,7 +461,7 @@
             }
         }
 
-        /* Services/actions carousel: existing button and compact sizing stays unchanged. */
+        /* Three-panel carousel: desktop keeps the existing stacked layout. */
         .services-actions-viewport {
             width: 100%;
         }
@@ -477,6 +477,21 @@
             min-width: 0;
         }
 
+        .services-actions-main-panel {
+            grid-column: 1 / -1;
+            grid-row: 1;
+        }
+
+        .services-actions-additional-panel {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .services-actions-quick-panel {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
         .services-actions-panel .additional-services-grid,
         .services-actions-panel .quick-actions-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -490,12 +505,14 @@
         @media (max-width: 767px) {
             .services-actions-viewport {
                 overflow-x: auto;
+                overflow-y: hidden;
                 scroll-snap-type: x mandatory;
                 scroll-behavior: smooth;
                 overscroll-behavior-x: contain;
                 touch-action: pan-x pan-y;
                 -webkit-overflow-scrolling: touch;
                 scrollbar-width: none;
+                transition: height 0.25s ease;
             }
 
             .services-actions-viewport::-webkit-scrollbar {
@@ -505,11 +522,15 @@
             .services-actions-track {
                 display: flex;
                 gap: 0;
+                align-items: flex-start;
             }
 
             .services-actions-panel {
+                display: flow-root;
                 flex: 0 0 100%;
                 width: 100%;
+                grid-column: auto;
+                grid-row: auto;
                 scroll-snap-align: start;
                 scroll-snap-stop: always;
             }
@@ -565,6 +586,7 @@
         @media (prefers-reduced-motion: reduce) {
             .services-actions-viewport {
                 scroll-behavior: auto;
+                transition: none;
             }
 
             .services-actions-arrow,
@@ -606,50 +628,11 @@
     
     <main class="mobile-compact-main max-w-3xl mx-auto px-4 py-8 flex-grow">
         
-        <!-- MAIN BLOCK (TRANSPARENT GLASS) -->
-        <div class="main-order-panel max-w-md mx-auto p-4 mb-6 glass-panel border-t-4 border-green-500 shadow-2xl">
-            <div id="lineStatus" class="mb-3 p-3 rounded-lg text-center text-sm font-bold border hidden shadow-sm transition-all duration-500 bg-white/80"></div>
-            
-            <button data-service="taxi" class="main-taxi-button service-btn btn-hover btn-active bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black py-4 px-4 rounded-xl w-full shadow-lg text-lg flex items-center justify-center space-x-2.5 mb-3.5 blink-btn">
-                <i class="fas fa-car-side text-2xl"></i>
-                <span>Заказать Taxi</span>
-            </button>
-            
-            <div class="main-service-shortcuts grid grid-cols-2 gap-3 mb-3.5">
-                <button onclick="openServicesMenu('whatsapp')" class="btn-hover btn-active bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-md flex items-center justify-center space-x-2 text-sm">
-                    <i class="fas fa-bars"></i>
-                    <span>Меню услуг</span>
-                </button>
-                <button onclick="openModal('foodModal')" class="btn-hover btn-active bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-md flex items-center justify-center space-x-2 text-sm">
-                    <i class="fas fa-utensils"></i>
-                    <span>Заказ Еды</span>
-                </button>
-            </div>
-            
-            <div class="main-quick-shortcuts grid grid-cols-3 gap-2.5 mb-4">
-                <button onclick="shareApp()" class="btn-hover btn-active bg-gradient-to-br from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-share-alt mb-1 text-base"></i><span>Поделиться</span></button>
-                <button onclick="openServicesMenu('telegram')" class="btn-hover btn-active bg-gradient-to-br from-sky-500 to-sky-700 hover:from-sky-600 hover:to-sky-800 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fab fa-telegram-plane mb-1 text-base"></i><span>Telegram</span></button>
-                <button data-service="auction" class="service-btn btn-hover btn-active bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-gavel mb-1 text-base"></i><span>Аукцион</span></button>
-            </div>
-            
-            <button type="button" onclick="getCurrentLocation('main')" id="locationBtn" class="w-full glass-mode font-semibold transition flex items-center justify-center space-x-3 shadow-sm btn-active py-3.5 rounded-xl border border-white/40">
-                <i class="fas fa-location-arrow"></i><span id="locationBtnText">Использовать мое местоположение</span>
-            </button>
-            <p id="locationResult" class="text-xs text-center text-white mt-2 hidden" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
-                <a id="locationAddress" href="#" target="_blank" rel="noopener noreferrer" class="coord-link text-white underline"></a>
-            </p>
-            
-            <div class="main-payment-options mt-4 pt-3 border-t border-white/30 flex justify-center space-x-6 glass-text">
-                <div class="flex items-center space-x-1.5"><i class="fas fa-money-bill-wave text-xl text-green-400"></i><span class="font-semibold text-xs">Наличные</span></div>
-                <div class="flex items-center space-x-1.5"><i class="fas fa-exchange-alt text-xl text-blue-400"></i><span class="font-semibold text-xs">Перевод (Kaspi)</span></div>
-            </div>
-        </div>
-        
-        <!-- SERVICES AND QUICK ACTIONS CAROUSEL -->
-        <section id="servicesActionsCarousel" class="services-actions-carousel" aria-label="Дополнительные услуги и быстрые действия" aria-roledescription="карусель">
+        <!-- MAIN ORDER, SERVICES AND QUICK ACTIONS CAROUSEL -->
+        <section id="servicesActionsCarousel" class="services-actions-carousel" aria-label="Заказ такси, дополнительные услуги и быстрые действия" aria-roledescription="карусель">
             <div class="services-actions-viewport" tabindex="0" aria-label="Листайте вправо или влево для выбора раздела">
                 <div class="services-actions-track">
-                    <article class="services-actions-panel" data-carousel-panel role="group" aria-roledescription="слайд" aria-label="1 из 2" aria-labelledby="additionalServicesTitle">
+                    <article class="services-actions-panel services-actions-additional-panel" data-carousel-panel role="group" aria-roledescription="слайд" aria-label="1 из 3" aria-labelledby="additionalServicesTitle">
         <h3 id="additionalServicesTitle" class="additional-services-title text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-8 border-gray-400 border-opacity-30">Дополнительные Услуги</h3>
         <div class="additional-services-grid grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
             <button id="deliveryBtn" data-service="delivery" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500 relative overflow-hidden transition-all duration-300">
@@ -678,7 +661,48 @@
         
                     </article>
 
-                    <article class="services-actions-panel" data-carousel-panel role="group" aria-roledescription="слайд" aria-label="2 из 2" aria-labelledby="quickActionsTitle">
+                    <article class="services-actions-panel services-actions-main-panel" data-carousel-panel role="group" aria-roledescription="слайд" aria-label="2 из 3 — Заказ такси">
+                        <!-- MAIN BLOCK (TRANSPARENT GLASS) -->
+                        <div class="main-order-panel max-w-md mx-auto p-4 mb-6 glass-panel border-t-4 border-green-500 shadow-2xl">
+                            <div id="lineStatus" class="mb-3 p-3 rounded-lg text-center text-sm font-bold border hidden shadow-sm transition-all duration-500 bg-white/80"></div>
+
+                            <button data-service="taxi" class="main-taxi-button service-btn btn-hover btn-active bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black py-4 px-4 rounded-xl w-full shadow-lg text-lg flex items-center justify-center space-x-2.5 mb-3.5 blink-btn">
+                                <i class="fas fa-car-side text-2xl"></i>
+                                <span>Заказать Taxi</span>
+                            </button>
+
+                            <div class="main-service-shortcuts grid grid-cols-2 gap-3 mb-3.5">
+                                <button onclick="openServicesMenu('whatsapp')" class="btn-hover btn-active bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-md flex items-center justify-center space-x-2 text-sm">
+                                    <i class="fas fa-bars"></i>
+                                    <span>Меню услуг</span>
+                                </button>
+                                <button onclick="openModal('foodModal')" class="btn-hover btn-active bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-md flex items-center justify-center space-x-2 text-sm">
+                                    <i class="fas fa-utensils"></i>
+                                    <span>Заказ Еды</span>
+                                </button>
+                            </div>
+
+                            <div class="main-quick-shortcuts grid grid-cols-3 gap-2.5 mb-4">
+                                <button onclick="shareApp()" class="btn-hover btn-active bg-gradient-to-br from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-share-alt mb-1 text-base"></i><span>Поделиться</span></button>
+                                <button onclick="openServicesMenu('telegram')" class="btn-hover btn-active bg-gradient-to-br from-sky-500 to-sky-700 hover:from-sky-600 hover:to-sky-800 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fab fa-telegram-plane mb-1 text-base"></i><span>Telegram</span></button>
+                                <button data-service="auction" class="service-btn btn-hover btn-active bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-gavel mb-1 text-base"></i><span>Аукцион</span></button>
+                            </div>
+
+                            <button type="button" onclick="getCurrentLocation('main')" id="locationBtn" class="w-full glass-mode font-semibold transition flex items-center justify-center space-x-3 shadow-sm btn-active py-3.5 rounded-xl border border-white/40">
+                                <i class="fas fa-location-arrow"></i><span id="locationBtnText">Использовать мое местоположение</span>
+                            </button>
+                            <p id="locationResult" class="text-xs text-center text-white mt-2 hidden" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
+                                <a id="locationAddress" href="#" target="_blank" rel="noopener noreferrer" class="coord-link text-white underline"></a>
+                            </p>
+
+                            <div class="main-payment-options mt-4 pt-3 border-t border-white/30 flex justify-center space-x-6 glass-text">
+                                <div class="flex items-center space-x-1.5"><i class="fas fa-money-bill-wave text-xl text-green-400"></i><span class="font-semibold text-xs">Наличные</span></div>
+                                <div class="flex items-center space-x-1.5"><i class="fas fa-exchange-alt text-xl text-blue-400"></i><span class="font-semibold text-xs">Перевод (Kaspi)</span></div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="services-actions-panel services-actions-quick-panel" data-carousel-panel role="group" aria-roledescription="слайд" aria-label="3 из 3" aria-labelledby="quickActionsTitle">
         <h3 id="quickActionsTitle" class="quick-actions-title text-xl font-bold text-center mb-4 text-white text-shadow-md border-t pt-4 border-gray-400 border-opacity-30">Быстрые Действия</h3>
         <div class="quick-actions-grid grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
             <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" rel="noopener noreferrer" class="btn-hover btn-active bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-star text-xl mb-1"></i><span>Оставить отзыв</span></a>
@@ -696,14 +720,15 @@
                     <i class="fas fa-chevron-left" aria-hidden="true"></i>
                 </button>
                 <div class="services-actions-dots" role="group" aria-label="Выбор раздела">
-                    <button type="button" class="services-actions-dot" data-carousel-dot="0" aria-label="Дополнительные услуги" aria-current="true"></button>
-                    <button type="button" class="services-actions-dot" data-carousel-dot="1" aria-label="Быстрые действия" aria-current="false"></button>
+                    <button type="button" class="services-actions-dot" data-carousel-dot="0" aria-label="Дополнительные услуги" aria-current="false"></button>
+                    <button type="button" class="services-actions-dot" data-carousel-dot="1" aria-label="Заказ такси" aria-current="true"></button>
+                    <button type="button" class="services-actions-dot" data-carousel-dot="2" aria-label="Быстрые действия" aria-current="false"></button>
                 </div>
                 <button type="button" class="services-actions-arrow" data-carousel-next aria-label="Показать следующий раздел">
                     <i class="fas fa-chevron-right" aria-hidden="true"></i>
                 </button>
             </div>
-            <p class="sr-only" data-carousel-status aria-live="polite">Показан раздел «Дополнительные услуги», 1 из 2</p>
+            <p class="sr-only" data-carousel-status aria-live="polite">Показан раздел «Заказ такси», 2 из 3</p>
         </section>
 
         <!-- BUS SCHEDULE BLOCK -->
@@ -3992,14 +4017,26 @@
             const status = carousel.querySelector('[data-carousel-status]');
             const mobileLayout = window.matchMedia('(max-width: 767px)');
             const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-            const panelNames = ['Дополнительные услуги', 'Быстрые действия'];
-            let activeIndex = 0;
+            const panelNames = ['Дополнительные услуги', 'Заказ такси', 'Быстрые действия'];
+            const initialIndex = 1;
+            let activeIndex = initialIndex;
             let scrollFrame = null;
+            let resizeFrame = null;
 
-            if (!viewport || panels.length !== 2 || !previousButton || !nextButton) return;
+            if (!viewport || panels.length !== 3 || !previousButton || !nextButton) return;
 
             function panelLeft(index) {
                 return panels[index].offsetLeft - panels[0].offsetLeft;
+            }
+
+            function resizeViewport(index) {
+                if (!mobileLayout.matches) {
+                    viewport.style.removeProperty('height');
+                    return;
+                }
+
+                const panelHeight = Math.ceil(panels[index].getBoundingClientRect().height);
+                if (panelHeight > 0) viewport.style.height = panelHeight + 'px';
             }
 
             function updateControls(index, announce) {
@@ -4011,19 +4048,20 @@
 
                 previousButton.disabled = activeIndex === 0;
                 nextButton.disabled = activeIndex === panels.length - 1;
+                resizeViewport(activeIndex);
 
                 if (announce && status) {
                     status.textContent = 'Показан раздел «' + panelNames[activeIndex] + '», ' + (activeIndex + 1) + ' из ' + panels.length;
                 }
             }
 
-            function goToPanel(index, announce) {
+            function goToPanel(index, announce, requestedBehavior) {
                 if (!mobileLayout.matches) return;
                 const nextIndex = Math.max(0, Math.min(index, panels.length - 1));
 
                 viewport.scrollTo({
                     left: panelLeft(nextIndex),
-                    behavior: reducedMotion.matches ? 'auto' : 'smooth'
+                    behavior: requestedBehavior || (reducedMotion.matches ? 'auto' : 'smooth')
                 });
                 updateControls(nextIndex, announce);
             }
@@ -4063,16 +4101,41 @@
                 });
             }, { passive: true });
 
-            window.addEventListener('resize', function() {
+            function syncLayout() {
                 if (mobileLayout.matches) {
                     viewport.scrollTo({ left: panelLeft(activeIndex), behavior: 'auto' });
+                    resizeViewport(activeIndex);
                 } else {
+                    viewport.style.removeProperty('height');
                     viewport.scrollLeft = 0;
-                    updateControls(0, false);
+                    activeIndex = initialIndex;
+                    updateControls(initialIndex, false);
                 }
+            }
+
+            window.addEventListener('resize', function() {
+                if (resizeFrame !== null) window.cancelAnimationFrame(resizeFrame);
+                resizeFrame = window.requestAnimationFrame(function() {
+                    resizeFrame = null;
+                    syncLayout();
+                });
             });
 
-            updateControls(0, false);
+            if ('ResizeObserver' in window) {
+                const panelResizeObserver = new ResizeObserver(function(entries) {
+                    if (!mobileLayout.matches) return;
+                    if (entries.some(function(entry) { return entry.target === panels[activeIndex]; })) {
+                        resizeViewport(activeIndex);
+                    }
+                });
+                panels.forEach(function(panel) { panelResizeObserver.observe(panel); });
+            }
+
+            updateControls(initialIndex, false);
+            goToPanel(initialIndex, false, 'auto');
+            window.requestAnimationFrame(function() {
+                goToPanel(initialIndex, false, 'auto');
+            });
         }
 
         initServicesActionsCarousel();

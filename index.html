@@ -3114,9 +3114,12 @@
             if (modal) {
                 modal.classList.remove('active');
                 modal.setAttribute('aria-hidden', 'true');
-                if (modalId === 'mapModal' && window.simAnimationFrame) {
-                    window.cancelAnimationFrame(window.simAnimationFrame);
-                    window.simAnimationFrame = null;
+                if (modalId === 'mapModal') {
+                    window.simInitToken = (window.simInitToken || 0) + 1;
+                    if (window.simAnimationFrame) {
+                        window.cancelAnimationFrame(window.simAnimationFrame);
+                        window.simAnimationFrame = null;
+                    }
                 }
                 if (modalId === 'taxiModal' || modalId === 'auctionModal') {
                     const stopsContainerTaxi = document.getElementById('additionalStops');
@@ -3185,6 +3188,7 @@
         window.simMap = null;
         window.carMarkers = [];
         window.simAnimationFrame = null;
+        window.simInitToken = 0;
         window.userMarker = null;
 
         window.openMapModal = function() {
@@ -3194,6 +3198,7 @@
         };
 
         window.initSimulationMap = async function() {
+            const initToken = ++window.simInitToken;
             const overlay = document.getElementById('mapOverlayText');
             if (!window.L) {
                 if (overlay) overlay.textContent = 'Карта временно недоступна';
@@ -3496,6 +3501,11 @@
                 } catch (error) {
                     console.warn('Не удалось сохранить кэш маршрутов:', error);
                 }
+            }
+
+            if (initToken !== window.simInitToken ||
+                document.getElementById('mapModal')?.getAttribute('aria-hidden') === 'true') {
+                return;
             }
 
             const usableRoutes = routes.filter(route => Array.isArray(route.points) && route.points.length > 1);

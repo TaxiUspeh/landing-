@@ -60,10 +60,16 @@ for (const expected of [
   "const panelNames = ['Дополнительные услуги', 'Заказ такси', 'Быстрые действия']",
   'const initialIndex = 1',
   'resizeViewport(activeIndex)',
-  "goToPanel(initialIndex, false, 'auto')"
+  'prepareCarouselMovement()',
+  'finishCarouselMovement',
+  'scheduleCarouselFinish',
+  'contain: inline-size',
+  'will-change: scroll-position',
+  '.mobile-compact-main {'
 ]) {
   if (!index.includes(expected)) failures.push('index.html: missing carousel behavior ' + expected);
 }
+if (/transition:\s*height/.test(index)) failures.push('index.html: carousel height must not animate during a swipe');
 if (/addEventListener\(\s*['"]touchmove/.test(index)) failures.push('index.html: carousel must not block vertical touch scrolling');
 const mapStart = index.indexOf('window.simMap = null;');
 const mapEnd = index.indexOf('window.togglePreorder = function()', mapStart);

@@ -461,13 +461,26 @@
             }
         }
 
+        /* Keep the flex-column page and carousel from growing wider than a phone screen. */
+        .mobile-compact-main {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
         /* Three-panel carousel: desktop keeps the existing stacked layout. */
+        .services-actions-carousel,
         .services-actions-viewport {
             width: 100%;
+            min-width: 0;
+            max-width: 100%;
         }
 
         .services-actions-track {
             display: grid;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 1rem;
             align-items: stretch;
@@ -475,6 +488,8 @@
 
         .services-actions-panel {
             min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .services-actions-main-panel {
@@ -512,7 +527,8 @@
                 touch-action: pan-x pan-y;
                 -webkit-overflow-scrolling: touch;
                 scrollbar-width: none;
-                transition: height 0.25s ease;
+                contain: inline-size;
+                will-change: scroll-position;
             }
 
             .services-actions-viewport::-webkit-scrollbar {
@@ -586,7 +602,6 @@
         @media (prefers-reduced-motion: reduce) {
             .services-actions-viewport {
                 scroll-behavior: auto;
-                transition: none;
             }
 
             .services-actions-arrow,
@@ -4020,13 +4035,28 @@
             const panelNames = ['Дополнительные услуги', 'Заказ такси', 'Быстрые действия'];
             const initialIndex = 1;
             let activeIndex = initialIndex;
-            let scrollFrame = null;
+            let scrollEndTimer = null;
             let resizeFrame = null;
+            let panelResizeFrame = null;
+            let carouselMoving = false;
+            let pendingAnnouncement = false;
+            let suppressScrollEvents = true;
 
             if (!viewport || panels.length !== 3 || !previousButton || !nextButton) return;
 
             function panelLeft(index) {
                 return panels[index].offsetLeft - panels[0].offsetLeft;
+            }
+
+            function panelHeight(index) {
+                return Math.ceil(Math.max(
+                    panels[index].scrollHeight,
+                    panels[index].getBoundingClientRect().height
+                ));
+            }
+
+            function setViewportHeight(height) {
+                if (height > 0) viewport.style.height = height + 'px';
             }
 
             function resizeViewport(index) {
@@ -4035,8 +4065,18 @@
                     return;
                 }
 
-                const panelHeight = Math.ceil(panels[index].getBoundingClientRect().height);
-                if (panelHeight > 0) viewport.style.height = panelHeight + 'px';
+                setViewportHeight(panelHeight(index));
+            }
+
+            function prepareCarouselMovement() {
+                if (!mobileLayout.matches || carouselMoving) return;
+                carouselMoving = true;
+
+                // Give the moving slides enough room once, before the gesture continues.
+                // This prevents the taller main order card from appearing in pieces.
+                setViewportHeight(Math.max.apply(null, panels.map(function(panel, index) {
+                    return panelHeight(index);
+                })));
             }
 
             function updateControls(index, announce) {
@@ -4048,22 +4088,67 @@
 
                 previousButton.disabled = activeIndex === 0;
                 nextButton.disabled = activeIndex === panels.length - 1;
-                resizeViewport(activeIndex);
 
                 if (announce && status) {
                     status.textContent = 'Показан раздел «' + panelNames[activeIndex] + '», ' + (activeIndex + 1) + ' из ' + panels.length;
                 }
             }
 
+            function closestPanelIndex() {
+                const panelWidth = viewport.clientWidth || 1;
+                return Math.max(0, Math.min(
+                    Math.round(viewport.scrollLeft / panelWidth),
+                    panels.length - 1
+                ));
+            }
+
+            function finishCarouselMovement(announce) {
+                if (!mobileLayout.matches) return;
+                if (scrollEndTimer !== null) {
+                    window.clearTimeout(scrollEndTimer);
+                    scrollEndTimer = null;
+                }
+
+                const shouldAnnounce = announce || pendingAnnouncement;
+                pendingAnnouncement = false;
+                carouselMoving = false;
+                updateControls(closestPanelIndex(), shouldAnnounce);
+                resizeViewport(activeIndex);
+            }
+
+            function scheduleCarouselFinish(announce) {
+                pendingAnnouncement = pendingAnnouncement || announce;
+                if (scrollEndTimer !== null) window.clearTimeout(scrollEndTimer);
+                scrollEndTimer = window.setTimeout(function() {
+                    finishCarouselMovement(pendingAnnouncement);
+                }, 120);
+            }
+
             function goToPanel(index, announce, requestedBehavior) {
                 if (!mobileLayout.matches) return;
                 const nextIndex = Math.max(0, Math.min(index, panels.length - 1));
+                const behavior = requestedBehavior || (reducedMotion.matches ? 'auto' : 'smooth');
 
+                if (nextIndex === activeIndex && Math.abs(viewport.scrollLeft - panelLeft(nextIndex)) < 1) {
+                    updateControls(nextIndex, announce);
+                    resizeViewport(nextIndex);
+                    return;
+                }
+
+                prepareCarouselMovement();
+                pendingAnnouncement = pendingAnnouncement || announce;
                 viewport.scrollTo({
                     left: panelLeft(nextIndex),
-                    behavior: requestedBehavior || (reducedMotion.matches ? 'auto' : 'smooth')
+                    behavior: behavior
                 });
-                updateControls(nextIndex, announce);
+
+                if (behavior === 'auto') {
+                    window.requestAnimationFrame(function() {
+                        finishCarouselMovement(announce);
+                    });
+                } else {
+                    scheduleCarouselFinish(announce);
+                }
             }
 
             previousButton.addEventListener('click', function() {
@@ -4087,23 +4172,21 @@
             });
 
             viewport.addEventListener('scroll', function() {
-                if (!mobileLayout.matches || scrollFrame !== null) return;
-
-                scrollFrame = window.requestAnimationFrame(function() {
-                    scrollFrame = null;
-                    const closestIndex = panels.reduce(function(bestIndex, panel, index) {
-                        return Math.abs(panelLeft(index) - viewport.scrollLeft) < Math.abs(panelLeft(bestIndex) - viewport.scrollLeft)
-                            ? index
-                            : bestIndex;
-                    }, 0);
-
-                    if (closestIndex !== activeIndex) updateControls(closestIndex, true);
-                });
+                if (!mobileLayout.matches || suppressScrollEvents) return;
+                prepareCarouselMovement();
+                scheduleCarouselFinish(true);
             }, { passive: true });
 
+            if ('onscrollend' in viewport) {
+                viewport.addEventListener('scrollend', function() {
+                    if (!suppressScrollEvents) finishCarouselMovement(true);
+                }, { passive: true });
+            }
+
             function syncLayout() {
+                suppressScrollEvents = true;
                 if (mobileLayout.matches) {
-                    viewport.scrollTo({ left: panelLeft(activeIndex), behavior: 'auto' });
+                    viewport.scrollLeft = panelLeft(activeIndex);
                     resizeViewport(activeIndex);
                 } else {
                     viewport.style.removeProperty('height');
@@ -4111,6 +4194,16 @@
                     activeIndex = initialIndex;
                     updateControls(initialIndex, false);
                 }
+
+                window.requestAnimationFrame(function() {
+                    if (mobileLayout.matches) {
+                        viewport.scrollLeft = panelLeft(activeIndex);
+                        resizeViewport(activeIndex);
+                    }
+                    window.requestAnimationFrame(function() {
+                        suppressScrollEvents = false;
+                    });
+                });
             }
 
             window.addEventListener('resize', function() {
@@ -4124,18 +4217,18 @@
             if ('ResizeObserver' in window) {
                 const panelResizeObserver = new ResizeObserver(function(entries) {
                     if (!mobileLayout.matches) return;
-                    if (entries.some(function(entry) { return entry.target === panels[activeIndex]; })) {
-                        resizeViewport(activeIndex);
-                    }
+                    if (!entries.some(function(entry) { return entry.target === panels[activeIndex]; })) return;
+                    if (panelResizeFrame !== null) window.cancelAnimationFrame(panelResizeFrame);
+                    panelResizeFrame = window.requestAnimationFrame(function() {
+                        panelResizeFrame = null;
+                        if (!carouselMoving) resizeViewport(activeIndex);
+                    });
                 });
                 panels.forEach(function(panel) { panelResizeObserver.observe(panel); });
             }
 
             updateControls(initialIndex, false);
-            goToPanel(initialIndex, false, 'auto');
-            window.requestAnimationFrame(function() {
-                goToPanel(initialIndex, false, 'auto');
-            });
+            syncLayout();
         }
 
         initServicesActionsCarousel();

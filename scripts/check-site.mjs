@@ -68,6 +68,7 @@ if (mapStart === -1 || mapEnd === -1) {
     'overview=full&geometries=geojson',
     'haversineMeters',
     'requestAnimationFrame(animateCars)',
+    'initToken !== window.simInitToken',
     'data-map-view="district"'
   ]) {
     if (!mapSimulation.includes(expected)) failures.push('index.html: map simulation missing ' + expected);

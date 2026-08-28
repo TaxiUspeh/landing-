@@ -10,7 +10,7 @@ for (const file of htmlFiles) {
   }
 }
 const index = await readFile('index.html', 'utf8');
-for (const expected of ['BASE_PRICE: 800', 'от <strong>800 тенге</strong>', "register('./service-worker.js')", 'нажмите «Отправить»']) {
+for (const expected of ['BASE_PRICE: 800', 'от <strong>800 тенге</strong>', "register('./service-worker.js', { updateViaCache: 'none' })", 'нажмите «Отправить»']) {
   if (!index.includes(expected)) failures.push('index.html: missing ' + expected);
 }
 
@@ -51,27 +51,45 @@ if (carouselStart === -1 || carouselEnd === -1) {
 }
 
 for (const expected of [
-  'scroll-snap-type: x mandatory',
-  'touch-action: pan-x pan-y',
+  'touch-action: pan-y pinch-zoom',
+  'transform: translate3d(-100%, 0, 0)',
+  'transition: transform 220ms',
+  'will-change: transform',
+  '.services-actions-track.is-dragging',
+  '.services-actions-track.is-instant',
   'data-carousel-prev',
   'data-carousel-next',
   'initServicesActionsCarousel()',
-  'viewport.scrollTo({',
+  "addEventListener('pointerdown'",
+  "addEventListener('pointermove'",
+  "addEventListener('pointerup'",
+  "addEventListener('pointercancel'",
+  "gestureAxis = 'horizontal'",
+  'const threshold = Math.max(42',
   "const panelNames = ['Дополнительные услуги', 'Заказ такси', 'Быстрые действия']",
   'const initialIndex = 1',
-  'resizeViewport(activeIndex)',
-  'prepareCarouselMovement()',
-  'finishCarouselMovement',
-  'scheduleCarouselFinish',
-  'contain: inline-size',
-  'will-change: scroll-position',
+  'measureStableHeight()',
+  'setTrackOffset(baseOffset(activeIndex) + dragOffset, false)',
   '.mobile-compact-main {'
 ]) {
   if (!index.includes(expected)) failures.push('index.html: missing carousel behavior ' + expected);
 }
 if (/transition:\s*height/.test(index)) failures.push('index.html: carousel height must not animate during a swipe');
-if (!/html,\s*body\s*\{[^}]*overflow-x:\s*hidden/s.test(index)) failures.push('index.html: page-level horizontal overflow guard is missing');
+if (/scroll-snap-type/.test(index)) failures.push('index.html: native scroll-snap carousel remains');
+if (/html,\s*body\s*\{[^}]*overflow-x:\s*hidden/s.test(index)) failures.push('index.html: root overflow-x hidden can block page scrolling on mobile');
+if (!/body\s*\{[^}]*overflow-x:\s*clip/s.test(index)) failures.push('index.html: safe body horizontal overflow guard is missing');
 if (/addEventListener\(\s*['"]touchmove/.test(index)) failures.push('index.html: carousel must not block vertical touch scrolling');
+
+const carouselScriptStart = index.indexOf('function initServicesActionsCarousel()');
+const carouselScriptEnd = index.indexOf('initServicesActionsCarousel();', carouselScriptStart);
+if (carouselScriptStart === -1 || carouselScriptEnd === -1) {
+  failures.push('index.html: carousel script is missing');
+} else {
+  const carouselScript = index.slice(carouselScriptStart, carouselScriptEnd);
+  for (const forbidden of ['scrollLeft', 'viewport.scrollTo', "addEventListener('scroll'"]) {
+    if (carouselScript.includes(forbidden)) failures.push('index.html: native horizontal scrolling remains: ' + forbidden);
+  }
+}
 const mapStart = index.indexOf('window.simMap = null;');
 const mapEnd = index.indexOf('window.togglePreorder = function()', mapStart);
 if (mapStart === -1 || mapEnd === -1) {
@@ -105,6 +123,9 @@ if (mapStart === -1 || mapEnd === -1) {
 if (/WhatsApp Image 2026-08-24/.test(index)) failures.push('index.html: broken StroyDom image remains');
 if (/chip\.innerHTML\s*=/.test(index)) failures.push('index.html: address history uses innerHTML');
 const manifest = JSON.parse(await readFile('site.webmanifest', 'utf8'));
+const serviceWorker = await readFile('service-worker.js', 'utf8');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v2-carousel'")) failures.push('service-worker.js: carousel cache version was not updated');
+if (serviceWorker.includes('taxi-uspeh-v1')) failures.push('service-worker.js: stale v1 cache name remains');
 for (const icon of manifest.icons) await access(resolve(icon.src.replace(/^\/landing-\//, ''))).catch(() => failures.push('missing icon: ' + icon.src));
 for (const file of ['service-worker.js', 'robots.txt', 'sitemap.xml']) await access(file).catch(() => failures.push('missing ' + file));
 if (failures.length) { console.error(failures.join('\n')); process.exit(1); }

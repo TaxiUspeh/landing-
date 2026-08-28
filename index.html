@@ -41,8 +41,6 @@
         html, body {
             width: 100%;
             max-width: 100%;
-            overflow-x: hidden;
-            overscroll-behavior-y: none;
             -webkit-tap-highlight-color: transparent;
         }
         @supports (-webkit-touch-callout: none) { .header-bg { padding-top: env(safe-area-inset-top); } }
@@ -53,7 +51,8 @@
             background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
                               url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=1920&auto=format&fit=crop');
             background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat;
-            padding-bottom: 90px; transition: color 0.3s; color: #1f2937; 
+            overflow-x: clip;
+            padding-bottom: 90px; transition: color 0.3s; color: #1f2937;
         }
         
         .header-bg { background: linear-gradient(135deg, rgba(245, 158, 11, 0.95) 0%, rgba(29, 78, 216, 0.95) 100%); backdrop-filter: blur(10px); transition: background 0.3s; }
@@ -525,26 +524,24 @@
 
         @media (max-width: 767px) {
             .services-actions-viewport {
-                overflow-x: auto;
-                overflow-y: hidden;
-                scroll-snap-type: x mandatory;
-                scroll-behavior: smooth;
-                overscroll-behavior-x: contain;
-                touch-action: pan-x pan-y;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
-                contain: inline-size;
-                will-change: scroll-position;
-            }
-
-            .services-actions-viewport::-webkit-scrollbar {
-                display: none;
+                position: relative;
+                overflow: hidden;
+                touch-action: pan-y pinch-zoom;
+                contain: layout paint;
             }
 
             .services-actions-track {
                 display: flex;
                 gap: 0;
                 align-items: flex-start;
+                transform: translate3d(-100%, 0, 0);
+                transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+                will-change: transform;
+            }
+
+            .services-actions-track.is-dragging,
+            .services-actions-track.is-instant {
+                transition: none;
             }
 
             .services-actions-panel {
@@ -553,8 +550,11 @@
                 width: 100%;
                 grid-column: auto;
                 grid-row: auto;
-                scroll-snap-align: start;
-                scroll-snap-stop: always;
+            }
+
+            .services-actions-viewport.is-dragging {
+                user-select: none;
+                -webkit-user-select: none;
             }
 
             .services-actions-controls {
@@ -606,8 +606,8 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .services-actions-viewport {
-                scroll-behavior: auto;
+            .services-actions-track {
+                transition: none;
             }
 
             .services-actions-arrow,
@@ -2828,7 +2828,9 @@
              checkLineStatus(); 
              initPwaPushNotifications();
              if ('serviceWorker' in navigator) {
-                 navigator.serviceWorker.register('./service-worker.js').catch(error => console.warn('Service worker registration failed:', error));
+                 navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' })
+                     .then(registration => registration.update())
+                     .catch(error => console.warn('Service worker registration failed:', error));
              }
              setInterval(checkLineStatus, 60000); 
              
@@ -4031,6 +4033,7 @@
             if (!carousel) return;
 
             const viewport = carousel.querySelector('.services-actions-viewport');
+            const track = carousel.querySelector('.services-actions-track');
             const panels = Array.from(carousel.querySelectorAll('[data-carousel-panel]'));
             const dots = Array.from(carousel.querySelectorAll('[data-carousel-dot]'));
             const previousButton = carousel.querySelector('[data-carousel-prev]');
@@ -4041,52 +4044,54 @@
             const panelNames = ['Дополнительные услуги', 'Заказ такси', 'Быстрые действия'];
             const initialIndex = 1;
             let activeIndex = initialIndex;
-            let scrollEndTimer = null;
             let resizeFrame = null;
             let panelResizeFrame = null;
-            let carouselMoving = false;
-            let pendingAnnouncement = false;
-            let suppressScrollEvents = true;
+            let pointerId = null;
+            let startX = 0;
+            let startY = 0;
+            let currentX = 0;
+            let currentY = 0;
+            let gestureAxis = null;
+            let dragStartedAt = 0;
+            let ignoreClickUntil = 0;
 
-            if (!viewport || panels.length !== 3 || !previousButton || !nextButton) return;
+            if (!viewport || !track || panels.length !== 3 || !previousButton || !nextButton) return;
 
-            function panelLeft(index) {
-                return panels[index].offsetLeft - panels[0].offsetLeft;
+            function clampIndex(index) {
+                return Math.max(0, Math.min(index, panels.length - 1));
             }
 
-            function panelHeight(index) {
-                return Math.ceil(Math.max(
-                    panels[index].scrollHeight,
-                    panels[index].getBoundingClientRect().height
-                ));
+            function panelWidth() {
+                return viewport.clientWidth || 1;
             }
 
-            function setViewportHeight(height) {
-                if (height > 0) viewport.style.height = height + 'px';
+            function baseOffset(index) {
+                return -index * panelWidth();
             }
 
-            function resizeViewport(index) {
+            function setTrackOffset(offset, animate) {
+                track.classList.toggle('is-instant', !animate || reducedMotion.matches);
+                track.style.transform = 'translate3d(' + Math.round(offset) + 'px, 0, 0)';
+            }
+
+            function measureStableHeight() {
                 if (!mobileLayout.matches) {
                     viewport.style.removeProperty('height');
                     return;
                 }
 
-                setViewportHeight(panelHeight(index));
-            }
+                const tallestPanel = Math.max.apply(null, panels.map(function(panel) {
+                    return Math.ceil(Math.max(
+                        panel.scrollHeight,
+                        panel.getBoundingClientRect().height
+                    ));
+                }));
 
-            function prepareCarouselMovement() {
-                if (!mobileLayout.matches || carouselMoving) return;
-                carouselMoving = true;
-
-                // Give the moving slides enough room once, before the gesture continues.
-                // This prevents the taller main order card from appearing in pieces.
-                setViewportHeight(Math.max.apply(null, panels.map(function(panel, index) {
-                    return panelHeight(index);
-                })));
+                if (tallestPanel > 0) viewport.style.height = tallestPanel + 'px';
             }
 
             function updateControls(index, announce) {
-                activeIndex = Math.max(0, Math.min(index, panels.length - 1));
+                activeIndex = clampIndex(index);
 
                 dots.forEach(function(dot, dotIndex) {
                     dot.setAttribute('aria-current', dotIndex === activeIndex ? 'true' : 'false');
@@ -4100,61 +4105,11 @@
                 }
             }
 
-            function closestPanelIndex() {
-                const panelWidth = viewport.clientWidth || 1;
-                return Math.max(0, Math.min(
-                    Math.round(viewport.scrollLeft / panelWidth),
-                    panels.length - 1
-                ));
-            }
-
-            function finishCarouselMovement(announce) {
+            function goToPanel(index, announce, animate) {
+                const nextIndex = clampIndex(index);
+                updateControls(nextIndex, announce);
                 if (!mobileLayout.matches) return;
-                if (scrollEndTimer !== null) {
-                    window.clearTimeout(scrollEndTimer);
-                    scrollEndTimer = null;
-                }
-
-                const shouldAnnounce = announce || pendingAnnouncement;
-                pendingAnnouncement = false;
-                carouselMoving = false;
-                updateControls(closestPanelIndex(), shouldAnnounce);
-                resizeViewport(activeIndex);
-            }
-
-            function scheduleCarouselFinish(announce) {
-                pendingAnnouncement = pendingAnnouncement || announce;
-                if (scrollEndTimer !== null) window.clearTimeout(scrollEndTimer);
-                scrollEndTimer = window.setTimeout(function() {
-                    finishCarouselMovement(pendingAnnouncement);
-                }, 120);
-            }
-
-            function goToPanel(index, announce, requestedBehavior) {
-                if (!mobileLayout.matches) return;
-                const nextIndex = Math.max(0, Math.min(index, panels.length - 1));
-                const behavior = requestedBehavior || (reducedMotion.matches ? 'auto' : 'smooth');
-
-                if (nextIndex === activeIndex && Math.abs(viewport.scrollLeft - panelLeft(nextIndex)) < 1) {
-                    updateControls(nextIndex, announce);
-                    resizeViewport(nextIndex);
-                    return;
-                }
-
-                prepareCarouselMovement();
-                pendingAnnouncement = pendingAnnouncement || announce;
-                viewport.scrollTo({
-                    left: panelLeft(nextIndex),
-                    behavior: behavior
-                });
-
-                if (behavior === 'auto') {
-                    window.requestAnimationFrame(function() {
-                        finishCarouselMovement(announce);
-                    });
-                } else {
-                    scheduleCarouselFinish(announce);
-                }
+                setTrackOffset(baseOffset(nextIndex), animate !== false);
             }
 
             previousButton.addEventListener('click', function() {
@@ -4177,39 +4132,119 @@
                 goToPanel(activeIndex + (event.key === 'ArrowRight' ? 1 : -1), true);
             });
 
-            viewport.addEventListener('scroll', function() {
-                if (!mobileLayout.matches || suppressScrollEvents) return;
-                prepareCarouselMovement();
-                scheduleCarouselFinish(true);
-            }, { passive: true });
-
-            if ('onscrollend' in viewport) {
-                viewport.addEventListener('scrollend', function() {
-                    if (!suppressScrollEvents) finishCarouselMovement(true);
-                }, { passive: true });
+            function resetPointer() {
+                pointerId = null;
+                gestureAxis = null;
+                viewport.classList.remove('is-dragging');
+                track.classList.remove('is-dragging');
             }
 
-            function syncLayout() {
-                suppressScrollEvents = true;
-                if (mobileLayout.matches) {
-                    viewport.scrollLeft = panelLeft(activeIndex);
-                    resizeViewport(activeIndex);
-                } else {
-                    viewport.style.removeProperty('height');
-                    viewport.scrollLeft = 0;
-                    activeIndex = initialIndex;
-                    updateControls(initialIndex, false);
+            function finishPointer(event, cancelled) {
+                if (pointerId === null || event.pointerId !== pointerId) return;
+
+                currentX = event.clientX;
+                currentY = event.clientY;
+                const dx = currentX - startX;
+                const elapsed = Math.max(performance.now() - dragStartedAt, 1);
+                const velocity = dx / elapsed;
+                const wasHorizontal = gestureAxis === 'horizontal';
+                let targetIndex = activeIndex;
+
+                if (!cancelled && wasHorizontal) {
+                    const threshold = Math.max(42, Math.min(72, panelWidth() * 0.14));
+                    if (dx > threshold || velocity > 0.45) targetIndex = activeIndex - 1;
+                    if (dx < -threshold || velocity < -0.45) targetIndex = activeIndex + 1;
+                    ignoreClickUntil = performance.now() + 350;
                 }
 
-                window.requestAnimationFrame(function() {
-                    if (mobileLayout.matches) {
-                        viewport.scrollLeft = panelLeft(activeIndex);
-                        resizeViewport(activeIndex);
+                if (viewport.hasPointerCapture && viewport.hasPointerCapture(pointerId)) {
+                    viewport.releasePointerCapture(pointerId);
+                }
+
+                resetPointer();
+                goToPanel(targetIndex, wasHorizontal, true);
+            }
+
+            viewport.addEventListener('pointerdown', function(event) {
+                if (!mobileLayout.matches || !event.isPrimary || pointerId !== null) return;
+                if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+                pointerId = event.pointerId;
+                startX = event.clientX;
+                startY = event.clientY;
+                currentX = startX;
+                currentY = startY;
+                gestureAxis = null;
+                dragStartedAt = performance.now();
+            });
+
+            viewport.addEventListener('pointermove', function(event) {
+                if (pointerId === null || event.pointerId !== pointerId) return;
+
+                currentX = event.clientX;
+                currentY = event.clientY;
+                const dx = currentX - startX;
+                const dy = currentY - startY;
+                const absX = Math.abs(dx);
+                const absY = Math.abs(dy);
+
+                if (gestureAxis === null && Math.max(absX, absY) >= 8) {
+                    if (absY > absX * 1.15) {
+                        gestureAxis = 'vertical';
+                        return;
                     }
-                    window.requestAnimationFrame(function() {
-                        suppressScrollEvents = false;
-                    });
-                });
+                    if (absX > absY * 1.15) {
+                        gestureAxis = 'horizontal';
+                        viewport.classList.add('is-dragging');
+                        track.classList.add('is-dragging');
+                        if (viewport.setPointerCapture) viewport.setPointerCapture(pointerId);
+                    }
+                }
+
+                if (gestureAxis !== 'horizontal') return;
+                event.preventDefault();
+
+                let dragOffset = dx;
+                const pullingPastFirst = activeIndex === 0 && dx > 0;
+                const pullingPastLast = activeIndex === panels.length - 1 && dx < 0;
+                if (pullingPastFirst || pullingPastLast) dragOffset *= 0.28;
+                setTrackOffset(baseOffset(activeIndex) + dragOffset, false);
+            }, { passive: false });
+
+            viewport.addEventListener('pointerup', function(event) {
+                finishPointer(event, false);
+            });
+
+            viewport.addEventListener('pointercancel', function(event) {
+                finishPointer(event, true);
+            });
+
+            viewport.addEventListener('click', function(event) {
+                if (performance.now() >= ignoreClickUntil) return;
+                event.preventDefault();
+                event.stopPropagation();
+            }, true);
+
+            viewport.addEventListener('dragstart', function(event) {
+                if (mobileLayout.matches) event.preventDefault();
+            });
+
+            function syncLayout() {
+                if (pointerId !== null) resetPointer();
+
+                if (mobileLayout.matches) {
+                    measureStableHeight();
+                    updateControls(activeIndex, false);
+                    setTrackOffset(baseOffset(activeIndex), false);
+                    return;
+                }
+
+                viewport.style.removeProperty('height');
+                viewport.classList.remove('is-dragging');
+                track.classList.remove('is-dragging', 'is-instant');
+                track.style.removeProperty('transform');
+                activeIndex = initialIndex;
+                updateControls(initialIndex, false);
             }
 
             window.addEventListener('resize', function() {
@@ -4223,14 +4258,18 @@
             if ('ResizeObserver' in window) {
                 const panelResizeObserver = new ResizeObserver(function(entries) {
                     if (!mobileLayout.matches) return;
-                    if (!entries.some(function(entry) { return entry.target === panels[activeIndex]; })) return;
+                    if (!entries.some(function(entry) { return panels.includes(entry.target); })) return;
                     if (panelResizeFrame !== null) window.cancelAnimationFrame(panelResizeFrame);
                     panelResizeFrame = window.requestAnimationFrame(function() {
                         panelResizeFrame = null;
-                        if (!carouselMoving) resizeViewport(activeIndex);
+                        measureStableHeight();
                     });
                 });
                 panels.forEach(function(panel) { panelResizeObserver.observe(panel); });
+            }
+
+            if (mobileLayout.addEventListener) {
+                mobileLayout.addEventListener('change', syncLayout);
             }
 
             updateControls(initialIndex, false);

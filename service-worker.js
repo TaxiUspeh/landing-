@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v1';
+const CACHE_NAME = 'taxi-uspeh-v2-carousel';
 const APP_SHELL = [
   './',
   './index.html',

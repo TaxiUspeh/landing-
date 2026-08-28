@@ -70,6 +70,7 @@ for (const expected of [
   if (!index.includes(expected)) failures.push('index.html: missing carousel behavior ' + expected);
 }
 if (/transition:\s*height/.test(index)) failures.push('index.html: carousel height must not animate during a swipe');
+if (!/html,\s*body\s*\{[^}]*overflow-x:\s*hidden/s.test(index)) failures.push('index.html: page-level horizontal overflow guard is missing');
 if (/addEventListener\(\s*['"]touchmove/.test(index)) failures.push('index.html: carousel must not block vertical touch scrolling');
 const mapStart = index.indexOf('window.simMap = null;');
 const mapEnd = index.indexOf('window.togglePreorder = function()', mapStart);

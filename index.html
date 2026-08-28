@@ -38,7 +38,13 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
-        html, body { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+        }
         @supports (-webkit-touch-callout: none) { .header-bg { padding-top: env(safe-area-inset-top); } }
         
         body { 

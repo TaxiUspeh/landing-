@@ -1,5 +1,6 @@
 import { readFile, access } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { getHolidayForDate } from '../holiday-calendar.js';
 
 const htmlFiles = ['index.html', 'drivers.html', 'food.html', 'SHASHDVOR.html'];
 const failures = [];
@@ -80,6 +81,46 @@ if (/html,\s*body\s*\{[^}]*overflow-x:\s*hidden/s.test(index)) failures.push('in
 if (!/body\s*\{[^}]*overflow-x:\s*clip/s.test(index)) failures.push('index.html: safe body horizontal overflow guard is missing');
 if (/addEventListener\(\s*['"]touchmove/.test(index)) failures.push('index.html: carousel must not block vertical touch scrolling');
 
+for (const expected of [
+  'id="holidayBanner"',
+  'id="holidayBannerTitle"',
+  'id="holidayBannerText"',
+  'updateHolidayBanner()',
+  'const holidayMultiplier = holiday ? CONFIG.TAXI.MULTIPLIERS.HOLIDAY : 1',
+  'priceMultiplier = Math.max(priceMultiplier, holidayMultiplier)',
+  "holiday: 'taxi_last_holiday_notification'",
+  "weather: 'taxi_last_weather_notification'",
+  "night: 'taxi_last_night_notification'",
+  "document.addEventListener('visibilitychange', handleAppVisibilityChange)",
+  '15 * 60 * 1000',
+  'data: { url: \'./\' }'
+]) {
+  if (!index.includes(expected)) failures.push('index.html: missing holiday behavior ' + expected);
+}
+
+const holidayBannerIndex = index.indexOf('id="holidayBanner"');
+const lineStatusIndex = index.indexOf('id="lineStatus"');
+if (holidayBannerIndex === -1 || lineStatusIndex === -1 || holidayBannerIndex > lineStatusIndex) {
+  failures.push('index.html: holiday banner must be separate and placed before line status');
+}
+
+const lineStatusStart = index.indexOf('window.checkLineStatus = async function()');
+const lineStatusEnd = index.indexOf('function debounce(', lineStatusStart);
+if (lineStatusStart === -1 || lineStatusEnd === -1) {
+  failures.push('index.html: line status logic is missing');
+} else {
+  const lineStatusScript = index.slice(lineStatusStart, lineStatusEnd);
+  for (const expected of [
+    "statusEl.setAttribute('onclick', 'window.openMapModal()')",
+    'СВОБОДНЫХ МАШИН',
+    'МАЛО МАШИН',
+    'updateHolidayBanner()'
+  ]) {
+    if (!lineStatusScript.includes(expected)) failures.push('index.html: line status behavior changed: ' + expected);
+  }
+  if (lineStatusScript.includes('ПРАЗДНИЧНЫЙ ДЕНЬ')) failures.push('index.html: holiday text still replaces the car status card');
+}
+
 const carouselScriptStart = index.indexOf('function initServicesActionsCarousel()');
 const carouselScriptEnd = index.indexOf('initServicesActionsCarousel();', carouselScriptStart);
 if (carouselScriptStart === -1 || carouselScriptEnd === -1) {
@@ -124,9 +165,52 @@ if (/WhatsApp Image 2026-08-24/.test(index)) failures.push('index.html: broken S
 if (/chip\.innerHTML\s*=/.test(index)) failures.push('index.html: address history uses innerHTML');
 const manifest = JSON.parse(await readFile('site.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v2-carousel'")) failures.push('service-worker.js: carousel cache version was not updated');
-if (serviceWorker.includes('taxi-uspeh-v1')) failures.push('service-worker.js: stale v1 cache name remains');
+const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v3-holidays'")) failures.push('service-worker.js: holiday cache version was not updated');
+if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
+if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
+if (/taxi-uspeh-v[12](?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+for (const expected of ['2026-03-09', '2026-03-24', '2026-03-25', '2026-05-11', '2026-05-27', '2026-10-26', "start: '03-15'", 'fromYear: 2026']) {
+  if (!holidayCalendar.includes(expected)) failures.push('holiday-calendar.js: missing official 2026 date ' + expected);
+}
+if (/\bduration\s*:/.test(holidayCalendar)) failures.push('holiday-calendar.js: duration-based holiday calculation remains');
+
+function localDate(year, month, day) {
+  return new Date(year, month - 1, day, 12, 0, 0);
+}
+
+for (const testCase of [
+  [2026, 1, 1, 'Новый год', false],
+  [2026, 1, 2, 'Новый год', false],
+  [2026, 1, 3, null, false],
+  [2026, 3, 8, 'Международный женский день', false],
+  [2026, 3, 9, 'Международный женский день', true],
+  [2026, 3, 10, null, false],
+  [2026, 3, 15, 'День Конституции Республики Казахстан', false],
+  [2026, 3, 21, 'Наурыз мейрамы', false],
+  [2026, 3, 23, 'Наурыз мейрамы', false],
+  [2026, 3, 24, 'Наурыз мейрамы', true],
+  [2026, 3, 25, 'Наурыз мейрамы', true],
+  [2026, 3, 26, null, false],
+  [2026, 5, 9, 'День Победы', false],
+  [2026, 5, 10, null, false],
+  [2026, 5, 11, 'День Победы', true],
+  [2026, 5, 27, 'Курбан айт', false],
+  [2026, 5, 28, null, false],
+  [2026, 8, 30, null, false],
+  [2026, 10, 25, 'День Республики', false],
+  [2026, 10, 26, 'День Республики', true],
+  [2026, 10, 27, null, false],
+  [2026, 12, 16, 'День Независимости', false],
+  [2027, 3, 15, 'День Конституции Республики Казахстан', false]
+]) {
+  const [year, month, day, expectedName, expectedObserved] = testCase;
+  const holiday = getHolidayForDate(localDate(year, month, day));
+  const actualName = holiday ? holiday.name : null;
+  if (actualName !== expectedName) failures.push(`holiday-calendar.js: ${year}-${month}-${day} expected ${expectedName}, found ${actualName}`);
+  if (holiday && holiday.observed !== expectedObserved) failures.push(`holiday-calendar.js: ${year}-${month}-${day} observed flag is incorrect`);
+}
 for (const icon of manifest.icons) await access(resolve(icon.src.replace(/^\/landing-\//, ''))).catch(() => failures.push('missing icon: ' + icon.src));
-for (const file of ['service-worker.js', 'robots.txt', 'sitemap.xml']) await access(file).catch(() => failures.push('missing ' + file));
+for (const file of ['service-worker.js', 'holiday-calendar.js', 'robots.txt', 'sitemap.xml']) await access(file).catch(() => failures.push('missing ' + file));
 if (failures.length) { console.error(failures.join('\n')); process.exit(1); }
 console.log('Site checks passed (' + htmlFiles.length + ' HTML pages).');

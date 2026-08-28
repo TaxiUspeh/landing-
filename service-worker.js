@@ -1,7 +1,8 @@
-const CACHE_NAME = 'taxi-uspeh-v2-carousel';
+const CACHE_NAME = 'taxi-uspeh-v3-holidays';
 const APP_SHELL = [
   './',
   './index.html',
+  './holiday-calendar.js',
   './drivers.html',
   './food.html',
   './SHASHDVOR.html',
@@ -37,5 +38,28 @@ self.addEventListener('fetch', event => {
       }
       return response;
     }))
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const requestedUrl = event.notification.data && event.notification.data.url
+    ? event.notification.data.url
+    : './';
+  const targetUrl = new URL(requestedUrl, self.registration.scope).href;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      const appClient = windowClients.find(client => client.url.startsWith(self.registration.scope));
+      if (appClient) {
+        if ('navigate' in appClient) {
+          return appClient.navigate(targetUrl).then(navigatedClient => {
+            return navigatedClient && 'focus' in navigatedClient ? navigatedClient.focus() : appClient.focus();
+          });
+        }
+        return appClient.focus();
+      }
+      return self.clients.openWindow ? self.clients.openWindow(targetUrl) : undefined;
+    })
   );
 });

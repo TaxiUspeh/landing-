@@ -282,6 +282,21 @@
                 line-height: 1.2 !important;
             }
 
+            .main-order-panel #holidayBanner {
+                margin-bottom: 0.5rem !important;
+                padding: 0.5rem 0.625rem !important;
+            }
+
+            .main-order-panel #holidayBannerTitle {
+                font-size: 0.75rem !important;
+                line-height: 1.15 !important;
+            }
+
+            .main-order-panel #holidayBannerText {
+                font-size: 0.625rem !important;
+                line-height: 1.2 !important;
+            }
+
             .main-order-panel .main-taxi-button {
                 min-height: 46px;
                 padding: 0.55rem 0.75rem !important;
@@ -685,6 +700,17 @@
                     <article class="services-actions-panel services-actions-main-panel" data-carousel-panel role="group" aria-roledescription="слайд" aria-label="2 из 3 — Заказ такси">
                         <!-- MAIN BLOCK (TRANSPARENT GLASS) -->
                         <div class="main-order-panel max-w-md mx-auto p-4 mb-6 glass-panel border-t-4 border-green-500 shadow-2xl">
+                            <div id="holidayBanner" class="hidden mb-3 p-3 rounded-xl border border-amber-300 bg-gradient-to-r from-amber-100/95 via-yellow-50/95 to-amber-100/95 text-amber-950 shadow-lg dark:from-amber-900/90 dark:via-yellow-900/90 dark:to-amber-900/90 dark:text-amber-50 dark:border-amber-500" role="status" aria-live="polite">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400/30 text-amber-700 dark:text-yellow-200" aria-hidden="true">
+                                        <i class="fas fa-gift"></i>
+                                    </span>
+                                    <div class="min-w-0 text-left">
+                                        <div id="holidayBannerTitle" class="text-sm font-black leading-tight"></div>
+                                        <div id="holidayBannerText" class="mt-0.5 text-xs font-semibold opacity-90"></div>
+                                    </div>
+                                </div>
+                            </div>
                             <div id="lineStatus" class="mb-3 p-3 rounded-lg text-center text-sm font-bold border hidden shadow-sm transition-all duration-500 bg-white/80"></div>
 
                             <button data-service="taxi" class="main-taxi-button service-btn btn-hover btn-active bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black py-4 px-4 rounded-xl w-full shadow-lg text-lg flex items-center justify-center space-x-2.5 mb-3.5 blink-btn">
@@ -1869,6 +1895,7 @@
     <!-- JAVASCRIPT LOGIC -->
     <!-- ========================================================= -->
     <script type="module">
+        import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -1892,21 +1919,6 @@
                     HOLIDAY: 1.25     // <--- Праздничный коэффициент (+25%)
                 }
             },
-            // Список государственных праздников РК (месяц: 0-11, день: 1-31, длительность в днях)
-            HOLIDAYS: [
-                { name: "Новый год", month: 0, day: 1, duration: 4 },
-                { name: "Рождество Христово", month: 0, day: 7, duration: 1 },
-                { name: "Международный женский день", month: 2, day: 8, duration: 1 },
-                { name: "Наурыз мейрамы", month: 2, day: 21, duration: 5 },
-                { name: "Праздник единства народа Казахстана", month: 4, day: 1, duration: 1 },
-                { name: "День защитника Отечества", month: 4, day: 7, duration: 1 },
-                { name: "День Победы", month: 4, day: 9, duration: 3 },
-                { name: "Курбан айт", month: 4, day: 27, duration: 1 },
-                { name: "День Столицы", month: 6, day: 6, duration: 1 },
-                { name: "День Конституции Республики Казахстан", month: 7, day: 30, duration: 3 },
-                { name: "День Республики", month: 9, day: 25, duration: 3 },
-                { name: "День Независимости", month: 11, day: 16, duration: 1 }
-            ],
             DELIVERY: {
                 BASE_PRICE: 1200
             },
@@ -2155,29 +2167,49 @@
             iconEl.className = `fas ${iconClass} icon`;
         }
 
-        function checkHolidayToday() {
-            const now = new Date();
-            for (const h of CONFIG.HOLIDAYS) {
-                const startDate = new Date(now.getFullYear(), h.month, h.day);
-                const endDate = new Date(now.getFullYear(), h.month, h.day + h.duration - 1);
-                if (now >= startDate && now <= endDate) {
-                    return h.name;
-                }
+        function updateHolidayBanner(referenceDate = new Date()) {
+            const banner = document.getElementById('holidayBanner');
+            const title = document.getElementById('holidayBannerTitle');
+            const text = document.getElementById('holidayBannerText');
+            const holiday = getHolidayForDate(referenceDate);
+            if (!banner || !title || !text) return holiday;
+
+            if (!holiday) {
+                banner.classList.add('hidden');
+                title.textContent = '';
+                text.textContent = '';
+                return null;
             }
-            return null;
+
+            const bannerKind = holiday.observed ? 'ПРАЗДНИЧНЫЙ ВЫХОДНОЙ' : 'ПРАЗДНИЧНЫЙ ДЕНЬ';
+            title.textContent = `${bannerKind}: ${holiday.name.toUpperCase()}`;
+            text.textContent = holiday.observed
+                ? 'Продолжение праздничных выходных. Действует тариф +25%.'
+                : 'Поздравляем! Сегодня действует праздничный тариф +25%.';
+            banner.classList.remove('hidden');
+            return holiday;
         }
 
-        // === PUSH NOTIFICATIONS / PWA SYSTEM LOGIC ===
+        // === LOCAL NOTIFICATIONS / PWA SYSTEM LOGIC ===
+        const NOTIFICATION_STORAGE_KEYS = Object.freeze({
+            holiday: 'taxi_last_holiday_notification',
+            weather: 'taxi_last_weather_notification',
+            night: 'taxi_last_night_notification'
+        });
+        let autoNotificationCheckInProgress = false;
+
+        function isStandaloneApp() {
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        }
+
         function initPwaPushNotifications() {
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
             const pushBtn = document.getElementById('pushToggleBtn');
             if (!pushBtn) return;
 
-            if (isStandalone) {
+            if (isStandaloneApp() && 'Notification' in window) {
                 pushBtn.classList.remove('hidden');
                 updatePushIconState();
-                
-                checkForAutoNotifications();
+                void checkForAutoNotifications();
             } else {
                 pushBtn.classList.add('hidden');
             }
@@ -2185,7 +2217,7 @@
 
         function updatePushIconState() {
             const icon = document.getElementById('pushIcon');
-            if (!icon) return;
+            if (!icon || !('Notification' in window)) return;
             if (Notification.permission === 'granted') {
                 icon.className = 'fas fa-bell text-lg text-yellow-300';
             } else {
@@ -2201,13 +2233,14 @@
 
             if (Notification.permission === 'granted') {
                 displayMessageModal('Уведомления', 'Уведомления уже включены! Мы будем присылать вам информацию о выгодных тарифах и акциях.', false);
-                sendLocalPushNotification("Такси «Успех»", "Уведомления активны. Вы первыми узнаете о праздничных акциях!");
+                await sendLocalPushNotification("Такси «Успех»", "Уведомления активны. Вы первыми узнаете о праздничных акциях!", 'taxi-uspeh-enabled');
             } else if (Notification.permission !== 'denied') {
                 const permission = await Notification.requestPermission();
                 updatePushIconState();
                 if (permission === 'granted') {
                     displayMessageModal('Успешно!', 'Уведомления успешно включены!', false);
-                    sendLocalPushNotification("Такси «Успех»", "Спасибо! Теперь вы будете получать уведомления о ночных тарифах и праздниках.");
+                    await sendLocalPushNotification("Такси «Успех»", "Спасибо! Теперь вы будете получать уведомления о ночных тарифах и праздниках.", 'taxi-uspeh-enabled');
+                    void checkForAutoNotifications();
                 } else {
                     displayMessageModal('Внимание', 'Вы заблокировали уведомления в браузере.', true);
                 }
@@ -2216,71 +2249,130 @@
             }
         }
 
-        function sendLocalPushNotification(title, bodyText) {
-            if (Notification.permission === 'granted') {
-                try {
-                    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                        navigator.serviceWorker.ready.then(registration => {
-                            registration.showNotification(title, {
-                                body: bodyText,
-                                icon: 'https://img.icons8.com/color/512/taxi.png',
-                                badge: 'https://img.icons8.com/color/512/taxi.png',
-                                vibrate: [200, 100, 200]
-                            });
-                        });
-                    } else {
-                        new Notification(title, {
-                            body: bodyText,
-                            icon: 'https://img.icons8.com/color/512/taxi.png'
-                        });
+        async function sendLocalPushNotification(title, bodyText, tag) {
+            if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+
+            const options = {
+                body: bodyText,
+                icon: './favicon-192x192.png',
+                badge: './favicon-32x32.png',
+                vibrate: [200, 100, 200],
+                tag,
+                data: { url: './' }
+            };
+
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        await registration.showNotification(title, options);
+                        return true;
                     }
-                } catch(e) { console.warn("Push error:", e); }
+                }
+                new Notification(title, options);
+                return true;
+            } catch (error) {
+                console.warn('Local notification error:', error);
+                return false;
             }
         }
 
-        function checkForAutoNotifications() {
-            if (Notification.permission !== 'granted') return;
-            const lastPushKey = 'taxi_last_push_date';
-            const todayStr = new Date().toDateString();
-            const lastPush = localStorage.getItem(lastPushKey);
+        function notificationWasSentToday(storageKey, referenceDate) {
+            const dateKey = formatLocalDateKey(referenceDate);
+            try {
+                return dateKey !== null && localStorage.getItem(storageKey) === dateKey;
+            } catch (error) {
+                return false;
+            }
+        }
 
-            if (lastPush === todayStr) return;
+        function markNotificationSent(storageKey, referenceDate) {
+            const dateKey = formatLocalDateKey(referenceDate);
+            if (!dateKey) return;
+            try {
+                localStorage.setItem(storageKey, dateKey);
+            } catch (error) {
+                console.warn('Notification state could not be saved:', error);
+            }
+        }
 
-            const holiday = checkHolidayToday();
-            const hour = new Date().getHours();
+        async function checkForAutoNotifications() {
+            if (!('Notification' in window) || Notification.permission !== 'granted' || autoNotificationCheckInProgress) return;
+            autoNotificationCheckInProgress = true;
 
-            window.fetchRealWeather().then(weather => {
+            const now = new Date();
+            const dateKey = formatLocalDateKey(now);
+            const holiday = getHolidayForDate(now);
+            let weatherAlertActive = false;
+
+            try {
+                if (holiday && !notificationWasSentToday(NOTIFICATION_STORAGE_KEYS.holiday, now)) {
+                    const sent = await sendLocalPushNotification(
+                        'Праздничный тариф!',
+                        `Сегодня праздник: ${holiday.name}. Действует специальный комфортный тариф Такси «Успех».`,
+                        `taxi-uspeh-holiday-${dateKey}`
+                    );
+                    if (sent) markNotificationSent(NOTIFICATION_STORAGE_KEYS.holiday, now);
+                }
+
+                let weather = null;
+                try {
+                    weather = await window.fetchRealWeather();
+                } catch (error) {
+                    console.warn('Weather notification check failed:', error);
+                }
                 if (weather) {
                     const temp = weather.temperature;
                     const code = weather.weathercode;
+                    let weatherTitle = '';
+                    let weatherBody = '';
+
                     if (temp <= -25) {
-                        sendLocalPushNotification("🥶 Сильный мороз в Белоусовке!", `Температура упала до ${temp}°C. Машин на линии меньше, тариф повышен. Рекомендуем заказывать заранее!`);
-                        localStorage.setItem(lastPushKey, todayStr);
-                        return;
+                        weatherAlertActive = true;
+                        weatherTitle = '🥶 Сильный мороз в Белоусовке!';
+                        weatherBody = `Температура упала до ${temp}°C. Машин на линии меньше, тариф повышен. Рекомендуем заказывать заранее!`;
                     } else if (code === 73 || code === 75 || code === 85 || code === 86) {
-                        sendLocalPushNotification("❄️ Снегопад и метель!", `На дорогах сложные условия. Возрос спрос на такси и доставка может занимать больше времени.`);
-                        localStorage.setItem(lastPushKey, todayStr);
-                        return;
+                        weatherAlertActive = true;
+                        weatherTitle = '❄️ Снегопад и метель!';
+                        weatherBody = 'На дорогах сложные условия. Возрос спрос на такси и доставка может занимать больше времени.';
+                    }
+
+                    if (weatherAlertActive && !notificationWasSentToday(NOTIFICATION_STORAGE_KEYS.weather, now)) {
+                        const sent = await sendLocalPushNotification(weatherTitle, weatherBody, `taxi-uspeh-weather-${dateKey}`);
+                        if (sent) markNotificationSent(NOTIFICATION_STORAGE_KEYS.weather, now);
                     }
                 }
 
-                if (holiday) {
-                    sendLocalPushNotification("Праздничный тариф!", `Сегодня праздник: ${holiday}. Действует специальный комфортный тариф Такси «Успех».`);
-                    localStorage.setItem(lastPushKey, todayStr);
-                } else if (hour >= 22 || hour < 5) {
-                    sendLocalPushNotification("Ночные поездки в Белоусовке", "Работаем круглосуточно! Заказывайте такси в один клик.");
-                    localStorage.setItem(lastPushKey, todayStr);
+                const hour = now.getHours();
+                if (!holiday && !weatherAlertActive && (hour >= 22 || hour < 5) && !notificationWasSentToday(NOTIFICATION_STORAGE_KEYS.night, now)) {
+                    const sent = await sendLocalPushNotification(
+                        'Ночные поездки в Белоусовке',
+                        'Работаем круглосуточно! Заказывайте такси в один клик.',
+                        `taxi-uspeh-night-${dateKey}`
+                    );
+                    if (sent) markNotificationSent(NOTIFICATION_STORAGE_KEYS.night, now);
                 }
-            });
+            } finally {
+                autoNotificationCheckInProgress = false;
+            }
+        }
+
+        function handleAppVisibilityChange() {
+            if (document.hidden) return;
+            updateHolidayBanner();
+            if (typeof window.checkLineStatus === 'function') void window.checkLineStatus();
+            if (isStandaloneApp()) void checkForAutoNotifications();
         }
         // =========================================================
 
-        const SIM_KEY = 'taxi_sim_state_v2'; 
+        const SIM_KEY = 'taxi_sim_state_v2';
         window.checkLineStatus = async function() {
             checkShopStatus();
+            const holiday = updateHolidayBanner();
             const weather = await window.fetchRealWeather();
             const hour = new Date().getHours();
             const statusEl = document.getElementById('lineStatus');
+            const holidayMultiplier = holiday ? CONFIG.TAXI.MULTIPLIERS.HOLIDAY : 1;
             let message = '';
             let style = '';
             priceMultiplier = 1; 
@@ -2304,28 +2396,11 @@
             }
 
             if (isSevereWeather) {
+                 priceMultiplier = Math.max(priceMultiplier, holidayMultiplier);
                  if(statusEl) {
                     const mapHint = `<div class="mt-1 text-[10px] opacity-75 flex items-center justify-center font-normal"><i class="fas fa-map-marker-alt mr-1"></i> Нажмите, чтобы посмотреть на карте</div>`;
                     statusEl.innerHTML = message + mapHint;
                     statusEl.className = `mb-3 p-4 rounded-xl border shadow-lg backdrop-blur-md transition-all duration-300 text-center text-sm font-bold cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${style}`;
-                    statusEl.setAttribute('onclick', 'window.openMapModal()');
-                    statusEl.classList.remove('hidden');
-                }
-                window.updateTaxiPrice();
-                window.updateDeliveryPrice();
-                return; 
-            }
-
-            const holidayName = checkHolidayToday();
-            if (holidayName) {
-                message = `<i class="fas fa-glass-cheers mr-2"></i> <b>ПРАЗДНИЧНЫЙ ДЕНЬ: ${holidayName.toUpperCase()}</b><br><span class="font-normal text-xs opacity-90">Действует праздничный тариф (+25%)</span>`;
-                style = 'bg-amber-100/50 border-amber-400 text-amber-900 backdrop-blur-md dark:bg-amber-900/40 dark:border-amber-500 dark:text-amber-100';
-                priceMultiplier = CONFIG.TAXI.MULTIPLIERS.HOLIDAY;
-                
-                if(statusEl) {
-                    const mapHint = `<div class="mt-1 text-[10px] opacity-75 flex items-center justify-center font-normal"><i class="fas fa-map-marker-alt mr-1"></i> Нажмите, чтобы посмотреть на карте</div>`;
-                    statusEl.innerHTML = `<div class="flex items-center justify-center gap-3"><span class="status-dot yellow" style="animation: pulse-yellow 2s infinite;"></span> <div class="text-left leading-tight">${message}${mapHint}</div></div>`;
-                    statusEl.className = `mb-3 p-3 rounded-xl border shadow-lg backdrop-blur-md transition-all duration-300 text-center text-sm font-bold cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${style}`;
                     statusEl.setAttribute('onclick', 'window.openMapModal()');
                     statusEl.classList.remove('hidden');
                 }
@@ -2388,6 +2463,8 @@
                     dotColor = 'green';
                 }
             }
+
+            priceMultiplier = Math.max(priceMultiplier, holidayMultiplier);
 
             if(statusEl) {
                 const mapHint = `<div class="mt-1 text-[10px] opacity-75 flex items-center justify-center font-normal"><i class="fas fa-map-marker-alt mr-1"></i> Нажмите, чтобы посмотреть на карте</div>`;
@@ -2822,17 +2899,22 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-             loadTheme(); 
-             initPhoneMask(); 
-             setAddressHistory(); 
-             checkLineStatus(); 
+             loadTheme();
+             initPhoneMask();
+             setAddressHistory();
+             updateHolidayBanner();
+             checkLineStatus();
              initPwaPushNotifications();
              if ('serviceWorker' in navigator) {
                  navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' })
                      .then(registration => registration.update())
                      .catch(error => console.warn('Service worker registration failed:', error));
              }
-             setInterval(checkLineStatus, 60000); 
+             document.addEventListener('visibilitychange', handleAppVisibilityChange);
+             setInterval(checkLineStatus, 60000);
+             setInterval(() => {
+                 if (!document.hidden && isStandaloneApp()) void checkForAutoNotifications();
+             }, 15 * 60 * 1000);
              
              const formattedNow = getFormattedCurrentTime();
              const taxiDateTimeInput = document.getElementById('taxiDateTime');

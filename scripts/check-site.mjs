@@ -14,7 +14,7 @@ for (const expected of ['BASE_PRICE: 800', 'от <strong>800 тенге</strong>
   if (!index.includes(expected)) failures.push('index.html: missing ' + expected);
 }
 
-const carouselStart = index.indexOf('<!-- SERVICES AND QUICK ACTIONS CAROUSEL -->');
+const carouselStart = index.indexOf('<!-- MAIN ORDER, SERVICES AND QUICK ACTIONS CAROUSEL -->');
 const carouselEnd = index.indexOf('<!-- BUS SCHEDULE BLOCK -->', carouselStart);
 if (carouselStart === -1 || carouselEnd === -1) {
   failures.push('index.html: services/actions carousel block is missing');
@@ -27,6 +27,8 @@ if (carouselStart === -1 || carouselEnd === -1) {
     'Трезвый водитель',
     'Помощь',
     'Автострахование',
+    'main-order-panel',
+    'Заказать Taxi',
     'Оставить отзыв',
     'Перезвонить',
     'Партнеры',
@@ -37,8 +39,15 @@ if (carouselStart === -1 || carouselEnd === -1) {
 
   const panelCount = (carousel.match(/data-carousel-panel role=/g) || []).length;
   const dotCount = (carousel.match(/data-carousel-dot="/g) || []).length;
-  if (panelCount !== 2) failures.push('index.html: expected 2 carousel panels, found ' + panelCount);
-  if (dotCount !== 2) failures.push('index.html: expected 2 carousel dots, found ' + dotCount);
+  if (panelCount !== 3) failures.push('index.html: expected 3 carousel panels, found ' + panelCount);
+  if (dotCount !== 3) failures.push('index.html: expected 3 carousel dots, found ' + dotCount);
+
+  const additionalIndex = carousel.indexOf('services-actions-additional-panel');
+  const mainIndex = carousel.indexOf('services-actions-main-panel');
+  const quickIndex = carousel.indexOf('services-actions-quick-panel');
+  if (!(additionalIndex < mainIndex && mainIndex < quickIndex)) {
+    failures.push('index.html: carousel panels must be ordered additional, main order, quick actions');
+  }
 }
 
 for (const expected of [
@@ -47,7 +56,11 @@ for (const expected of [
   'data-carousel-prev',
   'data-carousel-next',
   'initServicesActionsCarousel()',
-  'viewport.scrollTo({'
+  'viewport.scrollTo({',
+  "const panelNames = ['Дополнительные услуги', 'Заказ такси', 'Быстрые действия']",
+  'const initialIndex = 1',
+  'resizeViewport(activeIndex)',
+  "goToPanel(initialIndex, false, 'auto')"
 ]) {
   if (!index.includes(expected)) failures.push('index.html: missing carousel behavior ' + expected);
 }

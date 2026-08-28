@@ -1783,7 +1783,7 @@
             </div>
             <div class="p-0 relative rounded-b-xl overflow-hidden shadow-inner">
                 <div id="simulationMap" style="height: 60vh; width: 100%; background: #e5e5e5;" class="z-0"></div>
-                <div id="mapOverlayText" class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/95 dark:bg-gray-800/95 px-5 py-2 rounded-full shadow-lg font-bold text-sm z-[1000] text-gray-800 dark:text-gray-200 backdrop-blur-md pointer-events-none border border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                <div id="mapOverlayText" class="absolute top-3 left-3 right-3 bg-white/95 dark:bg-gray-800/95 px-3 py-2 rounded-2xl shadow-lg font-bold text-sm z-[1000] text-center leading-tight text-gray-800 dark:text-gray-200 backdrop-blur-md pointer-events-none border border-gray-200 dark:border-gray-700">
                     Загрузка...
                 </div>
             </div>
@@ -3250,6 +3250,9 @@
                         window.cancelAnimationFrame(window.simAnimationFrame);
                         window.simAnimationFrame = null;
                     }
+                    if (typeof window.stopSimulationLocationTracking === 'function') {
+                        window.stopSimulationLocationTracking();
+                    }
                 }
                 if (modalId === 'taxiModal' || modalId === 'auctionModal') {
                     const stopsContainerTaxi = document.getElementById('additionalStops');
@@ -3320,6 +3323,42 @@
         window.simAnimationFrame = null;
         window.simInitToken = 0;
         window.userMarker = null;
+        window.userAccuracyCircle = null;
+        window.simLocationWatchId = null;
+        window.approachRouteLine = null;
+        window.approachRoutingController = null;
+        window.approachCar = null;
+        window.latestSimUserLocation = null;
+        window.approachLastRouteLocation = null;
+        window.approachLastRouteRequestAt = 0;
+        window.approachViewFitted = false;
+
+        window.stopSimulationLocationTracking = function() {
+            if (window.simLocationWatchId !== null && navigator.geolocation) {
+                navigator.geolocation.clearWatch(window.simLocationWatchId);
+            }
+            window.simLocationWatchId = null;
+
+            if (window.approachRoutingController) {
+                window.approachRoutingController.abort();
+                window.approachRoutingController = null;
+            }
+
+            if (window.simMap) {
+                if (window.userMarker) window.simMap.removeLayer(window.userMarker);
+                if (window.userAccuracyCircle) window.simMap.removeLayer(window.userAccuracyCircle);
+                if (window.approachRouteLine) window.simMap.removeLayer(window.approachRouteLine);
+            }
+
+            window.userMarker = null;
+            window.userAccuracyCircle = null;
+            window.approachRouteLine = null;
+            window.approachCar = null;
+            window.latestSimUserLocation = null;
+            window.approachLastRouteLocation = null;
+            window.approachLastRouteRequestAt = 0;
+            window.approachViewFitted = false;
+        };
 
         window.openMapModal = function() {
             window.openModal('mapModal');
@@ -3330,6 +3369,83 @@
         window.initSimulationMap = async function() {
             const initToken = ++window.simInitToken;
             const overlay = document.getElementById('mapOverlayText');
+            window.stopSimulationLocationTracking();
+
+            const mapState = {
+                cars: null,
+                geolocation: navigator.geolocation ? 'locating' : 'unsupported',
+                routesReady: false,
+                routing: false,
+                routeError: false,
+                etaSeconds: null,
+                arrived: false
+            };
+
+            function renderMapOverlay() {
+                if (!overlay) return;
+                let iconClass = 'fas fa-map-marker-alt text-blue-500';
+                let primary = 'Готовим карту машин...';
+                let secondary = '';
+
+                if (mapState.cars === 0) {
+                    iconClass = 'fas fa-moon text-blue-500';
+                    primary = 'Свободных машин нет';
+                    secondary = mapState.geolocation === 'active' ? 'Ваше местоположение определено' : '';
+                } else if (mapState.arrived) {
+                    iconClass = 'fas fa-car-side text-green-500';
+                    primary = 'Ориентировочная машина рядом';
+                    secondary = 'Расчёт, водитель ещё не назначен';
+                } else if (Number.isFinite(mapState.etaSeconds)) {
+                    const minimumMinutes = Math.max(1, Math.ceil(mapState.etaSeconds / 60));
+                    const maximumMinutes = Math.max(minimumMinutes + 1, Math.ceil((mapState.etaSeconds + 90) / 60));
+                    iconClass = 'fas fa-car-side text-green-500';
+                    primary = `Ориентировочная машина: ${minimumMinutes}–${maximumMinutes} мин`;
+                    secondary = 'Расчёт, водитель ещё не назначен';
+                } else if (mapState.routing) {
+                    iconClass = 'fas fa-route text-green-500';
+                    primary = 'Рассчитываем время подачи...';
+                    secondary = Number.isFinite(mapState.cars) ? `На линии: ${mapState.cars}` : '';
+                } else if (mapState.geolocation === 'locating') {
+                    iconClass = 'fas fa-location-arrow text-blue-500';
+                    primary = 'Определяем ваше местоположение...';
+                    secondary = Number.isFinite(mapState.cars) ? `На линии: ${mapState.cars}` : 'Готовим маршруты машин';
+                } else if (mapState.geolocation === 'outside') {
+                    iconClass = 'fas fa-map-marker-alt text-amber-500';
+                    primary = 'Вы находитесь вне зоны карты';
+                    secondary = 'Подача рассчитывается для Белоусовки и района';
+                } else if (mapState.geolocation === 'denied') {
+                    iconClass = 'fas fa-location-arrow text-amber-500';
+                    primary = Number.isFinite(mapState.cars) ? `На линии: ${mapState.cars}` : 'Карта машин открыта';
+                    secondary = 'Разрешите геолокацию для расчёта подачи';
+                } else if (mapState.geolocation === 'unavailable' || mapState.geolocation === 'unsupported') {
+                    iconClass = 'fas fa-location-arrow text-gray-500';
+                    primary = Number.isFinite(mapState.cars) ? `На линии: ${mapState.cars}` : 'Карта машин открыта';
+                    secondary = 'Не удалось определить местоположение';
+                } else if (mapState.routeError) {
+                    iconClass = 'fas fa-route text-amber-500';
+                    primary = Number.isFinite(mapState.cars) ? `На линии: ${mapState.cars}` : 'Карта машин открыта';
+                    secondary = 'Время подачи временно недоступно';
+                } else if (!mapState.routesReady) {
+                    iconClass = 'fas fa-route text-blue-500';
+                    primary = 'Прокладываем маршруты...';
+                    secondary = Number.isFinite(mapState.cars) ? `На линии: ${mapState.cars}` : '';
+                } else {
+                    iconClass = 'fas fa-car-side text-green-500';
+                    primary = `На линии: ${mapState.cars}`;
+                    secondary = 'Машины двигаются по дорогам';
+                }
+
+                overlay.innerHTML =
+                    '<div class="flex items-center justify-center gap-2">' +
+                        '<i class="' + iconClass + ' shrink-0"></i>' +
+                        '<div class="min-w-0">' +
+                            '<div>' + primary + '</div>' +
+                            (secondary ? '<div class="mt-0.5 text-[10px] font-semibold opacity-75">' + secondary + '</div>' : '') +
+                        '</div>' +
+                    '</div>';
+            }
+
+            renderMapOverlay();
             if (!window.L) {
                 if (overlay) overlay.textContent = 'Карта временно недоступна';
                 return;
@@ -3416,35 +3532,80 @@
                 viewControl.addTo(window.simMap);
             }
 
-            // Показываем геопозицию клиента отдельной синей точкой.
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
-                    const userIcon = L.divIcon({
-                        className: 'user-location-icon',
-                        html: '<div style="background-color:#2563eb;border:3px solid #ffffff;border-radius:50%;width:20px;height:20px;box-shadow:0 0 12px rgba(37,99,235,0.9);"></div>',
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
-                    });
+            // Геопозиция обновляется только пока открыта карта и нигде не сохраняется.
+            const userIcon = L.divIcon({
+                className: 'user-location-icon',
+                html: '<div style="background-color:#2563eb;border:3px solid #ffffff;border-radius:50%;width:20px;height:20px;box-shadow:0 0 12px rgba(37,99,235,0.9);"></div>',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+            let userViewCentered = false;
 
-                    if (window.userMarker) window.simMap.removeLayer(window.userMarker);
-                    window.userMarker = L.marker([userLat, userLng], {
+            function handleSimulationLocation(position) {
+                if (initToken !== window.simInitToken ||
+                    document.getElementById('mapModal')?.getAttribute('aria-hidden') === 'true') return;
+
+                const userLat = Number(position.coords.latitude);
+                const userLng = Number(position.coords.longitude);
+                if (!Number.isFinite(userLat) || !Number.isFinite(userLng)) return;
+
+                const userPoint = [userLat, userLng];
+                const accuracy = Math.max(10, Math.min(2000, Number(position.coords.accuracy) || 50));
+                window.latestSimUserLocation = { point: userPoint, accuracy };
+
+                if (window.userMarker) {
+                    window.userMarker.setLatLng(userPoint);
+                    window.userMarker.setPopupContent('<b style="font-size:14px;">📍 Вы здесь</b><br><span style="font-size:11px;">Точность около ' + Math.round(accuracy) + ' м</span>');
+                } else {
+                    window.userMarker = L.marker(userPoint, {
                         icon: userIcon,
                         zIndexOffset: 1000
                     })
                         .addTo(window.simMap)
-                        .bindPopup('<b style="font-size:14px;">📍 Вы здесь</b>');
+                        .bindPopup('<b style="font-size:14px;">📍 Вы здесь</b><br><span style="font-size:11px;">Точность около ' + Math.round(accuracy) + ' м</span>');
+                }
 
-                    if (Math.abs(userLat - villageCenter[0]) < 0.1 && Math.abs(userLng - villageCenter[1]) < 0.1) {
-                        window.simMap.setView([userLat, userLng], 15);
+                if (window.userAccuracyCircle) {
+                    window.userAccuracyCircle.setLatLng(userPoint).setRadius(accuracy);
+                } else {
+                    window.userAccuracyCircle = L.circle(userPoint, {
+                        radius: accuracy,
+                        color: '#2563eb',
+                        weight: 1,
+                        fillColor: '#60a5fa',
+                        fillOpacity: 0.12,
+                        interactive: false
+                    }).addTo(window.simMap);
+                }
+
+                const insideServiceArea = haversineMeters(userPoint, villageCenter) <= 45000;
+                mapState.geolocation = insideServiceArea ? 'active' : 'outside';
+                mapState.routeError = false;
+                renderMapOverlay();
+
+                if (insideServiceArea) {
+                    if (!userViewCentered) {
+                        window.simMap.setView(userPoint, 15);
+                        userViewCentered = true;
                     }
-                }, error => {
-                    console.warn('Не удалось получить геопозицию пользователя:', error);
-                }, {
-                    timeout: 5000,
-                    maximumAge: 60000
-                });
+                    void planApproachToUser(userPoint);
+                }
+            }
+
+            function handleSimulationLocationError(error) {
+                console.warn('Не удалось получить геопозицию пользователя:', error);
+                mapState.geolocation = error && error.code === 1 ? 'denied' : 'unavailable';
+                renderMapOverlay();
+            }
+
+            if (navigator.geolocation) {
+                window.simLocationWatchId = navigator.geolocation.watchPosition(
+                    handleSimulationLocation,
+                    handleSimulationLocationError,
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+                );
+            } else {
+                renderMapOverlay();
             }
 
             // Полностью останавливаем предыдущий цикл перед повторным открытием карты.
@@ -3462,20 +3623,25 @@
             } catch (error) {
                 console.warn('Не удалось прочитать число машин:', error);
             }
+            mapState.cars = cars;
+            renderMapOverlay();
 
             if (cars === 0) {
-                if (overlay) overlay.innerHTML = '<i class="fas fa-moon text-blue-500 mr-2"></i> Свободных машин нет';
                 window.simMap.invalidateSize();
                 return;
             }
-
-            if (overlay) overlay.innerHTML = '<i class="fas fa-route text-blue-500 mr-2"></i> Прокладываем маршруты...';
 
             const taxiIcon = L.divIcon({
                 className: 'custom-taxi-icon',
                 html: '<div style="background-color:#facc15;border:2px solid #374151;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 6px rgba(0,0,0,0.3);"><i class="fas fa-taxi" style="font-size:11px;color:#111827;"></i></div>',
                 iconSize: [24, 24],
                 iconAnchor: [12, 12]
+            });
+            const approachTaxiIcon = L.divIcon({
+                className: 'custom-taxi-icon approach-taxi-icon',
+                html: '<div style="background-color:#22c55e;border:3px solid #ffffff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(34,197,94,0.28),0 4px 10px rgba(0,0,0,0.35);"><i class="fas fa-taxi" style="font-size:13px;color:#052e16;"></i></div>',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
             });
 
             const hub = [50.136840, 82.535025];
@@ -3640,10 +3806,13 @@
 
             const usableRoutes = routes.filter(route => Array.isArray(route.points) && route.points.length > 1);
             if (!usableRoutes.length) {
-                if (overlay) overlay.textContent = 'Маршруты временно недоступны';
+                mapState.routeError = true;
+                renderMapOverlay();
                 window.simMap.invalidateSize();
                 return;
             }
+            mapState.routesReady = true;
+            renderMapOverlay();
 
             const localRoute = usableRoutes.find(route => route.kind === 'local') || usableRoutes[0];
             const districtRoutes = usableRoutes.filter(route => route.kind === 'district');
@@ -3653,9 +3822,164 @@
             const animationStart = performance.now();
 
             function carDescription(route, waiting) {
+                if (route.kind === 'approach') {
+                    return '<b>Ориентировочная ближайшая машина</b><br>' +
+                        (waiting ? 'Может быть рядом с вами' : 'Движется в вашу сторону') +
+                        '<br><span style="font-size:11px;">Расчёт, водитель ещё не назначен</span>';
+                }
                 return '<b>Такси «Успех»</b><br>' +
                     (waiting ? 'Ожидает пассажира' : 'В пути') +
                     '<br><span style="font-size:12px;">' + route.label + '</span>';
+            }
+
+            function selectApproachCar(userPoint) {
+                if (window.approachCar) return window.approachCar;
+                const nearestCars = window.carMarkers
+                    .slice()
+                    .sort((left, right) => {
+                        return haversineMeters([left.lat, left.lng], userPoint) -
+                            haversineMeters([right.lat, right.lng], userPoint);
+                    })
+                    .slice(0, Math.min(3, window.carMarkers.length));
+                if (!nearestCars.length) return null;
+                return nearestCars[Math.floor(Math.random() * nearestCars.length)];
+            }
+
+            function routeLengthMeters(points) {
+                let distance = 0;
+                for (let index = 1; index < points.length; index++) {
+                    distance += haversineMeters(points[index - 1], points[index]);
+                }
+                return distance;
+            }
+
+            function approachRemainingMeters(car) {
+                if (!car || !car.route || car.route.kind !== 'approach' || car.arrived) return 0;
+                const points = car.route.points;
+                const nextIndex = Math.min(points.length - 1, car.pointIndex + 1);
+                let remaining = haversineMeters([car.lat, car.lng], points[nextIndex]);
+                for (let index = nextIndex + 1; index < points.length; index++) {
+                    remaining += haversineMeters(points[index - 1], points[index]);
+                }
+                return remaining;
+            }
+
+            async function planApproachToUser(userPoint) {
+                if (!mapState.routesReady || !window.carMarkers.length || mapState.routing ||
+                    initToken !== window.simInitToken || mapState.geolocation !== 'active') return;
+
+                if (window.approachLastRouteLocation &&
+                    haversineMeters(window.approachLastRouteLocation, userPoint) < 75) return;
+                if (window.approachLastRouteRequestAt &&
+                    Date.now() - window.approachLastRouteRequestAt < 15000) return;
+
+                const selectedCar = selectApproachCar(userPoint);
+                if (!selectedCar) return;
+
+                const controller = new AbortController();
+                window.approachRoutingController = controller;
+                window.approachLastRouteRequestAt = Date.now();
+                mapState.routing = true;
+                mapState.routeError = false;
+                mapState.etaSeconds = null;
+                mapState.arrived = false;
+                renderMapOverlay();
+
+                const startPoint = [selectedCar.lat, selectedCar.lng];
+                const timeoutId = setTimeout(() => controller.abort(), 7000);
+                try {
+                    const coordinates = startPoint[1] + ',' + startPoint[0] + ';' + userPoint[1] + ',' + userPoint[0];
+                    const url = 'https://router.project-osrm.org/route/v1/driving/' +
+                        coordinates + '?overview=full&geometries=geojson&steps=false';
+                    const response = await fetch(url, {
+                        signal: controller.signal,
+                        headers: { Accept: 'application/json' }
+                    });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    const data = await response.json();
+                    const routeData = data.routes && data.routes[0];
+                    const routeCoordinates = routeData && routeData.geometry && routeData.geometry.coordinates;
+                    if (!Array.isArray(routeCoordinates) || routeCoordinates.length < 2) {
+                        throw new Error('Маршрут к клиенту не найден');
+                    }
+
+                    if (initToken !== window.simInitToken ||
+                        document.getElementById('mapModal')?.getAttribute('aria-hidden') === 'true') return;
+
+                    const approachPoints = simplifyRoute(
+                        routeCoordinates.map(point => [point[1], point[0]]),
+                        5
+                    );
+                    const geometryDistance = routeLengthMeters(approachPoints);
+                    const routeDistance = Number(routeData.distance) > 0 ? Number(routeData.distance) : geometryDistance;
+                    const routeDuration = Number(routeData.duration) > 0 ? Number(routeData.duration) : routeDistance / 8;
+                    const approachSpeed = Math.max(4, Math.min(14, routeDistance / Math.max(routeDuration, 1)));
+                    const animationDuration = geometryDistance / approachSpeed;
+
+                    if (window.approachRouteLine) {
+                        window.simMap.removeLayer(window.approachRouteLine);
+                    }
+                    window.approachRouteLine = L.polyline(approachPoints, {
+                        color: '#22c55e',
+                        weight: 5,
+                        opacity: 0.82,
+                        dashArray: '9 9',
+                        interactive: false
+                    }).addTo(window.simMap);
+
+                    window.approachCar = selectedCar;
+                    selectedCar.isApproach = true;
+                    selectedCar.arrived = false;
+                    selectedCar.route = {
+                        id: 'client-approach',
+                        label: 'Ориентировочная подача клиенту',
+                        kind: 'approach',
+                        points: approachPoints
+                    };
+                    selectedCar.pointIndex = 0;
+                    selectedCar.direction = 1;
+                    selectedCar.lat = approachPoints[0][0];
+                    selectedCar.lng = approachPoints[0][1];
+                    selectedCar.baseSpeed = approachSpeed;
+                    selectedCar.speedFactor = 1;
+                    selectedCar.pauseUntil = performance.now();
+                    selectedCar.waiting = false;
+                    selectedCar.marker
+                        .setIcon(approachTaxiIcon)
+                        .setLatLng(approachPoints[0])
+                        .setPopupContent(carDescription(selectedCar.route, false));
+                    selectedCar.marker.unbindTooltip().bindTooltip('Ориентировочная машина', {
+                        direction: 'top',
+                        offset: [0, -16],
+                        opacity: 0.95
+                    });
+
+                    window.approachLastRouteLocation = userPoint.slice();
+                    mapState.etaSeconds = animationDuration;
+                    mapState.routeError = false;
+                    mapState.routing = false;
+                    renderMapOverlay();
+
+                    if (!window.approachViewFitted) {
+                        window.simMap.fitBounds(window.approachRouteLine.getBounds(), {
+                            padding: [45, 45],
+                            maxZoom: 16
+                        });
+                        window.approachViewFitted = true;
+                    }
+                } catch (error) {
+                    if (error.name !== 'AbortError' && initToken === window.simInitToken) {
+                        console.warn('Не удалось рассчитать подачу машины:', error);
+                        mapState.routing = false;
+                        mapState.routeError = true;
+                        renderMapOverlay();
+                    }
+                } finally {
+                    clearTimeout(timeoutId);
+                    if (window.approachRoutingController === controller) {
+                        window.approachRoutingController = null;
+                    }
+                }
             }
 
             for (let index = 0; index < cars; index++) {
@@ -3705,14 +4029,14 @@
                 });
             }
 
-            if (overlay) {
-                overlay.innerHTML = '<i class="fas fa-car-side text-green-500 mr-2"></i> На линии: ' +
-                    cars +
-                    ' · маршруты по дорогам';
+            renderMapOverlay();
+            if (window.latestSimUserLocation && mapState.geolocation === 'active') {
+                void planApproachToUser(window.latestSimUserLocation.point);
             }
             window.simMap.invalidateSize();
 
             function advanceCar(car, distanceMeters, now) {
+                const requestedDistance = distanceMeters;
                 let remaining = distanceMeters;
                 let guard = 0;
 
@@ -3722,12 +4046,23 @@
                     const targetIndex = car.pointIndex + car.direction;
 
                     if (targetIndex < 0 || targetIndex >= points.length) {
+                        if (car.isApproach) {
+                            car.arrived = true;
+                            car.waiting = true;
+                            car.pauseUntil = Number.POSITIVE_INFINITY;
+                            car.marker.setLatLng([car.lat, car.lng]);
+                            car.marker.setPopupContent(carDescription(car.route, true));
+                            mapState.arrived = true;
+                            mapState.etaSeconds = 0;
+                            renderMapOverlay();
+                            return requestedDistance - remaining;
+                        }
                         car.direction *= -1;
                         car.pauseUntil = now + 3000 + Math.random() * 9000;
                         car.waiting = true;
                         car.marker.setLatLng([car.lat, car.lng]);
                         car.marker.setPopupContent(carDescription(car.route, true));
-                        return;
+                        return requestedDistance - remaining;
                     }
 
                     const target = points[targetIndex];
@@ -3756,14 +4091,25 @@
                 }
 
                 car.marker.setLatLng([car.lat, car.lng]);
+                return requestedDistance - remaining;
             }
 
             let previousFrame = animationStart;
+            let lastEtaUpdate = animationStart;
             function animateCars(now) {
                 const elapsedSeconds = Math.min((now - previousFrame) / 1000, 0.25);
                 previousFrame = now;
 
                 window.carMarkers.forEach(car => {
+                    if (car.isApproach) {
+                        if (car.arrived || now < car.pauseUntil) return;
+                        advanceCar(car, car.baseSpeed * elapsedSeconds, now);
+                        if (!car.arrived && now - lastEtaUpdate >= 1000) {
+                            mapState.etaSeconds = approachRemainingMeters(car) / Math.max(car.baseSpeed, 1);
+                        }
+                        return;
+                    }
+
                     if (now < car.pauseUntil) return;
 
                     if (car.waiting) {
@@ -3778,6 +4124,11 @@
 
                     advanceCar(car, car.baseSpeed * car.speedFactor * elapsedSeconds, now);
                 });
+
+                if (now - lastEtaUpdate >= 1000) {
+                    lastEtaUpdate = now;
+                    if (window.approachCar && !window.approachCar.arrived) renderMapOverlay();
+                }
 
                 window.simAnimationFrame = window.requestAnimationFrame(animateCars);
             }

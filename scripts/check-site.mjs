@@ -11,6 +11,17 @@ for (const file of htmlFiles) {
   }
 }
 const index = await readFile('index.html', 'utf8');
+const inlineModule = index.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1] || '';
+if (!inlineModule) {
+  failures.push('index.html: inline module script is missing');
+} else {
+  const parseableModule = inlineModule.replace(/^\s*import\s+[^;]+;\s*$/gm, '');
+  try {
+    Function(parseableModule);
+  } catch (error) {
+    failures.push('index.html: inline module syntax error: ' + error.message);
+  }
+}
 for (const expected of ['BASE_PRICE: 800', 'от <strong>800 тенге</strong>', "register('./service-worker.js', { updateViaCache: 'none' })", 'нажмите «Отправить»']) {
   if (!index.includes(expected)) failures.push('index.html: missing ' + expected);
 }
@@ -148,7 +159,19 @@ if (mapStart === -1 || mapEnd === -1) {
     'haversineMeters',
     'requestAnimationFrame(animateCars)',
     'initToken !== window.simInitToken',
-    'data-map-view="district"'
+    'data-map-view="district"',
+    'navigator.geolocation.watchPosition',
+    'navigator.geolocation.clearWatch',
+    'enableHighAccuracy: true',
+    'stopSimulationLocationTracking',
+    'planApproachToUser',
+    'approachRemainingMeters',
+    'Ориентировочная машина',
+    'водитель ещё не назначен',
+    'L.polyline(approachPoints',
+    'routeData.duration',
+    'approachLastRouteRequestAt',
+    'Расчёт, водитель ещё не назначен'
   ]) {
     if (!mapSimulation.includes(expected)) failures.push('index.html: map simulation missing ' + expected);
   }
@@ -159,17 +182,22 @@ if (mapStart === -1 || mapEnd === -1) {
   if (localRouteCount !== 1) failures.push('index.html: expected 1 local route, found ' + localRouteCount);
   if (/const roadNodes\s*=/.test(mapSimulation)) failures.push('index.html: old straight-line road graph remains');
   if (/simInterval|setInterval/.test(mapSimulation)) failures.push('index.html: old interval map animation remains');
+  if (/navigator\.geolocation\.getCurrentPosition/.test(mapSimulation)) failures.push('index.html: map still uses one-time geolocation instead of live tracking');
+  if (/Водитель назначен/.test(mapSimulation)) failures.push('index.html: simulated car must not be presented as an assigned real driver');
 }
+
+const mapOverlayTag = index.match(/<div id="mapOverlayText"[^>]*>/)?.[0] || '';
+if (!mapOverlayTag || /whitespace-nowrap/.test(mapOverlayTag)) failures.push('index.html: mobile map status can overflow the screen');
 
 if (/WhatsApp Image 2026-08-24/.test(index)) failures.push('index.html: broken StroyDom image remains');
 if (/chip\.innerHTML\s*=/.test(index)) failures.push('index.html: address history uses innerHTML');
 const manifest = JSON.parse(await readFile('site.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v3-holidays'")) failures.push('service-worker.js: holiday cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v4-live-map'")) failures.push('service-worker.js: live map cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v[12](?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v[123](?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
 for (const expected of ['2026-03-09', '2026-03-24', '2026-03-25', '2026-05-11', '2026-05-27', '2026-10-26', "start: '03-15'", 'fromYear: 2026']) {
   if (!holidayCalendar.includes(expected)) failures.push('holiday-calendar.js: missing official 2026 date ' + expected);
 }

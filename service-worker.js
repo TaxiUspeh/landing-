@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v3-holidays';
+const CACHE_NAME = 'taxi-uspeh-v4-live-map';
 const APP_SHELL = [
   './',
   './index.html',

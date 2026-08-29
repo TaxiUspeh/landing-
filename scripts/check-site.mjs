@@ -164,7 +164,10 @@ if (mapStart === -1 || mapEnd === -1) {
 } else {
   const mapSimulation = index.slice(mapStart, mapEnd);
   for (const expected of [
-    'Магазины и школа',
+    'Центр и магазины',
+    'Школа и южная часть',
+    'Западная часть Белоусовки',
+    'Северная и восточная часть',
     'Белоусовка — Белокаменка',
     'Белоусовка — Секисовка',
     'Белоусовка — Прогресс',
@@ -186,7 +189,18 @@ if (mapStart === -1 || mapEnd === -1) {
     'L.polyline(approachPoints',
     'routeData.duration',
     'approachLastRouteRequestAt',
-    'Расчёт, водитель ещё не назначен'
+    'Расчёт, водитель ещё не назначен',
+    "const motionStateKey = 'taxi_sim_motion_v2'",
+    'const desiredLocalCarCount = cars <= 2',
+    'Math.round(cars * 0.65)',
+    'persistSimulationMotionState()',
+    'const restoredElapsedMs = restoredMotionState',
+    'pauseAtKnownStop',
+    'switchCarToRoute',
+    'selectApproachCarByRoadTime',
+    'table/v1/driving/',
+    'minimumDuration',
+    'findRouteStopIndexes'
   ]) {
     if (!mapSimulation.includes(expected)) failures.push('index.html: map simulation missing ' + expected);
   }
@@ -194,11 +208,13 @@ if (mapStart === -1 || mapEnd === -1) {
   const districtRouteCount = (mapSimulation.match(/kind: 'district'/g) || []).length;
   const localRouteCount = (mapSimulation.match(/kind: 'local'/g) || []).length;
   if (districtRouteCount !== 5) failures.push('index.html: expected 5 district routes, found ' + districtRouteCount);
-  if (localRouteCount !== 1) failures.push('index.html: expected 1 local route, found ' + localRouteCount);
+  if (localRouteCount !== 4) failures.push('index.html: expected 4 local routes, found ' + localRouteCount);
   if (/const roadNodes\s*=/.test(mapSimulation)) failures.push('index.html: old straight-line road graph remains');
   if (/simInterval|setInterval/.test(mapSimulation)) failures.push('index.html: old interval map animation remains');
   if (/navigator\.geolocation\.getCurrentPosition/.test(mapSimulation)) failures.push('index.html: map still uses one-time geolocation instead of live tracking');
   if (/Водитель назначен/.test(mapSimulation)) failures.push('index.html: simulated car must not be presented as an assigned real driver');
+  if (/id: 'local-places'/.test(mapSimulation)) failures.push('index.html: old single local route remains');
+  if (/selectApproachCar\s*\(/.test(mapSimulation)) failures.push('index.html: random nearest-car selection remains');
 }
 
 const mapOverlayTag = index.match(/<div id="mapOverlayText"[^>]*>/)?.[0] || '';
@@ -253,10 +269,10 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v5-food-pwa'")) failures.push('service-worker.js: food PWA cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v6-natural-map'")) failures.push('service-worker.js: natural map cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v[1234](?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v[12345](?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
 for (const expected of [
   "'./food.webmanifest'",
   "'./shashlyk.webmanifest'",

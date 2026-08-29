@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v5-food-pwa';
+const CACHE_NAME = 'taxi-uspeh-v6-natural-map';
 const APP_SHELL = [
   './',
   './index.html',

@@ -9,25 +9,22 @@
   "theme_color": "#FFC107",
   "icons": [
     {
-      "src": "/landing-/favicon-32x32.png",
-      "sizes": "1024x1024",
-      "type": "image/png"
-    },
-    {
       "src": "/landing-/favicon-192x192.png",
-      "sizes": "1024x1024",
-      "type": "image/png"
-    },
-    {
-      "src": "/landing-/apple-touch-icon.png",
-      "sizes": "1024x1024",
-      "type": "image/png"
-    },
-    {
-      "src": "/landing-/favicon-192x192.png",
-      "sizes": "1024x1024",
+      "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/landing-/pwa-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/landing-/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

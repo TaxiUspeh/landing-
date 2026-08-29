@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v6-natural-map';
+const CACHE_NAME = 'taxi-uspeh-v7-pwa-icons';
 const APP_SHELL = [
   './',
   './index.html',
@@ -15,7 +15,9 @@ const APP_SHELL = [
   './site.webmanifest',
   './favicon-32x32.png',
   './favicon-192x192.png',
-  './apple-touch-icon.png'
+  './apple-touch-icon.png',
+  './pwa-icon-512x512.png',
+  './pwa-maskable-512x512.png'
 ];
 
 self.addEventListener('install', event => {

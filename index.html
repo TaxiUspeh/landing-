@@ -3332,8 +3332,14 @@
         window.approachLastRouteLocation = null;
         window.approachLastRouteRequestAt = 0;
         window.approachViewFitted = false;
+        window.persistSimulationMotionState = null;
 
         window.stopSimulationLocationTracking = function() {
+            if (typeof window.persistSimulationMotionState === 'function') {
+                window.persistSimulationMotionState();
+            }
+            window.persistSimulationMotionState = null;
+
             if (window.simLocationWatchId !== null && navigator.geolocation) {
                 navigator.geolocation.clearWatch(window.simLocationWatchId);
             }
@@ -3651,20 +3657,54 @@
             const hermes = [50.135968, 82.533004];
             const leonid = [50.137562, 82.528800];
             const shashlyk = [50.1343, 82.5407];
+            const westResidential = [50.1358, 82.5125];
+            const southResidential = [50.1198, 82.5310];
+            const northResidential = [50.1475, 82.5335];
+            const eastResidential = [50.1415, 82.5500];
 
             // Все маршруты строятся по дорожной геометрии OSRM. Fallback-точки нужны только
             // на случай временной недоступности сервиса маршрутизации.
             const routeSpecs = [
                 {
-                    id: 'local-places',
-                    label: 'Магазины и школа',
+                    id: 'local-center',
+                    label: 'Центр и магазины',
                     kind: 'local',
-                    waypoints: [station, stroyDom, leonid, hermes, school, shashlyk, station],
+                    waypoints: [station, stroyDom, leonid, hermes, station],
                     fallback: [
-                        station, stroyDom, leonid, hermes,
-                        [50.1335, 82.5337], [50.1300, 82.5342], school,
-                        [50.1290, 82.5390], shashlyk,
-                        [50.1350, 82.5370], station
+                        station, stroyDom, leonid, hermes, station
+                    ]
+                },
+                {
+                    id: 'local-school-south',
+                    label: 'Школа и южная часть',
+                    kind: 'local',
+                    waypoints: [station, school, southResidential, shashlyk, hermes, station],
+                    fallback: [
+                        station, [50.1300, 82.5342], school,
+                        southResidential, [50.1260, 82.5380], shashlyk,
+                        [50.1350, 82.5370], hermes, station
+                    ]
+                },
+                {
+                    id: 'local-west',
+                    label: 'Западная часть Белоусовки',
+                    kind: 'local',
+                    waypoints: [station, westResidential, [50.1278, 82.5165], school, station],
+                    fallback: [
+                        station, [50.1360, 82.5220], westResidential,
+                        [50.1278, 82.5165], [50.1250, 82.5250], school,
+                        [50.1315, 82.5320], station
+                    ]
+                },
+                {
+                    id: 'local-north-east',
+                    label: 'Северная и восточная часть',
+                    kind: 'local',
+                    waypoints: [station, northResidential, eastResidential, shashlyk, hermes, station],
+                    fallback: [
+                        station, [50.1420, 82.5310], northResidential,
+                        [50.1470, 82.5430], eastResidential, shashlyk,
+                        [50.1360, 82.5380], hermes, station
                     ]
                 },
                 {
@@ -3730,6 +3770,31 @@
                 return simplified;
             }
 
+            function findRouteStopIndexes(points, waypoints) {
+                if (!Array.isArray(points) || points.length < 3 || !Array.isArray(waypoints)) return [];
+                const indexes = waypoints.slice(1, -1).map(waypoint => {
+                    let closestIndex = 1;
+                    let closestDistance = Number.POSITIVE_INFINITY;
+                    for (let index = 1; index < points.length - 1; index++) {
+                        const distance = haversineMeters(points[index], waypoint);
+                        if (distance < closestDistance) {
+                            closestDistance = distance;
+                            closestIndex = index;
+                        }
+                    }
+                    return closestIndex;
+                });
+                return Array.from(new Set(indexes)).sort((left, right) => left - right);
+            }
+
+            function withRouteMetadata(spec, points, source) {
+                return Object.assign({}, spec, {
+                    points,
+                    source,
+                    stopIndexes: findRouteStopIndexes(points, spec.waypoints)
+                });
+            }
+
             const routeCacheKey = 'taxi_sim_road_routes_v1';
             let cachedRoutes = {};
             try {
@@ -3745,7 +3810,7 @@
             async function loadRoadRoute(spec) {
                 const cached = cachedRoutes[spec.id];
                 if (Array.isArray(cached) && cached.length > 1) {
-                    return Object.assign({}, spec, { points: cached, source: 'cache' });
+                    return withRouteMetadata(spec, cached, 'cache');
                 }
 
                 const controller = new AbortController();
@@ -3775,19 +3840,82 @@
                     const simplified = simplifyRoute(roadPoints, spec.kind === 'district' ? 24 : 8);
                     cachedRoutes[spec.id] = simplified;
                     cacheChanged = true;
-                    return Object.assign({}, spec, { points: simplified, source: 'road' });
+                    return withRouteMetadata(spec, simplified, 'road');
                 } catch (error) {
                     console.warn('Используем резервный маршрут ' + spec.label + ':', error);
-                    return Object.assign({}, spec, {
-                        points: simplifyRoute(spec.fallback, 3),
-                        source: 'fallback'
-                    });
+                    return withRouteMetadata(spec, simplifyRoute(spec.fallback, 3), 'fallback');
                 } finally {
                     clearTimeout(timeoutId);
                 }
             }
 
-            const routes = await Promise.all(routeSpecs.map(loadRoadRoute));
+            const motionStateKey = 'taxi_sim_motion_v2';
+            const motionStateMaxAge = 15 * 60 * 1000;
+            let restoredMotionState = null;
+            try {
+                const parsedMotionState = JSON.parse(localStorage.getItem(motionStateKey));
+                if (parsedMotionState && parsedMotionState.version === 2 &&
+                    Array.isArray(parsedMotionState.cars) &&
+                    Date.now() - Number(parsedMotionState.savedAt) < motionStateMaxAge) {
+                    restoredMotionState = parsedMotionState;
+                }
+            } catch (error) {
+                console.warn('Не удалось восстановить движение машин:', error);
+            }
+
+            const localSpecs = routeSpecs.filter(spec => spec.kind === 'local');
+            const districtSpecs = routeSpecs.filter(spec => spec.kind === 'district');
+            const desiredLocalCarCount = cars <= 2
+                ? cars
+                : cars === 3
+                    ? 2
+                    : cars === 4
+                        ? 3
+                        : Math.max(3, Math.min(cars, Math.round(cars * 0.65)));
+            const assignmentRotation = Math.floor(Date.now() / (5 * 60 * 1000));
+            const restoredCarsBySlot = new Map(
+                (restoredMotionState?.cars || []).map(car => [Number(car.slotId), car])
+            );
+            let localAssignmentIndex = 0;
+            let districtAssignmentIndex = 0;
+            const assignedRouteIds = {
+                local: new Set(),
+                district: new Set()
+            };
+            const assignedSpecs = Array.from({ length: cars }, (_, slotId) => {
+                const kind = slotId < desiredLocalCarCount ? 'local' : 'district';
+                const pool = kind === 'local' ? localSpecs : districtSpecs;
+                const restored = restoredCarsBySlot.get(slotId);
+                const restoredSpec = restored && routeSpecs.find(spec => spec.id === restored.routeId && spec.kind === kind);
+                if (restoredSpec &&
+                    (!assignedRouteIds[kind].has(restoredSpec.id) || assignedRouteIds[kind].size >= pool.length)) {
+                    assignedRouteIds[kind].add(restoredSpec.id);
+                    return restoredSpec;
+                }
+
+                const poolIndex = kind === 'local' ? localAssignmentIndex++ : districtAssignmentIndex++;
+                let selectedSpec = pool[(assignmentRotation + poolIndex) % pool.length];
+                for (let attempt = 0; attempt < pool.length; attempt++) {
+                    const candidate = pool[(assignmentRotation + poolIndex + attempt) % pool.length];
+                    if (!assignedRouteIds[kind].has(candidate.id)) {
+                        selectedSpec = candidate;
+                        break;
+                    }
+                }
+                assignedRouteIds[kind].add(selectedSpec.id);
+                return selectedSpec;
+            });
+
+            const specsToLoadById = new Map(assignedSpecs.map(spec => [spec.id, spec]));
+            function addStandbyRoute(pool) {
+                if (!pool.length) return;
+                const standby = pool.find(spec => !specsToLoadById.has(spec.id));
+                if (standby) specsToLoadById.set(standby.id, standby);
+            }
+            addStandbyRoute(localSpecs);
+            if (cars > desiredLocalCarCount) addStandbyRoute(districtSpecs);
+
+            const routes = await Promise.all(Array.from(specsToLoadById.values()).map(loadRoadRoute));
             if (cacheChanged) {
                 try {
                     localStorage.setItem(routeCacheKey, JSON.stringify({
@@ -3814,11 +3942,9 @@
             mapState.routesReady = true;
             renderMapOverlay();
 
-            const localRoute = usableRoutes.find(route => route.kind === 'local') || usableRoutes[0];
+            const routesById = new Map(usableRoutes.map(route => [route.id, route]));
+            const localRoutes = usableRoutes.filter(route => route.kind === 'local');
             const districtRoutes = usableRoutes.filter(route => route.kind === 'district');
-            const rotation = districtRoutes.length
-                ? Math.floor(Date.now() / 60000) % districtRoutes.length
-                : 0;
             const animationStart = performance.now();
 
             function carDescription(route, waiting) {
@@ -3832,17 +3958,48 @@
                     '<br><span style="font-size:12px;">' + route.label + '</span>';
             }
 
-            function selectApproachCar(userPoint) {
+            async function selectApproachCarByRoadTime(userPoint, signal) {
                 if (window.approachCar) return window.approachCar;
-                const nearestCars = window.carMarkers
+                const candidates = window.carMarkers
                     .slice()
                     .sort((left, right) => {
                         return haversineMeters([left.lat, left.lng], userPoint) -
                             haversineMeters([right.lat, right.lng], userPoint);
                     })
-                    .slice(0, Math.min(3, window.carMarkers.length));
-                if (!nearestCars.length) return null;
-                return nearestCars[Math.floor(Math.random() * nearestCars.length)];
+                    .slice(0, Math.min(8, window.carMarkers.length));
+                if (!candidates.length) return null;
+                if (candidates.length === 1) return candidates[0];
+
+                try {
+                    const points = candidates.map(car => [car.lat, car.lng]).concat([userPoint]);
+                    const coordinates = points.map(point => point[1] + ',' + point[0]).join(';');
+                    const sourceIndexes = candidates.map((_, index) => index).join(';');
+                    const destinationIndex = points.length - 1;
+                    const url = 'https://router.project-osrm.org/table/v1/driving/' + coordinates +
+                        '?sources=' + sourceIndexes + '&destinations=' + destinationIndex;
+                    const response = await fetch(url, {
+                        signal,
+                        headers: { Accept: 'application/json' }
+                    });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    const data = await response.json();
+                    const durations = Array.isArray(data.durations)
+                        ? data.durations.map(row => Number(row && row[0]))
+                        : [];
+                    let bestIndex = -1;
+                    let minimumDuration = Number.POSITIVE_INFINITY;
+                    durations.forEach((duration, index) => {
+                        if (Number.isFinite(duration) && duration < minimumDuration) {
+                            minimumDuration = duration;
+                            bestIndex = index;
+                        }
+                    });
+                    if (bestIndex >= 0) return candidates[bestIndex];
+                } catch (error) {
+                    if (error.name === 'AbortError') throw error;
+                    console.warn('Не удалось сравнить время подачи машин, используем ближайшую:', error);
+                }
+                return candidates[0];
             }
 
             function routeLengthMeters(points) {
@@ -3873,9 +4030,6 @@
                 if (window.approachLastRouteRequestAt &&
                     Date.now() - window.approachLastRouteRequestAt < 15000) return;
 
-                const selectedCar = selectApproachCar(userPoint);
-                if (!selectedCar) return;
-
                 const controller = new AbortController();
                 window.approachRoutingController = controller;
                 window.approachLastRouteRequestAt = Date.now();
@@ -3885,9 +4039,12 @@
                 mapState.arrived = false;
                 renderMapOverlay();
 
-                const startPoint = [selectedCar.lat, selectedCar.lng];
-                const timeoutId = setTimeout(() => controller.abort(), 7000);
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
                 try {
+                    const selectedCar = await selectApproachCarByRoadTime(userPoint, controller.signal);
+                    if (!selectedCar) throw new Error('Свободная машина не найдена');
+
+                    const startPoint = [selectedCar.lat, selectedCar.lng];
                     const coordinates = startPoint[1] + ',' + startPoint[0] + ';' + userPoint[1] + ',' + userPoint[0];
                     const url = 'https://router.project-osrm.org/route/v1/driving/' +
                         coordinates + '?overview=full&geometries=geojson&steps=false';
@@ -3968,8 +4125,10 @@
                         window.approachViewFitted = true;
                     }
                 } catch (error) {
-                    if (error.name !== 'AbortError' && initToken === window.simInitToken) {
-                        console.warn('Не удалось рассчитать подачу машины:', error);
+                    if (initToken === window.simInitToken) {
+                        if (error.name !== 'AbortError') {
+                            console.warn('Не удалось рассчитать подачу машины:', error);
+                        }
                         mapState.routing = false;
                         mapState.routeError = true;
                         renderMapOverlay();
@@ -3982,10 +4141,54 @@
                 }
             }
 
-            for (let index = 0; index < cars; index++) {
-                const route = index === 0 || !districtRoutes.length
-                    ? localRoute
-                    : districtRoutes[(rotation + index - 1) % districtRoutes.length];
+            function routePoolForKind(kind) {
+                const pool = kind === 'district' ? districtRoutes : localRoutes;
+                return pool.length ? pool : usableRoutes;
+            }
+
+            function cruisingSpeedForRoute(route) {
+                return route.kind === 'district'
+                    ? 16 + Math.random() * 7
+                    : 4.5 + Math.random() * 3.5;
+            }
+
+            function chooseNextRoute(car) {
+                const pool = routePoolForKind(car.homeRoute?.kind || car.route.kind);
+                if (pool.length <= 1) return pool[0] || car.route;
+                const currentIndex = Math.max(0, pool.findIndex(route => route.id === car.route.id));
+                const offset = 1 + Math.floor(Math.random() * (pool.length - 1));
+                return pool[(currentIndex + offset) % pool.length];
+            }
+
+            function switchCarToRoute(car, route, now) {
+                const distanceToStart = haversineMeters([car.lat, car.lng], route.points[0]);
+                const distanceToEnd = haversineMeters([car.lat, car.lng], route.points[route.points.length - 1]);
+                const startAtBeginning = distanceToStart <= distanceToEnd;
+                const pointIndex = startAtBeginning ? 0 : route.points.length - 1;
+                const point = route.points[pointIndex];
+
+                car.route = route;
+                car.homeRoute = route;
+                car.pointIndex = pointIndex;
+                car.direction = startAtBeginning ? 1 : -1;
+                car.lat = point[0];
+                car.lng = point[1];
+                car.baseSpeed = cruisingSpeedForRoute(route);
+                car.speedFactor = 0.8 + Math.random() * 0.28;
+                car.nextSpeedChange = now + 5000 + Math.random() * 9000;
+                car.pauseUntil = now + 6000 + Math.random() * 15000;
+                car.waiting = true;
+                car.marker
+                    .setLatLng(point)
+                    .setPopupContent(carDescription(route, true));
+                car.marker.unbindTooltip().bindTooltip(route.label, {
+                    direction: 'top',
+                    offset: [0, -13],
+                    opacity: 0.9
+                });
+            }
+
+            function randomPositionOnRoute(route) {
                 const points = route.points;
                 const direction = Math.random() < 0.5 ? 1 : -1;
                 const maxStartIndex = Math.max(1, points.length - 1);
@@ -4002,38 +4205,111 @@
                 const nextPoint = points[safeNextIndex];
                 const lat = startPoint[0] + (nextPoint[0] - startPoint[0]) * segmentProgress;
                 const lng = startPoint[1] + (nextPoint[1] - startPoint[1]) * segmentProgress;
+                return { direction, pointIndex: safePointIndex, lat, lng };
+            }
 
-                const marker = L.marker([lat, lng], { icon: taxiIcon })
+            const restoredElapsedMs = restoredMotionState
+                ? Math.max(0, Date.now() - Number(restoredMotionState.savedAt))
+                : 0;
+
+            for (let index = 0; index < cars; index++) {
+                const assignedSpec = assignedSpecs[index];
+                const route = routesById.get(assignedSpec.id) || routePoolForKind(assignedSpec.kind)[0];
+                if (!route) continue;
+
+                const restored = restoredCarsBySlot.get(index);
+                const restoredIsValid = restored && restored.routeId === route.id &&
+                    Number.isFinite(Number(restored.lat)) && Number.isFinite(Number(restored.lng));
+                const randomPosition = randomPositionOnRoute(route);
+                const position = restoredIsValid
+                    ? {
+                        direction: Number(restored.direction) === -1 ? -1 : 1,
+                        pointIndex: Math.max(0, Math.min(route.points.length - 1, Number(restored.pointIndex) || 0)),
+                        lat: Number(restored.lat),
+                        lng: Number(restored.lng)
+                    }
+                    : randomPosition;
+                const remainingPauseMs = restoredIsValid
+                    ? Math.max(0, (Number(restored.pauseRemainingMs) || 0) - restoredElapsedMs)
+                    : Math.random() * 4500;
+
+                const marker = L.marker([position.lat, position.lng], { icon: taxiIcon })
                     .addTo(window.simMap)
-                    .bindPopup(carDescription(route, false))
+                    .bindPopup(carDescription(route, remainingPauseMs > 0))
                     .bindTooltip(route.label, {
                         direction: 'top',
                         offset: [0, -13],
                         opacity: 0.9
                     });
 
-                window.carMarkers.push({
+                const car = {
+                    slotId: index,
                     marker,
                     route,
-                    pointIndex: safePointIndex,
-                    direction,
-                    lat,
-                    lng,
-                    baseSpeed: route.kind === 'district'
-                        ? 22 + Math.random() * 8
-                        : 6 + Math.random() * 4,
-                    speedFactor: 0.8 + Math.random() * 0.25,
+                    homeRoute: route,
+                    pointIndex: position.pointIndex,
+                    direction: position.direction,
+                    lat: position.lat,
+                    lng: position.lng,
+                    baseSpeed: cruisingSpeedForRoute(route),
+                    speedFactor: restoredIsValid
+                        ? Math.max(0.65, Math.min(1.15, Number(restored.speedFactor) || 1))
+                        : 0.8 + Math.random() * 0.28,
                     nextSpeedChange: animationStart + 4000 + Math.random() * 8000,
-                    pauseUntil: animationStart + Math.random() * 4500,
-                    waiting: false
-                });
+                    pauseUntil: animationStart + remainingPauseMs,
+                    waiting: remainingPauseMs > 0
+                };
+                window.carMarkers.push(car);
+
+                if (restoredIsValid && remainingPauseMs === 0 && restoredElapsedMs > 0) {
+                    const catchUpSeconds = Math.min(180, restoredElapsedMs / 1000);
+                    advanceCar(car, car.baseSpeed * car.speedFactor * catchUpSeconds, animationStart);
+                }
             }
+
+            function persistSimulationMotionState() {
+                const now = performance.now();
+                const stateCars = window.carMarkers
+                    .filter(car => !car.isApproach && car.route?.kind !== 'approach')
+                    .map(car => ({
+                        slotId: car.slotId,
+                        routeId: car.route.id,
+                        pointIndex: car.pointIndex,
+                        direction: car.direction,
+                        lat: car.lat,
+                        lng: car.lng,
+                        speedFactor: car.speedFactor,
+                        pauseRemainingMs: Number.isFinite(car.pauseUntil)
+                            ? Math.max(0, car.pauseUntil - now)
+                            : 0
+                    }));
+                try {
+                    localStorage.setItem(motionStateKey, JSON.stringify({
+                        version: 2,
+                        savedAt: Date.now(),
+                        cars: stateCars
+                    }));
+                } catch (error) {
+                    console.warn('Не удалось сохранить движение машин:', error);
+                }
+            }
+            window.persistSimulationMotionState = persistSimulationMotionState;
 
             renderMapOverlay();
             if (window.latestSimUserLocation && mapState.geolocation === 'active') {
                 void planApproachToUser(window.latestSimUserLocation.point);
             }
             window.simMap.invalidateSize();
+
+            function pauseAtKnownStop(car, pointIndex, now) {
+                if (car.route.kind !== 'local' || !car.route.stopIndexes?.includes(pointIndex)) return false;
+                car.pauseUntil = now + 8000 + Math.random() * 17000;
+                car.waiting = true;
+                car.marker
+                    .setLatLng([car.lat, car.lng])
+                    .setPopupContent(carDescription(car.route, true));
+                return true;
+            }
 
             function advanceCar(car, distanceMeters, now) {
                 const requestedDistance = distanceMeters;
@@ -4057,11 +4333,17 @@
                             renderMapOverlay();
                             return requestedDistance - remaining;
                         }
-                        car.direction *= -1;
-                        car.pauseUntil = now + 3000 + Math.random() * 9000;
-                        car.waiting = true;
-                        car.marker.setLatLng([car.lat, car.lng]);
-                        car.marker.setPopupContent(carDescription(car.route, true));
+                        const reachedRouteStart = targetIndex < 0;
+                        if (car.route.kind === 'local' || reachedRouteStart) {
+                            switchCarToRoute(car, chooseNextRoute(car), now);
+                        } else {
+                            car.direction = -1;
+                            car.pauseUntil = now + 5000 + Math.random() * 13000;
+                            car.waiting = true;
+                            car.marker
+                                .setLatLng([car.lat, car.lng])
+                                .setPopupContent(carDescription(car.route, true));
+                        }
                         return requestedDistance - remaining;
                     }
 
@@ -4073,6 +4355,9 @@
                         car.lat = target[0];
                         car.lng = target[1];
                         car.pointIndex = targetIndex;
+                        if (pauseAtKnownStop(car, targetIndex, now)) {
+                            return requestedDistance - remaining;
+                        }
                         continue;
                     }
 
@@ -4081,6 +4366,9 @@
                         car.lng = target[1];
                         car.pointIndex = targetIndex;
                         remaining -= segmentRemaining;
+                        if (pauseAtKnownStop(car, targetIndex, now)) {
+                            return requestedDistance - remaining;
+                        }
                         continue;
                     }
 
@@ -4096,6 +4384,7 @@
 
             let previousFrame = animationStart;
             let lastEtaUpdate = animationStart;
+            let lastMotionSave = animationStart;
             function animateCars(now) {
                 const elapsedSeconds = Math.min((now - previousFrame) / 1000, 0.25);
                 previousFrame = now;
@@ -4128,6 +4417,10 @@
                 if (now - lastEtaUpdate >= 1000) {
                     lastEtaUpdate = now;
                     if (window.approachCar && !window.approachCar.arrived) renderMapOverlay();
+                }
+                if (now - lastMotionSave >= 5000) {
+                    lastMotionSave = now;
+                    persistSimulationMotionState();
                 }
 
                 window.simAnimationFrame = window.requestAnimationFrame(animateCars);

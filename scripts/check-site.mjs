@@ -243,6 +243,9 @@ for (const expected of [
   'id="driver-login-button"',
   'id="driver-account-pending"',
   'id="driver-profile-balance"',
+  'id="driver-shift-control"',
+  'id="driver-shift-toggle"',
+  'id="driver-work-status-detail"',
   'id="driver-order-alerts-toggle"',
   'id="driver-order-alerts-test"',
   'id="driver-new-order-alert"',
@@ -266,6 +269,9 @@ for (const expected of [
   'id="online-orders-title"',
   'id="online-orders-list"',
   'id="orders-stat-searching"',
+  'На линии',
+  'Свободны',
+  'Заняты',
   'id="drivers-list"',
   'src="./dispatcher.js"'
 ]) {
@@ -319,10 +325,10 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v10-driver-open-alerts'")) failures.push('service-worker.js: driver-alert cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v11-driver-availability'")) failures.push('service-worker.js: driver-availability cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v[123456789](?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v(?:[1-9]|10)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
 for (const expected of [
   "'./food.webmanifest'",
   "'./shashlyk.webmanifest'",
@@ -419,19 +425,35 @@ for (const expected of [
   'snapshot.docChanges()',
   'initialOpenOrdersLoaded',
   'signalNewOrder(order)',
-  'updateOrdersPageTitle()'
+  'updateOrdersPageTitle()',
+  "doc(db, 'driverStates', currentUser.uid)",
+  "status: 'busy'",
+  "status: 'available'",
+  'touchDriverHeartbeat()',
+  'repairMissingBusyState()'
 ]) {
   if (!driverPortal.includes(expected)) failures.push('driver-portal.js: missing ' + expected);
 }
-for (const expected of ["collection(db, 'orders')", "collection(db, 'orderContacts')", 'Отменить заказ']) {
+for (const expected of [
+  "collection(db, 'orders')",
+  "collection(db, 'orderContacts')",
+  "collection(db, 'driverStates')",
+  'runTransaction',
+  'driverAvailabilityInfo(driver)',
+  'Отменить заказ'
+]) {
   if (!dispatcherScript.includes(expected)) failures.push('dispatcher.js: missing ' + expected);
 }
 for (const expected of [
   'match /orders/{orderId}',
   'match /orderContacts/{orderId}',
   'validClientOrderCreate()',
-  'driverAcceptsSearchingOrder()',
-  'assignedDriverAdvancesOrder()',
+  'driverAcceptsSearchingOrder(orderId)',
+  'assignedDriverAdvancesOrder(orderId)',
+  'match /driverStates/{accountUid}',
+  'driverIsAvailable()',
+  'driverBecomesBusyWithOrder(orderId)',
+  'driverBecomesAvailableAfter(orderId)',
   "resource.data.status == 'searching'"
 ]) {
   if (!firestoreRules.includes(expected)) failures.push('firestore.rules: missing ' + expected);

@@ -14,6 +14,7 @@ import {
     query,
     runTransaction,
     serverTimestamp,
+    updateDoc,
     where
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
@@ -26,6 +27,8 @@ const NEXT_ORDER_STATUS = {
 };
 const ORDER_ALERTS_PREFERENCE_KEY = 'taxi-uspeh-driver-order-alerts';
 const DEFAULT_PAGE_TITLE = document.title;
+const DRIVER_HEARTBEAT_INTERVAL_MS = 60 * 1000;
+const OFFLINE_DRIVER_STATE = Object.freeze({ status: 'offline', activeOrderId: '' });
 
 const elements = {
     loading: document.getElementById('driver-auth-loading'),
@@ -44,7 +47,12 @@ const elements = {
     profileName: document.getElementById('driver-profile-name'),
     profileCar: document.getElementById('driver-profile-car'),
     profileBalance: document.getElementById('driver-profile-balance'),
+    shiftControl: document.getElementById('driver-shift-control'),
+    shiftIcon: document.getElementById('driver-shift-icon'),
     workStatus: document.getElementById('driver-work-status'),
+    workStatusDetail: document.getElementById('driver-work-status-detail'),
+    shiftToggle: document.getElementById('driver-shift-toggle'),
+    shiftMessage: document.getElementById('driver-shift-message'),
     ordersSection: document.getElementById('driver-online-orders'),
     ordersLoading: document.getElementById('driver-orders-loading'),
     ordersEmpty: document.getElementById('driver-online-orders-empty'),
@@ -70,13 +78,24 @@ let orderActionInProgress = false;
 let currentUser = null;
 let currentDriverId = '';
 let currentDriver = null;
+let currentAccount = null;
+let currentBaseEligible = false;
+let currentDriverState = OFFLINE_DRIVER_STATE;
 let currentCanTakeOrders = false;
 let openOrders = [];
 let assignedOrders = [];
 let unsubscribeAccount = null;
 let unsubscribeDriver = null;
+let unsubscribeDriverState = null;
 let unsubscribeOpenOrders = null;
 let unsubscribeAssignedOrders = null;
+let watchedOrdersUserUid = '';
+let assignedOrdersLoaded = false;
+let openOrdersLoaded = false;
+let driverStateActionInProgress = false;
+let heartbeatInProgress = false;
+let heartbeatTimer = null;
+let legacyStateRepairInProgress = false;
 let orderAlertsEnabled = readOrderAlertsPreference();
 let orderAudioContext = null;
 let initialOpenOrdersLoaded = false;
@@ -377,24 +396,248 @@ function orderStatusLabel(status) {
     })[status] || 'Свободный заказ';
 }
 
-function renderWorkStatus(driver, account) {
+function canAccessOrders(driver, account) {
     const balance = Number(driver.balance);
     const status = driver.status || 'paused';
-    const canTakeOrders = account.active !== false
+    return account.active !== false
         && status === 'active'
         && Number.isFinite(balance)
         && balance < 0;
+}
 
-    elements.workStatus.className = canTakeOrders
-        ? 'rounded-xl p-3 mb-4 text-sm font-bold bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
-        : 'rounded-xl p-3 mb-4 text-sm font-bold bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300';
-    elements.workStatus.textContent = canTakeOrders
-        ? '✅ Можно принимать заказы'
-        : status !== 'active' || account.active === false
-            ? '🔴 Доступ к заказам приостановлен диспетчером'
-            : '🔴 При балансе 0 ₸ или выше новые заказы недоступны';
+function showShiftMessage(text, success = false) {
+    if (!elements.shiftMessage) return;
+    elements.shiftMessage.textContent = text;
+    elements.shiftMessage.className = text
+        ? `mt-2 text-xs ${success
+            ? 'text-green-700 dark:text-green-300'
+            : 'text-red-700 dark:text-red-300'}`
+        : 'hidden mt-2 text-xs';
+}
 
-    return canTakeOrders;
+function normalizedDriverState(snapshot, driverId) {
+    if (!snapshot?.exists()) return { ...OFFLINE_DRIVER_STATE, driverId: String(driverId), exists: false };
+    const state = snapshot.data();
+    if (String(state.driverId || '') !== String(driverId)) {
+        return { ...OFFLINE_DRIVER_STATE, driverId: String(driverId), exists: false };
+    }
+    if (!['offline', 'available', 'busy'].includes(state.status)) {
+        return { ...OFFLINE_DRIVER_STATE, driverId: String(driverId), exists: false };
+    }
+    return {
+        ...state,
+        exists: true,
+        status: state.status,
+        activeOrderId: typeof state.activeOrderId === 'string' ? state.activeOrderId : '',
+        driverId: String(driverId)
+    };
+}
+
+function renderWorkStatus(driver, account, state = currentDriverState) {
+    const eligible = canAccessOrders(driver, account);
+    const status = state?.status || 'offline';
+    let title = 'Не на линии';
+    let detail = 'Выйдите на линию, чтобы видеть новые онлайн-заказы.';
+    let icon = 'fas fa-power-off';
+    let containerClass = 'rounded-2xl p-4 mb-4 border bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-700';
+    let iconClass = 'flex-shrink-0 w-11 h-11 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center';
+    let buttonClass = 'mt-3 w-full rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-3 text-sm font-extrabold shadow-sm';
+    let buttonIcon = 'fas fa-play mr-2';
+    let buttonText = 'Выйти на линию';
+    let disabled = false;
+
+    if (status === 'busy') {
+        title = 'Занят — выполняется заказ';
+        detail = 'Новые заказы скрыты. Завершите текущую поездку, чтобы снова стать свободным.';
+        icon = 'fas fa-route';
+        containerClass = 'rounded-2xl p-4 mb-4 border bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-800';
+        iconClass = 'flex-shrink-0 w-11 h-11 rounded-xl bg-amber-200 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 flex items-center justify-center';
+        buttonClass = 'mt-3 w-full rounded-xl bg-amber-200 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200 px-4 py-3 text-sm font-extrabold cursor-not-allowed';
+        buttonIcon = 'fas fa-lock mr-2';
+        buttonText = 'Сначала завершите заказ';
+        disabled = true;
+    } else if (!eligible) {
+        title = 'Доступ к заказам ограничен';
+        detail = driver.status !== 'active' || account.active === false
+            ? 'Работу с заказами приостановил диспетчер.'
+            : 'При балансе 0 ₸ или выше новые заказы недоступны.';
+        icon = 'fas fa-ban';
+        containerClass = 'rounded-2xl p-4 mb-4 border bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+        iconClass = 'flex-shrink-0 w-11 h-11 rounded-xl bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 flex items-center justify-center';
+        buttonClass = 'mt-3 w-full rounded-xl bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-4 py-3 text-sm font-extrabold cursor-not-allowed';
+        buttonIcon = 'fas fa-lock mr-2';
+        buttonText = 'Доступ ограничен';
+        disabled = true;
+    } else if (status === 'offline' && !assignedOrdersLoaded) {
+        title = 'Проверяем текущие заказы';
+        detail = 'Подождите несколько секунд перед началом смены.';
+        icon = 'fas fa-circle-notch fa-spin';
+        buttonClass = 'mt-3 w-full rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-4 py-3 text-sm font-extrabold cursor-not-allowed';
+        buttonIcon = 'fas fa-clock mr-2';
+        buttonText = 'Проверяем…';
+        disabled = true;
+    } else if (status === 'offline'
+        && state?.exists === false
+        && assignedOrders.some((order) => ACTIVE_ORDER_STATUSES.has(order.status))) {
+        title = 'Восстанавливаем текущий заказ';
+        detail = 'Ранее начатая поездка останется у вас и не потеряется.';
+        icon = 'fas fa-rotate';
+        buttonClass = 'mt-3 w-full rounded-xl bg-amber-200 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200 px-4 py-3 text-sm font-extrabold cursor-not-allowed';
+        buttonIcon = 'fas fa-clock mr-2';
+        buttonText = 'Восстанавливаем…';
+        disabled = true;
+    } else if (status === 'available') {
+        title = 'На линии — свободен';
+        detail = 'Новые заказы и уведомления поступают автоматически.';
+        icon = 'fas fa-circle-check';
+        containerClass = 'rounded-2xl p-4 mb-4 border bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
+        iconClass = 'flex-shrink-0 w-11 h-11 rounded-xl bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 flex items-center justify-center';
+        buttonClass = 'mt-3 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 px-4 py-3 text-sm font-extrabold';
+        buttonIcon = 'fas fa-stop mr-2';
+        buttonText = 'Уйти с линии';
+    }
+
+    elements.shiftControl.className = containerClass;
+    elements.shiftIcon.className = iconClass;
+    elements.shiftIcon.querySelector('i').className = icon;
+    elements.workStatus.textContent = title;
+    elements.workStatusDetail.textContent = detail;
+    elements.shiftToggle.className = buttonClass;
+    elements.shiftToggle.querySelector('i').className = buttonIcon;
+    elements.shiftToggle.querySelector('span').textContent = driverStateActionInProgress ? 'Сохраняем…' : buttonText;
+    elements.shiftToggle.disabled = disabled || driverStateActionInProgress;
+
+    return eligible;
+}
+
+function stopHeartbeat() {
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+}
+
+async function touchDriverHeartbeat() {
+    if (heartbeatInProgress || !currentUser || !currentDriverId || document.hidden) return;
+    if (!['available', 'busy'].includes(currentDriverState.status)) return;
+    heartbeatInProgress = true;
+    try {
+        await updateDoc(doc(db, 'driverStates', currentUser.uid), {
+            lastSeen: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+    } catch (error) {
+        console.warn('Не удалось обновить связь с кабинетом:', error.code || error.message);
+    } finally {
+        heartbeatInProgress = false;
+    }
+}
+
+function syncHeartbeat() {
+    const shouldRun = Boolean(currentUser && ['available', 'busy'].includes(currentDriverState.status));
+    if (!shouldRun) {
+        stopHeartbeat();
+        return;
+    }
+    if (!heartbeatTimer) {
+        heartbeatTimer = setInterval(() => void touchDriverHeartbeat(), DRIVER_HEARTBEAT_INTERVAL_MS);
+    }
+}
+
+async function setDriverShiftStatus(nextStatus, { silent = false } = {}) {
+    if (!currentUser || !currentDriver || !currentAccount || driverStateActionInProgress) return false;
+    if (!['offline', 'available'].includes(nextStatus)) return false;
+    driverStateActionInProgress = true;
+    if (!silent) showShiftMessage('');
+    renderWorkStatus(currentDriver, currentAccount);
+
+    try {
+        if (nextStatus === 'available' && !currentBaseEligible) {
+            throw new Error('Сейчас доступ к заказам ограничен. Проверьте статус и баланс.');
+        }
+        await runTransaction(db, async (transaction) => {
+            const stateRef = doc(db, 'driverStates', currentUser.uid);
+            const stateSnapshot = await transaction.get(stateRef);
+            const existing = normalizedDriverState(stateSnapshot, currentDriverId);
+            if (existing.status === 'busy') {
+                throw new Error('Сначала завершите текущий заказ.');
+            }
+            transaction.set(stateRef, {
+                driverId: currentDriverId,
+                status: nextStatus,
+                activeOrderId: '',
+                lastSeen: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        });
+        if (!silent) {
+            showShiftMessage(nextStatus === 'available' ? 'Вы вышли на линию.' : 'Вы ушли с линии.', true);
+        }
+        return true;
+    } catch (error) {
+        console.warn('Статус смены не изменён:', error.code || error.message);
+        if (!silent) {
+            showShiftMessage(
+                error.code === 'permission-denied'
+                    ? 'Не удалось изменить статус. Сначала опубликуйте новые правила Firebase.'
+                    : error.message || 'Не удалось изменить статус смены.'
+            );
+        }
+        return false;
+    } finally {
+        driverStateActionInProgress = false;
+        if (currentDriver && currentAccount) renderWorkStatus(currentDriver, currentAccount);
+    }
+}
+
+async function toggleDriverShift() {
+    if (!assignedOrdersLoaded) {
+        showShiftMessage('Подождите: проверяем текущие заказы.');
+        return;
+    }
+    if (currentDriverState.exists === false
+        && assignedOrders.some((order) => ACTIVE_ORDER_STATUSES.has(order.status))) {
+        showShiftMessage('Восстанавливаем ранее начатый заказ.');
+        await repairMissingBusyState();
+        return;
+    }
+    const nextStatus = currentDriverState.status === 'available' ? 'offline' : 'available';
+    await setDriverShiftStatus(nextStatus);
+}
+
+async function repairMissingBusyState() {
+    if (legacyStateRepairInProgress || !currentUser || currentDriverState.exists !== false) return;
+    const activeOrder = assignedOrders.find((order) => ACTIVE_ORDER_STATUSES.has(order.status));
+    if (!activeOrder) return;
+    legacyStateRepairInProgress = true;
+    try {
+        await runTransaction(db, async (transaction) => {
+            const stateRef = doc(db, 'driverStates', currentUser.uid);
+            const orderRef = doc(db, 'orders', activeOrder.id);
+            const stateSnapshot = await transaction.get(stateRef);
+            const orderSnapshot = await transaction.get(orderRef);
+            if (stateSnapshot.exists()) return;
+            if (!orderSnapshot.exists()
+                || orderSnapshot.data().assignedDriverUid !== currentUser.uid
+                || !ACTIVE_ORDER_STATUSES.has(orderSnapshot.data().status)) return;
+            transaction.set(stateRef, {
+                driverId: currentDriverId,
+                status: 'busy',
+                activeOrderId: activeOrder.id,
+                lastSeen: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        });
+    } catch (error) {
+        console.warn('Не удалось восстановить рабочий статус:', error.code || error.message);
+    } finally {
+        legacyStateRepairInProgress = false;
+    }
+}
+
+async function logoutDriver() {
+    if (currentDriverState.status === 'available') {
+        await setDriverShiftStatus('offline', { silent: true });
+    }
+    await signOut(auth);
 }
 
 async function loadOrdersLink(canTakeOrders) {
@@ -422,8 +665,11 @@ function stopOrderWatches() {
     if (unsubscribeAssignedOrders) unsubscribeAssignedOrders();
     unsubscribeOpenOrders = null;
     unsubscribeAssignedOrders = null;
+    watchedOrdersUserUid = '';
     openOrders = [];
     assignedOrders = [];
+    openOrdersLoaded = false;
+    assignedOrdersLoaded = false;
     initialOpenOrdersLoaded = false;
     seenOpenOrderIds = new Set();
     hideNewOrderAlert();
@@ -438,11 +684,18 @@ function stopOrderWatches() {
 function stopProfileWatches() {
     if (unsubscribeAccount) unsubscribeAccount();
     if (unsubscribeDriver) unsubscribeDriver();
+    if (unsubscribeDriverState) unsubscribeDriverState();
     unsubscribeAccount = null;
     unsubscribeDriver = null;
+    unsubscribeDriverState = null;
+    stopHeartbeat();
     currentDriverId = '';
     currentDriver = null;
+    currentAccount = null;
+    currentBaseEligible = false;
+    currentDriverState = OFFLINE_DRIVER_STATE;
     currentCanTakeOrders = false;
+    legacyStateRepairInProgress = false;
     stopOrderWatches();
 }
 
@@ -549,11 +802,19 @@ async function loadOrderContact(orderId, contactElement, actionsElement) {
 
 function renderOnlineOrders() {
     if (!elements.ordersList) return;
+    const ready = assignedOrdersLoaded && (!currentCanTakeOrders || openOrdersLoaded);
+    if (!ready) {
+        setHidden(elements.ordersLoading, false);
+        setHidden(elements.ordersList, true);
+        setHidden(elements.ordersEmpty, true);
+        updateOrdersPageTitle();
+        return;
+    }
     const assignedActive = assignedOrders
         .filter((order) => ACTIVE_ORDER_STATUSES.has(order.status))
         .sort((a, b) => createdAtMillis(b) - createdAtMillis(a));
     const available = currentCanTakeOrders
-        ? openOrders.sort((a, b) => createdAtMillis(a) - createdAtMillis(b))
+        ? [...openOrders].sort((a, b) => createdAtMillis(a) - createdAtMillis(b))
         : [];
     const allVisible = [
         ...assignedActive.map((order) => [order, true]),
@@ -577,6 +838,12 @@ function renderOnlineOrders() {
         if (currentCanTakeOrders) {
             title.textContent = 'Свободных заказов пока нет';
             detail.textContent = 'Список обновляется автоматически.';
+        } else if (currentDriverState.status === 'busy') {
+            title.textContent = 'Вы заняты текущим заказом';
+            detail.textContent = 'После завершения поездки новые заказы появятся автоматически.';
+        } else if (currentBaseEligible) {
+            title.textContent = 'Вы сейчас не на линии';
+            detail.textContent = 'Нажмите «Выйти на линию», чтобы получать новые заказы.';
         } else {
             title.textContent = 'Новые заказы сейчас недоступны';
             detail.textContent = 'Проверьте статус и баланс выше. Уже принятый заказ останется виден.';
@@ -594,52 +861,81 @@ function handleOrdersError(error) {
     );
 }
 
-function startOrderWatches(user, driverId, driver, canTakeOrders) {
-    stopOrderWatches();
+function startOpenOrdersWatch() {
+    if (unsubscribeOpenOrders || !currentCanTakeOrders) return;
+    openOrders = [];
+    openOrdersLoaded = false;
+    initialOpenOrdersLoaded = false;
+    seenOpenOrderIds = new Set();
+    unsubscribeOpenOrders = onSnapshot(
+        query(collection(db, 'orders'), where('status', '==', 'searching')),
+        (snapshot) => {
+            showOrdersMessage('');
+            const nextOpenOrders = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
+            const newlyAddedOrders = initialOpenOrdersLoaded
+                ? snapshot.docChanges()
+                    .filter((change) => change.type === 'added' && !seenOpenOrderIds.has(change.doc.id))
+                    .map((change) => ({ id: change.doc.id, ...change.doc.data() }))
+                : [];
+
+            for (const order of nextOpenOrders) seenOpenOrderIds.add(order.id);
+            initialOpenOrdersLoaded = true;
+            openOrders = nextOpenOrders;
+            openOrdersLoaded = true;
+            renderOnlineOrders();
+            for (const order of newlyAddedOrders) signalNewOrder(order);
+        },
+        (error) => {
+            unsubscribeOpenOrders = null;
+            handleOrdersError(error);
+        }
+    );
+}
+
+function stopOpenOrdersWatch() {
+    if (unsubscribeOpenOrders) unsubscribeOpenOrders();
+    unsubscribeOpenOrders = null;
+    openOrders = [];
+    openOrdersLoaded = false;
+    initialOpenOrdersLoaded = false;
+    seenOpenOrderIds = new Set();
+    hideNewOrderAlert();
+}
+
+function syncOrderWatches(user, driverId, driver, canTakeOrders) {
+    const identityChanged = watchedOrdersUserUid !== user.uid;
+    if (identityChanged) {
+        stopOrderWatches();
+        watchedOrdersUserUid = user.uid;
+    }
+
     currentUser = user;
     currentDriverId = String(driverId);
     currentDriver = driver;
     currentCanTakeOrders = canTakeOrders;
     setHidden(elements.ordersSection, false);
-    setHidden(elements.ordersLoading, false);
 
-    let openLoaded = !canTakeOrders;
-    let assignedLoaded = false;
-    const renderWhenReady = () => {
-        if (openLoaded && assignedLoaded) renderOnlineOrders();
-    };
-
-    if (canTakeOrders) {
-        unsubscribeOpenOrders = onSnapshot(
-            query(collection(db, 'orders'), where('status', '==', 'searching')),
+    if (!unsubscribeAssignedOrders) {
+        assignedOrdersLoaded = false;
+        unsubscribeAssignedOrders = onSnapshot(
+            query(collection(db, 'orders'), where('assignedDriverUid', '==', user.uid)),
             (snapshot) => {
-                const nextOpenOrders = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
-                const newlyAddedOrders = initialOpenOrdersLoaded
-                    ? snapshot.docChanges()
-                        .filter((change) => change.type === 'added' && !seenOpenOrderIds.has(change.doc.id))
-                        .map((change) => ({ id: change.doc.id, ...change.doc.data() }))
-                    : [];
-
-                for (const order of nextOpenOrders) seenOpenOrderIds.add(order.id);
-                initialOpenOrdersLoaded = true;
-                openOrders = nextOpenOrders;
-                openLoaded = true;
-                renderWhenReady();
-                for (const order of newlyAddedOrders) signalNewOrder(order);
+                assignedOrders = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
+                assignedOrdersLoaded = true;
+                renderOnlineOrders();
+                if (currentDriver && currentAccount) renderWorkStatus(currentDriver, currentAccount);
+                void repairMissingBusyState();
             },
-            handleOrdersError
+            (error) => {
+                unsubscribeAssignedOrders = null;
+                handleOrdersError(error);
+            }
         );
     }
 
-    unsubscribeAssignedOrders = onSnapshot(
-        query(collection(db, 'orders'), where('assignedDriverUid', '==', user.uid)),
-        (snapshot) => {
-            assignedOrders = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
-            assignedLoaded = true;
-            renderWhenReady();
-        },
-        handleOrdersError
-    );
+    if (canTakeOrders) startOpenOrdersWatch();
+    else stopOpenOrdersWatch();
+    renderOnlineOrders();
 }
 
 async function acceptOrder(orderId) {
@@ -650,9 +946,15 @@ async function acceptOrder(orderId) {
     try {
         await runTransaction(db, async (transaction) => {
             const orderRef = doc(db, 'orders', orderId);
-            const snapshot = await transaction.get(orderRef);
-            if (!snapshot.exists() || snapshot.data().status !== 'searching') {
+            const stateRef = doc(db, 'driverStates', currentUser.uid);
+            const orderSnapshot = await transaction.get(orderRef);
+            const stateSnapshot = await transaction.get(stateRef);
+            if (!orderSnapshot.exists() || orderSnapshot.data().status !== 'searching') {
                 throw new Error('Этот заказ уже принял другой водитель.');
+            }
+            const state = normalizedDriverState(stateSnapshot, currentDriverId);
+            if (!stateSnapshot.exists() || state.status !== 'available' || state.activeOrderId) {
+                throw new Error('Вы уже заняты или не вышли на линию.');
             }
             transaction.update(orderRef, {
                 status: 'accepted',
@@ -665,13 +967,19 @@ async function acceptOrder(orderId) {
                 acceptedAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
+            transaction.update(stateRef, {
+                status: 'busy',
+                activeOrderId: orderId,
+                lastSeen: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
         });
         showOrdersMessage('Заказ принят. Теперь вам доступен телефон клиента.', true);
     } catch (error) {
         console.warn('Заказ не принят:', error.code || error.message);
         showOrdersMessage(
             error.code === 'permission-denied'
-                ? 'Доступ к заказу изменился. Проверьте баланс и статус.'
+                ? 'Заказ недоступен. Проверьте, что вы на линии, свободны и правила Firebase опубликованы.'
                 : error.message || 'Не удалось принять заказ.'
         );
     } finally {
@@ -688,16 +996,33 @@ async function advanceOrder(orderId, expectedStatus, nextStatus) {
     try {
         await runTransaction(db, async (transaction) => {
             const orderRef = doc(db, 'orders', orderId);
-            const snapshot = await transaction.get(orderRef);
-            if (!snapshot.exists()) throw new Error('Заказ не найден.');
-            const order = snapshot.data();
+            const stateRef = doc(db, 'driverStates', currentUser.uid);
+            const orderSnapshot = await transaction.get(orderRef);
+            if (!orderSnapshot.exists()) throw new Error('Заказ не найден.');
+            const order = orderSnapshot.data();
             if (order.assignedDriverUid !== currentUser.uid || order.status !== expectedStatus) {
                 throw new Error('Статус заказа уже изменился.');
+            }
+            let stateSnapshot = null;
+            if (nextStatus === 'completed') {
+                stateSnapshot = await transaction.get(stateRef);
+                const state = normalizedDriverState(stateSnapshot, currentDriverId);
+                if (!stateSnapshot.exists() || state.status !== 'busy' || state.activeOrderId !== orderId) {
+                    throw new Error('Текущий заказ не совпадает со статусом водителя.');
+                }
             }
             transaction.update(orderRef, {
                 status: nextStatus,
                 updatedAt: serverTimestamp()
             });
+            if (nextStatus === 'completed') {
+                transaction.update(stateRef, {
+                    status: 'available',
+                    activeOrderId: '',
+                    lastSeen: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
+            }
         });
         showOrdersMessage(nextStatus === 'completed' ? 'Поездка завершена.' : 'Статус заказа обновлён.', true);
     } catch (error) {
@@ -721,6 +1046,46 @@ function showProfileLoadError(error) {
     }
 }
 
+function watchDriverState(user, account, driver) {
+    if (unsubscribeDriverState) unsubscribeDriverState();
+    unsubscribeDriverState = null;
+    stopHeartbeat();
+
+    currentUser = user;
+    currentAccount = account;
+    currentDriver = driver;
+    currentDriverId = String(account.driverId);
+    currentBaseEligible = canAccessOrders(driver, account);
+    currentDriverState = { ...OFFLINE_DRIVER_STATE, driverId: currentDriverId, exists: false };
+    currentCanTakeOrders = false;
+    renderWorkStatus(driver, account, currentDriverState);
+    syncOrderWatches(user, currentDriverId, driver, false);
+
+    unsubscribeDriverState = onSnapshot(
+        doc(db, 'driverStates', user.uid),
+        (stateSnapshot) => {
+            currentDriverState = normalizedDriverState(stateSnapshot, currentDriverId);
+            currentCanTakeOrders = currentBaseEligible && currentDriverState.status === 'available';
+            renderWorkStatus(driver, account, currentDriverState);
+            syncHeartbeat();
+            syncOrderWatches(user, currentDriverId, driver, currentCanTakeOrders);
+            void repairMissingBusyState();
+        },
+        (error) => {
+            console.warn('Рабочий статус не загрузился:', error.code || error.message);
+            currentDriverState = { ...OFFLINE_DRIVER_STATE, driverId: currentDriverId, exists: false };
+            currentCanTakeOrders = false;
+            renderWorkStatus(driver, account, currentDriverState);
+            syncOrderWatches(user, currentDriverId, driver, false);
+            showShiftMessage(
+                error.code === 'permission-denied'
+                    ? 'Рабочая смена ещё не включена в правилах Firebase.'
+                    : 'Не удалось загрузить рабочий статус. Проверьте интернет.'
+            );
+        }
+    );
+}
+
 function watchDriverProfile(user) {
     stopProfileWatches();
     currentUser = user;
@@ -730,7 +1095,10 @@ function watchDriverProfile(user) {
 
     unsubscribeAccount = onSnapshot(doc(db, 'driverAccounts', user.uid), (accountSnapshot) => {
         if (unsubscribeDriver) unsubscribeDriver();
+        if (unsubscribeDriverState) unsubscribeDriverState();
         unsubscribeDriver = null;
+        unsubscribeDriverState = null;
+        stopHeartbeat();
         stopOrderWatches();
         setHidden(elements.profile, true);
         showMessage('');
@@ -758,9 +1126,13 @@ function watchDriverProfile(user) {
             setHidden(elements.pending, true);
             setHidden(elements.profile, false);
             showMessage('');
-            const canTakeOrders = renderWorkStatus(driver, account);
-            void loadOrdersLink(canTakeOrders);
-            startOrderWatches(user, account.driverId, driver, canTakeOrders);
+            currentAccount = account;
+            currentDriver = driver;
+            currentDriverId = String(account.driverId);
+            currentBaseEligible = canAccessOrders(driver, account);
+            renderWorkStatus(driver, account);
+            void loadOrdersLink(currentBaseEligible);
+            watchDriverState(user, account, driver);
         }, showProfileLoadError);
     }, showProfileLoadError);
 }
@@ -803,8 +1175,9 @@ async function copyUid() {
 }
 
 elements.loginButton?.addEventListener('click', login);
-elements.logoutButton?.addEventListener('click', () => signOut(auth));
+elements.logoutButton?.addEventListener('click', () => void logoutDriver());
 elements.copyUid?.addEventListener('click', copyUid);
+elements.shiftToggle?.addEventListener('click', () => void toggleDriverShift());
 elements.alertsToggle?.addEventListener('click', () => void toggleOrderAlerts());
 elements.alertsTest?.addEventListener('click', () => void testOrderAlerts());
 elements.newOrderAlertClose?.addEventListener('click', hideNewOrderAlert);
@@ -816,7 +1189,10 @@ elements.newOrderAlertView?.addEventListener('click', () => {
 
 window.addEventListener('focus', updateOrderAlertsControls);
 document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) updateOrderAlertsControls();
+    if (!document.hidden) {
+        updateOrderAlertsControls();
+        void touchDriverHeartbeat();
+    }
 });
 if (orderAlertsEnabled) {
     document.addEventListener('pointerdown', () => void prepareOrderSound(), { once: true });

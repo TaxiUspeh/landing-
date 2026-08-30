@@ -20,6 +20,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/driverAccounts/$(request.auth.uid);
     }
 
+    function driverStateDocument() {
+      return /databases/$(database)/documents/driverStates/$(request.auth.uid);
+    }
+
     function hasDriverAccount() {
       return signedIn() && exists(driverAccountDocument());
     }
@@ -45,8 +49,109 @@ service cloud.firestore {
         && get(linkedDriverDocument()).data.balance < 0;
     }
 
+    function activeOrderStatus(status) {
+      return status == 'accepted'
+        || status == 'en_route'
+        || status == 'arrived'
+        || status == 'in_trip';
+    }
+
+    function driverIsAvailable() {
+      return mayOpenOrders()
+        && exists(driverStateDocument())
+        && get(driverStateDocument()).data.driverId == linkedDriverId()
+        && get(driverStateDocument()).data.status == 'available'
+        && get(driverStateDocument()).data.activeOrderId == ''
+        && get(driverStateDocument()).data.lastSeen is timestamp
+        && get(driverStateDocument()).data.lastSeen >= request.time - duration.value(3, 'm');
+    }
+
+    function driverIsBusyWithOrder(orderId) {
+      return hasDriverAccount()
+        && exists(driverStateDocument())
+        && get(driverStateDocument()).data.driverId == linkedDriverId()
+        && get(driverStateDocument()).data.status == 'busy'
+        && get(driverStateDocument()).data.activeOrderId == orderId;
+    }
+
+    function driverBecomesBusyWithOrder(orderId) {
+      return existsAfter(driverStateDocument())
+        && getAfter(driverStateDocument()).data.driverId == linkedDriverId()
+        && getAfter(driverStateDocument()).data.status == 'busy'
+        && getAfter(driverStateDocument()).data.activeOrderId == orderId
+        && getAfter(driverStateDocument()).data.lastSeen == request.time
+        && getAfter(driverStateDocument()).data.updatedAt == request.time;
+    }
+
+    function driverBecomesAvailableAfter(orderId) {
+      return existsAfter(driverStateDocument())
+        && getAfter(driverStateDocument()).data.driverId == linkedDriverId()
+        && getAfter(driverStateDocument()).data.status == 'available'
+        && getAfter(driverStateDocument()).data.activeOrderId == ''
+        && getAfter(driverStateDocument()).data.lastSeen == request.time
+        && getAfter(driverStateDocument()).data.updatedAt == request.time
+        && existsAfter(orderDocument(orderId))
+        && (getAfter(orderDocument(orderId)).data.status == 'completed'
+          || getAfter(orderDocument(orderId)).data.status == 'cancelled');
+    }
+
     function orderDocument(orderId) {
       return /databases/$(database)/documents/orders/$(orderId);
+    }
+
+    function validDriverStateData(data) {
+      return data.keys().hasOnly([
+          'driverId', 'status', 'activeOrderId', 'lastSeen', 'updatedAt'
+        ])
+        && data.driverId is string
+        && data.driverId == linkedDriverId()
+        && data.status is string
+        && data.status in ['offline', 'available', 'busy']
+        && data.activeOrderId is string
+        && data.activeOrderId.size() <= 128
+        && ((data.status == 'busy' && data.activeOrderId.size() > 0)
+          || (data.status != 'busy' && data.activeOrderId == ''))
+        && data.lastSeen == request.time
+        && data.updatedAt == request.time;
+    }
+
+    function validOwnDriverStateCreate() {
+      return hasDriverAccount()
+        && validDriverStateData(request.resource.data)
+        && (request.resource.data.status == 'offline'
+          || (request.resource.data.status == 'available' && mayOpenOrders())
+          || (request.resource.data.status == 'busy'
+            && exists(orderDocument(request.resource.data.activeOrderId))
+            && get(orderDocument(request.resource.data.activeOrderId)).data.assignedDriverUid == request.auth.uid
+            && activeOrderStatus(get(orderDocument(request.resource.data.activeOrderId)).data.status)));
+    }
+
+    function validOwnDriverStateUpdate() {
+      return hasDriverAccount()
+        && resource.data.driverId == linkedDriverId()
+        && validDriverStateData(request.resource.data)
+        && (
+          (request.resource.data.status == resource.data.status
+            && request.resource.data.activeOrderId == resource.data.activeOrderId
+            && (resource.data.status != 'available' || mayOpenOrders()))
+          || (resource.data.status == 'offline'
+            && request.resource.data.status == 'available'
+            && mayOpenOrders())
+          || (resource.data.status == 'available'
+            && request.resource.data.status == 'offline')
+          || (resource.data.status == 'available'
+            && resource.data.activeOrderId == ''
+            && request.resource.data.status == 'busy'
+            && existsAfter(orderDocument(request.resource.data.activeOrderId))
+            && getAfter(orderDocument(request.resource.data.activeOrderId)).data.assignedDriverUid == request.auth.uid
+            && activeOrderStatus(getAfter(orderDocument(request.resource.data.activeOrderId)).data.status))
+          || (resource.data.status == 'busy'
+            && request.resource.data.status == 'available'
+            && request.resource.data.activeOrderId == ''
+            && existsAfter(orderDocument(resource.data.activeOrderId))
+            && (getAfter(orderDocument(resource.data.activeOrderId)).data.status == 'completed'
+              || getAfter(orderDocument(resource.data.activeOrderId)).data.status == 'cancelled'))
+        );
     }
 
     function validClientOrderCreate() {
@@ -96,8 +201,8 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
     }
 
-    function driverAcceptsSearchingOrder() {
-      return mayOpenOrders()
+    function driverAcceptsSearchingOrder(orderId) {
+      return driverIsAvailable()
         && resource.data.status == 'searching'
         && request.resource.data.status == 'accepted'
         && request.resource.data.assignedDriverUid == request.auth.uid
@@ -112,7 +217,8 @@ service cloud.firestore {
           'status', 'assignedDriverUid', 'assignedDriverId',
           'driverName', 'driverPhone', 'driverCar', 'driverColor',
           'acceptedAt', 'updatedAt'
-        ]);
+        ])
+        && driverBecomesBusyWithOrder(orderId);
     }
 
     function validDriverStatusTransition() {
@@ -122,13 +228,15 @@ service cloud.firestore {
         || (resource.data.status == 'in_trip' && request.resource.data.status == 'completed');
     }
 
-    function assignedDriverAdvancesOrder() {
-      return hasDriverAccount()
+    function assignedDriverAdvancesOrder(orderId) {
+      return driverIsBusyWithOrder(orderId)
         && resource.data.assignedDriverUid == request.auth.uid
         && resource.data.assignedDriverId == linkedDriverId()
         && validDriverStatusTransition()
         && request.resource.data.updatedAt == request.time
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && (request.resource.data.status != 'completed'
+          || driverBecomesAvailableAfter(orderId));
     }
 
     function validClientContactCreate(orderId) {
@@ -169,6 +277,15 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /driverStates/{accountUid} {
+      allow read: if signedIn() && (request.auth.uid == accountUid || isAdmin());
+      allow create: if isAdmin()
+        || (signedIn() && request.auth.uid == accountUid && validOwnDriverStateCreate());
+      allow update: if isAdmin()
+        || (signedIn() && request.auth.uid == accountUid && validOwnDriverStateUpdate());
+      allow delete: if isAdmin();
+    }
+
     match /balanceHistory/{entryId} {
       allow read: if isAdmin()
         || (hasDriverAccount() && resource.data.driverId == linkedDriverId());
@@ -185,12 +302,12 @@ service cloud.firestore {
       allow create: if isAdmin() || validClientOrderCreate();
       allow read: if isAdmin()
         || (signedIn() && resource.data.clientUid == request.auth.uid)
-        || (mayOpenOrders() && resource.data.status == 'searching')
+        || (driverIsAvailable() && resource.data.status == 'searching')
         || (signedIn() && resource.data.get('assignedDriverUid', '') == request.auth.uid);
       allow update: if isAdmin()
         || clientCancelsOwnSearchingOrder()
-        || driverAcceptsSearchingOrder()
-        || assignedDriverAdvancesOrder();
+        || driverAcceptsSearchingOrder(orderId)
+        || assignedDriverAdvancesOrder(orderId);
       allow delete: if isAdmin();
     }
 

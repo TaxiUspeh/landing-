@@ -13,9 +13,9 @@ import {
     onSnapshot,
     orderBy,
     query,
+    runTransaction,
     serverTimestamp,
     setDoc,
-    updateDoc,
     writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
@@ -68,12 +68,16 @@ const elements = {
 
 let currentUser = null;
 let drivers = [];
+let driverStates = new Map();
 let orders = [];
 let orderContacts = new Map();
 let unsubscribeDrivers = null;
+let unsubscribeDriverStates = null;
 let unsubscribeOrders = null;
 let unsubscribeOrderContacts = null;
 let authActionInProgress = false;
+let driverStatusRefreshTimer = null;
+const DRIVER_CONNECTION_TIMEOUT_MS = 3 * 60 * 1000;
 
 function setHidden(element, hidden) {
     if (element) element.classList.toggle('hidden', hidden);
@@ -168,14 +172,19 @@ async function copyUid() {
 
 function stopAdminPanel() {
     if (unsubscribeDrivers) unsubscribeDrivers();
+    if (unsubscribeDriverStates) unsubscribeDriverStates();
     if (unsubscribeOrders) unsubscribeOrders();
     if (unsubscribeOrderContacts) unsubscribeOrderContacts();
     unsubscribeDrivers = null;
+    unsubscribeDriverStates = null;
     unsubscribeOrders = null;
     unsubscribeOrderContacts = null;
     drivers = [];
+    driverStates = new Map();
     orders = [];
     orderContacts = new Map();
+    if (driverStatusRefreshTimer) clearInterval(driverStatusRefreshTimer);
+    driverStatusRefreshTimer = null;
     setHidden(elements.panel, true);
     setHidden(elements.driversList, true);
     setHidden(elements.driversEmpty, true);
@@ -200,7 +209,9 @@ async function checkAdminAccess(user) {
 
         setHidden(elements.panel, false);
         startDriversListener();
+        startDriverStatesListener();
         startOrdersListeners();
+        driverStatusRefreshTimer = setInterval(refreshDriverStatusIndicators, 30 * 1000);
         await loadOrdersLink();
     } catch (error) {
         console.warn('Проверка администратора не выполнена:', error.code || error.message);
@@ -211,13 +222,97 @@ async function checkAdminAccess(user) {
     }
 }
 
+function timestampMillis(value) {
+    if (value?.toMillis) return value.toMillis();
+    if (Number.isFinite(value?.seconds)) return value.seconds * 1000;
+    return 0;
+}
+
+function driverAvailabilityInfo(driver) {
+    const uid = normalizeUid(driver.authUid || '');
+    const state = uid ? driverStates.get(uid) : null;
+    const lastSeen = timestampMillis(state?.lastSeen);
+    const connected = lastSeen > 0 && Date.now() - lastSeen <= DRIVER_CONNECTION_TIMEOUT_MS;
+
+    if (state?.status === 'busy' && state.activeOrderId) {
+        const order = orders.find((item) => item.id === state.activeOrderId);
+        return {
+            key: 'busy',
+            label: '🟠 Занят',
+            detail: order
+                ? `Текущий заказ: ${order.orderNumber || order.id}${connected ? '' : ' · нет связи с кабинетом'}`
+                : connected ? 'Выполняет заказ' : 'Выполняет заказ · нет связи с кабинетом',
+            className: 'flex-shrink-0 text-xs font-extrabold rounded-full px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300'
+        };
+    }
+    if (!uid) {
+        return {
+            key: 'unlinked',
+            label: '⚪ Не подключён',
+            detail: 'Google UID ещё не привязан',
+            className: 'flex-shrink-0 text-xs font-extrabold rounded-full px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+        };
+    }
+    if (!canTakeOrders(driver)) {
+        return {
+            key: 'restricted',
+            label: '🔴 Ограничено',
+            detail: `${statusLabel(driver.status)} · баланс ${formatMoney(driver.balance)}`,
+            className: 'flex-shrink-0 text-xs font-extrabold rounded-full px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+        };
+    }
+    if (state?.status === 'available' && connected) {
+        return {
+            key: 'available',
+            label: '🟢 Свободен',
+            detail: 'На линии · получает новые заказы',
+            className: 'flex-shrink-0 text-xs font-extrabold rounded-full px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+        };
+    }
+    if (state?.status === 'available') {
+        return {
+            key: 'disconnected',
+            label: '⚪ Нет связи',
+            detail: 'Кабинет водителя не отвечает более 3 минут',
+            className: 'flex-shrink-0 text-xs font-extrabold rounded-full px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+        };
+    }
+    return {
+        key: 'offline',
+        label: '⚪ Не на линии',
+        detail: 'Новые онлайн-заказы не получает',
+        className: 'flex-shrink-0 text-xs font-extrabold rounded-full px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+    };
+}
+
 function updateStats() {
-    const active = drivers.filter((driver) => driver.status === 'active').length;
-    const allowed = drivers.filter(canTakeOrders).length;
+    const states = drivers.map(driverAvailabilityInfo);
+    const onLine = states.filter((state) => state.key === 'available' || state.key === 'busy').length;
+    const available = states.filter((state) => state.key === 'available').length;
+    const busy = states.filter((state) => state.key === 'busy').length;
     elements.total.textContent = String(drivers.length);
-    elements.active.textContent = String(active);
-    elements.allowed.textContent = String(allowed);
-    elements.blocked.textContent = String(drivers.length - allowed);
+    elements.active.textContent = String(onLine);
+    elements.allowed.textContent = String(available);
+    elements.blocked.textContent = String(busy);
+}
+
+function applyDriverAvailability(card, driver) {
+    const info = driverAvailabilityInfo(driver);
+    const badge = card.querySelector('[data-driver-availability-badge]');
+    const detail = card.querySelector('[data-driver-availability-detail]');
+    if (badge) {
+        badge.className = info.className;
+        badge.textContent = info.label;
+    }
+    if (detail) detail.textContent = info.detail;
+}
+
+function refreshDriverStatusIndicators() {
+    updateStats();
+    for (const card of elements.driversList.querySelectorAll('[data-driver-id]')) {
+        const driver = drivers.find((item) => item.id === card.dataset.driverId);
+        if (driver) applyDriverAvailability(card, driver);
+    }
 }
 
 function createInput(labelText, className, value, options = {}) {
@@ -250,6 +345,7 @@ function createInput(labelText, className, value, options = {}) {
 function renderDriverCard(driver) {
     const card = document.createElement('article');
     card.className = 'rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 p-4';
+    card.dataset.driverId = driver.id;
 
     const header = document.createElement('div');
     header.className = 'flex items-start gap-3 mb-4';
@@ -264,11 +360,12 @@ function renderDriverCard(driver) {
     titleWrap.append(title, subtitle);
 
     const badge = document.createElement('span');
-    badge.className = canTakeOrders(driver)
-        ? 'flex-shrink-0 text-xs font-extrabold rounded-full px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-        : 'flex-shrink-0 text-xs font-extrabold rounded-full px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300';
-    badge.textContent = canTakeOrders(driver) ? '✅ Можно брать' : '🔴 Ограничено';
+    badge.dataset.driverAvailabilityBadge = '';
     header.append(titleWrap, badge);
+
+    const availabilityDetail = document.createElement('p');
+    availabilityDetail.dataset.driverAvailabilityDetail = '';
+    availabilityDetail.className = 'mb-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300';
 
     const grid = document.createElement('div');
     grid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3';
@@ -297,7 +394,8 @@ function renderDriverCard(driver) {
     message.className = 'hidden text-xs w-full';
     message.setAttribute('role', 'status');
     footer.append(saveButton, currentBalance, message);
-    card.append(header, grid, footer);
+    card.append(header, availabilityDetail, grid, footer);
+    applyDriverAvailability(card, driver);
 
     saveButton.addEventListener('click', () => saveDriver(driver, {
         name: name.input,
@@ -351,6 +449,21 @@ function startDriversListener() {
             setHidden(elements.driversList, true);
             setHidden(elements.driversEmpty, false);
             elements.driversEmpty.querySelector('p').textContent = 'Не удалось загрузить водителей';
+        }
+    );
+}
+
+function startDriverStatesListener() {
+    unsubscribeDriverStates = onSnapshot(
+        collection(db, 'driverStates'),
+        (snapshot) => {
+            driverStates = new Map(snapshot.docs.map((snapshotDoc) => [snapshotDoc.id, snapshotDoc.data()]));
+            refreshDriverStatusIndicators();
+        },
+        (error) => {
+            console.warn('Рабочие статусы водителей не загрузились:', error.code || error.message);
+            driverStates = new Map();
+            refreshDriverStatusIndicators();
         }
     );
 }
@@ -494,6 +607,7 @@ function startOrdersListeners() {
     unsubscribeOrders = onSnapshot(collection(db, 'orders'), (snapshot) => {
         orders = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
         renderOnlineOrders();
+        refreshDriverStatusIndicators();
     }, handleOnlineOrdersError);
 
     unsubscribeOrderContacts = onSnapshot(collection(db, 'orderContacts'), (snapshot) => {
@@ -507,9 +621,34 @@ async function cancelOnlineOrder(order) {
     if (!window.confirm(`Отменить заказ ${order.orderNumber || order.id}? Клиент и водитель сразу увидят отмену.`)) return;
     setMessage(elements.onlineOrdersMessage, '');
     try {
-        await updateDoc(doc(db, 'orders', order.id), {
-            status: 'cancelled',
-            updatedAt: serverTimestamp()
+        await runTransaction(db, async (transaction) => {
+            const orderRef = doc(db, 'orders', order.id);
+            const orderSnapshot = await transaction.get(orderRef);
+            if (!orderSnapshot.exists() || !CANCELLABLE_ORDER_STATUSES.has(orderSnapshot.data().status)) {
+                throw new Error('Статус заказа уже изменился.');
+            }
+            const currentOrder = orderSnapshot.data();
+            let stateRef = null;
+            let stateSnapshot = null;
+            if (currentOrder.assignedDriverUid) {
+                stateRef = doc(db, 'driverStates', currentOrder.assignedDriverUid);
+                stateSnapshot = await transaction.get(stateRef);
+            }
+
+            transaction.update(orderRef, {
+                status: 'cancelled',
+                updatedAt: serverTimestamp()
+            });
+            if (stateRef
+                && stateSnapshot?.exists()
+                && stateSnapshot.data().status === 'busy'
+                && stateSnapshot.data().activeOrderId === order.id) {
+                transaction.update(stateRef, {
+                    status: 'available',
+                    activeOrderId: '',
+                    updatedAt: serverTimestamp()
+                });
+            }
         });
         setMessage(elements.onlineOrdersMessage, 'Заказ отменён.', true);
     } catch (error) {
@@ -542,6 +681,9 @@ async function saveDriver(original, controls) {
         const batch = writeBatch(db);
         const driverRef = doc(db, 'drivers', original.id);
         const oldUid = normalizeUid(original.authUid || '');
+        if (oldUid && oldUid !== authUid && driverStates.get(oldUid)?.status === 'busy') {
+            throw new Error('Нельзя менять UID, пока водитель выполняет заказ.');
+        }
         const updatedDriver = {
             name,
             phone: controls.phone.value.trim(),
@@ -555,7 +697,10 @@ async function saveDriver(original, controls) {
         };
         batch.update(driverRef, updatedDriver);
 
-        if (oldUid && oldUid !== authUid) batch.delete(doc(db, 'driverAccounts', oldUid));
+        if (oldUid && oldUid !== authUid) {
+            batch.delete(doc(db, 'driverAccounts', oldUid));
+            batch.delete(doc(db, 'driverStates', oldUid));
+        }
         if (authUid) {
             batch.set(doc(db, 'driverAccounts', authUid), {
                 driverId: original.id,

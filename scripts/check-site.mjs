@@ -1,5 +1,6 @@
 import { readFile, access } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { getHolidayForDate } from '../holiday-calendar.js';
 
 const htmlFiles = ['index.html', 'drivers.html', 'dispatcher.html', 'food.html', 'SHASHDVOR.html'];
@@ -41,6 +42,18 @@ const food = htmlByFile.get('food.html');
 const shashlyk = htmlByFile.get('SHASHDVOR.html');
 for (const expected of ['BASE_PRICE: 800', 'от <strong>800 тенге</strong>', "register('./service-worker.js', { updateViaCache: 'none' })", 'нажмите «Отправить»']) {
   if (!index.includes(expected)) failures.push('index.html: missing ' + expected);
+}
+for (const expected of [
+  'id="taxiCustomerPhone"',
+  'id="taxi-online-order-button"',
+  'id="taxi-whatsapp-order-button"',
+  'id="taxi-online-order-panel"',
+  'id="taxi-online-order-message"',
+  'Заказать онлайн',
+  'Через WhatsApp',
+  'src="./client-orders.js"'
+]) {
+  if (!index.includes(expected)) failures.push('index.html: missing hybrid online order behavior ' + expected);
 }
 
 const carouselStart = index.indexOf('<!-- MAIN ORDER, SERVICES AND QUICK ACTIONS CAROUSEL -->');
@@ -230,6 +243,9 @@ for (const expected of [
   'id="driver-login-button"',
   'id="driver-account-pending"',
   'id="driver-profile-balance"',
+  'id="driver-online-orders"',
+  'id="driver-online-orders-list"',
+  'Рабочий чат WhatsApp',
   'src="./driver-portal.js"',
   '<link rel="manifest" href="./drivers.webmanifest">',
   "register('./service-worker.js', { updateViaCache: 'none' })"
@@ -244,6 +260,9 @@ for (const expected of [
   'id="dispatcher-login-button"',
   'id="dispatcher-user-uid"',
   'id="add-driver-form"',
+  'id="online-orders-title"',
+  'id="online-orders-list"',
+  'id="orders-stat-searching"',
   'id="drivers-list"',
   'src="./dispatcher.js"'
 ]) {
@@ -297,10 +316,10 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v8-driver-auth'")) failures.push('service-worker.js: driver-auth cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v9-hybrid-online-orders'")) failures.push('service-worker.js: hybrid-order cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v[1234567](?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v[12345678](?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
 for (const expected of [
   "'./food.webmanifest'",
   "'./shashlyk.webmanifest'",
@@ -313,6 +332,7 @@ for (const expected of [
   "'./dispatcher.html'",
   "'./dispatcher.js'",
   "'./firebase-config.js'",
+  "'./client-orders.js'",
   'const cachedPage = await caches.match(event.request)'
 ]) {
   if (!serviceWorker.includes(expected)) failures.push('service-worker.js: missing ' + expected);
@@ -370,6 +390,35 @@ for (const [name, appManifest, expectedStart] of [
       .catch(() => failures.push('missing icon: ' + icon.src));
   }
 }
-for (const file of ['service-worker.js', 'holiday-calendar.js', 'drivers.webmanifest', 'firebase-config.js', 'driver-portal.js', 'dispatcher.js', 'firestore.rules', 'robots.txt', 'sitemap.xml']) await access(file).catch(() => failures.push('missing ' + file));
+for (const file of ['service-worker.js', 'holiday-calendar.js', 'drivers.webmanifest', 'firebase-config.js', 'client-orders.js', 'driver-portal.js', 'dispatcher.js', 'firestore.rules', 'robots.txt', 'sitemap.xml']) await access(file).catch(() => failures.push('missing ' + file));
+
+for (const file of ['client-orders.js', 'driver-portal.js', 'dispatcher.js', 'firebase-config.js']) {
+  const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+  if (result.status !== 0) failures.push(`${file}: syntax error: ${result.stderr.trim()}`);
+}
+
+const clientOrders = await readFile('client-orders.js', 'utf8');
+const driverPortal = await readFile('driver-portal.js', 'utf8');
+const dispatcherScript = await readFile('dispatcher.js', 'utf8');
+const firestoreRules = await readFile('firestore.rules', 'utf8');
+for (const expected of ['signInAnonymously', "collection(db, 'orders')", "doc(db, 'orderContacts'", "status: 'searching'"]) {
+  if (!clientOrders.includes(expected)) failures.push('client-orders.js: missing ' + expected);
+}
+for (const expected of ['runTransaction', "where('status', '==', 'searching')", "where('assignedDriverUid', '==', user.uid)", 'Позвонить клиенту']) {
+  if (!driverPortal.includes(expected)) failures.push('driver-portal.js: missing ' + expected);
+}
+for (const expected of ["collection(db, 'orders')", "collection(db, 'orderContacts')", 'Отменить заказ']) {
+  if (!dispatcherScript.includes(expected)) failures.push('dispatcher.js: missing ' + expected);
+}
+for (const expected of [
+  'match /orders/{orderId}',
+  'match /orderContacts/{orderId}',
+  'validClientOrderCreate()',
+  'driverAcceptsSearchingOrder()',
+  'assignedDriverAdvancesOrder()',
+  "resource.data.status == 'searching'"
+]) {
+  if (!firestoreRules.includes(expected)) failures.push('firestore.rules: missing ' + expected);
+}
 if (failures.length) { console.error(failures.join('\n')); process.exit(1); }
 console.log('Site checks passed (' + htmlFiles.length + ' HTML pages).');

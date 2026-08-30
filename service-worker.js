@@ -1,7 +1,8 @@
-const CACHE_NAME = 'taxi-uspeh-v8-driver-auth';
+const CACHE_NAME = 'taxi-uspeh-v9-hybrid-online-orders';
 const APP_SHELL = [
   './',
   './index.html',
+  './client-orders.js',
   './holiday-calendar.js',
   './drivers.html',
   './drivers.webmanifest',

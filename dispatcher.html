@@ -110,6 +110,42 @@
                 </div>
             </section>
 
+            <section class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-blue-200 dark:border-blue-900 overflow-hidden" aria-labelledby="online-orders-title">
+                <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-start gap-3">
+                    <div class="flex-grow">
+                        <h2 id="online-orders-title" class="font-extrabold">
+                            <i class="fas fa-satellite-dish text-blue-600 dark:text-blue-400 mr-2" aria-hidden="true"></i>Онлайн-заказы
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Заказы и статусы обновляются автоматически. WhatsApp продолжает работать отдельно.</p>
+                    </div>
+                    <span class="rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-3 py-1 text-xs font-extrabold">В реальном времени</span>
+                </div>
+                <div class="p-4 grid grid-cols-3 gap-3 border-b border-slate-200 dark:border-slate-800" aria-label="Сводка по онлайн-заказам">
+                    <div class="rounded-xl bg-amber-50 dark:bg-amber-900/20 p-3">
+                        <p class="text-[11px] text-amber-800 dark:text-amber-300">Ищут водителя</p>
+                        <p id="orders-stat-searching" class="text-xl font-black text-amber-700 dark:text-amber-300">0</p>
+                    </div>
+                    <div class="rounded-xl bg-blue-50 dark:bg-blue-900/20 p-3">
+                        <p class="text-[11px] text-blue-800 dark:text-blue-300">В работе</p>
+                        <p id="orders-stat-active" class="text-xl font-black text-blue-700 dark:text-blue-300">0</p>
+                    </div>
+                    <div class="rounded-xl bg-green-50 dark:bg-green-900/20 p-3">
+                        <p class="text-[11px] text-green-800 dark:text-green-300">Завершено</p>
+                        <p id="orders-stat-completed" class="text-xl font-black text-green-700 dark:text-green-300">0</p>
+                    </div>
+                </div>
+                <div id="online-orders-loading" class="p-6 text-sm text-slate-500 dark:text-slate-400" role="status">
+                    <i class="fas fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Загружаем онлайн-заказы…
+                </div>
+                <div id="online-orders-empty" class="hidden p-8 text-center text-slate-500 dark:text-slate-400">
+                    <i class="fas fa-route text-3xl mb-3" aria-hidden="true"></i>
+                    <p class="font-bold">Онлайн-заказов пока нет</p>
+                    <p class="text-xs mt-1">Новый заказ клиента появится здесь автоматически.</p>
+                </div>
+                <p id="online-orders-message" class="hidden mx-4 mt-4 rounded-xl border p-3 text-sm" role="status"></p>
+                <div id="online-orders-list" class="hidden p-4 grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
+            </section>
+
             <section class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" aria-labelledby="add-driver-title">
                 <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800">
                     <h2 id="add-driver-title" class="font-extrabold">Добавить водителя</h2>

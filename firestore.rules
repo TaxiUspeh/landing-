@@ -1,0 +1,81 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function adminDocument() {
+      return /databases/$(database)/documents/admins/$(request.auth.uid);
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(adminDocument())
+        && get(adminDocument()).data.active == true;
+    }
+
+    function driverAccountDocument() {
+      return /databases/$(database)/documents/driverAccounts/$(request.auth.uid);
+    }
+
+    function hasDriverAccount() {
+      return signedIn() && exists(driverAccountDocument());
+    }
+
+    function linkedDriverId() {
+      return get(driverAccountDocument()).data.driverId;
+    }
+
+    function isLinkedDriver(driverId) {
+      return hasDriverAccount() && linkedDriverId() == driverId;
+    }
+
+    function linkedDriverDocument() {
+      return /databases/$(database)/documents/drivers/$(linkedDriverId());
+    }
+
+    function mayOpenOrders() {
+      return hasDriverAccount()
+        && get(driverAccountDocument()).data.active == true
+        && exists(linkedDriverDocument())
+        && get(linkedDriverDocument()).data.status == 'active'
+        && get(linkedDriverDocument()).data.balance is number
+        && get(linkedDriverDocument()).data.balance < 0;
+    }
+
+    // Первую запись администратора владелец проекта создаёт вручную в консоли.
+    // Клиентский сайт не может назначить администратора сам себе.
+    match /admins/{adminId} {
+      allow read: if signedIn() && (request.auth.uid == adminId || isAdmin());
+      allow write: if false;
+    }
+
+    match /drivers/{driverId} {
+      allow read: if isAdmin() || isLinkedDriver(driverId);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /driverAccounts/{accountUid} {
+      allow read: if signedIn() && (request.auth.uid == accountUid || isAdmin());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /balanceHistory/{entryId} {
+      allow read: if isAdmin()
+        || (hasDriverAccount() && resource.data.driverId == linkedDriverId());
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAdmin() || (settingId == 'driverPortal' && mayOpenOrders());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

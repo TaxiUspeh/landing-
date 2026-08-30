@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v9-hybrid-online-orders';
+const CACHE_NAME = 'taxi-uspeh-v10-driver-open-alerts';
 const APP_SHELL = [
   './',
   './index.html',

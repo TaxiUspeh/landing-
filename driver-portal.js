@@ -24,6 +24,8 @@ const NEXT_ORDER_STATUS = {
     arrived: ['in_trip', 'Начать поездку'],
     in_trip: ['completed', 'Завершить поездку']
 };
+const ORDER_ALERTS_PREFERENCE_KEY = 'taxi-uspeh-driver-order-alerts';
+const DEFAULT_PAGE_TITLE = document.title;
 
 const elements = {
     loading: document.getElementById('driver-auth-loading'),
@@ -50,6 +52,16 @@ const elements = {
     ordersMessage: document.getElementById('driver-online-orders-message'),
     ordersLink: document.getElementById('driver-orders-link'),
     ordersUnavailable: document.getElementById('driver-orders-unavailable'),
+    alertsToggle: document.getElementById('driver-order-alerts-toggle'),
+    alertsTest: document.getElementById('driver-order-alerts-test'),
+    alertsStatus: document.getElementById('driver-order-alerts-status'),
+    alertsIcon: document.getElementById('driver-order-alerts-icon'),
+    newOrderAlert: document.getElementById('driver-new-order-alert'),
+    newOrderAlertTitle: document.getElementById('driver-new-order-alert-title'),
+    newOrderAlertRoute: document.getElementById('driver-new-order-alert-route'),
+    newOrderAlertPrice: document.getElementById('driver-new-order-alert-price'),
+    newOrderAlertView: document.getElementById('driver-new-order-alert-view'),
+    newOrderAlertClose: document.getElementById('driver-new-order-alert-close'),
     message: document.getElementById('driver-auth-message')
 };
 
@@ -65,9 +77,257 @@ let unsubscribeAccount = null;
 let unsubscribeDriver = null;
 let unsubscribeOpenOrders = null;
 let unsubscribeAssignedOrders = null;
+let orderAlertsEnabled = readOrderAlertsPreference();
+let orderAudioContext = null;
+let initialOpenOrdersLoaded = false;
+let seenOpenOrderIds = new Set();
+let currentAlertOrderId = '';
+let newOrderAlertTimer = null;
+let requestedOrderHandled = false;
 
 function setHidden(element, hidden) {
     if (element) element.classList.toggle('hidden', hidden);
+}
+
+function readOrderAlertsPreference() {
+    try {
+        return localStorage.getItem(ORDER_ALERTS_PREFERENCE_KEY) === 'enabled';
+    } catch {
+        return false;
+    }
+}
+
+function saveOrderAlertsPreference() {
+    try {
+        localStorage.setItem(ORDER_ALERTS_PREFERENCE_KEY, orderAlertsEnabled ? 'enabled' : 'disabled');
+    } catch (error) {
+        console.warn('Не удалось сохранить настройку уведомлений:', error.message);
+    }
+}
+
+function notificationPermission() {
+    return 'Notification' in window ? Notification.permission : 'unsupported';
+}
+
+function updateOrderAlertsControls() {
+    if (!elements.alertsToggle || !elements.alertsStatus || !elements.alertsIcon) return;
+    const permission = notificationPermission();
+    const toggleIcon = elements.alertsToggle.querySelector('i');
+    const toggleLabel = elements.alertsToggle.querySelector('span');
+    const statusIcon = elements.alertsIcon.querySelector('i');
+
+    if (!orderAlertsEnabled) {
+        elements.alertsToggle.className = 'rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 text-sm font-extrabold shadow-sm';
+        toggleIcon.className = 'fas fa-bell mr-2';
+        toggleLabel.textContent = 'Включить уведомления';
+        statusIcon.className = 'fas fa-bell-slash';
+        elements.alertsStatus.textContent = 'Нажмите кнопку, чтобы включить звук, вибрацию и уведомления телефона.';
+        setHidden(elements.alertsTest, true);
+        return;
+    }
+
+    elements.alertsToggle.className = 'rounded-xl border border-red-200 dark:border-red-800 bg-white dark:bg-gray-800 text-red-700 dark:text-red-300 px-4 py-3 text-sm font-extrabold';
+    toggleIcon.className = 'fas fa-bell-slash mr-2';
+    toggleLabel.textContent = 'Отключить сигналы';
+    statusIcon.className = 'fas fa-bell';
+    setHidden(elements.alertsTest, false);
+
+    if (permission === 'granted') {
+        elements.alertsStatus.textContent = 'Включены звук, вибрация и уведомления в верхней панели телефона.';
+    } else if (permission === 'denied') {
+        elements.alertsStatus.textContent = 'Звук и вибрация включены. Системные уведомления заблокированы в настройках браузера.';
+    } else if (permission === 'unsupported') {
+        elements.alertsStatus.textContent = 'Звук и вибрация включены. Этот браузер не поддерживает системные уведомления.';
+    } else {
+        elements.alertsStatus.textContent = 'Звук и вибрация включены. Разрешите системные уведомления при следующем включении.';
+    }
+}
+
+function getOrderAudioContext() {
+    if (orderAudioContext) return orderAudioContext;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    orderAudioContext = new AudioContextClass();
+    return orderAudioContext;
+}
+
+async function prepareOrderSound() {
+    const context = getOrderAudioContext();
+    if (context?.state === 'suspended') await context.resume();
+    return context;
+}
+
+async function playOrderSound() {
+    try {
+        const context = await prepareOrderSound();
+        if (!context || context.state !== 'running') return;
+        const startAt = context.currentTime;
+        for (const [offset, frequency] of [[0, 880], [0.32, 1046]]) {
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.value = frequency;
+            gain.gain.setValueAtTime(0.0001, startAt + offset);
+            gain.gain.exponentialRampToValueAtTime(0.16, startAt + offset + 0.025);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startAt + offset + 0.24);
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+            oscillator.start(startAt + offset);
+            oscillator.stop(startAt + offset + 0.25);
+        }
+    } catch (error) {
+        console.warn('Звуковой сигнал недоступен:', error.message);
+    }
+}
+
+function vibrateForOrder() {
+    if ('vibrate' in navigator) navigator.vibrate([180, 90, 180]);
+}
+
+function hideNewOrderAlert() {
+    if (newOrderAlertTimer) clearTimeout(newOrderAlertTimer);
+    newOrderAlertTimer = null;
+    currentAlertOrderId = '';
+    setHidden(elements.newOrderAlert, true);
+}
+
+function showNewOrderAlert({ title, route, price, orderId = '' }) {
+    if (!elements.newOrderAlert) return;
+    if (newOrderAlertTimer) clearTimeout(newOrderAlertTimer);
+    currentAlertOrderId = orderId;
+    elements.newOrderAlertTitle.textContent = title;
+    elements.newOrderAlertRoute.textContent = route;
+    elements.newOrderAlertPrice.textContent = price;
+    elements.newOrderAlertView.textContent = orderId ? 'Посмотреть заказ' : 'Перейти к заказам';
+    setHidden(elements.newOrderAlert, false);
+    newOrderAlertTimer = setTimeout(hideNewOrderAlert, 15000);
+}
+
+function scrollToOrder(orderId = '') {
+    const orderCard = orderId ? document.getElementById(`driver-order-${orderId}`) : null;
+    const target = orderCard || elements.ordersSection;
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (orderCard) {
+        orderCard.classList.add('ring-4', 'ring-yellow-300');
+        setTimeout(() => orderCard.classList.remove('ring-4', 'ring-yellow-300'), 2500);
+    }
+}
+
+async function showSystemNotification({ title, body, tag, url }) {
+    if (notificationPermission() !== 'granted') return false;
+    const options = {
+        body,
+        icon: './favicon-192x192.png',
+        badge: './favicon-32x32.png',
+        vibrate: [180, 90, 180],
+        tag,
+        renotify: true,
+        data: { url }
+    };
+
+    try {
+        if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.getRegistration()
+                || await navigator.serviceWorker.ready;
+            if (registration) {
+                await registration.showNotification(title, options);
+                return true;
+            }
+        }
+        const notification = new Notification(title, options);
+        const notificationOrderId = new URL(url, window.location.href).searchParams.get('order') || '';
+        notification.onclick = () => {
+            window.focus();
+            scrollToOrder(notificationOrderId);
+            notification.close();
+        };
+        return true;
+    } catch (error) {
+        console.warn('Системное уведомление недоступно:', error.message);
+        return false;
+    }
+}
+
+function orderRoute(order) {
+    return `${order.fromAddress || 'Адрес подачи не указан'} → ${order.toAddress || 'Адрес назначения не указан'}`;
+}
+
+function signalNewOrder(order) {
+    if (!orderAlertsEnabled || !currentCanTakeOrders) return;
+    const route = orderRoute(order);
+    const price = order.priceText || 'Цена уточняется';
+    showNewOrderAlert({ title: 'Новый онлайн-заказ', route, price, orderId: order.id });
+    void playOrderSound();
+    vibrateForOrder();
+    void showSystemNotification({
+        title: 'Новый заказ — Такси «Успех»',
+        body: `${route}\n${price}`,
+        tag: `taxi-uspeh-order-${order.id}`,
+        url: `./drivers.html?order=${encodeURIComponent(order.id)}#driver-online-orders`
+    });
+}
+
+async function testOrderAlerts() {
+    if (!orderAlertsEnabled) return;
+    await prepareOrderSound().catch(() => null);
+    showNewOrderAlert({
+        title: 'Проверка уведомлений',
+        route: 'Звук, вибрация и сообщение в кабинете работают',
+        price: 'Это не настоящий заказ'
+    });
+    void playOrderSound();
+    vibrateForOrder();
+    await showSystemNotification({
+        title: 'Проверка — Такси «Успех»',
+        body: 'Уведомления о новых заказах включены.',
+        tag: 'taxi-uspeh-driver-alert-test',
+        url: './drivers.html#driver-online-orders'
+    });
+}
+
+async function toggleOrderAlerts() {
+    if (orderAlertsEnabled) {
+        orderAlertsEnabled = false;
+        saveOrderAlertsPreference();
+        hideNewOrderAlert();
+        if ('vibrate' in navigator) navigator.vibrate(0);
+        updateOrderAlertsControls();
+        return;
+    }
+
+    orderAlertsEnabled = true;
+    saveOrderAlertsPreference();
+    await prepareOrderSound().catch(() => null);
+    if (notificationPermission() === 'default') {
+        try {
+            await Notification.requestPermission();
+        } catch (error) {
+            console.warn('Не удалось запросить разрешение уведомлений:', error.message);
+        }
+    }
+    updateOrderAlertsControls();
+    await testOrderAlerts();
+}
+
+function updateOrdersPageTitle() {
+    const availableCount = currentCanTakeOrders ? openOrders.length : 0;
+    const assignedCount = assignedOrders.filter((order) => ACTIVE_ORDER_STATUSES.has(order.status)).length;
+    const visibleCount = availableCount + assignedCount;
+    document.title = visibleCount > 0 ? `(${visibleCount}) Заказы — Такси «Успех»` : DEFAULT_PAGE_TITLE;
+}
+
+function scrollRequestedOrderIntoView() {
+    if (requestedOrderHandled) return;
+    const requestedOrderId = new URLSearchParams(window.location.search).get('order');
+    if (!requestedOrderId) {
+        requestedOrderHandled = true;
+        return;
+    }
+    const orderCard = document.getElementById(`driver-order-${requestedOrderId}`);
+    if (!orderCard) return;
+    requestedOrderHandled = true;
+    requestAnimationFrame(() => scrollToOrder(requestedOrderId));
 }
 
 function showMessage(text) {
@@ -164,11 +424,15 @@ function stopOrderWatches() {
     unsubscribeAssignedOrders = null;
     openOrders = [];
     assignedOrders = [];
+    initialOpenOrdersLoaded = false;
+    seenOpenOrderIds = new Set();
+    hideNewOrderAlert();
     setHidden(elements.ordersSection, true);
     setHidden(elements.ordersList, true);
     setHidden(elements.ordersEmpty, true);
     setHidden(elements.ordersLoading, false);
     showOrdersMessage('');
+    updateOrdersPageTitle();
 }
 
 function stopProfileWatches() {
@@ -191,6 +455,8 @@ function createText(tag, className, text) {
 
 function createOrderCard(order, assigned) {
     const card = document.createElement('article');
+    card.id = `driver-order-${order.id}`;
+    card.dataset.orderId = order.id;
     card.className = assigned
         ? 'rounded-xl border-2 border-blue-300 dark:border-blue-700 bg-blue-50/70 dark:bg-blue-950/30 p-3'
         : 'rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3';
@@ -299,6 +565,9 @@ function renderOnlineOrders() {
         elements.ordersList.append(createOrderCard(order, assigned));
     }
 
+    updateOrdersPageTitle();
+    scrollRequestedOrderIntoView();
+
     setHidden(elements.ordersLoading, true);
     setHidden(elements.ordersList, allVisible.length === 0);
     setHidden(elements.ordersEmpty, allVisible.length !== 0);
@@ -344,9 +613,19 @@ function startOrderWatches(user, driverId, driver, canTakeOrders) {
         unsubscribeOpenOrders = onSnapshot(
             query(collection(db, 'orders'), where('status', '==', 'searching')),
             (snapshot) => {
-                openOrders = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
+                const nextOpenOrders = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
+                const newlyAddedOrders = initialOpenOrdersLoaded
+                    ? snapshot.docChanges()
+                        .filter((change) => change.type === 'added' && !seenOpenOrderIds.has(change.doc.id))
+                        .map((change) => ({ id: change.doc.id, ...change.doc.data() }))
+                    : [];
+
+                for (const order of nextOpenOrders) seenOpenOrderIds.add(order.id);
+                initialOpenOrdersLoaded = true;
+                openOrders = nextOpenOrders;
                 openLoaded = true;
                 renderWhenReady();
+                for (const order of newlyAddedOrders) signalNewOrder(order);
             },
             handleOrdersError
         );
@@ -526,6 +805,23 @@ async function copyUid() {
 elements.loginButton?.addEventListener('click', login);
 elements.logoutButton?.addEventListener('click', () => signOut(auth));
 elements.copyUid?.addEventListener('click', copyUid);
+elements.alertsToggle?.addEventListener('click', () => void toggleOrderAlerts());
+elements.alertsTest?.addEventListener('click', () => void testOrderAlerts());
+elements.newOrderAlertClose?.addEventListener('click', hideNewOrderAlert);
+elements.newOrderAlertView?.addEventListener('click', () => {
+    const orderId = currentAlertOrderId;
+    hideNewOrderAlert();
+    scrollToOrder(orderId);
+});
+
+window.addEventListener('focus', updateOrderAlertsControls);
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) updateOrderAlertsControls();
+});
+if (orderAlertsEnabled) {
+    document.addEventListener('pointerdown', () => void prepareOrderSound(), { once: true });
+}
+updateOrderAlertsControls();
 
 getRedirectResult(auth).catch((error) => {
     console.error('Ошибка возврата из Google:', error);

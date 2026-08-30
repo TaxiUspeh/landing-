@@ -15,6 +15,7 @@ import {
     query,
     serverTimestamp,
     setDoc,
+    updateDoc,
     writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
@@ -37,6 +38,13 @@ const elements = {
     active: document.getElementById('stat-active'),
     allowed: document.getElementById('stat-allowed'),
     blocked: document.getElementById('stat-blocked'),
+    ordersSearching: document.getElementById('orders-stat-searching'),
+    ordersActive: document.getElementById('orders-stat-active'),
+    ordersCompleted: document.getElementById('orders-stat-completed'),
+    onlineOrdersLoading: document.getElementById('online-orders-loading'),
+    onlineOrdersEmpty: document.getElementById('online-orders-empty'),
+    onlineOrdersList: document.getElementById('online-orders-list'),
+    onlineOrdersMessage: document.getElementById('online-orders-message'),
     addDriverForm: document.getElementById('add-driver-form'),
     addDriverButton: document.getElementById('add-driver-button'),
     addDriverMessage: document.getElementById('add-driver-message'),
@@ -60,7 +68,11 @@ const elements = {
 
 let currentUser = null;
 let drivers = [];
+let orders = [];
+let orderContacts = new Map();
 let unsubscribeDrivers = null;
+let unsubscribeOrders = null;
+let unsubscribeOrderContacts = null;
 let authActionInProgress = false;
 
 function setHidden(element, hidden) {
@@ -156,12 +168,22 @@ async function copyUid() {
 
 function stopAdminPanel() {
     if (unsubscribeDrivers) unsubscribeDrivers();
+    if (unsubscribeOrders) unsubscribeOrders();
+    if (unsubscribeOrderContacts) unsubscribeOrderContacts();
     unsubscribeDrivers = null;
+    unsubscribeOrders = null;
+    unsubscribeOrderContacts = null;
     drivers = [];
+    orders = [];
+    orderContacts = new Map();
     setHidden(elements.panel, true);
     setHidden(elements.driversList, true);
     setHidden(elements.driversEmpty, true);
     setHidden(elements.driversLoading, false);
+    setHidden(elements.onlineOrdersList, true);
+    setHidden(elements.onlineOrdersEmpty, true);
+    setHidden(elements.onlineOrdersLoading, false);
+    setMessage(elements.onlineOrdersMessage, '');
 }
 
 async function checkAdminAccess(user) {
@@ -178,6 +200,7 @@ async function checkAdminAccess(user) {
 
         setHidden(elements.panel, false);
         startDriversListener();
+        startOrdersListeners();
         await loadOrdersLink();
     } catch (error) {
         console.warn('Проверка администратора не выполнена:', error.code || error.message);
@@ -330,6 +353,169 @@ function startDriversListener() {
             elements.driversEmpty.querySelector('p').textContent = 'Не удалось загрузить водителей';
         }
     );
+}
+
+const ACTIVE_ORDER_STATUSES = new Set(['accepted', 'en_route', 'arrived', 'in_trip']);
+const CANCELLABLE_ORDER_STATUSES = new Set(['searching', ...ACTIVE_ORDER_STATUSES]);
+
+function onlineOrderStatus(status) {
+    return ({
+        searching: ['Ищет водителя', 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300'],
+        accepted: ['Водитель принял', 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'],
+        en_route: ['Водитель в пути', 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'],
+        arrived: ['Водитель приехал', 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'],
+        in_trip: ['Поездка выполняется', 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300'],
+        completed: ['Завершён', 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'],
+        cancelled: ['Отменён', 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300']
+    })[status] || ['Статус неизвестен', 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'];
+}
+
+function orderTime(order) {
+    if (!order.createdAt?.toDate) return '';
+    return new Intl.DateTimeFormat('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(order.createdAt.toDate());
+}
+
+function createOrderText(tag, className, text) {
+    const element = document.createElement(tag);
+    element.className = className;
+    element.textContent = text;
+    return element;
+}
+
+function createOnlineOrderCard(order) {
+    const card = document.createElement('article');
+    card.className = 'rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 p-4';
+
+    const header = document.createElement('div');
+    header.className = 'flex items-start justify-between gap-3';
+    const titleWrap = document.createElement('div');
+    titleWrap.className = 'min-w-0';
+    titleWrap.append(
+        createOrderText('h3', 'font-extrabold', order.orderNumber || `Заказ ${order.id.slice(0, 8)}`),
+        createOrderText('p', 'text-xs text-slate-500 dark:text-slate-400', orderTime(order))
+    );
+    const [statusText, statusClass] = onlineOrderStatus(order.status);
+    const badge = createOrderText('span', `flex-shrink-0 rounded-full px-3 py-1 text-[11px] font-extrabold ${statusClass}`, statusText);
+    header.append(titleWrap, badge);
+
+    const route = createOrderText('p', 'mt-3 font-bold break-words', `${order.fromAddress || '—'} → ${order.toAddress || '—'}`);
+    const price = createOrderText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', order.priceText || 'Цена уточняется');
+    card.append(header, route, price);
+
+    if (Array.isArray(order.stops) && order.stops.length) {
+        card.append(createOrderText('p', 'mt-2 text-xs text-slate-600 dark:text-slate-300', `Остановки: ${order.stops.join(' → ')}`));
+    }
+    if (order.scheduledFor) {
+        card.append(createOrderText('p', 'mt-1 text-xs text-slate-600 dark:text-slate-300', `Время: ${order.scheduledFor.replace('T', ' ')}`));
+    }
+    if (order.wishes) {
+        card.append(createOrderText('p', 'mt-1 text-xs text-slate-600 dark:text-slate-300', `Пожелания: ${order.wishes}`));
+    }
+
+    const contact = orderContacts.get(order.id);
+    const contactPhone = contact?.passengerPhone || contact?.customerPhone || '';
+    const contactName = contact?.customerName || 'Клиент';
+    const details = document.createElement('div');
+    details.className = 'mt-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 text-xs space-y-1';
+    details.append(createOrderText('p', 'font-bold', contact ? `${contactName}${contactPhone ? ` · ${contactPhone}` : ''}` : 'Контакт загружается…'));
+    details.append(createOrderText(
+        'p',
+        'text-slate-500 dark:text-slate-400',
+        order.assignedDriverUid
+            ? `Водитель: ${order.driverName || order.assignedDriverId || 'назначен'}${order.driverCar ? ` · ${order.driverCar}` : ''}`
+            : 'Водитель ещё не назначен'
+    ));
+    card.append(details);
+
+    const actions = document.createElement('div');
+    actions.className = 'mt-3 flex flex-wrap gap-2';
+    if (contactPhone) {
+        const call = document.createElement('a');
+        call.href = `tel:${String(contactPhone).replace(/[^\d+]/g, '')}`;
+        call.className = 'rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-xs font-extrabold';
+        call.textContent = 'Позвонить клиенту';
+        actions.append(call);
+    }
+    if (CANCELLABLE_ORDER_STATUSES.has(order.status)) {
+        const cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.className = 'rounded-xl border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-2 text-xs font-extrabold';
+        cancel.textContent = 'Отменить заказ';
+        cancel.addEventListener('click', () => cancelOnlineOrder(order));
+        actions.append(cancel);
+    }
+    if (actions.childElementCount) card.append(actions);
+    return card;
+}
+
+function renderOnlineOrders() {
+    const active = orders.filter((order) => ACTIVE_ORDER_STATUSES.has(order.status)).length;
+    elements.ordersSearching.textContent = String(orders.filter((order) => order.status === 'searching').length);
+    elements.ordersActive.textContent = String(active);
+    elements.ordersCompleted.textContent = String(orders.filter((order) => order.status === 'completed').length);
+
+    const priority = { searching: 0, accepted: 1, en_route: 1, arrived: 1, in_trip: 1, completed: 2, cancelled: 3 };
+    const sorted = [...orders].sort((a, b) => {
+        const priorityDifference = (priority[a.status] ?? 4) - (priority[b.status] ?? 4);
+        if (priorityDifference) return priorityDifference;
+        const aTime = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const bTime = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+        return bTime - aTime;
+    }).slice(0, 50);
+
+    elements.onlineOrdersList.replaceChildren();
+    for (const order of sorted) elements.onlineOrdersList.append(createOnlineOrderCard(order));
+    setHidden(elements.onlineOrdersLoading, true);
+    setHidden(elements.onlineOrdersEmpty, sorted.length !== 0);
+    setHidden(elements.onlineOrdersList, sorted.length === 0);
+}
+
+function handleOnlineOrdersError(error) {
+    console.warn('Онлайн-заказы не загрузились:', error.code || error.message);
+    setHidden(elements.onlineOrdersLoading, true);
+    setHidden(elements.onlineOrdersList, true);
+    setHidden(elements.onlineOrdersEmpty, true);
+    setMessage(
+        elements.onlineOrdersMessage,
+        error.code === 'permission-denied'
+            ? 'Онлайн-заказы ещё не включены в правилах Firebase. Рабочий чат WhatsApp продолжает работать.'
+            : 'Не удалось загрузить онлайн-заказы. Проверьте интернет.'
+    );
+}
+
+function startOrdersListeners() {
+    setHidden(elements.onlineOrdersLoading, false);
+    setMessage(elements.onlineOrdersMessage, '');
+    unsubscribeOrders = onSnapshot(collection(db, 'orders'), (snapshot) => {
+        orders = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
+        renderOnlineOrders();
+    }, handleOnlineOrdersError);
+
+    unsubscribeOrderContacts = onSnapshot(collection(db, 'orderContacts'), (snapshot) => {
+        orderContacts = new Map(snapshot.docs.map((snapshotDoc) => [snapshotDoc.id, snapshotDoc.data()]));
+        if (orders.length) renderOnlineOrders();
+    }, handleOnlineOrdersError);
+}
+
+async function cancelOnlineOrder(order) {
+    if (!currentUser || !CANCELLABLE_ORDER_STATUSES.has(order.status)) return;
+    if (!window.confirm(`Отменить заказ ${order.orderNumber || order.id}? Клиент и водитель сразу увидят отмену.`)) return;
+    setMessage(elements.onlineOrdersMessage, '');
+    try {
+        await updateDoc(doc(db, 'orders', order.id), {
+            status: 'cancelled',
+            updatedAt: serverTimestamp()
+        });
+        setMessage(elements.onlineOrdersMessage, 'Заказ отменён.', true);
+    } catch (error) {
+        console.error('Не удалось отменить заказ:', error);
+        setMessage(elements.onlineOrdersMessage, 'Не удалось отменить заказ. Обновите страницу и попробуйте ещё раз.');
+    }
 }
 
 async function ensureUidAvailable(uid, driverId) {

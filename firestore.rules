@@ -45,6 +45,113 @@ service cloud.firestore {
         && get(linkedDriverDocument()).data.balance < 0;
     }
 
+    function orderDocument(orderId) {
+      return /databases/$(database)/documents/orders/$(orderId);
+    }
+
+    function validClientOrderCreate() {
+      return signedIn()
+        && request.resource.data.keys().hasOnly([
+          'orderNumber', 'serviceType', 'source', 'clientUid',
+          'fromAddress', 'toAddress', 'stops', 'wishes', 'scheduledFor',
+          'direction', 'priceText', 'priceAmount', 'status',
+          'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.clientUid == request.auth.uid
+        && request.resource.data.serviceType == 'taxi'
+        && request.resource.data.source == 'online'
+        && request.resource.data.status == 'searching'
+        && request.resource.data.orderNumber is string
+        && request.resource.data.orderNumber.size() > 0
+        && request.resource.data.orderNumber.size() <= 32
+        && request.resource.data.fromAddress is string
+        && request.resource.data.fromAddress.size() > 0
+        && request.resource.data.fromAddress.size() <= 240
+        && request.resource.data.toAddress is string
+        && request.resource.data.toAddress.size() > 0
+        && request.resource.data.toAddress.size() <= 240
+        && request.resource.data.stops is list
+        && request.resource.data.stops.size() <= 5
+        && request.resource.data.wishes is string
+        && request.resource.data.wishes.size() <= 500
+        && request.resource.data.scheduledFor is string
+        && request.resource.data.scheduledFor.size() <= 40
+        && request.resource.data.direction is string
+        && request.resource.data.direction.size() <= 120
+        && request.resource.data.priceText is string
+        && request.resource.data.priceText.size() <= 80
+        && request.resource.data.priceAmount is number
+        && request.resource.data.priceAmount >= 0
+        && request.resource.data.priceAmount <= 10000000
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function clientCancelsOwnSearchingOrder() {
+      return signedIn()
+        && resource.data.clientUid == request.auth.uid
+        && resource.data.status == 'searching'
+        && request.resource.data.status == 'cancelled'
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+    }
+
+    function driverAcceptsSearchingOrder() {
+      return mayOpenOrders()
+        && resource.data.status == 'searching'
+        && request.resource.data.status == 'accepted'
+        && request.resource.data.assignedDriverUid == request.auth.uid
+        && request.resource.data.assignedDriverId == linkedDriverId()
+        && request.resource.data.driverName == get(linkedDriverDocument()).data.get('name', 'Водитель')
+        && request.resource.data.driverPhone == get(linkedDriverDocument()).data.get('phone', '')
+        && request.resource.data.driverCar == get(linkedDriverDocument()).data.get('car', '')
+        && request.resource.data.driverColor == get(linkedDriverDocument()).data.get('color', '')
+        && request.resource.data.acceptedAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'assignedDriverUid', 'assignedDriverId',
+          'driverName', 'driverPhone', 'driverCar', 'driverColor',
+          'acceptedAt', 'updatedAt'
+        ]);
+    }
+
+    function validDriverStatusTransition() {
+      return (resource.data.status == 'accepted' && request.resource.data.status == 'en_route')
+        || (resource.data.status == 'en_route' && request.resource.data.status == 'arrived')
+        || (resource.data.status == 'arrived' && request.resource.data.status == 'in_trip')
+        || (resource.data.status == 'in_trip' && request.resource.data.status == 'completed');
+    }
+
+    function assignedDriverAdvancesOrder() {
+      return hasDriverAccount()
+        && resource.data.assignedDriverUid == request.auth.uid
+        && resource.data.assignedDriverId == linkedDriverId()
+        && validDriverStatusTransition()
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+    }
+
+    function validClientContactCreate(orderId) {
+      return signedIn()
+        && request.resource.data.keys().hasOnly([
+          'clientUid', 'customerName', 'customerPhone', 'passengerPhone',
+          'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.clientUid == request.auth.uid
+        && request.resource.data.customerName is string
+        && request.resource.data.customerName.size() > 0
+        && request.resource.data.customerName.size() <= 80
+        && request.resource.data.customerPhone is string
+        && request.resource.data.customerPhone.size() >= 10
+        && request.resource.data.customerPhone.size() <= 32
+        && request.resource.data.passengerPhone is string
+        && request.resource.data.passengerPhone.size() <= 32
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && existsAfter(orderDocument(orderId))
+        && getAfter(orderDocument(orderId)).data.clientUid == request.auth.uid;
+    }
+
     // Первую запись администратора владелец проекта создаёт вручную в консоли.
     // Клиентский сайт не может назначить администратора сам себе.
     match /admins/{adminId} {
@@ -72,6 +179,29 @@ service cloud.firestore {
     match /settings/{settingId} {
       allow read: if isAdmin() || (settingId == 'driverPortal' && mayOpenOrders());
       allow create, update, delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow create: if isAdmin() || validClientOrderCreate();
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.clientUid == request.auth.uid)
+        || (mayOpenOrders() && resource.data.status == 'searching')
+        || (signedIn() && resource.data.get('assignedDriverUid', '') == request.auth.uid);
+      allow update: if isAdmin()
+        || clientCancelsOwnSearchingOrder()
+        || driverAcceptsSearchingOrder()
+        || assignedDriverAdvancesOrder();
+      allow delete: if isAdmin();
+    }
+
+    match /orderContacts/{orderId} {
+      allow create: if isAdmin() || validClientContactCreate(orderId);
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.clientUid == request.auth.uid)
+        || (signedIn()
+          && exists(orderDocument(orderId))
+          && get(orderDocument(orderId)).data.get('assignedDriverUid', '') == request.auth.uid);
+      allow update, delete: if isAdmin();
     }
 
     match /{document=**} {

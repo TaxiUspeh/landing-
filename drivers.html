@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- PWA Settings start -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,12 +11,10 @@
     <meta name="theme-color" content="#1d4ed8" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
     
-    <!-- Иконка приложения (используем внешнюю ссылку на иконку такси) -->
-    <link rel="icon" type="image/png" href="https://img.icons8.com/color/512/taxi.png">
-    <link rel="apple-touch-icon" href="https://img.icons8.com/color/512/taxi.png">
+    <link rel="icon" type="image/png" href="./favicon-192x192.png">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
     
-    <!-- Манифест для Android (встроенный) -->
-    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%D0%A2%D0%B0%D0%BA%D1%81%D0%B8%20%D0%A3%D1%81%D0%BF%D0%B5%D1%85%22%2C%22short_name%22%3A%22%D0%A3%D1%81%D0%BF%D0%B5%D1%85%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23ffffff%22%2C%22theme_color%22%3A%22%231d4ed8%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fimg.icons8.com%2Fcolor%2F512%2Ftaxi.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+    <link rel="manifest" href="./drivers.webmanifest">
     <!-- PWA Settings end -->
 
     <title>Работа в Такси «Успех» — для водителей</title>
@@ -161,6 +159,10 @@
         @media (min-width: 768px) {
             body { padding-bottom: 0; }
         }
+
+        #driver-account {
+            scroll-margin-top: 1rem;
+        }
     </style>
 </head>
 <body class="text-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors-custom">
@@ -187,6 +189,94 @@
     <!-- MAIN -->
     <main class="max-w-3xl mx-auto px-4 py-6 flex-grow w-full">
 
+        <!-- Личный кабинет действующего водителя -->
+        <section id="driver-account" class="mb-8 fade-in-section is-visible" aria-labelledby="driver-account-title">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-blue-100 dark:border-gray-700 overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-700 to-indigo-700 px-5 py-4 text-white">
+                    <div class="flex items-center gap-3">
+                        <span class="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center" aria-hidden="true">
+                            <i class="fas fa-id-card text-xl"></i>
+                        </span>
+                        <div>
+                            <h2 id="driver-account-title" class="text-lg font-extrabold">Личный кабинет водителя</h2>
+                            <p class="text-xs text-blue-100">Вход только для подключённых водителей</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-5">
+                    <div id="driver-auth-loading" class="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300" role="status">
+                        <i class="fas fa-circle-notch fa-spin text-blue-600" aria-hidden="true"></i>
+                        <span>Проверяем вход…</span>
+                    </div>
+
+                    <div id="driver-signed-out" class="hidden">
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                            Войдите через Google. После подключения аккаунта диспетчером здесь появятся ваш баланс и доступ к рабочим действиям.
+                        </p>
+                        <button id="driver-login-button" type="button"
+                                class="btn-hover w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white py-3.5 px-4 rounded-xl font-bold shadow-sm flex items-center justify-center gap-3">
+                            <i class="fab fa-google text-red-500 text-xl" aria-hidden="true"></i>
+                            <span>Войти через Google</span>
+                        </button>
+                    </div>
+
+                    <div id="driver-signed-in" class="hidden">
+                        <div class="flex items-center gap-3 mb-4">
+                            <img id="driver-user-photo" class="hidden w-12 h-12 rounded-full object-cover bg-gray-100" alt="Фото аккаунта Google">
+                            <span id="driver-user-placeholder" class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 flex items-center justify-center" aria-hidden="true">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <div class="min-w-0 flex-grow">
+                                <p id="driver-user-name" class="font-bold truncate">Водитель</p>
+                                <p id="driver-user-email" class="text-xs text-gray-500 dark:text-gray-400 truncate"></p>
+                            </div>
+                            <button id="driver-logout-button" type="button" class="text-xs font-bold text-red-600 dark:text-red-400 px-2 py-2" aria-label="Выйти из аккаунта">Выйти</button>
+                        </div>
+
+                        <div id="driver-account-pending" class="hidden rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4">
+                            <p class="font-bold text-amber-900 dark:text-amber-200 mb-1">Аккаунт ещё не подключён</p>
+                            <p class="text-xs text-amber-800 dark:text-amber-300 mb-3">Передайте диспетчеру этот UID. Он нужен один раз, чтобы связать Google-аккаунт с вашей карточкой водителя.</p>
+                            <div class="flex gap-2">
+                                <code id="driver-user-uid" class="min-w-0 flex-grow bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 text-xs break-all select-all"></code>
+                                <button id="driver-copy-uid" type="button" class="flex-shrink-0 bg-amber-600 hover:bg-amber-700 text-white rounded-lg px-3" aria-label="Скопировать UID">
+                                    <i class="fas fa-copy" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="driver-profile" class="hidden">
+                            <div class="grid grid-cols-2 gap-3 mb-4">
+                                <div class="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-3">
+                                    <p class="text-[11px] text-gray-500 dark:text-gray-400">Водитель</p>
+                                    <p id="driver-profile-name" class="font-extrabold truncate">—</p>
+                                    <p id="driver-profile-car" class="text-xs text-gray-500 dark:text-gray-400 truncate">—</p>
+                                </div>
+                                <div class="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 p-3">
+                                    <p class="text-[11px] text-blue-600 dark:text-blue-300">Баланс</p>
+                                    <p id="driver-profile-balance" class="font-black text-xl text-blue-700 dark:text-blue-300">—</p>
+                                </div>
+                            </div>
+                            <div id="driver-work-status" class="rounded-xl p-3 mb-4 text-sm font-bold" role="status"></div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <a id="driver-orders-link" href="#" target="_blank" rel="noopener noreferrer"
+                                   class="hidden bg-yellow-400 hover:bg-yellow-500 text-blue-950 py-3 rounded-xl font-extrabold text-center shadow-md">
+                                    <i class="fas fa-list-check mr-2" aria-hidden="true"></i>Открыть заказы
+                                </a>
+                                <a href="https://yandex.ru/navi" target="_blank" rel="noopener noreferrer"
+                                   class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white py-3 rounded-xl font-bold text-center shadow-md">
+                                    <i class="fas fa-location-arrow text-blue-600 mr-2" aria-hidden="true"></i>Навигатор
+                                </a>
+                            </div>
+                            <p id="driver-orders-unavailable" class="hidden mt-3 text-xs text-center text-gray-500 dark:text-gray-400">Ссылка на рабочие заказы пока не настроена диспетчером.</p>
+                        </div>
+
+                        <p id="driver-auth-message" class="hidden mt-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-xs text-red-700 dark:text-red-300" role="alert"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Основные действия -->
         <div class="flex flex-col gap-4 mb-10 fade-in-section">
             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-md border-l-4 border-green-500">
@@ -206,10 +296,10 @@
                     <span>Режим Пассажира</span>
                 </a>
 
-                <a href="https://chat.whatsapp.com/Ke2bt9sD8VfCFmZ1LeEcqe" target="_blank" rel="noopener noreferrer"
+                <a href="#driver-account"
                    class="btn-hover bg-yellow-400 hover:bg-yellow-500 text-blue-900 py-3.5 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
-                    <i class="fas fa-users"></i>
-                    <span>Чат заказов</span>
+                    <i class="fas fa-right-to-bracket"></i>
+                    <span>Вход водителя</span>
                 </a>
                 <a href="https://yandex.ru/navi" target="_blank" rel="noopener noreferrer"
                    class="btn-hover bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white py-3.5 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
@@ -498,6 +588,14 @@
             slider.addEventListener('input', updateCalculator);
             updateCalculator();
         });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' })
+                    .catch(error => console.warn('Service Worker не зарегистрирован:', error));
+            });
+        }
     </script>
+    <script type="module" src="./driver-portal.js"></script>
 </body>
 </html>

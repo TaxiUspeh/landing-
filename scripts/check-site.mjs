@@ -2,7 +2,7 @@ import { readFile, access } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { getHolidayForDate } from '../holiday-calendar.js';
 
-const htmlFiles = ['index.html', 'drivers.html', 'food.html', 'SHASHDVOR.html'];
+const htmlFiles = ['index.html', 'drivers.html', 'dispatcher.html', 'food.html', 'SHASHDVOR.html'];
 const failures = [];
 const htmlByFile = new Map();
 for (const file of htmlFiles) {
@@ -35,6 +35,8 @@ for (const file of htmlFiles) {
   }
 }
 const index = htmlByFile.get('index.html');
+const drivers = htmlByFile.get('drivers.html');
+const dispatcher = htmlByFile.get('dispatcher.html');
 const food = htmlByFile.get('food.html');
 const shashlyk = htmlByFile.get('SHASHDVOR.html');
 for (const expected of ['BASE_PRICE: 800', 'от <strong>800 тенге</strong>', "register('./service-worker.js', { updateViaCache: 'none' })", 'нажмите «Отправить»']) {
@@ -223,6 +225,31 @@ if (!mapOverlayTag || /whitespace-nowrap/.test(mapOverlayTag)) failures.push('in
 if (/WhatsApp Image 2026-08-24/.test(index)) failures.push('index.html: broken StroyDom image remains');
 if (/chip\.innerHTML\s*=/.test(index)) failures.push('index.html: address history uses innerHTML');
 
+for (const expected of [
+  'id="driver-account"',
+  'id="driver-login-button"',
+  'id="driver-account-pending"',
+  'id="driver-profile-balance"',
+  'src="./driver-portal.js"',
+  '<link rel="manifest" href="./drivers.webmanifest">',
+  "register('./service-worker.js', { updateViaCache: 'none' })"
+]) {
+  if (!drivers.includes(expected)) failures.push('drivers.html: missing protected driver portal ' + expected);
+}
+if (/https:\/\/chat\.whatsapp\.com\//i.test(drivers)) failures.push('drivers.html: public orders-chat invite remains in page source');
+if (/user-scalable=no|maximum-scale=1(?:\.0)?/i.test(drivers)) failures.push('drivers.html: browser zoom is disabled');
+
+for (const expected of [
+  '<meta name="robots" content="noindex, nofollow, noarchive">',
+  'id="dispatcher-login-button"',
+  'id="dispatcher-user-uid"',
+  'id="add-driver-form"',
+  'id="drivers-list"',
+  'src="./dispatcher.js"'
+]) {
+  if (!dispatcher.includes(expected)) failures.push('dispatcher.html: missing protected dispatcher behavior ' + expected);
+}
+
 for (const [file, html, expected] of [
   ['food.html', food, {
     manifest: '<link rel="manifest" href="./food.webmanifest">',
@@ -265,14 +292,15 @@ if (!shashOrder.includes("document.getElementById('order-phone').value = ''")) f
 if (!shashlyk.includes('Бронь подготовлена!') || !shashlyk.includes('Заявка подготовлена!')) failures.push('SHASHDVOR.html: prepared request wording is missing');
 
 const manifest = JSON.parse(await readFile('site.webmanifest', 'utf8'));
+const driversManifest = JSON.parse(await readFile('drivers.webmanifest', 'utf8'));
 const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v7-pwa-icons'")) failures.push('service-worker.js: PWA icon cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v8-driver-auth'")) failures.push('service-worker.js: driver-auth cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v[12345](?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v[1234567](?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
 for (const expected of [
   "'./food.webmanifest'",
   "'./shashlyk.webmanifest'",
@@ -280,6 +308,11 @@ for (const expected of [
   "'./food-icon-512.png'",
   "'./shashlyk-icon-192.png'",
   "'./shashlyk-icon-512.png'",
+  "'./driver-portal.js'",
+  "'./drivers.webmanifest'",
+  "'./dispatcher.html'",
+  "'./dispatcher.js'",
+  "'./firebase-config.js'",
   'const cachedPage = await caches.match(event.request)'
 ]) {
   if (!serviceWorker.includes(expected)) failures.push('service-worker.js: missing ' + expected);
@@ -326,6 +359,7 @@ for (const testCase of [
 }
 for (const [name, appManifest, expectedStart] of [
   ['site.webmanifest', manifest, '/landing-/'],
+  ['drivers.webmanifest', driversManifest, './drivers.html'],
   ['food.webmanifest', foodManifest, './food.html'],
   ['shashlyk.webmanifest', shashlykManifest, './SHASHDVOR.html']
 ]) {
@@ -336,6 +370,6 @@ for (const [name, appManifest, expectedStart] of [
       .catch(() => failures.push('missing icon: ' + icon.src));
   }
 }
-for (const file of ['service-worker.js', 'holiday-calendar.js', 'robots.txt', 'sitemap.xml']) await access(file).catch(() => failures.push('missing ' + file));
+for (const file of ['service-worker.js', 'holiday-calendar.js', 'drivers.webmanifest', 'firebase-config.js', 'driver-portal.js', 'dispatcher.js', 'firestore.rules', 'robots.txt', 'sitemap.xml']) await access(file).catch(() => failures.push('missing ' + file));
 if (failures.length) { console.error(failures.join('\n')); process.exit(1); }
 console.log('Site checks passed (' + htmlFiles.length + ' HTML pages).');

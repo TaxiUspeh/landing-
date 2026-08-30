@@ -1,9 +1,14 @@
-const CACHE_NAME = 'taxi-uspeh-v7-pwa-icons';
+const CACHE_NAME = 'taxi-uspeh-v8-driver-auth';
 const APP_SHELL = [
   './',
   './index.html',
   './holiday-calendar.js',
   './drivers.html',
+  './drivers.webmanifest',
+  './driver-portal.js',
+  './dispatcher.html',
+  './dispatcher.js',
+  './firebase-config.js',
   './food.html',
   './SHASHDVOR.html',
   './food.webmanifest',

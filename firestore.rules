@@ -115,7 +115,11 @@ service cloud.firestore {
       return commissionBaseAmountForOrder(orderId) / 5;
     }
 
-    function validCommissionSettlement(orderId, driverId) {
+    // Проверяет поля завершённого онлайн-заказа и связанное изменение баланса.
+    // Эта проверка намеренно не требует запись истории: правило создания истории
+    // использует её же, а сам заказ ниже отдельно требует наличие истории в той же
+    // атомарной операции.
+    function validCommissionOrderAndBalance(orderId, driverId) {
       return existsAfter(orderDocument(orderId))
         && getAfter(orderDocument(orderId)).data.status == 'completed'
         && getAfter(orderDocument(orderId)).data.assignedDriverUid == request.auth.uid
@@ -135,7 +139,11 @@ service cloud.firestore {
         && getAfter(orderDocument(orderId)).data.commissionBalanceBefore == get(driverDocument(driverId)).data.balance
         && getAfter(orderDocument(orderId)).data.commissionBalanceAfter == getAfter(driverDocument(driverId)).data.balance
         && getAfter(driverDocument(driverId)).data.lastCommissionOrderId == orderId
-        && getAfter(driverDocument(driverId)).data.updatedAt == request.time
+        && getAfter(driverDocument(driverId)).data.updatedAt == request.time;
+    }
+
+    function validCommissionSettlement(orderId, driverId) {
+      return validCommissionOrderAndBalance(orderId, driverId)
         && existsAfter(onlineCommissionHistoryDocument(orderId));
     }
 
@@ -168,7 +176,7 @@ service cloud.firestore {
         && request.resource.data.difference == request.resource.data.commissionAmount
         && request.resource.data.previousBalance == get(driverDocument(linkedDriverId())).data.balance
         && request.resource.data.newBalance == getAfter(driverDocument(linkedDriverId())).data.balance
-        && validCommissionSettlement(request.resource.data.orderId, linkedDriverId());
+        && validCommissionOrderAndBalance(request.resource.data.orderId, linkedDriverId());
     }
 
     function driverAppliesOwnOnlineCommission(driverId) {
@@ -180,7 +188,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'balance', 'lastCommissionOrderId', 'updatedAt'
         ])
-        && validCommissionSettlement(request.resource.data.lastCommissionOrderId, driverId)
+        && validCommissionOrderAndBalance(request.resource.data.lastCommissionOrderId, driverId)
         && request.resource.data.balance == resource.data.balance
           + commissionAmountForOrder(request.resource.data.lastCommissionOrderId);
     }

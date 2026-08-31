@@ -1371,21 +1371,30 @@
                             <div id="additionalStops" class="mt-2.5 space-y-2.5" oninput="updateTaxiPrice()"></div>
                         </div>
                     </div>
-                    <section class="rounded-xl border border-violet-200 bg-violet-50 p-3.5" aria-labelledby="taxi-wishes-title">
-                        <div class="flex items-center justify-between gap-3">
-                            <label id="taxi-wishes-title" for="taxiWishes" class="text-sm font-bold text-violet-950">
-                                <i class="fas fa-comment-dots mr-2 text-violet-600" aria-hidden="true"></i>Пожелания к заказу
-                            </label>
-                            <span class="text-[11px] font-semibold text-violet-700">Необязательно</span>
+                    <section class="overflow-hidden rounded-xl border border-violet-200 bg-violet-50" aria-labelledby="taxi-wishes-title">
+                        <button id="taxi-wishes-toggle" type="button" onclick="toggleTaxiWishes()" aria-expanded="false" aria-controls="taxiWishesContent"
+                                class="w-full p-3.5 text-left hover:bg-violet-100/70 focus:outline-none btn-active">
+                            <span class="flex items-center justify-between gap-3">
+                                <span class="min-w-0">
+                                    <span id="taxi-wishes-title" class="block text-sm font-bold text-violet-950">
+                                        <i class="fas fa-comment-dots mr-2 text-violet-600" aria-hidden="true"></i>Пожелания к заказу
+                                    </span>
+                                    <span id="taxi-wishes-summary" class="mt-0.5 block truncate text-[11px] font-semibold text-violet-700">Необязательно</span>
+                                </span>
+                                <i id="taxiWishesIcon" class="fas fa-chevron-down flex-shrink-0 text-violet-600 transition-transform duration-300" aria-hidden="true"></i>
+                            </span>
+                        </button>
+                        <div id="taxiWishesContent" class="hidden border-t border-violet-200 px-3.5 pb-3.5 pt-3">
+                            <label for="taxiWishes" class="sr-only">Пожелания к заказу</label>
+                            <textarea id="taxiWishes" name="wishes" rows="2" maxlength="500" class="form-input-control" placeholder="Например: нужен универсал, много багажа, детское кресло…"></textarea>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <button type="button" onclick="addWish('Нужен универсал')" class="wish-tag px-3 py-1.5 bg-white text-violet-800 text-xs rounded-lg border border-violet-200 hover:bg-violet-100 hover:border-violet-300 transition btn-active">🚙 Универсал</button>
+                                <button type="button" onclick="addWish('Детское кресло')" class="wish-tag px-3 py-1.5 bg-white text-violet-800 text-xs rounded-lg border border-violet-200 hover:bg-violet-100 hover:border-violet-300 transition btn-active">👶 Детское кресло</button>
+                                <button type="button" onclick="addWish('Много багажа')" class="wish-tag px-3 py-1.5 bg-white text-violet-800 text-xs rounded-lg border border-violet-200 hover:bg-violet-100 hover:border-violet-300 transition btn-active">🧳 Багаж</button>
+                                <button type="button" onclick="addWish('С животным')" class="wish-tag px-3 py-1.5 bg-white text-violet-800 text-xs rounded-lg border border-violet-200 hover:bg-violet-100 hover:border-violet-300 transition btn-active">🐕 С животным</button>
+                            </div>
+                            <p class="mt-2 text-[11px] text-violet-800">Пожелание увидят водитель и диспетчер. Выполнение зависит от наличия подходящего автомобиля.</p>
                         </div>
-                        <textarea id="taxiWishes" name="wishes" rows="2" maxlength="500" class="form-input-control mt-2" placeholder="Например: нужен универсал, много багажа, детское кресло…"></textarea>
-                        <div class="flex flex-wrap gap-2 mt-2">
-                            <button type="button" onclick="addWish('Нужен универсал')" class="wish-tag px-3 py-1.5 bg-white text-violet-800 text-xs rounded-lg border border-violet-200 hover:bg-violet-100 hover:border-violet-300 transition btn-active">🚙 Универсал</button>
-                            <button type="button" onclick="addWish('Детское кресло')" class="wish-tag px-3 py-1.5 bg-white text-violet-800 text-xs rounded-lg border border-violet-200 hover:bg-violet-100 hover:border-violet-300 transition btn-active">👶 Детское кресло</button>
-                            <button type="button" onclick="addWish('Много багажа')" class="wish-tag px-3 py-1.5 bg-white text-violet-800 text-xs rounded-lg border border-violet-200 hover:bg-violet-100 hover:border-violet-300 transition btn-active">🧳 Багаж</button>
-                            <button type="button" onclick="addWish('С животным')" class="wish-tag px-3 py-1.5 bg-white text-violet-800 text-xs rounded-lg border border-violet-200 hover:bg-violet-100 hover:border-violet-300 transition btn-active">🐕 С животным</button>
-                        </div>
-                        <p class="mt-2 text-[11px] text-violet-800">Пожелание увидят водитель и диспетчер. Выполнение зависит от наличия подходящего автомобиля.</p>
                     </section>
                     <div class="border border-blue-200 rounded-xl overflow-hidden">
                         <button type="button" onclick="togglePreorder()" class="w-full p-3.5 bg-blue-50 flex justify-between items-center text-left focus:outline-none btn-active">
@@ -3343,6 +3352,7 @@
                     stopCounter = 0; 
                     const form = document.getElementById(modalId.replace('Modal', 'Form'));
                     if (form) form.reset();
+                    if (modalId === 'taxiModal') window.resetTaxiWishesPanel?.();
                 } else if (modalId === 'servicesMenuModal') {
                 } else {
                     const form = document.getElementById(modalId.replace('Modal', 'Form'));
@@ -4513,9 +4523,42 @@
         window.togglePreorder = function() {
             const content = document.getElementById('preorderContent');
             const icon = document.getElementById('preorderIcon');
-            if (content.classList.contains('hidden')) { content.classList.remove('hidden'); if (icon) icon.classList.add('rotate-180'); } 
+            if (content.classList.contains('hidden')) { content.classList.remove('hidden'); if (icon) icon.classList.add('rotate-180'); }
             else { content.classList.add('hidden'); if (icon) icon.classList.remove('rotate-180'); }
         }
+
+        function updateTaxiWishesSummary() {
+            const wishes = document.getElementById('taxiWishes')?.value.trim() || '';
+            const summary = document.getElementById('taxi-wishes-summary');
+            if (!summary) return;
+            summary.textContent = wishes
+                ? (wishes.length > 52 ? `${wishes.slice(0, 52)}…` : wishes)
+                : 'Необязательно';
+        }
+
+        window.toggleTaxiWishes = function() {
+            const content = document.getElementById('taxiWishesContent');
+            const icon = document.getElementById('taxiWishesIcon');
+            const toggle = document.getElementById('taxi-wishes-toggle');
+            if (!content) return;
+            const willOpen = content.classList.contains('hidden');
+            content.classList.toggle('hidden', !willOpen);
+            icon?.classList.toggle('rotate-180', willOpen);
+            toggle?.setAttribute('aria-expanded', String(willOpen));
+            updateTaxiWishesSummary();
+            if (willOpen) document.getElementById('taxiWishes')?.focus();
+        }
+
+        window.resetTaxiWishesPanel = function() {
+            const content = document.getElementById('taxiWishesContent');
+            const icon = document.getElementById('taxiWishesIcon');
+            const toggle = document.getElementById('taxi-wishes-toggle');
+            content?.classList.add('hidden');
+            icon?.classList.remove('rotate-180');
+            toggle?.setAttribute('aria-expanded', 'false');
+            updateTaxiWishesSummary();
+        }
+        document.getElementById('taxiWishes')?.addEventListener('input', updateTaxiWishesSummary);
         
         window.openServicesMenu = function(mode) {
             orderDestination = mode;
@@ -4560,6 +4603,7 @@
             let currentText = wishEl.value.trim();
             if (!currentText) wishEl.value = text;
             else if (!currentText.includes(text)) wishEl.value = currentText + ', ' + text;
+            updateTaxiWishesSummary();
         }
 
         window.payKaspi = function() {

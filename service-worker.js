@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v20-driver-cabinet-link';
+const CACHE_NAME = 'taxi-uspeh-v21-collapsible-order-wishes';
 const APP_SHELL = [
   './',
   './index.html',

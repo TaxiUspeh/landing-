@@ -46,6 +46,10 @@ for (const expected of ['BASE_PRICE: 800', 'от <strong>800 тенге</strong>
 for (const expected of [
   'id="taxiCustomerPhone"',
   'id="taxiWishes"',
+  'id="taxi-wishes-toggle"',
+  'id="taxiWishesContent"',
+  'toggleTaxiWishes()',
+  'resetTaxiWishesPanel',
   'Пожелания к заказу',
   "addWish('Нужен универсал')",
   'id="taxi-online-order-button"',
@@ -342,10 +346,10 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v20-driver-cabinet-link'")) failures.push('service-worker.js: driver-cabinet-link cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v21-collapsible-order-wishes'")) failures.push('service-worker.js: collapsible-order-wishes cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v(?:[1-9]|1[0-9])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
 for (const expected of [
   "'./food.webmanifest'",
   "'./shashlyk.webmanifest'",

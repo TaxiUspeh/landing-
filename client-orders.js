@@ -17,6 +17,8 @@ const ACTIVE_ORDER_STORAGE_KEY = 'taxi_uspeh_active_online_order_v1';
 const CUSTOMER_NAME_STORAGE_KEY = 'taxi_uspeh_customer_name_v1';
 const CUSTOMER_PHONE_STORAGE_KEY = 'taxi_uspeh_customer_phone_v1';
 const ACTIVE_STATUSES = new Set(['searching', 'accepted', 'en_route', 'arrived', 'in_trip']);
+const CANCELLATION_REQUEST_STATUSES = new Set(['accepted', 'en_route', 'arrived']);
+const CANCELLATION_REASONS = new Set(['plans_changed', 'no_longer_needed', 'called_other_taxi', 'other']);
 
 const elements = {
     form: document.getElementById('taxiForm'),
@@ -36,11 +38,14 @@ const elements = {
     driverCar: document.getElementById('taxi-online-driver-car'),
     driverCall: document.getElementById('taxi-online-driver-call'),
     cancelButton: document.getElementById('taxi-online-cancel-button'),
+    cancelReason: document.getElementById('taxi-online-cancel-reason'),
+    cancellationNotice: document.getElementById('taxi-online-cancellation-notice'),
     newOrderButton: document.getElementById('taxi-online-new-order-button'),
     dispatcherCall: document.getElementById('taxi-online-dispatcher-call')
 };
 
 let activeOrderId = '';
+let activeOrder = null;
 let unsubscribeOrder = null;
 let actionInProgress = false;
 
@@ -81,6 +86,7 @@ function setActionBusy(busy) {
         if (label) label.textContent = busy ? 'Отправляем…' : 'Заказать онлайн';
     }
     if (elements.cancelButton) elements.cancelButton.disabled = busy;
+    if (elements.cancelReason) elements.cancelReason.disabled = busy;
 }
 
 function normalizePhone(value) {
@@ -177,6 +183,12 @@ async function ensureSignedIn() {
 
 function statusPresentation(order) {
     const status = typeof order === 'string' ? order : order.status;
+    if (order?.cancellationRequestStatus === 'pending') {
+        return ['Запрос отмены отправлен диспетчеру', 'bg-amber-100 text-amber-900 border-amber-300'];
+    }
+    if (status === 'cancelled' && order?.cancellationDecision === 'false_call_fee') {
+        return ['Заказ отменён · компенсация 500 ₸', 'bg-red-100 text-red-900 border-red-300'];
+    }
     if (status === 'searching' && order?.requeuedAt) {
         return ['Подбираем другого водителя', 'bg-amber-100 text-amber-900 border-amber-300'];
     }
@@ -209,7 +221,26 @@ function showOrderPanel(order) {
         setHidden(elements.driverCall, !order.driverPhone);
     }
 
-    setHidden(elements.cancelButton, order.status !== 'searching');
+    const pendingCancellation = order.cancellationRequestStatus === 'pending';
+    const canRequestCancellation = CANCELLATION_REQUEST_STATUSES.has(order.status) && !pendingCancellation;
+    const canCancelImmediately = order.status === 'searching';
+    setHidden(elements.cancelButton, !canCancelImmediately && !canRequestCancellation);
+    if (elements.cancelButton) {
+        elements.cancelButton.textContent = canRequestCancellation ? 'Запросить отмену' : 'Отменить заказ';
+    }
+    setHidden(elements.cancelReason, !canRequestCancellation);
+    if (elements.cancellationNotice) {
+        let notice = '';
+        if (pendingCancellation) {
+            notice = 'Водитель уже назначен. Диспетчер рассматривает запрос на отмену. Не оформляйте новый заказ, пока не получите решение.';
+        } else if (order.cancellationDecision === 'false_call_fee') {
+            notice = 'Диспетчер отметил компенсацию за ложный вызов: 500 ₸. Для уточнения позвоните диспетчеру.';
+        } else if (order.cancellationDecision === 'free') {
+            notice = 'Диспетчер подтвердил отмену без компенсации.';
+        }
+        elements.cancellationNotice.textContent = notice;
+        setHidden(elements.cancellationNotice, !notice);
+    }
     setHidden(elements.newOrderButton, ACTIVE_STATUSES.has(order.status));
     setHidden(elements.form, true);
     setHidden(elements.panel, false);
@@ -231,7 +262,8 @@ function startOrderWatch(orderId) {
             setStatus('Заказ не найден. Можно оформить новый заказ.');
             return;
         }
-        showOrderPanel(snapshot.data());
+        activeOrder = snapshot.data();
+        showOrderPanel(activeOrder);
     }, (error) => {
         console.warn('Не удалось обновить статус заказа:', error.code || error.message);
         setStatus('Не удалось обновить статус. Проверьте интернет или позвоните диспетчеру.');
@@ -241,6 +273,7 @@ function startOrderWatch(orderId) {
 function resetToForm() {
     clearOrderWatch();
     activeOrderId = '';
+    activeOrder = null;
     storeValue(ACTIVE_ORDER_STORAGE_KEY, '');
     setHidden(elements.panel, true);
     setHidden(elements.form, false);
@@ -330,7 +363,37 @@ async function createOnlineOrder() {
 }
 
 async function cancelOnlineOrder() {
-    if (!activeOrderId || actionInProgress) return;
+    if (!activeOrderId || !activeOrder || actionInProgress) return;
+    const status = activeOrder.status;
+    if (status === 'searching') {
+        if (!window.confirm('Отменить заказ? Водитель ещё не назначен.')) return;
+    } else if (CANCELLATION_REQUEST_STATUSES.has(status)) {
+        const reason = elements.cancelReason?.value || '';
+        if (!CANCELLATION_REASONS.has(reason)) {
+            setStatus('Выберите причину отмены.');
+            return;
+        }
+        if (!window.confirm('Водитель уже назначен. При ложном вызове диспетчер может отметить компенсацию 500 ₸. Отправить запрос на отмену?')) return;
+        setActionBusy(true);
+        try {
+            await updateDoc(doc(db, 'orders', activeOrderId), {
+                cancellationRequestStatus: 'pending',
+                cancellationReason: reason,
+                cancellationRequestedAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+            setStatus('Запрос на отмену отправлен диспетчеру.', true);
+        } catch (error) {
+            console.warn('Запрос на отмену не отправлен:', error.code || error.message);
+            setStatus('Не удалось отправить запрос. Позвоните диспетчеру.');
+        } finally {
+            setActionBusy(false);
+        }
+        return;
+    } else {
+        setStatus('Этот заказ уже нельзя отменить через сайт. Позвоните диспетчеру.');
+        return;
+    }
     setActionBusy(true);
     try {
         await updateDoc(doc(db, 'orders', activeOrderId), {

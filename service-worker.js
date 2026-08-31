@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v15-order-requeue';
+const CACHE_NAME = 'taxi-uspeh-v16-cancellation-review';
 const APP_SHELL = [
   './',
   './index.html',

@@ -317,6 +317,26 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
     }
 
+    function clientRequestsCancellationAfterAssignment() {
+      return signedIn()
+        && resource.data.clientUid == request.auth.uid
+        && resource.data.status in ['accepted', 'en_route', 'arrived']
+        && resource.data.assignedDriverUid is string
+        && resource.data.assignedDriverUid.size() > 0
+        && resource.data.get('cancellationRequestStatus', '') != 'pending'
+        && request.resource.data.cancellationRequestStatus == 'pending'
+        && request.resource.data.cancellationReason is string
+        && request.resource.data.cancellationReason in [
+          'plans_changed', 'no_longer_needed', 'called_other_taxi', 'other'
+        ]
+        && request.resource.data.cancellationRequestedAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'cancellationRequestStatus', 'cancellationReason',
+          'cancellationRequestedAt', 'updatedAt'
+        ]);
+    }
+
     function driverAcceptsSearchingOrder(orderId) {
       return driverIsAvailable()
         && resource.data.status == 'searching'
@@ -348,6 +368,7 @@ service cloud.firestore {
       return driverIsBusyWithOrder(orderId)
         && resource.data.assignedDriverUid == request.auth.uid
         && resource.data.assignedDriverId == linkedDriverId()
+        && resource.data.get('cancellationRequestStatus', '') != 'pending'
         && validDriverStatusTransition()
         && request.resource.data.updatedAt == request.time
         && (
@@ -373,6 +394,7 @@ service cloud.firestore {
       return driverIsBusyWithOrder(orderId)
         && resource.data.assignedDriverUid == request.auth.uid
         && resource.data.assignedDriverId == linkedDriverId()
+        && resource.data.get('cancellationRequestStatus', '') != 'pending'
         && requeueableDriverOrderStatus(resource.data.status)
         && request.resource.data.status == 'searching'
         && request.resource.data.assignedDriverUid == ''
@@ -463,6 +485,7 @@ service cloud.firestore {
         || (signedIn() && resource.data.get('assignedDriverUid', '') == request.auth.uid);
       allow update: if isAdmin()
         || clientCancelsOwnSearchingOrder()
+        || clientRequestsCancellationAfterAssignment()
         || driverAcceptsSearchingOrder(orderId)
         || assignedDriverAdvancesOrder(orderId)
         || assignedDriverReturnsOrderToSearch(orderId);

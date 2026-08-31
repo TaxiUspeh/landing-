@@ -77,11 +77,18 @@ let unsubscribeOrders = null;
 let unsubscribeOrderContacts = null;
 let authActionInProgress = false;
 let manualOrderAssignmentInProgress = false;
+let cancellationDecisionInProgress = false;
 let driverStatusRefreshTimer = null;
 const DRIVER_CONNECTION_TIMEOUT_MS = 3 * 60 * 1000;
 const REQUEUE_REASON_LABELS = {
     car_issue: 'Неисправность автомобиля',
     cannot_continue: 'Водитель не может продолжить',
+    other: 'Другая причина'
+};
+const CLIENT_CANCELLATION_REASON_LABELS = {
+    plans_changed: 'Изменились планы',
+    no_longer_needed: 'Такси больше не нужно',
+    called_other_taxi: 'Заказал другое такси',
     other: 'Другая причина'
 };
 
@@ -477,7 +484,14 @@ function startDriverStatesListener() {
 const ACTIVE_ORDER_STATUSES = new Set(['accepted', 'en_route', 'arrived', 'in_trip']);
 const CANCELLABLE_ORDER_STATUSES = new Set(['searching', ...ACTIVE_ORDER_STATUSES]);
 
-function onlineOrderStatus(status) {
+function onlineOrderStatus(order) {
+    const status = typeof order === 'string' ? order : order.status;
+    if (order?.cancellationRequestStatus === 'pending') {
+        return ['Клиент просит отмену', 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300'];
+    }
+    if (status === 'cancelled' && order?.cancellationDecision === 'false_call_fee') {
+        return ['Ложный вызов · 500 ₸', 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'];
+    }
     return ({
         searching: ['Ищет водителя', 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300'],
         accepted: ['Водитель принял', 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'],
@@ -556,13 +570,34 @@ function createOnlineOrderCard(order) {
         createOrderText('h3', 'font-extrabold', order.orderNumber || `Заказ ${order.id.slice(0, 8)}`),
         createOrderText('p', 'text-xs text-slate-500 dark:text-slate-400', orderTime(order))
     );
-    const [statusText, statusClass] = onlineOrderStatus(order.status);
+    const [statusText, statusClass] = onlineOrderStatus(order);
     const badge = createOrderText('span', `flex-shrink-0 rounded-full px-3 py-1 text-[11px] font-extrabold ${statusClass}`, statusText);
     header.append(titleWrap, badge);
 
     const route = createOrderText('p', 'mt-3 font-bold break-words', `${order.fromAddress || '—'} → ${order.toAddress || '—'}`);
     const price = createOrderText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', order.priceText || 'Цена уточняется');
     card.append(header, route, price);
+
+    const pendingCancellation = order.cancellationRequestStatus === 'pending';
+    if (pendingCancellation) {
+        card.append(createOrderText(
+            'p',
+            'mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-bold text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200',
+            `Клиент просит отмену: ${CLIENT_CANCELLATION_REASON_LABELS[order.cancellationReason] || 'причина не указана'}. Подтвердите решение после проверки.`
+        ));
+    } else if (order.status === 'cancelled' && order.cancellationDecision === 'false_call_fee') {
+        card.append(createOrderText(
+            'p',
+            'mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-bold text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200',
+            `Зафиксирована компенсация за ложный вызов: ${formatMoney(order.cancellationFeeAmount || 500)}. Автоматического списания нет.`
+        ));
+    } else if (order.status === 'cancelled' && order.cancellationDecision === 'free') {
+        card.append(createOrderText(
+            'p',
+            'mt-3 rounded-xl border border-green-200 bg-green-50 p-3 text-xs font-bold text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-200',
+            'Отмена подтверждена диспетчером без компенсации.'
+        ));
+    }
 
     if (order.status === 'searching' && order.requeuedAt) {
         const returned = createOrderText(
@@ -633,7 +668,22 @@ function createOnlineOrderCard(order) {
         call.textContent = 'Позвонить клиенту';
         actions.append(call);
     }
-    if (CANCELLABLE_ORDER_STATUSES.has(order.status)) {
+    if (pendingCancellation) {
+        const freeCancel = document.createElement('button');
+        freeCancel.type = 'button';
+        freeCancel.className = 'rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-xs font-extrabold';
+        freeCancel.textContent = 'Подтвердить бесплатно';
+        freeCancel.disabled = cancellationDecisionInProgress;
+        freeCancel.addEventListener('click', () => void resolveClientCancellation(order, 'free'));
+
+        const falseCall = document.createElement('button');
+        falseCall.type = 'button';
+        falseCall.className = 'rounded-xl border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-2 text-xs font-extrabold';
+        falseCall.textContent = 'Ложный вызов · 500 ₸';
+        falseCall.disabled = cancellationDecisionInProgress;
+        falseCall.addEventListener('click', () => void resolveClientCancellation(order, 'false_call_fee'));
+        actions.append(freeCancel, falseCall);
+    } else if (CANCELLABLE_ORDER_STATUSES.has(order.status)) {
         const cancel = document.createElement('button');
         cancel.type = 'button';
         cancel.className = 'rounded-xl border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-2 text-xs font-extrabold';
@@ -795,6 +845,71 @@ async function cancelOnlineOrder(order) {
     } catch (error) {
         console.error('Не удалось отменить заказ:', error);
         setMessage(elements.onlineOrdersMessage, 'Не удалось отменить заказ. Обновите страницу и попробуйте ещё раз.');
+    }
+}
+
+async function resolveClientCancellation(order, decision) {
+    if (!currentUser || cancellationDecisionInProgress || order.cancellationRequestStatus !== 'pending') return;
+    const falseCall = decision === 'false_call_fee';
+    const confirmation = falseCall
+        ? `Подтвердить ложный вызов по заказу ${order.orderNumber || order.id}? Будет зафиксирована компенсация 500 ₸ без автоматического списания.`
+        : `Подтвердить отмену заказа ${order.orderNumber || order.id} без компенсации?`;
+    if (!window.confirm(confirmation)) return;
+
+    cancellationDecisionInProgress = true;
+    setMessage(elements.onlineOrdersMessage, '');
+    try {
+        await runTransaction(db, async (transaction) => {
+            const orderRef = doc(db, 'orders', order.id);
+            const orderSnapshot = await transaction.get(orderRef);
+            if (!orderSnapshot.exists()) throw new Error('Заказ не найден.');
+            const currentOrder = orderSnapshot.data();
+            if (!ACTIVE_ORDER_STATUSES.has(currentOrder.status)
+                || currentOrder.cancellationRequestStatus !== 'pending') {
+                throw new Error('Запрос на отмену уже обработан или статус заказа изменился.');
+            }
+
+            let stateRef = null;
+            let stateSnapshot = null;
+            if (currentOrder.assignedDriverUid) {
+                stateRef = doc(db, 'driverStates', currentOrder.assignedDriverUid);
+                stateSnapshot = await transaction.get(stateRef);
+            }
+
+            transaction.update(orderRef, {
+                status: 'cancelled',
+                cancellationRequestStatus: falseCall ? 'approved_false_call' : 'approved_free',
+                cancellationDecision: falseCall ? 'false_call_fee' : 'free',
+                cancellationFeeAmount: falseCall ? 500 : 0,
+                cancellationReviewedAt: serverTimestamp(),
+                cancellationReviewedBy: currentUser.uid,
+                updatedAt: serverTimestamp()
+            });
+            if (stateRef
+                && stateSnapshot?.exists()
+                && stateSnapshot.data().status === 'busy'
+                && stateSnapshot.data().activeOrderId === order.id) {
+                transaction.update(stateRef, {
+                    status: 'available',
+                    activeOrderId: '',
+                    lastSeen: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
+            }
+        });
+        setMessage(
+            elements.onlineOrdersMessage,
+            falseCall
+                ? 'Заказ отменён. Компенсация за ложный вызов 500 ₸ зафиксирована.'
+                : 'Заказ отменён без компенсации.',
+            true
+        );
+    } catch (error) {
+        console.error('Не удалось обработать запрос на отмену:', error);
+        setMessage(elements.onlineOrdersMessage, error.message || 'Не удалось обработать запрос на отмену.');
+    } finally {
+        cancellationDecisionInProgress = false;
+        renderOnlineOrders();
     }
 }
 

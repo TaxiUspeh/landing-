@@ -29,6 +29,12 @@ const REQUEUE_REASONS = [
     ['cannot_continue', 'Не могу продолжить заказ'],
     ['other', 'Другая причина']
 ];
+const CLIENT_CANCELLATION_REASON_LABELS = {
+    plans_changed: 'Изменились планы',
+    no_longer_needed: 'Такси больше не нужно',
+    called_other_taxi: 'Заказал другое такси',
+    other: 'Другая причина'
+};
 const NEXT_ORDER_STATUS = {
     accepted: ['en_route', 'Выехал к клиенту'],
     en_route: ['arrived', 'Я приехал'],
@@ -942,6 +948,15 @@ function createOrderCard(order, assigned) {
     const price = createText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', order.priceText || 'Цена уточняется');
     card.append(header, route, price);
 
+    const cancellationPending = assigned && order.cancellationRequestStatus === 'pending';
+    if (cancellationPending) {
+        card.append(createText(
+            'p',
+            'mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs font-bold text-amber-900 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-100',
+            `Клиент просит отменить заказ: ${CLIENT_CANCELLATION_REASON_LABELS[order.cancellationReason] || 'причина не указана'}. Ожидайте решения диспетчера и не продолжайте маршрут.`
+        ));
+    }
+
     if (Array.isArray(order.stops) && order.stops.length) {
         card.append(createText('p', 'mt-2 text-xs text-gray-600 dark:text-gray-300', `Остановки: ${order.stops.join(' → ')}`));
     }
@@ -975,7 +990,7 @@ function createOrderCard(order, assigned) {
         actions.append(contact);
         void loadOrderContact(order.id, contact, actions);
 
-        const next = NEXT_ORDER_STATUS[order.status];
+        const next = cancellationPending ? null : NEXT_ORDER_STATUS[order.status];
         if (next) {
             const statusButton = document.createElement('button');
             statusButton.type = 'button';
@@ -986,7 +1001,7 @@ function createOrderCard(order, assigned) {
             actions.append(statusButton);
         }
 
-        if (REQUEUEABLE_ORDER_STATUSES.has(order.status)) {
+        if (!cancellationPending && REQUEUEABLE_ORDER_STATUSES.has(order.status)) {
             const requeueReason = document.createElement('select');
             requeueReason.className = 'w-full rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-100';
             for (const [value, label] of REQUEUE_REASONS) {

@@ -1463,8 +1463,16 @@
                     </div>
 
                     <p id="taxi-online-order-message" class="hidden rounded-xl border p-3 text-sm" role="status"></p>
+                    <p id="taxi-online-cancellation-notice" class="hidden rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-900" role="status"></p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <select id="taxi-online-cancel-reason" class="hidden rounded-xl border border-red-200 bg-white px-3 py-3 text-sm font-semibold text-gray-800">
+                            <option value="">Причина отмены</option>
+                            <option value="plans_changed">Изменились планы</option>
+                            <option value="no_longer_needed">Такси больше не нужно</option>
+                            <option value="called_other_taxi">Заказал другое такси</option>
+                            <option value="other">Другая причина</option>
+                        </select>
                         <button id="taxi-online-cancel-button" type="button" class="hidden bg-red-100 hover:bg-red-200 text-red-800 border border-red-200 rounded-xl py-3 font-bold">Отменить заказ</button>
                         <button id="taxi-online-new-order-button" type="button" class="hidden bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 font-bold">Новый заказ</button>
                         <a id="taxi-online-dispatcher-call" href="tel:+77770649648" class="bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-xl py-3 font-bold text-center">

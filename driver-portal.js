@@ -28,6 +28,7 @@ const NEXT_ORDER_STATUS = {
 const ORDER_ALERTS_PREFERENCE_KEY = 'taxi-uspeh-driver-order-alerts';
 const DEFAULT_PAGE_TITLE = document.title;
 const DRIVER_HEARTBEAT_INTERVAL_MS = 60 * 1000;
+const BALANCE_HISTORY_RESPONSE_TIMEOUT_MS = 6000;
 const OFFLINE_DRIVER_STATE = Object.freeze({ status: 'offline', activeOrderId: '' });
 
 const elements = {
@@ -109,6 +110,7 @@ let newOrderAlertTimer = null;
 let requestedOrderHandled = false;
 let watchedHistoryDriverId = '';
 let balanceHistory = [];
+let balanceHistoryLoadTimer = null;
 
 function setHidden(element, hidden) {
     if (element) element.classList.toggle('hidden', hidden);
@@ -405,8 +407,29 @@ function balanceHistoryMillis(entry) {
     return entry.changedAt?.toMillis ? entry.changedAt.toMillis() : 0;
 }
 
+function clearBalanceHistoryLoadTimer() {
+    if (!balanceHistoryLoadTimer) return;
+    clearTimeout(balanceHistoryLoadTimer);
+    balanceHistoryLoadTimer = null;
+}
+
+function setBalanceHistoryEmptyMessage(message) {
+    const text = elements.balanceHistoryEmpty?.querySelector('p');
+    if (text) text.textContent = message;
+}
+
+function showBalanceHistoryUnavailable(message) {
+    clearBalanceHistoryLoadTimer();
+    setBalanceHistoryEmptyMessage(message);
+    setHidden(elements.balanceHistoryLoading, true);
+    setHidden(elements.balanceHistoryList, true);
+    setHidden(elements.balanceHistoryEmpty, false);
+}
+
 function renderBalanceHistory() {
     if (!elements.balanceHistoryList) return;
+    clearBalanceHistoryLoadTimer();
+    setBalanceHistoryEmptyMessage('Изменений баланса пока нет');
     const entries = [...balanceHistory]
         .sort((a, b) => balanceHistoryMillis(b) - balanceHistoryMillis(a))
         .slice(0, 8);
@@ -462,8 +485,10 @@ function watchBalanceHistory(driverId) {
     if (!normalizedId || watchedHistoryDriverId === normalizedId) return;
     if (unsubscribeBalanceHistory) unsubscribeBalanceHistory();
     unsubscribeBalanceHistory = null;
+    clearBalanceHistoryLoadTimer();
     watchedHistoryDriverId = normalizedId;
     balanceHistory = [];
+    setBalanceHistoryEmptyMessage('Изменений баланса пока нет');
     setHidden(elements.balanceHistoryLoading, false);
     setHidden(elements.balanceHistoryEmpty, true);
     setHidden(elements.balanceHistoryList, true);
@@ -477,11 +502,12 @@ function watchBalanceHistory(driverId) {
         (error) => {
             console.warn('История баланса не загрузилась:', error.code || error.message);
             balanceHistory = [];
-            setHidden(elements.balanceHistoryLoading, true);
-            setHidden(elements.balanceHistoryList, true);
-            setHidden(elements.balanceHistoryEmpty, false);
+            showBalanceHistoryUnavailable('История пока недоступна. Проверьте интернет и обновите страницу.');
         }
     );
+    balanceHistoryLoadTimer = setTimeout(() => {
+        showBalanceHistoryUnavailable('История пока не ответила. Проверьте интернет или обновите страницу.');
+    }, BALANCE_HISTORY_RESPONSE_TIMEOUT_MS);
 }
 
 function carDescription(driver) {
@@ -795,6 +821,7 @@ function stopProfileWatches() {
     unsubscribeDriver = null;
     unsubscribeDriverState = null;
     unsubscribeBalanceHistory = null;
+    clearBalanceHistoryLoadTimer();
     stopHeartbeat();
     currentDriverId = '';
     currentDriver = null;

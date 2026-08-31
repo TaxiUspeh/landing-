@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v12-driver-accounting';
+const CACHE_NAME = 'taxi-uspeh-v13-balance-history-timeout';
 const APP_SHELL = [
   './',
   './index.html',

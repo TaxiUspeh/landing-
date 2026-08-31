@@ -45,6 +45,9 @@ for (const expected of ['BASE_PRICE: 800', 'от <strong>800 тенге</strong>
 }
 for (const expected of [
   'id="taxiCustomerPhone"',
+  'id="taxiWishes"',
+  'Пожелания к заказу',
+  "addWish('Нужен универсал')",
   'id="taxi-online-order-button"',
   'id="taxi-whatsapp-order-button"',
   'id="taxi-online-order-panel"',
@@ -328,10 +331,10 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v16-cancellation-review'")) failures.push('service-worker.js: cancellation-review cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v17-compact-history'")) failures.push('service-worker.js: compact-history cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v(?:[1-9]|1[0-5])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v(?:[1-9]|1[0-6])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
 for (const expected of [
   "'./food.webmanifest'",
   "'./shashlyk.webmanifest'",
@@ -452,6 +455,10 @@ for (const expected of [
   'commissionBaseAmount',
   'BALANCE_HISTORY_RESPONSE_TIMEOUT_MS',
   'BALANCE_HISTORY_PAGE_SIZE = 20',
+  'BALANCE_HISTORY_EXPANDED_PREFERENCE_KEY',
+  'toggleBalanceHistory',
+  'stopBalanceHistoryWatch',
+  'Нажмите, чтобы показать',
   'loadMoreBalanceHistory',
   "orderBy('changedAt', 'desc')",
   'showBalanceHistoryUnavailable',

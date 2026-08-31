@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v16-cancellation-review';
+const CACHE_NAME = 'taxi-uspeh-v17-compact-history';
 const APP_SHELL = [
   './',
   './index.html',

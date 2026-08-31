@@ -46,6 +46,7 @@ const DEFAULT_PAGE_TITLE = document.title;
 const DRIVER_HEARTBEAT_INTERVAL_MS = 60 * 1000;
 const BALANCE_HISTORY_RESPONSE_TIMEOUT_MS = 6000;
 const BALANCE_HISTORY_PAGE_SIZE = 20;
+const BALANCE_HISTORY_EXPANDED_PREFERENCE_KEY = 'taxi-uspeh-driver-balance-history-expanded';
 const OFFLINE_DRIVER_STATE = Object.freeze({ status: 'offline', activeOrderId: '' });
 
 const elements = {
@@ -71,6 +72,10 @@ const elements = {
     workStatusDetail: document.getElementById('driver-work-status-detail'),
     shiftToggle: document.getElementById('driver-shift-toggle'),
     shiftMessage: document.getElementById('driver-shift-message'),
+    balanceHistoryToggle: document.getElementById('driver-balance-history-toggle'),
+    balanceHistoryContent: document.getElementById('driver-balance-history-content'),
+    balanceHistorySummary: document.getElementById('driver-balance-history-summary'),
+    balanceHistoryIcon: document.getElementById('driver-balance-history-icon'),
     balanceHistoryLoading: document.getElementById('driver-balance-history-loading'),
     balanceHistoryEmpty: document.getElementById('driver-balance-history-empty'),
     balanceHistoryList: document.getElementById('driver-balance-history-list'),
@@ -132,6 +137,8 @@ let balanceHistoryLoadTimer = null;
 let balanceHistoryCursor = null;
 let balanceHistoryHasMore = false;
 let balanceHistoryLoadingMore = false;
+let balanceHistoryInitialLoaded = false;
+let balanceHistoryExpanded = readBalanceHistoryExpandedPreference();
 
 function setHidden(element, hidden) {
     if (element) element.classList.toggle('hidden', hidden);
@@ -142,6 +149,22 @@ function readOrderAlertsPreference() {
         return localStorage.getItem(ORDER_ALERTS_PREFERENCE_KEY) === 'enabled';
     } catch {
         return false;
+    }
+}
+
+function readBalanceHistoryExpandedPreference() {
+    try {
+        return localStorage.getItem(BALANCE_HISTORY_EXPANDED_PREFERENCE_KEY) === 'expanded';
+    } catch {
+        return false;
+    }
+}
+
+function saveBalanceHistoryExpandedPreference() {
+    try {
+        localStorage.setItem(BALANCE_HISTORY_EXPANDED_PREFERENCE_KEY, balanceHistoryExpanded ? 'expanded' : 'collapsed');
+    } catch (error) {
+        console.warn('Не удалось сохранить вид истории баланса:', error.message);
     }
 }
 
@@ -428,6 +451,31 @@ function balanceHistoryMillis(entry) {
     return entry.changedAt?.toMillis ? entry.changedAt.toMillis() : 0;
 }
 
+function updateBalanceHistoryControls() {
+    const latest = [...balanceHistory]
+        .sort((a, b) => balanceHistoryMillis(b) - balanceHistoryMillis(a))[0];
+    setHidden(elements.balanceHistoryContent, !balanceHistoryExpanded);
+    if (elements.balanceHistoryToggle) {
+        elements.balanceHistoryToggle.setAttribute('aria-expanded', String(balanceHistoryExpanded));
+    }
+    if (elements.balanceHistoryIcon) {
+        elements.balanceHistoryIcon.className = balanceHistoryExpanded
+            ? 'fas fa-chevron-up flex-shrink-0 text-emerald-700 dark:text-emerald-300 transition-transform'
+            : 'fas fa-chevron-down flex-shrink-0 text-emerald-700 dark:text-emerald-300 transition-transform';
+    }
+    if (elements.balanceHistorySummary) {
+        if (balanceHistoryExpanded) {
+            elements.balanceHistorySummary.textContent = 'Свернуть историю';
+        } else if (latest) {
+            elements.balanceHistorySummary.textContent = `Последнее: ${formatSignedMoney(latest.difference)} · ${balanceHistoryTime(latest)}`;
+        } else if (balanceHistoryInitialLoaded) {
+            elements.balanceHistorySummary.textContent = 'Изменений баланса пока нет';
+        } else {
+            elements.balanceHistorySummary.textContent = 'Нажмите, чтобы показать';
+        }
+    }
+}
+
 function clearBalanceHistoryLoadTimer() {
     if (!balanceHistoryLoadTimer) return;
     clearTimeout(balanceHistoryLoadTimer);
@@ -441,6 +489,9 @@ function setBalanceHistoryEmptyMessage(message) {
 
 function showBalanceHistoryUnavailable(message) {
     clearBalanceHistoryLoadTimer();
+    balanceHistoryInitialLoaded = true;
+    updateBalanceHistoryControls();
+    if (!balanceHistoryExpanded) return;
     setBalanceHistoryEmptyMessage(message);
     setHidden(elements.balanceHistoryLoading, true);
     setHidden(elements.balanceHistoryList, true);
@@ -466,7 +517,7 @@ function mergeBalanceHistoryEntries(entries) {
 
 function updateBalanceHistoryMoreButton(entries) {
     if (!elements.balanceHistoryMore) return;
-    const visible = entries.length > 0 && balanceHistoryHasMore;
+    const visible = balanceHistoryExpanded && entries.length > 0 && balanceHistoryHasMore;
     setHidden(elements.balanceHistoryMore, !visible);
     if (!visible) return;
     elements.balanceHistoryMore.disabled = balanceHistoryLoadingMore;
@@ -480,6 +531,8 @@ function updateBalanceHistoryMoreButton(entries) {
 function renderBalanceHistory() {
     if (!elements.balanceHistoryList) return;
     clearBalanceHistoryLoadTimer();
+    updateBalanceHistoryControls();
+    if (!balanceHistoryExpanded) return;
     setBalanceHistoryEmptyMessage('Изменений баланса пока нет');
     const entries = [...balanceHistory]
         .sort((a, b) => balanceHistoryMillis(b) - balanceHistoryMillis(a));
@@ -532,7 +585,7 @@ function renderBalanceHistory() {
 }
 
 async function loadMoreBalanceHistory() {
-    if (balanceHistoryLoadingMore || !balanceHistoryHasMore || !balanceHistoryCursor || !watchedHistoryDriverId) return;
+    if (!balanceHistoryExpanded || balanceHistoryLoadingMore || !balanceHistoryHasMore || !balanceHistoryCursor || !watchedHistoryDriverId) return;
     const requestedDriverId = watchedHistoryDriverId;
     balanceHistoryLoadingMore = true;
     renderBalanceHistory();
@@ -553,17 +606,41 @@ async function loadMoreBalanceHistory() {
     }
 }
 
-function watchBalanceHistory(driverId) {
-    const normalizedId = String(driverId || '');
-    if (!normalizedId || watchedHistoryDriverId === normalizedId) return;
+function stopBalanceHistoryWatch(clearData = false) {
     if (unsubscribeBalanceHistory) unsubscribeBalanceHistory();
     unsubscribeBalanceHistory = null;
     clearBalanceHistoryLoadTimer();
-    watchedHistoryDriverId = normalizedId;
-    balanceHistory = [];
-    balanceHistoryCursor = null;
-    balanceHistoryHasMore = false;
+    watchedHistoryDriverId = '';
     balanceHistoryLoadingMore = false;
+    if (clearData) {
+        balanceHistory = [];
+        balanceHistoryCursor = null;
+        balanceHistoryHasMore = false;
+        balanceHistoryInitialLoaded = false;
+    }
+    updateBalanceHistoryControls();
+}
+
+function toggleBalanceHistory() {
+    balanceHistoryExpanded = !balanceHistoryExpanded;
+    saveBalanceHistoryExpandedPreference();
+    updateBalanceHistoryControls();
+    if (balanceHistoryExpanded) {
+        watchBalanceHistory(currentDriverId);
+    } else {
+        stopBalanceHistoryWatch();
+    }
+}
+
+function watchBalanceHistory(driverId) {
+    const normalizedId = String(driverId || '');
+    if (!balanceHistoryExpanded) {
+        updateBalanceHistoryControls();
+        return;
+    }
+    if (!normalizedId || watchedHistoryDriverId === normalizedId) return;
+    stopBalanceHistoryWatch(true);
+    watchedHistoryDriverId = normalizedId;
     setBalanceHistoryEmptyMessage('Изменений баланса пока нет');
     setHidden(elements.balanceHistoryLoading, false);
     setHidden(elements.balanceHistoryEmpty, true);
@@ -576,6 +653,7 @@ function watchBalanceHistory(driverId) {
             mergeBalanceHistoryEntries(entries);
             if (!balanceHistoryCursor) balanceHistoryCursor = snapshot.docs.at(-1) || null;
             balanceHistoryHasMore = snapshot.docs.length === BALANCE_HISTORY_PAGE_SIZE;
+            balanceHistoryInitialLoaded = true;
             renderBalanceHistory();
         },
         (error) => {
@@ -895,12 +973,10 @@ function stopProfileWatches() {
     if (unsubscribeAccount) unsubscribeAccount();
     if (unsubscribeDriver) unsubscribeDriver();
     if (unsubscribeDriverState) unsubscribeDriverState();
-    if (unsubscribeBalanceHistory) unsubscribeBalanceHistory();
     unsubscribeAccount = null;
     unsubscribeDriver = null;
     unsubscribeDriverState = null;
-    unsubscribeBalanceHistory = null;
-    clearBalanceHistoryLoadTimer();
+    stopBalanceHistoryWatch(true);
     stopHeartbeat();
     currentDriverId = '';
     currentDriver = null;
@@ -908,11 +984,6 @@ function stopProfileWatches() {
     currentBaseEligible = false;
     currentDriverState = OFFLINE_DRIVER_STATE;
     currentCanTakeOrders = false;
-    watchedHistoryDriverId = '';
-    balanceHistory = [];
-    balanceHistoryCursor = null;
-    balanceHistoryHasMore = false;
-    balanceHistoryLoadingMore = false;
     legacyStateRepairInProgress = false;
     stopOrderWatches();
 }
@@ -1546,6 +1617,7 @@ elements.loginButton?.addEventListener('click', login);
 elements.logoutButton?.addEventListener('click', () => void logoutDriver());
 elements.copyUid?.addEventListener('click', copyUid);
 elements.shiftToggle?.addEventListener('click', () => void toggleDriverShift());
+elements.balanceHistoryToggle?.addEventListener('click', toggleBalanceHistory);
 elements.balanceHistoryMore?.addEventListener('click', () => void loadMoreBalanceHistory());
 elements.alertsToggle?.addEventListener('click', () => void toggleOrderAlerts());
 elements.alertsTest?.addEventListener('click', () => void testOrderAlerts());

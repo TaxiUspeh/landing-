@@ -206,6 +206,13 @@
             
             <p class="text-indigo-100 text-sm font-medium drop-shadow-sm">Работа для водителей</p>
             <p class="text-indigo-200 text-xs mt-1 opacity-90 drop-shadow-sm">Белоусовка • Глубокое • Усть-Каменогорск</p>
+            <button id="driver-install-app-button" type="button"
+                    class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm backdrop-blur-sm hover:bg-white/25 btn-active"
+                    aria-describedby="driver-install-app-message">
+                <i class="fas fa-mobile-screen-button text-sm" aria-hidden="true"></i>
+                <span>Установить приложение</span>
+            </button>
+            <p id="driver-install-app-message" class="hidden mx-auto mt-2 max-w-xs rounded-lg bg-white/15 px-3 py-2 text-xs text-indigo-50" role="status"></p>
         </div>
     </header>
 
@@ -661,6 +668,56 @@
             content.classList.toggle('open');
             icon.classList.toggle('rotated');
         }
+
+        let driverDeferredInstallPrompt = null;
+        const driverInstallButton = document.getElementById('driver-install-app-button');
+        const driverInstallMessage = document.getElementById('driver-install-app-message');
+
+        function isDriverAppInstalled() {
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        }
+
+        function showDriverInstallMessage(message) {
+            if (!driverInstallMessage) return;
+            driverInstallMessage.textContent = message;
+            driverInstallMessage.classList.remove('hidden');
+        }
+
+        function updateDriverInstallButton() {
+            if (!driverInstallButton) return;
+            driverInstallButton.classList.toggle('hidden', isDriverAppInstalled());
+        }
+
+        window.addEventListener('beforeinstallprompt', (event) => {
+            event.preventDefault();
+            driverDeferredInstallPrompt = event;
+            updateDriverInstallButton();
+        });
+
+        driverInstallButton?.addEventListener('click', async () => {
+            if (driverDeferredInstallPrompt) {
+                driverDeferredInstallPrompt.prompt();
+                const { outcome } = await driverDeferredInstallPrompt.userChoice;
+                driverDeferredInstallPrompt = null;
+                if (outcome === 'accepted') {
+                    showDriverInstallMessage('Приложение устанавливается. После установки оно появится на главном экране телефона.');
+                }
+                return;
+            }
+
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            showDriverInstallMessage(isIOS
+                ? 'В Safari нажмите «Поделиться», затем выберите «На экран Домой». '
+                : 'Откройте меню браузера ⋮ и выберите «Установить приложение» или «Добавить на главный экран».');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            driverDeferredInstallPrompt = null;
+            updateDriverInstallButton();
+            showDriverInstallMessage('Приложение установлено и доступно на главном экране телефона.');
+        });
+
+        updateDriverInstallButton();
 
         // Логика анимации при прокрутке
         document.addEventListener('DOMContentLoaded', () => {

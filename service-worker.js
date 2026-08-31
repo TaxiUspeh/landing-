@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v18-driver-install-button';
+const CACHE_NAME = 'taxi-uspeh-v19-driver-documents-modal';
 const APP_SHELL = [
   './',
   './index.html',

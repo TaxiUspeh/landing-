@@ -68,6 +68,40 @@
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
         }
 
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            width: min(100%, 31rem);
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+            border-radius: 1rem;
+            background: white;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+            transform: translateY(8px) scale(0.98);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .modal-overlay.active .modal { transform: none; }
+        .dark .modal { background: #1f2937; }
+
         /* Карточки преимуществ */
         .advantage-card {
             transition: transform 0.2s, box-shadow 0.2s;
@@ -410,12 +444,12 @@
         <div class="flex flex-col gap-4 mb-10 fade-in-section">
             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-md border-l-4 border-green-500">
                 <h2 class="text-lg font-bold mb-1">Хочешь зарабатывать?</h2>
-                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Нажми кнопку ниже, чтобы отправить заявку диспетчеру в WhatsApp.</p>
-                <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20работать%20в%20Такси%20«Успех»." target="_blank" rel="noopener noreferrer"
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Посмотрите список документов и отправьте их диспетчеру в WhatsApp.</p>
+                <button id="driver-documents-open" type="button"
                    class="btn-hover bg-green-600 hover:bg-green-700 text-white w-full py-3.5 rounded-xl text-lg font-bold shadow-lg flex items-center justify-center gap-3">
                     <i class="fab fa-whatsapp text-2xl"></i>
-                    <span>Стать водителем</span>
-                </a>
+                    <span>Документы и заявка</span>
+                </button>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -608,6 +642,41 @@
         </p>
     </main>
 
+    <!-- Документы для подключения водителя -->
+    <div id="driver-documents-modal" class="modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="driver-documents-modal-title">
+        <div class="modal p-5 sm:p-6">
+            <div class="flex items-start justify-between gap-4 border-b border-gray-200 dark:border-gray-700 pb-4">
+                <div>
+                    <h2 id="driver-documents-modal-title" class="text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-car-side text-indigo-600" aria-hidden="true"></i> Подключение водителя
+                    </h2>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Подготовьте документы перед отправкой.</p>
+                </div>
+                <button id="driver-documents-close" type="button" class="flex-shrink-0 w-10 h-10 rounded-lg text-2xl text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-white" aria-label="Закрыть окно">×</button>
+            </div>
+
+            <div class="mt-4 space-y-4 text-left">
+                <p class="text-sm text-gray-700 dark:text-gray-200">Для работы в Такси «Успех» отправьте в WhatsApp диспетчера чёткие фото:</p>
+                <ul class="space-y-2.5 rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-950 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-100">
+                    <li class="flex gap-2"><i class="fas fa-id-card mt-0.5 text-indigo-600 dark:text-indigo-300" aria-hidden="true"></i><span><b>Удостоверение личности</b></span></li>
+                    <li class="flex gap-2"><i class="fas fa-address-card mt-0.5 text-indigo-600 dark:text-indigo-300" aria-hidden="true"></i><span><b>Водительское удостоверение</b> нужной категории</span></li>
+                    <li class="flex gap-2"><i class="fas fa-file-lines mt-0.5 text-indigo-600 dark:text-indigo-300" aria-hidden="true"></i><span><b>Технический паспорт</b> на автомобиль (СРТС)</span></li>
+                    <li class="flex gap-2"><i class="fas fa-mobile-screen mt-0.5 text-indigo-600 dark:text-indigo-300" aria-hidden="true"></i><span><b>Смартфон</b> для работы с онлайн-заказами</span></li>
+                </ul>
+                <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+                    <i class="fas fa-circle-info mr-1.5" aria-hidden="true"></i>В сообщении также укажите марку, цвет и госномер автомобиля. Документы отправляются только в WhatsApp диспетчера и не сохраняются в приложении.
+                </div>
+                <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20подключиться%20водителем%20в%20Такси%20Успех.%0AОтправляю%20документы%3A%20удостоверение%2C%20водительские%20права%20и%20техпаспорт.%0AМарка%2C%20цвет%20и%20госномер%20авто%3A" target="_blank" rel="noopener noreferrer"
+                   class="btn-hover flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-3.5 text-center text-sm font-extrabold text-white shadow-md">
+                    <i class="fab fa-whatsapp text-lg" aria-hidden="true"></i> Отправить документы в WhatsApp
+                </a>
+                <a href="tel:+77770649648" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm font-extrabold text-blue-800 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-200 dark:hover:bg-blue-900/40">
+                    <i class="fas fa-phone-alt" aria-hidden="true"></i> Позвонить диспетчеру
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- FOOTER -->
     <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-5 mt-auto fade-in-section">
         <div class="text-center">
@@ -625,11 +694,11 @@
                class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-800 dark:text-white p-3 rounded-xl shadow-md flex items-center justify-center w-12">
                 <i class="fas fa-phone-alt"></i>
             </a>
-            <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20работать%20в%20Такси%20«Успех»." target="_blank" rel="noopener noreferrer"
+            <button id="driver-documents-open-mobile" type="button"
                class="bg-green-600 hover:bg-green-700 text-white flex-grow py-3 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
                 <i class="fab fa-whatsapp text-2xl"></i>
                 <span>Стать водителем</span>
-            </a>
+            </button>
         </div>
     </div>
 
@@ -668,6 +737,37 @@
             content.classList.toggle('open');
             icon.classList.toggle('rotated');
         }
+
+        const driverDocumentsModal = document.getElementById('driver-documents-modal');
+        const driverDocumentsClose = document.getElementById('driver-documents-close');
+        const driverDocumentsTriggers = document.querySelectorAll('#driver-documents-open, #driver-documents-open-mobile');
+        let driverDocumentsLastTrigger = null;
+
+        function openDriverDocumentsModal(trigger) {
+            if (!driverDocumentsModal) return;
+            driverDocumentsLastTrigger = trigger || document.activeElement;
+            driverDocumentsModal.classList.add('active');
+            driverDocumentsModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            driverDocumentsClose?.focus();
+        }
+
+        function closeDriverDocumentsModal() {
+            if (!driverDocumentsModal) return;
+            driverDocumentsModal.classList.remove('active');
+            driverDocumentsModal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            driverDocumentsLastTrigger?.focus?.();
+        }
+
+        driverDocumentsTriggers.forEach((trigger) => trigger.addEventListener('click', () => openDriverDocumentsModal(trigger)));
+        driverDocumentsClose?.addEventListener('click', closeDriverDocumentsModal);
+        driverDocumentsModal?.addEventListener('click', (event) => {
+            if (event.target === driverDocumentsModal) closeDriverDocumentsModal();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && driverDocumentsModal?.classList.contains('active')) closeDriverDocumentsModal();
+        });
 
         let driverDeferredInstallPrompt = null;
         const driverInstallButton = document.getElementById('driver-install-app-button');

@@ -10,10 +10,14 @@ import {
     collection,
     doc,
     getDoc,
+    getDocs,
+    limit,
     onSnapshot,
+    orderBy,
     query,
     runTransaction,
     serverTimestamp,
+    startAfter,
     updateDoc,
     where
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
@@ -29,6 +33,7 @@ const ORDER_ALERTS_PREFERENCE_KEY = 'taxi-uspeh-driver-order-alerts';
 const DEFAULT_PAGE_TITLE = document.title;
 const DRIVER_HEARTBEAT_INTERVAL_MS = 60 * 1000;
 const BALANCE_HISTORY_RESPONSE_TIMEOUT_MS = 6000;
+const BALANCE_HISTORY_PAGE_SIZE = 20;
 const OFFLINE_DRIVER_STATE = Object.freeze({ status: 'offline', activeOrderId: '' });
 
 const elements = {
@@ -57,6 +62,7 @@ const elements = {
     balanceHistoryLoading: document.getElementById('driver-balance-history-loading'),
     balanceHistoryEmpty: document.getElementById('driver-balance-history-empty'),
     balanceHistoryList: document.getElementById('driver-balance-history-list'),
+    balanceHistoryMore: document.getElementById('driver-balance-history-more'),
     ordersSection: document.getElementById('driver-online-orders'),
     ordersLoading: document.getElementById('driver-orders-loading'),
     ordersEmpty: document.getElementById('driver-online-orders-empty'),
@@ -111,6 +117,9 @@ let requestedOrderHandled = false;
 let watchedHistoryDriverId = '';
 let balanceHistory = [];
 let balanceHistoryLoadTimer = null;
+let balanceHistoryCursor = null;
+let balanceHistoryHasMore = false;
+let balanceHistoryLoadingMore = false;
 
 function setHidden(element, hidden) {
     if (element) element.classList.toggle('hidden', hidden);
@@ -424,6 +433,36 @@ function showBalanceHistoryUnavailable(message) {
     setHidden(elements.balanceHistoryLoading, true);
     setHidden(elements.balanceHistoryList, true);
     setHidden(elements.balanceHistoryEmpty, false);
+    setHidden(elements.balanceHistoryMore, true);
+}
+
+function balanceHistoryQuery(driverId, cursor = null) {
+    const constraints = [
+        where('driverId', '==', driverId),
+        orderBy('changedAt', 'desc'),
+        limit(BALANCE_HISTORY_PAGE_SIZE)
+    ];
+    if (cursor) constraints.push(startAfter(cursor));
+    return query(collection(db, 'balanceHistory'), ...constraints);
+}
+
+function mergeBalanceHistoryEntries(entries) {
+    const byId = new Map(balanceHistory.map((entry) => [entry.id, entry]));
+    entries.forEach((entry) => byId.set(entry.id, entry));
+    balanceHistory = [...byId.values()];
+}
+
+function updateBalanceHistoryMoreButton(entries) {
+    if (!elements.balanceHistoryMore) return;
+    const visible = entries.length > 0 && balanceHistoryHasMore;
+    setHidden(elements.balanceHistoryMore, !visible);
+    if (!visible) return;
+    elements.balanceHistoryMore.disabled = balanceHistoryLoadingMore;
+    elements.balanceHistoryMore.classList.toggle('opacity-60', balanceHistoryLoadingMore);
+    const icon = elements.balanceHistoryMore.querySelector('i');
+    const label = elements.balanceHistoryMore.querySelector('span');
+    if (icon) icon.className = balanceHistoryLoadingMore ? 'fas fa-circle-notch fa-spin mr-2' : 'fas fa-chevron-down mr-2';
+    if (label) label.textContent = balanceHistoryLoadingMore ? 'Загружаем…' : 'Показать ещё';
 }
 
 function renderBalanceHistory() {
@@ -431,8 +470,7 @@ function renderBalanceHistory() {
     clearBalanceHistoryLoadTimer();
     setBalanceHistoryEmptyMessage('Изменений баланса пока нет');
     const entries = [...balanceHistory]
-        .sort((a, b) => balanceHistoryMillis(b) - balanceHistoryMillis(a))
-        .slice(0, 8);
+        .sort((a, b) => balanceHistoryMillis(b) - balanceHistoryMillis(a));
 
     elements.balanceHistoryList.replaceChildren();
     for (const entry of entries) {
@@ -478,6 +516,29 @@ function renderBalanceHistory() {
     setHidden(elements.balanceHistoryLoading, true);
     setHidden(elements.balanceHistoryList, entries.length === 0);
     setHidden(elements.balanceHistoryEmpty, entries.length !== 0);
+    updateBalanceHistoryMoreButton(entries);
+}
+
+async function loadMoreBalanceHistory() {
+    if (balanceHistoryLoadingMore || !balanceHistoryHasMore || !balanceHistoryCursor || !watchedHistoryDriverId) return;
+    const requestedDriverId = watchedHistoryDriverId;
+    balanceHistoryLoadingMore = true;
+    renderBalanceHistory();
+    try {
+        const snapshot = await getDocs(balanceHistoryQuery(requestedDriverId, balanceHistoryCursor));
+        if (requestedDriverId !== watchedHistoryDriverId) return;
+        const entries = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
+        mergeBalanceHistoryEntries(entries);
+        balanceHistoryCursor = snapshot.docs.at(-1) || balanceHistoryCursor;
+        balanceHistoryHasMore = snapshot.docs.length === BALANCE_HISTORY_PAGE_SIZE;
+    } catch (error) {
+        console.warn('Следующая страница истории не загрузилась:', error.code || error.message);
+    } finally {
+        if (requestedDriverId === watchedHistoryDriverId) {
+            balanceHistoryLoadingMore = false;
+            renderBalanceHistory();
+        }
+    }
 }
 
 function watchBalanceHistory(driverId) {
@@ -488,15 +549,21 @@ function watchBalanceHistory(driverId) {
     clearBalanceHistoryLoadTimer();
     watchedHistoryDriverId = normalizedId;
     balanceHistory = [];
+    balanceHistoryCursor = null;
+    balanceHistoryHasMore = false;
+    balanceHistoryLoadingMore = false;
     setBalanceHistoryEmptyMessage('Изменений баланса пока нет');
     setHidden(elements.balanceHistoryLoading, false);
     setHidden(elements.balanceHistoryEmpty, true);
     setHidden(elements.balanceHistoryList, true);
 
     unsubscribeBalanceHistory = onSnapshot(
-        query(collection(db, 'balanceHistory'), where('driverId', '==', normalizedId)),
+        balanceHistoryQuery(normalizedId),
         (snapshot) => {
-            balanceHistory = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
+            const entries = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
+            mergeBalanceHistoryEntries(entries);
+            if (!balanceHistoryCursor) balanceHistoryCursor = snapshot.docs.at(-1) || null;
+            balanceHistoryHasMore = snapshot.docs.length === BALANCE_HISTORY_PAGE_SIZE;
             renderBalanceHistory();
         },
         (error) => {
@@ -831,6 +898,9 @@ function stopProfileWatches() {
     currentCanTakeOrders = false;
     watchedHistoryDriverId = '';
     balanceHistory = [];
+    balanceHistoryCursor = null;
+    balanceHistoryHasMore = false;
+    balanceHistoryLoadingMore = false;
     legacyStateRepairInProgress = false;
     stopOrderWatches();
 }
@@ -1379,6 +1449,7 @@ elements.loginButton?.addEventListener('click', login);
 elements.logoutButton?.addEventListener('click', () => void logoutDriver());
 elements.copyUid?.addEventListener('click', copyUid);
 elements.shiftToggle?.addEventListener('click', () => void toggleDriverShift());
+elements.balanceHistoryMore?.addEventListener('click', () => void loadMoreBalanceHistory());
 elements.alertsToggle?.addEventListener('click', () => void toggleOrderAlerts());
 elements.alertsTest?.addEventListener('click', () => void testOrderAlerts());
 elements.newOrderAlertClose?.addEventListener('click', hideNewOrderAlert);

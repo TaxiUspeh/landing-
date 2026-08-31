@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v13-balance-history-timeout';
+const CACHE_NAME = 'taxi-uspeh-v14-paged-balance-history';
 const APP_SHELL = [
   './',
   './index.html',

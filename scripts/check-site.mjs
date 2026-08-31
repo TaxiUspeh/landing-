@@ -438,7 +438,7 @@ for (const expected of [
   'commissionRate: 20',
   'commissionBaseAmount',
   'lastCommissionOrderId',
-  '`online-${orderId}`'
+  "doc(db, 'balanceHistory', orderId)"
 ]) {
   if (!driverPortal.includes(expected)) failures.push('driver-portal.js: missing ' + expected);
 }

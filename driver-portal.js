@@ -1127,7 +1127,8 @@ async function advanceOrder(orderId, expectedStatus, nextStatus) {
                     throw new Error('Текущий заказ не совпадает со статусом водителя.');
                 }
                 const driverRef = doc(db, 'drivers', currentDriverId);
-                const historyRef = doc(db, 'balanceHistory', `online-${orderId}`);
+                // Используем ID заказа: так правила Firebase могут надёжно проверить одну запись комиссии.
+                const historyRef = doc(db, 'balanceHistory', orderId);
                 driverSnapshot = await transaction.get(driverRef);
                 historySnapshot = await transaction.get(historyRef);
                 if (!driverSnapshot.exists()) throw new Error('Карточка водителя не найдена.');

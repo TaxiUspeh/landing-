@@ -104,7 +104,7 @@ service cloud.firestore {
     }
 
     function onlineCommissionHistoryDocument(orderId) {
-      return /databases/$(database)/documents/balanceHistory/online-$(orderId);
+      return /databases/$(database)/documents/balanceHistory/$(orderId);
     }
 
     function commissionBaseAmountForOrder(orderId) {
@@ -141,7 +141,7 @@ service cloud.firestore {
 
     function validOwnOnlineCommissionHistoryCreate(entryId) {
       return hasDriverAccount()
-        && entryId == 'online-' + request.resource.data.orderId
+        && entryId == request.resource.data.orderId
         && request.resource.data.keys().hasOnly([
           'driverId', 'driverNumber', 'orderId', 'orderNumber', 'source',
           'commissionRate', 'commissionBaseAmount', 'commissionAmount', 'previousBalance', 'newBalance',

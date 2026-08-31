@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v19-driver-documents-modal';
+const CACHE_NAME = 'taxi-uspeh-v20-driver-cabinet-link';
 const APP_SHELL = [
   './',
   './index.html',

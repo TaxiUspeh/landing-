@@ -1367,6 +1367,22 @@
                             <div id="additionalStops" class="mt-2.5 space-y-2.5" oninput="updateTaxiPrice()"></div>
                         </div>
                     </div>
+                    <section class="rounded-xl border border-violet-200 bg-violet-50 p-3.5" aria-labelledby="taxi-wishes-title">
+                        <div class="flex items-center justify-between gap-3">
+                            <label id="taxi-wishes-title" for="taxiWishes" class="text-sm font-bold text-violet-950">
+                                <i class="fas fa-comment-dots mr-2 text-violet-600" aria-hidden="true"></i>Пожелания к заказу
+                            </label>
+                            <span class="text-[11px] font-semibold text-violet-700">Необязательно</span>
+                        </div>
+                        <textarea id="taxiWishes" name="wishes" rows="2" maxlength="500" class="form-input-control mt-2" placeholder="Например: нужен универсал, много багажа, детское кресло…"></textarea>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <button type="button" onclick="addWish('Нужен универсал')" class="wish-tag px-3 py-1.5 bg-white text-violet-800 text-xs rounded-lg border border-violet-200 hover:bg-violet-100 hover:border-violet-300 transition btn-active">🚙 Универсал</button>
+                            <button type="button" onclick="addWish('Детское кресло')" class="wish-tag px-3 py-1.5 bg-white text-violet-800 text-xs rounded-lg border border-violet-200 hover:bg-violet-100 hover:border-violet-300 transition btn-active">👶 Детское кресло</button>
+                            <button type="button" onclick="addWish('Много багажа')" class="wish-tag px-3 py-1.5 bg-white text-violet-800 text-xs rounded-lg border border-violet-200 hover:bg-violet-100 hover:border-violet-300 transition btn-active">🧳 Багаж</button>
+                            <button type="button" onclick="addWish('С животным')" class="wish-tag px-3 py-1.5 bg-white text-violet-800 text-xs rounded-lg border border-violet-200 hover:bg-violet-100 hover:border-violet-300 transition btn-active">🐕 С животным</button>
+                        </div>
+                        <p class="mt-2 text-[11px] text-violet-800">Пожелание увидят водитель и диспетчер. Выполнение зависит от наличия подходящего автомобиля.</p>
+                    </section>
                     <div class="border border-blue-200 rounded-xl overflow-hidden">
                         <button type="button" onclick="togglePreorder()" class="w-full p-3.5 bg-blue-50 flex justify-between items-center text-left focus:outline-none btn-active">
                             <span class="text-sm font-bold text-blue-700 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Запланировать (Предзаказ)</span>
@@ -1374,15 +1390,6 @@
                         </button>
                         <div id="preorderContent" class="hidden p-3.5 bg-white border-t border-blue-100 space-y-3">
                             <div class="flex flex-col"><label for="taxiDateTime" class="text-xs font-medium text-gray-600 mb-1">Дата и время поездки</label><input id="taxiDateTime" name="dateTime" type="datetime-local" class="form-input-control"></div>
-                            <div class="flex flex-col"><label for="taxiWishes" class="text-xs font-medium text-gray-600 mb-1">Пожелания</label><textarea id="taxiWishes" name="wishes" rows="2" class="form-input-control" placeholder="Например: Нужно детское кресло..."></textarea>
-                                <div class="flex flex-wrap gap-2 mt-2">
-                                    <button type="button" onclick="addWish('Детское кресло')" class="wish-tag px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg border hover:bg-blue-100 hover:border-blue-300 transition btn-active">👶 Детское кресло</button>
-                                    <button type="button" onclick="addWish('Пустой багажник')" class="wish-tag px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg border hover:bg-blue-100 hover:border-blue-300 transition btn-active">🧳 Пустой багажник</button>
-                                    <button type="button" onclick="addWish('С животным')" class="wish-tag px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg border hover:bg-blue-100 hover:border-blue-300 transition btn-active">🐕 С животным</button>
-                                    <button type="button" onclick="addWish('Кондиционер')" class="wish-tag px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg border hover:bg-blue-100 hover:border-blue-300 transition btn-active">❄️ Кондиционер</button>
-                                    <button type="button" onclick="addWish('Сдача с 5000/10000')" class="wish-tag px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg border hover:bg-blue-100 hover:border-blue-300 transition btn-active">💵 Сдача</button>
-                                </div>
-                            </div>
                         </div>
                     </div>
                     <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-3.5 space-y-3">

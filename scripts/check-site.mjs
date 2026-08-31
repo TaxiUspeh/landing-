@@ -243,6 +243,10 @@ if (/chip\.innerHTML\s*=/.test(index)) failures.push('index.html: address histor
 
 for (const expected of [
   'id="driver-account"',
+  'id="driver-install-app-button"',
+  'id="driver-install-app-message"',
+  "addEventListener('beforeinstallprompt'",
+  "addEventListener('appinstalled'",
   'id="driver-login-button"',
   'id="driver-account-pending"',
   'id="driver-profile-balance"',
@@ -331,10 +335,10 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v17-compact-history'")) failures.push('service-worker.js: compact-history cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v18-driver-install-button'")) failures.push('service-worker.js: driver-install-button cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v(?:[1-9]|1[0-6])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v(?:[1-9]|1[0-7])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
 for (const expected of [
   "'./food.webmanifest'",
   "'./shashlyk.webmanifest'",

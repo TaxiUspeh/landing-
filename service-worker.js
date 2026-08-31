@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v17-compact-history';
+const CACHE_NAME = 'taxi-uspeh-v18-driver-install-button';
 const APP_SHELL = [
   './',
   './index.html',

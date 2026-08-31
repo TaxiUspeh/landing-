@@ -175,7 +175,11 @@ async function ensureSignedIn() {
     });
 }
 
-function statusPresentation(status) {
+function statusPresentation(order) {
+    const status = typeof order === 'string' ? order : order.status;
+    if (status === 'searching' && order?.requeuedAt) {
+        return ['Подбираем другого водителя', 'bg-amber-100 text-amber-900 border-amber-300'];
+    }
     const statuses = {
         searching: ['Ищем свободного водителя', 'bg-amber-100 text-amber-900 border-amber-300'],
         accepted: ['Водитель принял заказ', 'bg-blue-100 text-blue-900 border-blue-300'],
@@ -189,7 +193,7 @@ function statusPresentation(status) {
 }
 
 function showOrderPanel(order) {
-    const [statusText, statusClasses] = statusPresentation(order.status);
+    const [statusText, statusClasses] = statusPresentation(order);
     elements.orderNumber.textContent = order.orderNumber || activeOrderId;
     elements.orderRoute.textContent = `${order.fromAddress || '—'} → ${order.toAddress || '—'}`;
     elements.orderPrice.textContent = order.priceText || 'Цена уточняется';

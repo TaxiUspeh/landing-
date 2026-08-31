@@ -95,6 +95,24 @@ service cloud.firestore {
           || getAfter(orderDocument(orderId)).data.status == 'cancelled');
     }
 
+    function driverBecomesOfflineAfterRequeue(orderId) {
+      return existsAfter(driverStateDocument())
+        && getAfter(driverStateDocument()).data.driverId == linkedDriverId()
+        && getAfter(driverStateDocument()).data.status == 'offline'
+        && getAfter(driverStateDocument()).data.activeOrderId == ''
+        && getAfter(driverStateDocument()).data.lastSeen == request.time
+        && getAfter(driverStateDocument()).data.updatedAt == request.time
+        && existsAfter(orderDocument(orderId))
+        && getAfter(orderDocument(orderId)).data.status == 'searching'
+        && getAfter(orderDocument(orderId)).data.assignedDriverUid == ''
+        && getAfter(orderDocument(orderId)).data.assignedDriverId == ''
+        && getAfter(orderDocument(orderId)).data.driverName == ''
+        && getAfter(orderDocument(orderId)).data.driverPhone == ''
+        && getAfter(orderDocument(orderId)).data.driverCar == ''
+        && getAfter(orderDocument(orderId)).data.driverColor == ''
+        && getAfter(orderDocument(orderId)).data.requeuedAt == request.time;
+    }
+
     function orderDocument(orderId) {
       return /databases/$(database)/documents/orders/$(orderId);
     }
@@ -245,6 +263,10 @@ service cloud.firestore {
             && existsAfter(orderDocument(resource.data.activeOrderId))
             && (getAfter(orderDocument(resource.data.activeOrderId)).data.status == 'completed'
               || getAfter(orderDocument(resource.data.activeOrderId)).data.status == 'cancelled'))
+          || (resource.data.status == 'busy'
+            && request.resource.data.status == 'offline'
+            && request.resource.data.activeOrderId == ''
+            && driverBecomesOfflineAfterRequeue(resource.data.activeOrderId))
         );
     }
 
@@ -341,6 +363,38 @@ service cloud.firestore {
         );
     }
 
+    function requeueableDriverOrderStatus(status) {
+      return status == 'accepted'
+        || status == 'en_route'
+        || status == 'arrived';
+    }
+
+    function assignedDriverReturnsOrderToSearch(orderId) {
+      return driverIsBusyWithOrder(orderId)
+        && resource.data.assignedDriverUid == request.auth.uid
+        && resource.data.assignedDriverId == linkedDriverId()
+        && requeueableDriverOrderStatus(resource.data.status)
+        && request.resource.data.status == 'searching'
+        && request.resource.data.assignedDriverUid == ''
+        && request.resource.data.assignedDriverId == ''
+        && request.resource.data.driverName == ''
+        && request.resource.data.driverPhone == ''
+        && request.resource.data.driverCar == ''
+        && request.resource.data.driverColor == ''
+        && request.resource.data.requeueReason is string
+        && request.resource.data.requeueReason in ['car_issue', 'cannot_continue', 'other']
+        && request.resource.data.requeuedAt == request.time
+        && request.resource.data.requeueCount is number
+        && request.resource.data.requeueCount == resource.data.get('requeueCount', 0) + 1
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'assignedDriverUid', 'assignedDriverId',
+          'driverName', 'driverPhone', 'driverCar', 'driverColor',
+          'requeueReason', 'requeuedAt', 'requeueCount', 'updatedAt'
+        ])
+        && driverBecomesOfflineAfterRequeue(orderId);
+    }
+
     function validClientContactCreate(orderId) {
       return signedIn()
         && request.resource.data.keys().hasOnly([
@@ -410,7 +464,8 @@ service cloud.firestore {
       allow update: if isAdmin()
         || clientCancelsOwnSearchingOrder()
         || driverAcceptsSearchingOrder(orderId)
-        || assignedDriverAdvancesOrder(orderId);
+        || assignedDriverAdvancesOrder(orderId)
+        || assignedDriverReturnsOrderToSearch(orderId);
       allow delete: if isAdmin();
     }
 

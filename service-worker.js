@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v14-paged-balance-history';
+const CACHE_NAME = 'taxi-uspeh-v15-order-requeue';
 const APP_SHELL = [
   './',
   './index.html',

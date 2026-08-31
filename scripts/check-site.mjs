@@ -328,10 +328,10 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v14-paged-balance-history'")) failures.push('service-worker.js: paged-balance-history cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v15-order-requeue'")) failures.push('service-worker.js: order-requeue cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v(?:[1-9]|1[0-3])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v(?:[1-9]|1[0-4])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
 for (const expected of [
   "'./food.webmanifest'",
   "'./shashlyk.webmanifest'",
@@ -421,7 +421,7 @@ if (!firestoreIndexes.indexes.some((index) => index.collectionGroup === 'balance
   && index.fields?.[1]?.order === 'DESCENDING')) {
   failures.push('firestore.indexes.json: balance history index is missing');
 }
-for (const expected of ['signInAnonymously', "collection(db, 'orders')", "doc(db, 'orderContacts'", "status: 'searching'", 'parseMaximumPrice(priceText)']) {
+for (const expected of ['signInAnonymously', "collection(db, 'orders')", "doc(db, 'orderContacts'", "status: 'searching'", 'parseMaximumPrice(priceText)', 'Подбираем другого водителя']) {
   if (!clientOrders.includes(expected)) failures.push('client-orders.js: missing ' + expected);
 }
 for (const expected of [
@@ -452,7 +452,10 @@ for (const expected of [
   "orderBy('changedAt', 'desc')",
   'showBalanceHistoryUnavailable',
   'lastCommissionOrderId',
-  "doc(db, 'balanceHistory', orderId)"
+  "doc(db, 'balanceHistory', orderId)",
+  'REQUEUEABLE_ORDER_STATUSES',
+  'returnOrderToSearch(orderId, expectedStatus, reason)',
+  "requeueReason: REQUEUE_REASONS.some"
 ]) {
   if (!driverPortal.includes(expected)) failures.push('driver-portal.js: missing ' + expected);
 }
@@ -465,7 +468,10 @@ for (const expected of [
   'Отменить заказ',
   'commissionAmount',
   'commissionBaseAmount',
-  'Комиссия ${rate}%'
+  'Комиссия ${rate}%',
+  'assignOrderManually(orderId, driverId)',
+  'manualAssignmentCandidates()',
+  'Назначить вручную'
 ]) {
   if (!dispatcherScript.includes(expected)) failures.push('dispatcher.js: missing ' + expected);
 }
@@ -475,10 +481,12 @@ for (const expected of [
   'validClientOrderCreate()',
   'driverAcceptsSearchingOrder(orderId)',
   'assignedDriverAdvancesOrder(orderId)',
+  'assignedDriverReturnsOrderToSearch(orderId)',
   'match /driverStates/{accountUid}',
   'driverIsAvailable()',
   'driverBecomesBusyWithOrder(orderId)',
   'driverBecomesAvailableAfter(orderId)',
+  'driverBecomesOfflineAfterRequeue(orderId)',
   'validCommissionSettlement(orderId, driverId)',
   'validOwnOnlineCommissionHistoryCreate(entryId)',
   'driverAppliesOwnOnlineCommission(driverId)',

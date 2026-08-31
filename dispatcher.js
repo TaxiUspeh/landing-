@@ -76,8 +76,14 @@ let unsubscribeDriverStates = null;
 let unsubscribeOrders = null;
 let unsubscribeOrderContacts = null;
 let authActionInProgress = false;
+let manualOrderAssignmentInProgress = false;
 let driverStatusRefreshTimer = null;
 const DRIVER_CONNECTION_TIMEOUT_MS = 3 * 60 * 1000;
+const REQUEUE_REASON_LABELS = {
+    car_issue: 'Неисправность автомобиля',
+    cannot_continue: 'Водитель не может продолжить',
+    other: 'Другая причина'
+};
 
 function setHidden(element, hidden) {
     if (element) element.classList.toggle('hidden', hidden);
@@ -500,6 +506,44 @@ function createOrderText(tag, className, text) {
     return element;
 }
 
+function manualAssignmentCandidates() {
+    return drivers.filter((driver) => driverAvailabilityInfo(driver).key === 'available');
+}
+
+function appendManualAssignmentControls(actions, order) {
+    const candidates = manualAssignmentCandidates();
+    const hint = createOrderText(
+        'p',
+        'w-full text-xs text-slate-500 dark:text-slate-400',
+        candidates.length
+            ? 'Назначайте водителя после подтверждения по телефону.'
+            : 'Свободных водителей на линии сейчас нет.'
+    );
+    actions.append(hint);
+    if (!candidates.length) return;
+
+    const select = document.createElement('select');
+    select.className = 'min-w-0 flex-grow rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 dark:border-blue-800 dark:bg-slate-900 dark:text-slate-100';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Выберите свободного водителя';
+    select.append(placeholder);
+    for (const driver of candidates) {
+        const option = document.createElement('option');
+        option.value = driver.id;
+        option.textContent = `ID ${driver.driverNumber} · ${driver.name || 'Водитель'}${driver.car ? ` · ${driver.car}` : ''}`;
+        select.append(option);
+    }
+
+    const assign = document.createElement('button');
+    assign.type = 'button';
+    assign.className = 'rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-xs font-extrabold';
+    assign.textContent = 'Назначить вручную';
+    assign.disabled = manualOrderAssignmentInProgress;
+    assign.addEventListener('click', () => void assignOrderManually(order.id, select.value));
+    actions.append(select, assign);
+}
+
 function createOnlineOrderCard(order) {
     const card = document.createElement('article');
     card.className = 'rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 p-4';
@@ -519,6 +563,15 @@ function createOnlineOrderCard(order) {
     const route = createOrderText('p', 'mt-3 font-bold break-words', `${order.fromAddress || '—'} → ${order.toAddress || '—'}`);
     const price = createOrderText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', order.priceText || 'Цена уточняется');
     card.append(header, route, price);
+
+    if (order.status === 'searching' && order.requeuedAt) {
+        const returned = createOrderText(
+            'p',
+            'mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200',
+            `Возвращён в поиск: ${REQUEUE_REASON_LABELS[order.requeueReason] || 'причина не указана'}${Number(order.requeueCount) > 1 ? ` · возвратов: ${order.requeueCount}` : ''}`
+        );
+        card.append(returned);
+    }
 
     if (order.status === 'completed' && Number.isFinite(Number(order.commissionAmount))) {
         const accounting = document.createElement('div');
@@ -588,6 +641,7 @@ function createOnlineOrderCard(order) {
         cancel.addEventListener('click', () => cancelOnlineOrder(order));
         actions.append(cancel);
     }
+    if (order.status === 'searching') appendManualAssignmentControls(actions, order);
     if (actions.childElementCount) card.append(actions);
     return card;
 }
@@ -640,6 +694,67 @@ function startOrdersListeners() {
         orderContacts = new Map(snapshot.docs.map((snapshotDoc) => [snapshotDoc.id, snapshotDoc.data()]));
         if (orders.length) renderOnlineOrders();
     }, handleOnlineOrdersError);
+}
+
+async function assignOrderManually(orderId, driverId) {
+    if (!currentUser || manualOrderAssignmentInProgress) return;
+    if (!driverId) {
+        setMessage(elements.onlineOrdersMessage, 'Сначала выберите свободного водителя.');
+        return;
+    }
+    manualOrderAssignmentInProgress = true;
+    setMessage(elements.onlineOrdersMessage, '');
+    try {
+        await runTransaction(db, async (transaction) => {
+            const orderRef = doc(db, 'orders', orderId);
+            const driverRef = doc(db, 'drivers', driverId);
+            const orderSnapshot = await transaction.get(orderRef);
+            const driverSnapshot = await transaction.get(driverRef);
+            if (!orderSnapshot.exists() || orderSnapshot.data().status !== 'searching') {
+                throw new Error('Этот заказ уже принят или отменён.');
+            }
+            if (!driverSnapshot.exists()) throw new Error('Карточка водителя не найдена.');
+            const driver = driverSnapshot.data();
+            const driverUid = normalizeUid(driver.authUid || '');
+            if (!driverUid || driver.status !== 'active' || Number(driver.balance) >= 0) {
+                throw new Error('Водитель недоступен для онлайн-заказов.');
+            }
+
+            const stateRef = doc(db, 'driverStates', driverUid);
+            const stateSnapshot = await transaction.get(stateRef);
+            const state = stateSnapshot.exists() ? stateSnapshot.data() : null;
+            const connected = timestampMillis(state?.lastSeen) > 0
+                && Date.now() - timestampMillis(state.lastSeen) <= DRIVER_CONNECTION_TIMEOUT_MS;
+            if (!state || state.status !== 'available' || state.activeOrderId || !connected) {
+                throw new Error('Этот водитель уже занят, не на линии или кабинет не отвечает.');
+            }
+
+            transaction.update(orderRef, {
+                status: 'accepted',
+                assignedDriverUid: driverUid,
+                assignedDriverId: driverId,
+                driverName: driver.name || 'Водитель',
+                driverPhone: driver.phone || '',
+                driverCar: driver.car || '',
+                driverColor: driver.color || '',
+                acceptedAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+            transaction.update(stateRef, {
+                status: 'busy',
+                activeOrderId: orderId,
+                lastSeen: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        });
+        setMessage(elements.onlineOrdersMessage, 'Водитель назначен вручную. Клиент и водитель увидят заказ.', true);
+    } catch (error) {
+        console.warn('Не удалось назначить водителя вручную:', error.code || error.message);
+        setMessage(elements.onlineOrdersMessage, error.message || 'Не удалось назначить водителя вручную.');
+    } finally {
+        manualOrderAssignmentInProgress = false;
+        renderOnlineOrders();
+    }
 }
 
 async function cancelOnlineOrder(order) {

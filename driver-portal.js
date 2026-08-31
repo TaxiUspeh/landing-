@@ -23,6 +23,12 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const ACTIVE_ORDER_STATUSES = new Set(['accepted', 'en_route', 'arrived', 'in_trip']);
+const REQUEUEABLE_ORDER_STATUSES = new Set(['accepted', 'en_route', 'arrived']);
+const REQUEUE_REASONS = [
+    ['car_issue', 'Неисправность автомобиля'],
+    ['cannot_continue', 'Не могу продолжить заказ'],
+    ['other', 'Другая причина']
+];
 const NEXT_ORDER_STATUS = {
     accepted: ['en_route', 'Выехал к клиенту'],
     en_route: ['arrived', 'Я приехал'],
@@ -979,6 +985,24 @@ function createOrderCard(order, assigned) {
             statusButton.addEventListener('click', () => advanceOrder(order.id, order.status, next[0]));
             actions.append(statusButton);
         }
+
+        if (REQUEUEABLE_ORDER_STATUSES.has(order.status)) {
+            const requeueReason = document.createElement('select');
+            requeueReason.className = 'w-full rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-100';
+            for (const [value, label] of REQUEUE_REASONS) {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = label;
+                requeueReason.append(option);
+            }
+            const requeueButton = document.createElement('button');
+            requeueButton.type = 'button';
+            requeueButton.className = 'rounded-lg border border-amber-500 text-amber-800 hover:bg-amber-100 px-4 py-2 text-xs font-extrabold dark:border-amber-600 dark:text-amber-200 dark:hover:bg-amber-900/30';
+            requeueButton.textContent = 'Вернуть в поиск';
+            requeueButton.disabled = orderActionInProgress;
+            requeueButton.addEventListener('click', () => returnOrderToSearch(order.id, order.status, requeueReason.value));
+            actions.append(requeueReason, requeueButton);
+        }
     }
 
     card.append(actions);
@@ -1298,6 +1322,64 @@ async function advanceOrder(orderId, expectedStatus, nextStatus) {
     } catch (error) {
         console.warn('Статус заказа не изменён:', error.code || error.message);
         showOrdersMessage(error.message || 'Не удалось изменить статус заказа.');
+    } finally {
+        orderActionInProgress = false;
+        renderOnlineOrders();
+    }
+}
+
+async function returnOrderToSearch(orderId, expectedStatus, reason) {
+    if (!currentUser || orderActionInProgress || !REQUEUEABLE_ORDER_STATUSES.has(expectedStatus)) return;
+    const reasonLabel = REQUEUE_REASONS.find(([value]) => value === reason)?.[1] || 'Другая причина';
+    if (!window.confirm(`Вернуть заказ в поиск? Клиент увидит, что подбирается другой водитель. Причина для диспетчера: ${reasonLabel}.`)) return;
+
+    orderActionInProgress = true;
+    showOrdersMessage('');
+    renderOnlineOrders();
+    try {
+        await runTransaction(db, async (transaction) => {
+            const orderRef = doc(db, 'orders', orderId);
+            const stateRef = doc(db, 'driverStates', currentUser.uid);
+            const orderSnapshot = await transaction.get(orderRef);
+            const stateSnapshot = await transaction.get(stateRef);
+            if (!orderSnapshot.exists()) throw new Error('Заказ не найден.');
+            const order = orderSnapshot.data();
+            const state = normalizedDriverState(stateSnapshot, currentDriverId);
+            if (order.assignedDriverUid !== currentUser.uid || order.status !== expectedStatus) {
+                throw new Error('Статус заказа уже изменился.');
+            }
+            if (!stateSnapshot.exists() || state.status !== 'busy' || state.activeOrderId !== orderId) {
+                throw new Error('Текущий заказ не совпадает со статусом водителя.');
+            }
+
+            transaction.update(orderRef, {
+                status: 'searching',
+                assignedDriverUid: '',
+                assignedDriverId: '',
+                driverName: '',
+                driverPhone: '',
+                driverCar: '',
+                driverColor: '',
+                requeueReason: REQUEUE_REASONS.some(([value]) => value === reason) ? reason : 'other',
+                requeuedAt: serverTimestamp(),
+                requeueCount: Number(order.requeueCount || 0) + 1,
+                updatedAt: serverTimestamp()
+            });
+            transaction.update(stateRef, {
+                status: 'offline',
+                activeOrderId: '',
+                lastSeen: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        });
+        showOrdersMessage('Заказ возвращён в поиск. Вы автоматически ушли с линии.', true);
+    } catch (error) {
+        console.warn('Не удалось вернуть заказ в поиск:', error.code || error.message);
+        showOrdersMessage(
+            error.code === 'permission-denied'
+                ? 'Не удалось вернуть заказ. Проверьте, что опубликованы новые правила Firebase.'
+                : error.message || 'Не удалось вернуть заказ в поиск.'
+        );
     } finally {
         orderActionInProgress = false;
         renderOnlineOrders();

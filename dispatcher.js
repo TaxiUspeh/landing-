@@ -45,6 +45,8 @@ const elements = {
     onlineOrdersEmpty: document.getElementById('online-orders-empty'),
     onlineOrdersList: document.getElementById('online-orders-list'),
     onlineOrdersMessage: document.getElementById('online-orders-message'),
+    expandOnlineOrders: document.getElementById('expand-online-orders'),
+    collapseOnlineOrders: document.getElementById('collapse-online-orders'),
     addDriverForm: document.getElementById('add-driver-form'),
     addDriverButton: document.getElementById('add-driver-button'),
     addDriverMessage: document.getElementById('add-driver-message'),
@@ -71,6 +73,7 @@ let drivers = [];
 let driverStates = new Map();
 let orders = [];
 let orderContacts = new Map();
+const expandedOrderIds = new Set();
 let unsubscribeDrivers = null;
 let unsubscribeDriverStates = null;
 let unsubscribeOrders = null;
@@ -520,6 +523,23 @@ function createOrderText(tag, className, text) {
     return element;
 }
 
+function orderDetailsId(orderId) {
+    return `online-order-details-${String(orderId).replace(/[^A-Za-z0-9_-]/g, '-')}`;
+}
+
+function setOrderExpanded(orderId, expanded) {
+    if (expanded) expandedOrderIds.add(orderId);
+    else expandedOrderIds.delete(orderId);
+    renderOnlineOrders();
+}
+
+function setAllOrdersExpanded(expanded) {
+    const visibleOrderIds = orders.slice(0, 50).map((order) => order.id);
+    if (expanded) visibleOrderIds.forEach((orderId) => expandedOrderIds.add(orderId));
+    else visibleOrderIds.forEach((orderId) => expandedOrderIds.delete(orderId));
+    renderOnlineOrders();
+}
+
 function manualAssignmentCandidates() {
     return drivers.filter((driver) => driverAvailabilityInfo(driver).key === 'available');
 }
@@ -560,7 +580,13 @@ function appendManualAssignmentControls(actions, order) {
 
 function createOnlineOrderCard(order) {
     const card = document.createElement('article');
-    card.className = 'rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 p-4';
+    card.className = 'overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60';
+    card.dataset.orderId = order.id;
+    const expanded = expandedOrderIds.has(order.id);
+    const detailsId = orderDetailsId(order.id);
+
+    const summary = document.createElement('div');
+    summary.className = 'p-4';
 
     const header = document.createElement('div');
     header.className = 'flex items-start justify-between gap-3';
@@ -576,23 +602,41 @@ function createOnlineOrderCard(order) {
 
     const route = createOrderText('p', 'mt-3 font-bold break-words', `${order.fromAddress || '—'} → ${order.toAddress || '—'}`);
     const price = createOrderText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', order.priceText || 'Цена уточняется');
-    card.append(header, route, price);
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'mt-3 flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs font-extrabold text-blue-700 dark:border-slate-800 dark:bg-slate-900 dark:text-blue-300';
+    toggle.setAttribute('aria-expanded', String(expanded));
+    toggle.setAttribute('aria-controls', detailsId);
+    const toggleText = document.createElement('span');
+    toggleText.textContent = expanded ? 'Свернуть детали' : 'Подробнее и действия';
+    const toggleIcon = document.createElement('i');
+    toggleIcon.className = `fas ${expanded ? 'fa-chevron-up' : 'fa-chevron-down'}`;
+    toggleIcon.setAttribute('aria-hidden', 'true');
+    toggle.append(toggleText, toggleIcon);
+    toggle.addEventListener('click', () => setOrderExpanded(order.id, !expanded));
+    summary.append(header, route, price, toggle);
+
+    const detailsPanel = document.createElement('div');
+    detailsPanel.id = detailsId;
+    detailsPanel.className = 'border-t border-slate-200 p-4 dark:border-slate-800';
+    detailsPanel.hidden = !expanded;
+    card.append(summary, detailsPanel);
 
     const pendingCancellation = order.cancellationRequestStatus === 'pending';
     if (pendingCancellation) {
-        card.append(createOrderText(
+        detailsPanel.append(createOrderText(
             'p',
             'mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-bold text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200',
             `Клиент просит отмену: ${CLIENT_CANCELLATION_REASON_LABELS[order.cancellationReason] || 'причина не указана'}. Подтвердите решение после проверки.`
         ));
     } else if (order.status === 'cancelled' && order.cancellationDecision === 'false_call_fee') {
-        card.append(createOrderText(
+        detailsPanel.append(createOrderText(
             'p',
             'mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-bold text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200',
             `Зафиксирована компенсация за ложный вызов: ${formatMoney(order.cancellationFeeAmount || 500)}. Автоматического списания нет.`
         ));
     } else if (order.status === 'cancelled' && order.cancellationDecision === 'free') {
-        card.append(createOrderText(
+        detailsPanel.append(createOrderText(
             'p',
             'mt-3 rounded-xl border border-green-200 bg-green-50 p-3 text-xs font-bold text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-200',
             'Отмена подтверждена диспетчером без компенсации.'
@@ -605,7 +649,7 @@ function createOnlineOrderCard(order) {
             'mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200',
             `Возвращён в поиск: ${REQUEUE_REASON_LABELS[order.requeueReason] || 'причина не указана'}${Number(order.requeueCount) > 1 ? ` · возвратов: ${order.requeueCount}` : ''}`
         );
-        card.append(returned);
+        detailsPanel.append(returned);
     }
 
     if (order.status === 'completed' && Number.isFinite(Number(order.commissionAmount))) {
@@ -631,17 +675,17 @@ function createOnlineOrderCard(order) {
                 `Баланс: ${formatMoney(order.commissionBalanceBefore)} → ${formatMoney(order.commissionBalanceAfter)}`
             ));
         }
-        card.append(accounting);
+        detailsPanel.append(accounting);
     }
 
     if (Array.isArray(order.stops) && order.stops.length) {
-        card.append(createOrderText('p', 'mt-2 text-xs text-slate-600 dark:text-slate-300', `Остановки: ${order.stops.join(' → ')}`));
+        detailsPanel.append(createOrderText('p', 'mt-2 text-xs text-slate-600 dark:text-slate-300', `Остановки: ${order.stops.join(' → ')}`));
     }
     if (order.scheduledFor) {
-        card.append(createOrderText('p', 'mt-1 text-xs text-slate-600 dark:text-slate-300', `Время: ${order.scheduledFor.replace('T', ' ')}`));
+        detailsPanel.append(createOrderText('p', 'mt-1 text-xs text-slate-600 dark:text-slate-300', `Время: ${order.scheduledFor.replace('T', ' ')}`));
     }
     if (order.wishes) {
-        card.append(createOrderText('p', 'mt-1 text-xs text-slate-600 dark:text-slate-300', `Пожелания: ${order.wishes}`));
+        detailsPanel.append(createOrderText('p', 'mt-1 text-xs text-slate-600 dark:text-slate-300', `Пожелания: ${order.wishes}`));
     }
 
     const contact = orderContacts.get(order.id);
@@ -657,7 +701,7 @@ function createOnlineOrderCard(order) {
             ? `Водитель: ${order.driverName || order.assignedDriverId || 'назначен'}${order.driverCar ? ` · ${order.driverCar}` : ''}`
             : 'Водитель ещё не назначен'
     ));
-    card.append(details);
+    detailsPanel.append(details);
 
     const actions = document.createElement('div');
     actions.className = 'mt-3 flex flex-wrap gap-2';
@@ -692,7 +736,7 @@ function createOnlineOrderCard(order) {
         actions.append(cancel);
     }
     if (order.status === 'searching') appendManualAssignmentControls(actions, order);
-    if (actions.childElementCount) card.append(actions);
+    if (actions.childElementCount) detailsPanel.append(actions);
     return card;
 }
 
@@ -711,6 +755,12 @@ function renderOnlineOrders() {
         return bTime - aTime;
     }).slice(0, 50);
 
+    const visibleOrderIds = new Set(sorted.map((order) => order.id));
+    for (const orderId of Array.from(expandedOrderIds)) {
+        if (!visibleOrderIds.has(orderId)) expandedOrderIds.delete(orderId);
+    }
+    elements.expandOnlineOrders.disabled = sorted.length === 0;
+    elements.collapseOnlineOrders.disabled = sorted.length === 0;
     elements.onlineOrdersList.replaceChildren();
     for (const order of sorted) elements.onlineOrdersList.append(createOnlineOrderCard(order));
     setHidden(elements.onlineOrdersLoading, true);
@@ -1099,6 +1149,8 @@ elements.copyUid.addEventListener('click', copyUid);
 elements.addDriverForm.addEventListener('submit', addDriver);
 elements.ordersLinkForm.addEventListener('submit', saveOrdersLink);
 elements.driverSearch.addEventListener('input', renderDrivers);
+elements.expandOnlineOrders.addEventListener('click', () => setAllOrdersExpanded(true));
+elements.collapseOnlineOrders.addEventListener('click', () => setAllOrdersExpanded(false));
 
 getRedirectResult(auth).catch((error) => {
     console.error('Ошибка возврата из Google:', error);

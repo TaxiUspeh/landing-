@@ -304,6 +304,23 @@
                                 <p id="driver-shift-message" class="hidden mt-2 text-xs" role="status"></p>
                             </section>
 
+                            <section id="driver-balance-history" class="mb-4 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/20 overflow-hidden" aria-labelledby="driver-balance-history-title">
+                                <div class="px-4 py-3 border-b border-emerald-200 dark:border-emerald-800">
+                                    <h3 id="driver-balance-history-title" class="font-extrabold text-emerald-950 dark:text-emerald-100">
+                                        <i class="fas fa-receipt mr-2" aria-hidden="true"></i>История баланса
+                                    </h3>
+                                    <p class="mt-1 text-xs text-emerald-800 dark:text-emerald-300">Комиссии по онлайн-заказам и изменения диспетчера.</p>
+                                </div>
+                                <div id="driver-balance-history-loading" class="px-4 py-4 text-xs text-gray-600 dark:text-gray-300" role="status">
+                                    <i class="fas fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Загружаем историю…
+                                </div>
+                                <div id="driver-balance-history-empty" class="hidden px-4 py-5 text-center text-xs text-gray-600 dark:text-gray-300">
+                                    <i class="fas fa-receipt text-lg mb-2" aria-hidden="true"></i>
+                                    <p class="font-bold">Изменений баланса пока нет</p>
+                                </div>
+                                <div id="driver-balance-history-list" class="hidden divide-y divide-emerald-100 dark:divide-emerald-900/60"></div>
+                            </section>
+
                             <section id="driver-order-alerts" class="mb-4 rounded-2xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 p-4" aria-labelledby="driver-order-alerts-title">
                                 <div class="flex items-start gap-3">
                                     <span id="driver-order-alerts-icon" class="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 flex items-center justify-center" aria-hidden="true">

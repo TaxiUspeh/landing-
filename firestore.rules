@@ -99,6 +99,92 @@ service cloud.firestore {
       return /databases/$(database)/documents/orders/$(orderId);
     }
 
+    function driverDocument(driverId) {
+      return /databases/$(database)/documents/drivers/$(driverId);
+    }
+
+    function onlineCommissionHistoryDocument(orderId) {
+      return /databases/$(database)/documents/balanceHistory/online-$(orderId);
+    }
+
+    function commissionBaseAmountForOrder(orderId) {
+      return getAfter(orderDocument(orderId)).data.priceAmount;
+    }
+
+    function commissionAmountForOrder(orderId) {
+      return commissionBaseAmountForOrder(orderId) / 5;
+    }
+
+    function validCommissionSettlement(orderId, driverId) {
+      return existsAfter(orderDocument(orderId))
+        && getAfter(orderDocument(orderId)).data.status == 'completed'
+        && getAfter(orderDocument(orderId)).data.assignedDriverUid == request.auth.uid
+        && getAfter(orderDocument(orderId)).data.assignedDriverId == driverId
+        && getAfter(orderDocument(orderId)).data.commissionRate == 20
+        && getAfter(orderDocument(orderId)).data.commissionBaseAmount is number
+        && getAfter(orderDocument(orderId)).data.commissionBaseAmount == commissionBaseAmountForOrder(orderId)
+        && getAfter(orderDocument(orderId)).data.commissionAmount is number
+        && getAfter(orderDocument(orderId)).data.commissionAmount == commissionAmountForOrder(orderId)
+        && getAfter(orderDocument(orderId)).data.commissionBalanceBefore is number
+        && getAfter(orderDocument(orderId)).data.commissionBalanceAfter is number
+        && getAfter(orderDocument(orderId)).data.commissionChargedAt == request.time
+        && exists(driverDocument(driverId))
+        && existsAfter(driverDocument(driverId))
+        && get(driverDocument(driverId)).data.balance is number
+        && getAfter(driverDocument(driverId)).data.balance is number
+        && getAfter(orderDocument(orderId)).data.commissionBalanceBefore == get(driverDocument(driverId)).data.balance
+        && getAfter(orderDocument(orderId)).data.commissionBalanceAfter == getAfter(driverDocument(driverId)).data.balance
+        && getAfter(driverDocument(driverId)).data.lastCommissionOrderId == orderId
+        && getAfter(driverDocument(driverId)).data.updatedAt == request.time
+        && existsAfter(onlineCommissionHistoryDocument(orderId));
+    }
+
+    function validOwnOnlineCommissionHistoryCreate(entryId) {
+      return hasDriverAccount()
+        && entryId == 'online-' + request.resource.data.orderId
+        && request.resource.data.keys().hasOnly([
+          'driverId', 'driverNumber', 'orderId', 'orderNumber', 'source',
+          'commissionRate', 'commissionBaseAmount', 'commissionAmount', 'previousBalance', 'newBalance',
+          'difference', 'reason', 'changedAt', 'changedBy'
+        ])
+        && request.resource.data.driverId == linkedDriverId()
+        && request.resource.data.driverNumber == getAfter(linkedDriverDocument()).data.driverNumber
+        && request.resource.data.orderId is string
+        && request.resource.data.orderId.size() > 0
+        && request.resource.data.orderNumber is string
+        && request.resource.data.orderNumber.size() <= 32
+        && request.resource.data.source == 'online'
+        && request.resource.data.commissionRate == 20
+        && request.resource.data.commissionBaseAmount is number
+        && request.resource.data.commissionAmount is number
+        && request.resource.data.previousBalance is number
+        && request.resource.data.newBalance is number
+        && request.resource.data.difference is number
+        && request.resource.data.reason == 'Комиссия 20% от максимальной цены онлайн-заказа'
+        && request.resource.data.changedAt == request.time
+        && request.resource.data.changedBy == request.auth.uid
+        && request.resource.data.commissionBaseAmount == commissionBaseAmountForOrder(request.resource.data.orderId)
+        && request.resource.data.commissionAmount == commissionAmountForOrder(request.resource.data.orderId)
+        && request.resource.data.difference == request.resource.data.commissionAmount
+        && request.resource.data.previousBalance == get(driverDocument(linkedDriverId())).data.balance
+        && request.resource.data.newBalance == getAfter(driverDocument(linkedDriverId())).data.balance
+        && validCommissionSettlement(request.resource.data.orderId, linkedDriverId());
+    }
+
+    function driverAppliesOwnOnlineCommission(driverId) {
+      return isLinkedDriver(driverId)
+        && resource.data.balance is number
+        && request.resource.data.balance is number
+        && request.resource.data.lastCommissionOrderId is string
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'balance', 'lastCommissionOrderId', 'updatedAt'
+        ])
+        && validCommissionSettlement(request.resource.data.lastCommissionOrderId, driverId)
+        && request.resource.data.balance == resource.data.balance
+          + commissionAmountForOrder(request.resource.data.lastCommissionOrderId);
+    }
+
     function validDriverStateData(data) {
       return data.keys().hasOnly([
           'driverId', 'status', 'activeOrderId', 'lastSeen', 'updatedAt'
@@ -234,9 +320,17 @@ service cloud.firestore {
         && resource.data.assignedDriverId == linkedDriverId()
         && validDriverStatusTransition()
         && request.resource.data.updatedAt == request.time
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
-        && (request.resource.data.status != 'completed'
-          || driverBecomesAvailableAfter(orderId));
+        && (
+          (request.resource.data.status != 'completed'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']))
+          || (request.resource.data.status == 'completed'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'updatedAt', 'commissionRate', 'commissionAmount',
+              'commissionBaseAmount', 'commissionBalanceBefore', 'commissionBalanceAfter', 'commissionChargedAt'
+            ])
+            && validCommissionSettlement(orderId, linkedDriverId())
+            && driverBecomesAvailableAfter(orderId))
+        );
     }
 
     function validClientContactCreate(orderId) {
@@ -269,7 +363,8 @@ service cloud.firestore {
 
     match /drivers/{driverId} {
       allow read: if isAdmin() || isLinkedDriver(driverId);
-      allow create, update, delete: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || driverAppliesOwnOnlineCommission(driverId);
     }
 
     match /driverAccounts/{accountUid} {
@@ -289,7 +384,7 @@ service cloud.firestore {
     match /balanceHistory/{entryId} {
       allow read: if isAdmin()
         || (hasDriverAccount() && resource.data.driverId == linkedDriverId());
-      allow create: if isAdmin();
+      allow create: if isAdmin() || (signedIn() && validOwnOnlineCommissionHistoryCreate(entryId));
       allow update, delete: if false;
     }
 

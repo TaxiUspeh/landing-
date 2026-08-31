@@ -520,6 +520,32 @@ function createOnlineOrderCard(order) {
     const price = createOrderText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', order.priceText || 'Цена уточняется');
     card.append(header, route, price);
 
+    if (order.status === 'completed' && Number.isFinite(Number(order.commissionAmount))) {
+        const accounting = document.createElement('div');
+        accounting.className = 'mt-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-xs';
+        const rate = Number.isFinite(Number(order.commissionRate)) ? Number(order.commissionRate) : 20;
+        accounting.append(createOrderText(
+            'p',
+            'font-extrabold text-emerald-900 dark:text-emerald-200',
+            `Комиссия ${rate}%: +${formatMoney(order.commissionAmount)}`
+        ));
+        if (Number.isFinite(Number(order.commissionBaseAmount))) {
+            accounting.append(createOrderText(
+                'p',
+                'mt-1 text-emerald-800 dark:text-emerald-300',
+                `Расчёт: ${rate}% от максимальной цены ${formatMoney(order.commissionBaseAmount)}`
+            ));
+        }
+        if (Number.isFinite(Number(order.commissionBalanceBefore)) && Number.isFinite(Number(order.commissionBalanceAfter))) {
+            accounting.append(createOrderText(
+                'p',
+                'mt-1 text-emerald-800 dark:text-emerald-300',
+                `Баланс: ${formatMoney(order.commissionBalanceBefore)} → ${formatMoney(order.commissionBalanceAfter)}`
+            ));
+        }
+        card.append(accounting);
+    }
+
     if (Array.isArray(order.stops) && order.stops.length) {
         card.append(createOrderText('p', 'mt-2 text-xs text-slate-600 dark:text-slate-300', `Остановки: ${order.stops.join(' → ')}`));
     }

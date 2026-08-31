@@ -114,9 +114,11 @@ function collectStops() {
         .slice(0, 5);
 }
 
-function parsePrice(text) {
-    const match = String(text || '').replace(/\s/g, '').match(/\d+/);
-    return match ? Number(match[0]) : 0;
+function parseMaximumPrice(text) {
+    const amounts = (String(text || '').match(/\d[\d\s\u00A0]*/g) || [])
+        .map((value) => Number(value.replace(/\D/g, '')))
+        .filter((value) => Number.isFinite(value));
+    return amounts.length ? Math.max(...amounts) : 0;
 }
 
 function createOrderNumber() {
@@ -290,7 +292,8 @@ async function createOnlineOrder() {
             scheduledFor,
             direction,
             priceText,
-            priceAmount: parsePrice(priceText),
+            // Для диапазона «800–1000 ₸» расчётной суммой является 1000 ₸.
+            priceAmount: parseMaximumPrice(priceText),
             status: 'searching',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()

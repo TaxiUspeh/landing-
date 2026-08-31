@@ -53,6 +53,9 @@ const elements = {
     workStatusDetail: document.getElementById('driver-work-status-detail'),
     shiftToggle: document.getElementById('driver-shift-toggle'),
     shiftMessage: document.getElementById('driver-shift-message'),
+    balanceHistoryLoading: document.getElementById('driver-balance-history-loading'),
+    balanceHistoryEmpty: document.getElementById('driver-balance-history-empty'),
+    balanceHistoryList: document.getElementById('driver-balance-history-list'),
     ordersSection: document.getElementById('driver-online-orders'),
     ordersLoading: document.getElementById('driver-orders-loading'),
     ordersEmpty: document.getElementById('driver-online-orders-empty'),
@@ -87,6 +90,7 @@ let assignedOrders = [];
 let unsubscribeAccount = null;
 let unsubscribeDriver = null;
 let unsubscribeDriverState = null;
+let unsubscribeBalanceHistory = null;
 let unsubscribeOpenOrders = null;
 let unsubscribeAssignedOrders = null;
 let watchedOrdersUserUid = '';
@@ -103,6 +107,8 @@ let seenOpenOrderIds = new Set();
 let currentAlertOrderId = '';
 let newOrderAlertTimer = null;
 let requestedOrderHandled = false;
+let watchedHistoryDriverId = '';
+let balanceHistory = [];
 
 function setHidden(element, hidden) {
     if (element) element.classList.toggle('hidden', hidden);
@@ -377,6 +383,105 @@ function formatMoney(value) {
     const amount = Number(value);
     if (!Number.isFinite(amount)) return 'Не указан';
     return new Intl.NumberFormat('ru-RU').format(amount) + ' ₸';
+}
+
+function formatSignedMoney(value) {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) return '—';
+    return `${amount > 0 ? '+' : ''}${formatMoney(amount)}`;
+}
+
+function balanceHistoryTime(entry) {
+    if (!entry.changedAt?.toDate) return 'Только что';
+    return new Intl.DateTimeFormat('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(entry.changedAt.toDate());
+}
+
+function balanceHistoryMillis(entry) {
+    return entry.changedAt?.toMillis ? entry.changedAt.toMillis() : 0;
+}
+
+function renderBalanceHistory() {
+    if (!elements.balanceHistoryList) return;
+    const entries = [...balanceHistory]
+        .sort((a, b) => balanceHistoryMillis(b) - balanceHistoryMillis(a))
+        .slice(0, 8);
+
+    elements.balanceHistoryList.replaceChildren();
+    for (const entry of entries) {
+        const item = document.createElement('article');
+        item.className = 'px-4 py-3 text-xs';
+        const header = document.createElement('div');
+        header.className = 'flex items-start justify-between gap-3';
+        const details = document.createElement('div');
+        details.className = 'min-w-0';
+        details.append(
+            createText('p', 'font-extrabold text-gray-900 dark:text-white', entry.reason || 'Изменение баланса'),
+            createText(
+                'p',
+                'mt-1 text-[11px] text-gray-600 dark:text-gray-300',
+                [entry.orderNumber ? `Заказ ${entry.orderNumber}` : '', balanceHistoryTime(entry)].filter(Boolean).join(' · ')
+            )
+        );
+        const difference = createText(
+            'p',
+            `flex-shrink-0 font-black ${Number(entry.difference) > 0 ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`,
+            formatSignedMoney(entry.difference)
+        );
+        header.append(details, difference);
+        item.append(header);
+
+        if (Number.isFinite(Number(entry.previousBalance)) && Number.isFinite(Number(entry.newBalance))) {
+            item.append(createText(
+                'p',
+                'mt-1 text-[11px] text-gray-500 dark:text-gray-400',
+                `Баланс: ${formatMoney(entry.previousBalance)} → ${formatMoney(entry.newBalance)}`
+            ));
+        }
+        if (entry.source === 'online' && Number.isFinite(Number(entry.commissionBaseAmount))) {
+            item.append(createText(
+                'p',
+                'mt-1 text-[11px] text-gray-500 dark:text-gray-400',
+                `Расчёт: 20% от ${formatMoney(entry.commissionBaseAmount)}`
+            ));
+        }
+        elements.balanceHistoryList.append(item);
+    }
+
+    setHidden(elements.balanceHistoryLoading, true);
+    setHidden(elements.balanceHistoryList, entries.length === 0);
+    setHidden(elements.balanceHistoryEmpty, entries.length !== 0);
+}
+
+function watchBalanceHistory(driverId) {
+    const normalizedId = String(driverId || '');
+    if (!normalizedId || watchedHistoryDriverId === normalizedId) return;
+    if (unsubscribeBalanceHistory) unsubscribeBalanceHistory();
+    unsubscribeBalanceHistory = null;
+    watchedHistoryDriverId = normalizedId;
+    balanceHistory = [];
+    setHidden(elements.balanceHistoryLoading, false);
+    setHidden(elements.balanceHistoryEmpty, true);
+    setHidden(elements.balanceHistoryList, true);
+
+    unsubscribeBalanceHistory = onSnapshot(
+        query(collection(db, 'balanceHistory'), where('driverId', '==', normalizedId)),
+        (snapshot) => {
+            balanceHistory = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
+            renderBalanceHistory();
+        },
+        (error) => {
+            console.warn('История баланса не загрузилась:', error.code || error.message);
+            balanceHistory = [];
+            setHidden(elements.balanceHistoryLoading, true);
+            setHidden(elements.balanceHistoryList, true);
+            setHidden(elements.balanceHistoryEmpty, false);
+        }
+    );
 }
 
 function carDescription(driver) {
@@ -685,9 +790,11 @@ function stopProfileWatches() {
     if (unsubscribeAccount) unsubscribeAccount();
     if (unsubscribeDriver) unsubscribeDriver();
     if (unsubscribeDriverState) unsubscribeDriverState();
+    if (unsubscribeBalanceHistory) unsubscribeBalanceHistory();
     unsubscribeAccount = null;
     unsubscribeDriver = null;
     unsubscribeDriverState = null;
+    unsubscribeBalanceHistory = null;
     stopHeartbeat();
     currentDriverId = '';
     currentDriver = null;
@@ -695,6 +802,8 @@ function stopProfileWatches() {
     currentBaseEligible = false;
     currentDriverState = OFFLINE_DRIVER_STATE;
     currentCanTakeOrders = false;
+    watchedHistoryDriverId = '';
+    balanceHistory = [];
     legacyStateRepairInProgress = false;
     stopOrderWatches();
 }
@@ -994,6 +1103,7 @@ async function advanceOrder(orderId, expectedStatus, nextStatus) {
     showOrdersMessage('');
     renderOnlineOrders();
     try {
+        let completedCommissionAmount = null;
         await runTransaction(db, async (transaction) => {
             const orderRef = doc(db, 'orders', orderId);
             const stateRef = doc(db, 'driverStates', currentUser.uid);
@@ -1004,17 +1114,75 @@ async function advanceOrder(orderId, expectedStatus, nextStatus) {
                 throw new Error('Статус заказа уже изменился.');
             }
             let stateSnapshot = null;
+            let driverSnapshot = null;
+            let historySnapshot = null;
+            let commissionAmount = null;
+            let commissionBaseAmount = null;
+            let previousBalance = null;
+            let newBalance = null;
             if (nextStatus === 'completed') {
                 stateSnapshot = await transaction.get(stateRef);
                 const state = normalizedDriverState(stateSnapshot, currentDriverId);
                 if (!stateSnapshot.exists() || state.status !== 'busy' || state.activeOrderId !== orderId) {
                     throw new Error('Текущий заказ не совпадает со статусом водителя.');
                 }
+                const driverRef = doc(db, 'drivers', currentDriverId);
+                // Используем ID заказа: так правила Firebase могут надёжно проверить одну запись комиссии.
+                const historyRef = doc(db, 'balanceHistory', orderId);
+                driverSnapshot = await transaction.get(driverRef);
+                historySnapshot = await transaction.get(historyRef);
+                if (!driverSnapshot.exists()) throw new Error('Карточка водителя не найдена.');
+                if (historySnapshot.exists()) throw new Error('Комиссия по этому заказу уже учтена.');
+
+                commissionBaseAmount = Number(order.priceAmount);
+                previousBalance = Number(driverSnapshot.data().balance);
+                if (!Number.isFinite(commissionBaseAmount) || commissionBaseAmount < 0) {
+                    throw new Error('В заказе нет корректной цены для комиссии.');
+                }
+                if (!Number.isFinite(previousBalance)) {
+                    throw new Error('В карточке водителя указан некорректный баланс.');
+                }
+                commissionAmount = commissionBaseAmount / 5;
+                newBalance = previousBalance + commissionAmount;
+                completedCommissionAmount = commissionAmount;
+
+                transaction.update(doc(db, 'drivers', currentDriverId), {
+                    balance: newBalance,
+                    lastCommissionOrderId: orderId,
+                    updatedAt: serverTimestamp()
+                });
+                transaction.set(historyRef, {
+                    driverId: currentDriverId,
+                    driverNumber: driverSnapshot.data().driverNumber,
+                    orderId,
+                    orderNumber: order.orderNumber || '',
+                    source: 'online',
+                    commissionRate: 20,
+                    commissionBaseAmount,
+                    commissionAmount,
+                    previousBalance,
+                    newBalance,
+                    difference: commissionAmount,
+                    reason: 'Комиссия 20% от максимальной цены онлайн-заказа',
+                    changedAt: serverTimestamp(),
+                    changedBy: currentUser.uid
+                });
             }
-            transaction.update(orderRef, {
+            const orderUpdate = {
                 status: nextStatus,
                 updatedAt: serverTimestamp()
-            });
+            };
+            if (nextStatus === 'completed') {
+                Object.assign(orderUpdate, {
+                    commissionRate: 20,
+                    commissionBaseAmount,
+                    commissionAmount,
+                    commissionBalanceBefore: previousBalance,
+                    commissionBalanceAfter: newBalance,
+                    commissionChargedAt: serverTimestamp()
+                });
+            }
+            transaction.update(orderRef, orderUpdate);
             if (nextStatus === 'completed') {
                 transaction.update(stateRef, {
                     status: 'available',
@@ -1024,7 +1192,12 @@ async function advanceOrder(orderId, expectedStatus, nextStatus) {
                 });
             }
         });
-        showOrdersMessage(nextStatus === 'completed' ? 'Поездка завершена.' : 'Статус заказа обновлён.', true);
+        showOrdersMessage(
+            nextStatus === 'completed'
+                ? `Поездка завершена. Комиссия ${formatMoney(completedCommissionAmount)} учтена.`
+                : 'Статус заказа обновлён.',
+            true
+        );
     } catch (error) {
         console.warn('Статус заказа не изменён:', error.code || error.message);
         showOrdersMessage(error.message || 'Не удалось изменить статус заказа.');
@@ -1130,6 +1303,7 @@ function watchDriverProfile(user) {
             currentDriver = driver;
             currentDriverId = String(account.driverId);
             currentBaseEligible = canAccessOrders(driver, account);
+            watchBalanceHistory(currentDriverId);
             renderWorkStatus(driver, account);
             void loadOrdersLink(currentBaseEligible);
             watchDriverState(user, account, driver);

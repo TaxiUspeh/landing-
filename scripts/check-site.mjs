@@ -246,6 +246,8 @@ for (const expected of [
   'id="driver-shift-control"',
   'id="driver-shift-toggle"',
   'id="driver-work-status-detail"',
+  'id="driver-balance-history"',
+  'id="driver-balance-history-list"',
   'id="driver-order-alerts-toggle"',
   'id="driver-order-alerts-test"',
   'id="driver-new-order-alert"',
@@ -325,10 +327,10 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v11-driver-availability'")) failures.push('service-worker.js: driver-availability cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v12-driver-accounting'")) failures.push('service-worker.js: driver-accounting cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v(?:[1-9]|10)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v(?:[1-9]|1[01])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
 for (const expected of [
   "'./food.webmanifest'",
   "'./shashlyk.webmanifest'",
@@ -410,7 +412,7 @@ const clientOrders = await readFile('client-orders.js', 'utf8');
 const driverPortal = await readFile('driver-portal.js', 'utf8');
 const dispatcherScript = await readFile('dispatcher.js', 'utf8');
 const firestoreRules = await readFile('firestore.rules', 'utf8');
-for (const expected of ['signInAnonymously', "collection(db, 'orders')", "doc(db, 'orderContacts'", "status: 'searching'"]) {
+for (const expected of ['signInAnonymously', "collection(db, 'orders')", "doc(db, 'orderContacts'", "status: 'searching'", 'parseMaximumPrice(priceText)']) {
   if (!clientOrders.includes(expected)) failures.push('client-orders.js: missing ' + expected);
 }
 for (const expected of [
@@ -430,7 +432,13 @@ for (const expected of [
   "status: 'busy'",
   "status: 'available'",
   'touchDriverHeartbeat()',
-  'repairMissingBusyState()'
+  'repairMissingBusyState()',
+  "collection(db, 'balanceHistory')",
+  'watchBalanceHistory(currentDriverId)',
+  'commissionRate: 20',
+  'commissionBaseAmount',
+  'lastCommissionOrderId',
+  "doc(db, 'balanceHistory', orderId)"
 ]) {
   if (!driverPortal.includes(expected)) failures.push('driver-portal.js: missing ' + expected);
 }
@@ -440,7 +448,10 @@ for (const expected of [
   "collection(db, 'driverStates')",
   'runTransaction',
   'driverAvailabilityInfo(driver)',
-  'Отменить заказ'
+  'Отменить заказ',
+  'commissionAmount',
+  'commissionBaseAmount',
+  'Комиссия ${rate}%'
 ]) {
   if (!dispatcherScript.includes(expected)) failures.push('dispatcher.js: missing ' + expected);
 }
@@ -454,6 +465,10 @@ for (const expected of [
   'driverIsAvailable()',
   'driverBecomesBusyWithOrder(orderId)',
   'driverBecomesAvailableAfter(orderId)',
+  'validCommissionSettlement(orderId, driverId)',
+  'validOwnOnlineCommissionHistoryCreate(entryId)',
+  'driverAppliesOwnOnlineCommission(driverId)',
+  "'commissionRate', 'commissionBaseAmount', 'commissionAmount'",
   "resource.data.status == 'searching'"
 ]) {
   if (!firestoreRules.includes(expected)) failures.push('firestore.rules: missing ' + expected);

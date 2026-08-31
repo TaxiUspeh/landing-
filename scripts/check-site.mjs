@@ -327,10 +327,10 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v12-driver-accounting'")) failures.push('service-worker.js: driver-accounting cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v13-balance-history-timeout'")) failures.push('service-worker.js: balance-history cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v(?:[1-9]|1[01])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v(?:[1-9]|1[0-2])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
 for (const expected of [
   "'./food.webmanifest'",
   "'./shashlyk.webmanifest'",
@@ -437,6 +437,8 @@ for (const expected of [
   'watchBalanceHistory(currentDriverId)',
   'commissionRate: 20',
   'commissionBaseAmount',
+  'BALANCE_HISTORY_RESPONSE_TIMEOUT_MS',
+  'showBalanceHistoryUnavailable',
   'lastCommissionOrderId',
   "doc(db, 'balanceHistory', orderId)"
 ]) {

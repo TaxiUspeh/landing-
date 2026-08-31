@@ -248,6 +248,7 @@ for (const expected of [
   'id="driver-work-status-detail"',
   'id="driver-balance-history"',
   'id="driver-balance-history-list"',
+  'id="driver-balance-history-more"',
   'id="driver-order-alerts-toggle"',
   'id="driver-order-alerts-test"',
   'id="driver-new-order-alert"',
@@ -327,10 +328,10 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v13-balance-history-timeout'")) failures.push('service-worker.js: balance-history cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v14-paged-balance-history'")) failures.push('service-worker.js: paged-balance-history cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v(?:[1-9]|1[0-2])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v(?:[1-9]|1[0-3])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
 for (const expected of [
   "'./food.webmanifest'",
   "'./shashlyk.webmanifest'",
@@ -401,7 +402,7 @@ for (const [name, appManifest, expectedStart] of [
       .catch(() => failures.push('missing icon: ' + icon.src));
   }
 }
-for (const file of ['service-worker.js', 'holiday-calendar.js', 'drivers.webmanifest', 'firebase-config.js', 'client-orders.js', 'driver-portal.js', 'dispatcher.js', 'firestore.rules', 'robots.txt', 'sitemap.xml']) await access(file).catch(() => failures.push('missing ' + file));
+for (const file of ['service-worker.js', 'holiday-calendar.js', 'drivers.webmanifest', 'firebase-config.js', 'client-orders.js', 'driver-portal.js', 'dispatcher.js', 'firestore.rules', 'firestore.indexes.json', 'robots.txt', 'sitemap.xml']) await access(file).catch(() => failures.push('missing ' + file));
 
 for (const file of ['client-orders.js', 'driver-portal.js', 'dispatcher.js', 'firebase-config.js']) {
   const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
@@ -412,6 +413,14 @@ const clientOrders = await readFile('client-orders.js', 'utf8');
 const driverPortal = await readFile('driver-portal.js', 'utf8');
 const dispatcherScript = await readFile('dispatcher.js', 'utf8');
 const firestoreRules = await readFile('firestore.rules', 'utf8');
+const firestoreIndexes = JSON.parse(await readFile('firestore.indexes.json', 'utf8'));
+if (!firestoreIndexes.indexes.some((index) => index.collectionGroup === 'balanceHistory'
+  && index.queryScope === 'COLLECTION'
+  && index.fields?.[0]?.fieldPath === 'driverId'
+  && index.fields?.[1]?.fieldPath === 'changedAt'
+  && index.fields?.[1]?.order === 'DESCENDING')) {
+  failures.push('firestore.indexes.json: balance history index is missing');
+}
 for (const expected of ['signInAnonymously', "collection(db, 'orders')", "doc(db, 'orderContacts'", "status: 'searching'", 'parseMaximumPrice(priceText)']) {
   if (!clientOrders.includes(expected)) failures.push('client-orders.js: missing ' + expected);
 }
@@ -438,6 +447,9 @@ for (const expected of [
   'commissionRate: 20',
   'commissionBaseAmount',
   'BALANCE_HISTORY_RESPONSE_TIMEOUT_MS',
+  'BALANCE_HISTORY_PAGE_SIZE = 20',
+  'loadMoreBalanceHistory',
+  "orderBy('changedAt', 'desc')",
   'showBalanceHistoryUnavailable',
   'lastCommissionOrderId',
   "doc(db, 'balanceHistory', orderId)"

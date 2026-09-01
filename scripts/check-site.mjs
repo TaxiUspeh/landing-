@@ -299,6 +299,7 @@ for (const expected of [
   'Сигналы заказов и чата',
   'id="driver-order-alerts-toggle"',
   'id="driver-order-alerts-test"',
+  'id="driver-order-alerts-note"',
   'id="driver-new-order-alert"',
   'id="driver-online-orders"',
   'id="driver-online-orders-list"',
@@ -394,7 +395,7 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v33-driver-sticky-chat'")) failures.push('service-worker.js: driver sticky header cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v34-fcm-driver-push'")) failures.push('service-worker.js: FCM driver push cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
 if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
@@ -468,9 +469,9 @@ for (const [name, appManifest, expectedStart] of [
       .catch(() => failures.push('missing icon: ' + icon.src));
   }
 }
-for (const file of ['service-worker.js', 'holiday-calendar.js', 'drivers.webmanifest', 'firebase-config.js', 'client-orders.js', 'driver-portal.js', 'dispatcher.js', 'firestore.rules', 'firestore.indexes.json', 'robots.txt', 'sitemap.xml']) await access(file).catch(() => failures.push('missing ' + file));
+for (const file of ['service-worker.js', 'holiday-calendar.js', 'drivers.webmanifest', 'firebase-config.js', 'client-orders.js', 'driver-portal.js', 'dispatcher.js', 'firestore.rules', 'firestore.indexes.json', 'functions/index.js', 'functions/package.json', 'firebase.json', '.firebaserc', 'robots.txt', 'sitemap.xml']) await access(file).catch(() => failures.push('missing ' + file));
 
-for (const file of ['client-orders.js', 'driver-portal.js', 'dispatcher.js', 'firebase-config.js']) {
+for (const file of ['client-orders.js', 'driver-portal.js', 'dispatcher.js', 'firebase-config.js', 'functions/index.js']) {
   const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
   if (result.status !== 0) failures.push(`${file}: syntax error: ${result.stderr.trim()}`);
 }
@@ -479,6 +480,7 @@ const clientOrders = await readFile('client-orders.js', 'utf8');
 const driverPortal = await readFile('driver-portal.js', 'utf8');
 const dispatcherScript = await readFile('dispatcher.js', 'utf8');
 const firestoreRules = await readFile('firestore.rules', 'utf8');
+const driverPushFunctions = await readFile('functions/index.js', 'utf8');
 const firestoreIndexes = JSON.parse(await readFile('firestore.indexes.json', 'utf8'));
 if (!firestoreIndexes.indexes.some((index) => index.collectionGroup === 'balanceHistory'
   && index.queryScope === 'COLLECTION'
@@ -541,6 +543,10 @@ for (const expected of [
   'updateMobilePrimaryAction()',
   'openDispatcherChatFromMobile()',
   "dataset.driverMobileAction === 'chat'",
+  "firebase-messaging.js",
+  'enableDriverPushSubscription',
+  "doc(db, 'driverPushTokens'",
+  'webPushVapidKey',
   'sendDriverChatMessage(event)',
   'playChatSound()',
   'signalDispatcherChatReply()',
@@ -617,9 +623,20 @@ for (const expected of [
   'driverAppliesOwnOnlineCommission(driverId)',
   "resource.data.get('cancellationRequestStatus', '') != 'pending'",
   "'commissionRate', 'commissionBaseAmount', 'commissionAmount'",
-  "resource.data.status == 'searching'"
+  "resource.data.status == 'searching'",
+  'match /driverPushTokens/{tokenId}'
 ]) {
   if (!firestoreRules.includes(expected)) failures.push('firestore.rules: missing ' + expected);
+}
+for (const expected of [
+  "onDocumentCreated('orders/{orderId}'",
+  "collection('driverPushTokens')",
+  "where('enabled', '==', true)",
+  'sendEachForMulticast',
+  'registration-token-not-registered',
+  'Откройте кабинет, чтобы посмотреть маршрут и цену.'
+]) {
+  if (!driverPushFunctions.includes(expected)) failures.push('functions/index.js: missing ' + expected);
 }
 if (failures.length) { console.error(failures.join('\n')); process.exit(1); }
 console.log('Site checks passed (' + htmlFiles.length + ' HTML pages).');

@@ -269,6 +269,7 @@ for (const expected of [
   'id="driver-dispatcher-chat"',
   'id="driver-dispatcher-chat-form"',
   'id="driver-dispatcher-chat-list"',
+  'Сигналы заказов и чата',
   'id="driver-order-alerts-toggle"',
   'id="driver-order-alerts-test"',
   'id="driver-new-order-alert"',
@@ -302,6 +303,7 @@ for (const expected of [
   'data-dispatcher-mobile-section="messages"',
   'id="dispatcher-messages-content"',
   'id="dispatcher-messages-form"',
+  'id="dispatcher-messages-sound-toggle"',
   'id="dispatcher-mobile-navigation"',
   'data-dispatcher-mobile-section="orders"',
   'data-dispatcher-mobile-section="drivers"',
@@ -365,7 +367,7 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v27-driver-dispatcher-chat'")) failures.push('service-worker.js: driver-dispatcher-chat cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v28-chat-sounds'")) failures.push('service-worker.js: chat-sounds cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
 if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
@@ -507,6 +509,8 @@ for (const expected of [
   "orderBy('createdAt', 'desc')",
   'watchDriverChat(user, driverId)',
   'sendDriverChatMessage(event)',
+  'playChatSound()',
+  'signalDispatcherChatReply()',
   "sender: 'driver'",
   'showBalanceHistoryUnavailable',
   'lastCommissionOrderId',
@@ -543,6 +547,8 @@ for (const expected of [
   'startDriverMessagesListener()',
   'openDriverMessageConversation(driverUid)',
   'sendDispatcherMessage(event)',
+  'toggleDispatcherChatSound()',
+  'playDispatcherChatSound()',
   'expandedOrderIds',
   "mobileDispatcherSection = 'orders'",
   "mobileOrdersView = 'current'",

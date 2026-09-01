@@ -261,8 +261,7 @@ for (const expected of [
   'id="driver-login-button"',
   'id="driver-account-pending"',
   'id="driver-profile-balance"',
-  'id="driver-shift-control"',
-  'id="driver-shift-toggle"',
+  'id="driver-work-status-card"',
   'id="driver-work-status-detail"',
   'id="driver-balance-history"',
   'id="driver-balance-history-list"',
@@ -278,6 +277,9 @@ for (const expected of [
   "register('./service-worker.js', { updateViaCache: 'none' })"
 ]) {
   if (!drivers.includes(expected)) failures.push('drivers.html: missing protected driver portal ' + expected);
+}
+if (drivers.includes('id="driver-shift-toggle"') || drivers.includes('Выйти на линию')) {
+  failures.push('drivers.html: manual driver shift controls must not return');
 }
 if (/https:\/\/chat\.whatsapp\.com\//i.test(drivers)) failures.push('drivers.html: public orders-chat invite remains in page source');
 if (/user-scalable=no|maximum-scale=1(?:\.0)?/i.test(drivers)) failures.push('drivers.html: browser zoom is disabled');
@@ -298,7 +300,7 @@ for (const expected of [
   'id="mobile-orders-current-button"',
   'id="mobile-orders-history-button"',
   'id="orders-stat-searching"',
-  'На линии',
+  'В кабинете',
   'Свободны',
   'Заняты',
   'id="drivers-list"',
@@ -354,7 +356,7 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v23-mobile-dispatcher-navigation'")) failures.push('service-worker.js: mobile-dispatcher-navigation cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v24-automatic-driver-orders'")) failures.push('service-worker.js: automatic-driver-orders cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
 if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
@@ -536,7 +538,7 @@ for (const expected of [
   'driverIsAvailable()',
   'driverBecomesBusyWithOrder(orderId)',
   'driverBecomesAvailableAfter(orderId)',
-  'driverBecomesOfflineAfterRequeue(orderId)',
+  'driverBecomesAvailableAfterRequeue(orderId)',
   'validCommissionSettlement(orderId, driverId)',
   'validOwnOnlineCommissionHistoryCreate(entryId)',
   'driverAppliesOwnOnlineCommission(driverId)',

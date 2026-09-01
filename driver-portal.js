@@ -48,6 +48,7 @@ const BALANCE_HISTORY_RESPONSE_TIMEOUT_MS = 6000;
 const BALANCE_HISTORY_PAGE_SIZE = 20;
 const BALANCE_HISTORY_EXPANDED_PREFERENCE_KEY = 'taxi-uspeh-driver-balance-history-expanded';
 const OFFLINE_DRIVER_STATE = Object.freeze({ status: 'offline', activeOrderId: '' });
+const AVAILABLE_DRIVER_STATE = Object.freeze({ status: 'available', activeOrderId: '' });
 
 const elements = {
     loading: document.getElementById('driver-auth-loading'),
@@ -66,12 +67,10 @@ const elements = {
     profileName: document.getElementById('driver-profile-name'),
     profileCar: document.getElementById('driver-profile-car'),
     profileBalance: document.getElementById('driver-profile-balance'),
-    shiftControl: document.getElementById('driver-shift-control'),
-    shiftIcon: document.getElementById('driver-shift-icon'),
+    workStatusCard: document.getElementById('driver-work-status-card'),
+    workStatusIcon: document.getElementById('driver-work-status-icon'),
     workStatus: document.getElementById('driver-work-status'),
     workStatusDetail: document.getElementById('driver-work-status-detail'),
-    shiftToggle: document.getElementById('driver-shift-toggle'),
-    shiftMessage: document.getElementById('driver-shift-message'),
     balanceHistoryToggle: document.getElementById('driver-balance-history-toggle'),
     balanceHistoryContent: document.getElementById('driver-balance-history-content'),
     balanceHistorySummary: document.getElementById('driver-balance-history-summary'),
@@ -685,22 +684,9 @@ function orderStatusLabel(status) {
 }
 
 function canAccessOrders(driver, account) {
-    const balance = Number(driver.balance);
     const status = driver.status || 'paused';
     return account.active !== false
-        && status === 'active'
-        && Number.isFinite(balance)
-        && balance < 0;
-}
-
-function showShiftMessage(text, success = false) {
-    if (!elements.shiftMessage) return;
-    elements.shiftMessage.textContent = text;
-    elements.shiftMessage.className = text
-        ? `mt-2 text-xs ${success
-            ? 'text-green-700 dark:text-green-300'
-            : 'text-red-700 dark:text-red-300'}`
-        : 'hidden mt-2 text-xs';
+        && status === 'active';
 }
 
 function normalizedDriverState(snapshot, driverId) {
@@ -724,76 +710,47 @@ function normalizedDriverState(snapshot, driverId) {
 function renderWorkStatus(driver, account, state = currentDriverState) {
     const eligible = canAccessOrders(driver, account);
     const status = state?.status || 'offline';
-    let title = 'Не на линии';
-    let detail = 'Выйдите на линию, чтобы видеть новые онлайн-заказы.';
-    let icon = 'fas fa-power-off';
+    let title = 'Подключаем заказы';
+    let detail = 'Кабинет автоматически подключается к новым заказам.';
+    let icon = 'fas fa-circle-notch fa-spin';
     let containerClass = 'rounded-2xl p-4 mb-4 border bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-700';
     let iconClass = 'flex-shrink-0 w-11 h-11 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center';
-    let buttonClass = 'mt-3 w-full rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-3 text-sm font-extrabold shadow-sm';
-    let buttonIcon = 'fas fa-play mr-2';
-    let buttonText = 'Выйти на линию';
-    let disabled = false;
 
     if (status === 'busy') {
         title = 'Занят — выполняется заказ';
-        detail = 'Новые заказы скрыты. Завершите текущую поездку, чтобы снова стать свободным.';
+        detail = 'Новые заказы временно скрыты. После завершения поездки они появятся автоматически.';
         icon = 'fas fa-route';
         containerClass = 'rounded-2xl p-4 mb-4 border bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-800';
         iconClass = 'flex-shrink-0 w-11 h-11 rounded-xl bg-amber-200 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 flex items-center justify-center';
-        buttonClass = 'mt-3 w-full rounded-xl bg-amber-200 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200 px-4 py-3 text-sm font-extrabold cursor-not-allowed';
-        buttonIcon = 'fas fa-lock mr-2';
-        buttonText = 'Сначала завершите заказ';
-        disabled = true;
     } else if (!eligible) {
         title = 'Доступ к заказам ограничен';
-        detail = driver.status !== 'active' || account.active === false
-            ? 'Работу с заказами приостановил диспетчер.'
-            : 'При балансе 0 ₸ или выше новые заказы недоступны.';
+        detail = 'Работу с заказами приостановил диспетчер.';
         icon = 'fas fa-ban';
         containerClass = 'rounded-2xl p-4 mb-4 border bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
         iconClass = 'flex-shrink-0 w-11 h-11 rounded-xl bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 flex items-center justify-center';
-        buttonClass = 'mt-3 w-full rounded-xl bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-4 py-3 text-sm font-extrabold cursor-not-allowed';
-        buttonIcon = 'fas fa-lock mr-2';
-        buttonText = 'Доступ ограничен';
-        disabled = true;
-    } else if (status === 'offline' && !assignedOrdersLoaded) {
+    } else if (!assignedOrdersLoaded) {
         title = 'Проверяем текущие заказы';
-        detail = 'Подождите несколько секунд перед началом смены.';
+        detail = 'Подождите несколько секунд: проверяем ранее начатые поездки.';
         icon = 'fas fa-circle-notch fa-spin';
-        buttonClass = 'mt-3 w-full rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-4 py-3 text-sm font-extrabold cursor-not-allowed';
-        buttonIcon = 'fas fa-clock mr-2';
-        buttonText = 'Проверяем…';
-        disabled = true;
     } else if (status === 'offline'
         && state?.exists === false
         && assignedOrders.some((order) => ACTIVE_ORDER_STATUSES.has(order.status))) {
         title = 'Восстанавливаем текущий заказ';
         detail = 'Ранее начатая поездка останется у вас и не потеряется.';
         icon = 'fas fa-rotate';
-        buttonClass = 'mt-3 w-full rounded-xl bg-amber-200 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200 px-4 py-3 text-sm font-extrabold cursor-not-allowed';
-        buttonIcon = 'fas fa-clock mr-2';
-        buttonText = 'Восстанавливаем…';
-        disabled = true;
     } else if (status === 'available') {
-        title = 'На линии — свободен';
-        detail = 'Новые заказы и уведомления поступают автоматически.';
+        title = 'Онлайн-заказы доступны';
+        detail = 'Пока кабинет открыт, новые заказы и бесплатные сигналы приходят автоматически.';
         icon = 'fas fa-circle-check';
         containerClass = 'rounded-2xl p-4 mb-4 border bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
         iconClass = 'flex-shrink-0 w-11 h-11 rounded-xl bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 flex items-center justify-center';
-        buttonClass = 'mt-3 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 px-4 py-3 text-sm font-extrabold';
-        buttonIcon = 'fas fa-stop mr-2';
-        buttonText = 'Уйти с линии';
     }
 
-    elements.shiftControl.className = containerClass;
-    elements.shiftIcon.className = iconClass;
-    elements.shiftIcon.querySelector('i').className = icon;
+    elements.workStatusCard.className = containerClass;
+    elements.workStatusIcon.className = iconClass;
+    elements.workStatusIcon.querySelector('i').className = icon;
     elements.workStatus.textContent = title;
     elements.workStatusDetail.textContent = detail;
-    elements.shiftToggle.className = buttonClass;
-    elements.shiftToggle.querySelector('i').className = buttonIcon;
-    elements.shiftToggle.querySelector('span').textContent = driverStateActionInProgress ? 'Сохраняем…' : buttonText;
-    elements.shiftToggle.disabled = disabled || driverStateActionInProgress;
 
     return eligible;
 }
@@ -830,65 +787,45 @@ function syncHeartbeat() {
     }
 }
 
-async function setDriverShiftStatus(nextStatus, { silent = false } = {}) {
-    if (!currentUser || !currentDriver || !currentAccount || driverStateActionInProgress) return false;
-    if (!['offline', 'available'].includes(nextStatus)) return false;
-    driverStateActionInProgress = true;
-    if (!silent) showShiftMessage('');
-    renderWorkStatus(currentDriver, currentAccount);
+async function ensureDriverAvailable() {
+    if (driverStateActionInProgress
+        || !currentUser
+        || !currentDriver
+        || !currentAccount
+        || !currentBaseEligible
+        || !assignedOrdersLoaded) return false;
+    if (['available', 'busy'].includes(currentDriverState.status)) return true;
+    if (assignedOrders.some((order) => ACTIVE_ORDER_STATUSES.has(order.status))) {
+        await repairMissingBusyState();
+        return false;
+    }
 
+    driverStateActionInProgress = true;
+    renderWorkStatus(currentDriver, currentAccount);
     try {
-        if (nextStatus === 'available' && !currentBaseEligible) {
-            throw new Error('Сейчас доступ к заказам ограничен. Проверьте статус и баланс.');
-        }
         await runTransaction(db, async (transaction) => {
             const stateRef = doc(db, 'driverStates', currentUser.uid);
             const stateSnapshot = await transaction.get(stateRef);
             const existing = normalizedDriverState(stateSnapshot, currentDriverId);
-            if (existing.status === 'busy') {
-                throw new Error('Сначала завершите текущий заказ.');
-            }
+            if (existing.status === 'busy') return;
             transaction.set(stateRef, {
                 driverId: currentDriverId,
-                status: nextStatus,
-                activeOrderId: '',
+                ...AVAILABLE_DRIVER_STATE,
                 lastSeen: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
         });
-        if (!silent) {
-            showShiftMessage(nextStatus === 'available' ? 'Вы вышли на линию.' : 'Вы ушли с линии.', true);
-        }
         return true;
     } catch (error) {
-        console.warn('Статус смены не изменён:', error.code || error.message);
-        if (!silent) {
-            showShiftMessage(
-                error.code === 'permission-denied'
-                    ? 'Не удалось изменить статус. Сначала опубликуйте новые правила Firebase.'
-                    : error.message || 'Не удалось изменить статус смены.'
-            );
+        console.warn('Не удалось автоматически подключить заказы:', error.code || error.message);
+        if (error.code === 'permission-denied') {
+            showOrdersMessage('Онлайн-заказы ещё не включены в правилах Firebase. Обновите правила и опубликуйте их.');
         }
         return false;
     } finally {
         driverStateActionInProgress = false;
         if (currentDriver && currentAccount) renderWorkStatus(currentDriver, currentAccount);
     }
-}
-
-async function toggleDriverShift() {
-    if (!assignedOrdersLoaded) {
-        showShiftMessage('Подождите: проверяем текущие заказы.');
-        return;
-    }
-    if (currentDriverState.exists === false
-        && assignedOrders.some((order) => ACTIVE_ORDER_STATUSES.has(order.status))) {
-        showShiftMessage('Восстанавливаем ранее начатый заказ.');
-        await repairMissingBusyState();
-        return;
-    }
-    const nextStatus = currentDriverState.status === 'available' ? 'offline' : 'available';
-    await setDriverShiftStatus(nextStatus);
 }
 
 async function repairMissingBusyState() {
@@ -922,8 +859,16 @@ async function repairMissingBusyState() {
 }
 
 async function logoutDriver() {
-    if (currentDriverState.status === 'available') {
-        await setDriverShiftStatus('offline', { silent: true });
+    if (currentUser && currentDriverState.status === 'available') {
+        try {
+            await updateDoc(doc(db, 'driverStates', currentUser.uid), {
+                ...OFFLINE_DRIVER_STATE,
+                lastSeen: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        } catch (error) {
+            console.warn('Не удалось отметить выход из кабинета:', error.code || error.message);
+        }
     }
     await signOut(auth);
 }
@@ -1158,11 +1103,11 @@ function renderOnlineOrders() {
             title.textContent = 'Вы заняты текущим заказом';
             detail.textContent = 'После завершения поездки новые заказы появятся автоматически.';
         } else if (currentBaseEligible) {
-            title.textContent = 'Вы сейчас не на линии';
-            detail.textContent = 'Нажмите «Выйти на линию», чтобы получать новые заказы.';
+            title.textContent = 'Подключаем новые заказы';
+            detail.textContent = 'Кабинет автоматически подключается. Подождите несколько секунд.';
         } else {
             title.textContent = 'Новые заказы сейчас недоступны';
-            detail.textContent = 'Проверьте статус и баланс выше. Уже принятый заказ останется виден.';
+            detail.textContent = 'Работу с заказами приостановил диспетчер. Уже принятый заказ останется виден.';
         }
     }
 }
@@ -1241,6 +1186,7 @@ function syncOrderWatches(user, driverId, driver, canTakeOrders) {
                 renderOnlineOrders();
                 if (currentDriver && currentAccount) renderWorkStatus(currentDriver, currentAccount);
                 void repairMissingBusyState();
+                void ensureDriverAvailable();
             },
             (error) => {
                 unsubscribeAssignedOrders = null;
@@ -1270,7 +1216,7 @@ async function acceptOrder(orderId) {
             }
             const state = normalizedDriverState(stateSnapshot, currentDriverId);
             if (!stateSnapshot.exists() || state.status !== 'available' || state.activeOrderId) {
-                throw new Error('Вы уже заняты или не вышли на линию.');
+                throw new Error('Вы уже заняты или кабинет ещё подключается к заказам.');
             }
             transaction.update(orderRef, {
                 status: 'accepted',
@@ -1290,12 +1236,18 @@ async function acceptOrder(orderId) {
                 updatedAt: serverTimestamp()
             });
         });
-        showOrdersMessage('Заказ принят. Теперь вам доступен телефон клиента.', true);
+        const balance = Number(currentDriver.balance);
+        showOrdersMessage(
+            Number.isFinite(balance) && balance >= 0
+                ? `Заказ принят. Напоминание: пополните баланс. Текущий баланс: ${formatMoney(balance)}.`
+                : 'Заказ принят. Теперь вам доступен телефон клиента.',
+            true
+        );
     } catch (error) {
         console.warn('Заказ не принят:', error.code || error.message);
         showOrdersMessage(
             error.code === 'permission-denied'
-                ? 'Заказ недоступен. Проверьте, что вы на линии, свободны и правила Firebase опубликованы.'
+                ? 'Заказ недоступен. Проверьте, что кабинет открыт, вы свободны и правила Firebase опубликованы.'
                 : error.message || 'Не удалось принять заказ.'
         );
     } finally {
@@ -1452,13 +1404,12 @@ async function returnOrderToSearch(orderId, expectedStatus, reason) {
                 updatedAt: serverTimestamp()
             });
             transaction.update(stateRef, {
-                status: 'offline',
-                activeOrderId: '',
+                ...AVAILABLE_DRIVER_STATE,
                 lastSeen: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
         });
-        showOrdersMessage('Заказ возвращён в поиск. Вы автоматически ушли с линии.', true);
+        showOrdersMessage('Заказ возвращён в поиск. Новые заказы снова доступны автоматически.', true);
     } catch (error) {
         console.warn('Не удалось вернуть заказ в поиск:', error.code || error.message);
         showOrdersMessage(
@@ -1508,6 +1459,7 @@ function watchDriverState(user, account, driver) {
             syncHeartbeat();
             syncOrderWatches(user, currentDriverId, driver, currentCanTakeOrders);
             void repairMissingBusyState();
+            void ensureDriverAvailable();
         },
         (error) => {
             console.warn('Рабочий статус не загрузился:', error.code || error.message);
@@ -1515,9 +1467,9 @@ function watchDriverState(user, account, driver) {
             currentCanTakeOrders = false;
             renderWorkStatus(driver, account, currentDriverState);
             syncOrderWatches(user, currentDriverId, driver, false);
-            showShiftMessage(
+            showOrdersMessage(
                 error.code === 'permission-denied'
-                    ? 'Рабочая смена ещё не включена в правилах Firebase.'
+                    ? 'Онлайн-заказы ещё не включены в правилах Firebase. Обновите правила и опубликуйте их.'
                     : 'Не удалось загрузить рабочий статус. Проверьте интернет.'
             );
         }
@@ -1616,7 +1568,6 @@ async function copyUid() {
 elements.loginButton?.addEventListener('click', login);
 elements.logoutButton?.addEventListener('click', () => void logoutDriver());
 elements.copyUid?.addEventListener('click', copyUid);
-elements.shiftToggle?.addEventListener('click', () => void toggleDriverShift());
 elements.balanceHistoryToggle?.addEventListener('click', toggleBalanceHistory);
 elements.balanceHistoryMore?.addEventListener('click', () => void loadMoreBalanceHistory());
 elements.alertsToggle?.addEventListener('click', () => void toggleOrderAlerts());

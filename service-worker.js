@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v24-automatic-driver-orders';
+const CACHE_NAME = 'taxi-uspeh-v25-manual-driver-id-assignment';
 const APP_SHELL = [
   './',
   './index.html',

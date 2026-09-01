@@ -272,10 +272,14 @@ if (/chip\.innerHTML\s*=/.test(index)) failures.push('index.html: address histor
 
 for (const expected of [
   'id="driver-account"',
+  'id="driver-app-header"',
+  'driver-sticky-header',
   'id="driver-install-app-button"',
   'id="driver-install-app-message"',
   'id="driver-documents-modal"',
   'id="driver-documents-open"',
+  'id="driver-mobile-primary-action"',
+  'data-driver-mobile-action="documents"',
   'Отправить документы в WhatsApp',
   'openDriverDocumentsModal',
   'closeDriverDocumentsModal',
@@ -390,7 +394,7 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v32-route-rate-sum'")) failures.push('service-worker.js: route rate fallback cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v33-driver-sticky-chat'")) failures.push('service-worker.js: driver sticky header cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
 if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
@@ -533,6 +537,10 @@ for (const expected of [
   "collection(db, 'driverMessages')",
   "orderBy('createdAt', 'desc')",
   'watchDriverChat(user, driverId)',
+  'mobilePrimaryAction',
+  'updateMobilePrimaryAction()',
+  'openDispatcherChatFromMobile()',
+  "dataset.driverMobileAction === 'chat'",
   'sendDriverChatMessage(event)',
   'playChatSound()',
   'signalDispatcherChatReply()',

@@ -91,6 +91,9 @@ const elements = {
     dispatcherChatInput: document.getElementById('driver-dispatcher-chat-input'),
     dispatcherChatSend: document.getElementById('driver-dispatcher-chat-send'),
     dispatcherChatMessage: document.getElementById('driver-dispatcher-chat-message'),
+    mobilePrimaryAction: document.getElementById('driver-mobile-primary-action'),
+    mobilePrimaryIcon: document.getElementById('driver-mobile-primary-icon'),
+    mobilePrimaryLabel: document.getElementById('driver-mobile-primary-label'),
     ordersSection: document.getElementById('driver-online-orders'),
     ordersLoading: document.getElementById('driver-orders-loading'),
     ordersEmpty: document.getElementById('driver-online-orders-empty'),
@@ -537,6 +540,32 @@ function updateDriverChatControls() {
         else if (driverChatLoaded) elements.dispatcherChatSummary.textContent = 'Переписка пока пуста';
         else elements.dispatcherChatSummary.textContent = 'Нажмите, чтобы написать диспетчеру';
     }
+}
+
+function updateMobilePrimaryAction() {
+    const action = elements.mobilePrimaryAction;
+    if (!action || !elements.mobilePrimaryIcon || !elements.mobilePrimaryLabel) return;
+
+    const hasDriverCabinet = Boolean(currentUser && currentDriver && currentDriverId);
+    action.dataset.driverMobileAction = hasDriverCabinet ? 'chat' : 'documents';
+    action.className = hasDriverCabinet
+        ? 'bg-sky-600 hover:bg-sky-700 text-white flex-grow py-3 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2'
+        : 'bg-green-600 hover:bg-green-700 text-white flex-grow py-3 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2';
+    elements.mobilePrimaryIcon.className = hasDriverCabinet
+        ? 'fas fa-comments text-xl'
+        : 'fab fa-whatsapp text-2xl';
+    elements.mobilePrimaryLabel.textContent = hasDriverCabinet ? 'Написать диспетчеру' : 'Стать водителем';
+    action.setAttribute('aria-label', hasDriverCabinet ? 'Написать диспетчеру' : 'Стать водителем');
+}
+
+function openDispatcherChatFromMobile() {
+    if (!currentUser || !currentDriver || !currentDriverId) return;
+    dispatcherChatExpanded = true;
+    dispatcherChatHasNewReply = false;
+    updateDriverChatControls();
+    const chatSection = document.getElementById('driver-dispatcher-chat');
+    chatSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => elements.dispatcherChatInput?.focus(), 350);
 }
 
 function renderDriverChat() {
@@ -1154,6 +1183,7 @@ function stopProfileWatches() {
     currentCanTakeOrders = false;
     legacyStateRepairInProgress = false;
     stopOrderWatches();
+    updateMobilePrimaryAction();
 }
 
 function createText(tag, className, text) {
@@ -1651,6 +1681,7 @@ function showProfileLoadError(error) {
     stopOrderWatches();
     setHidden(elements.profile, true);
     setHidden(elements.pending, false);
+    updateMobilePrimaryAction();
     if (error.code === 'permission-denied') {
         showMessage('Вход выполнен, но доступ к базе ещё не настроен. Передайте UID диспетчеру.');
     } else {
@@ -1718,6 +1749,9 @@ function watchDriverProfile(user) {
         showMessage('');
 
         if (!accountSnapshot.exists() || !accountSnapshot.data().driverId) {
+            currentDriver = null;
+            currentDriverId = '';
+            updateMobilePrimaryAction();
             setHidden(elements.pending, false);
             return;
         }
@@ -1729,6 +1763,9 @@ function watchDriverProfile(user) {
                 stopOrderWatches();
                 setHidden(elements.profile, true);
                 setHidden(elements.pending, false);
+                currentDriver = null;
+                currentDriverId = '';
+                updateMobilePrimaryAction();
                 showMessage('Карточка водителя не найдена. Сообщите об этом диспетчеру.');
                 return;
             }
@@ -1744,6 +1781,7 @@ function watchDriverProfile(user) {
             currentDriver = driver;
             currentDriverId = String(account.driverId);
             currentBaseEligible = canAccessOrders(driver, account);
+            updateMobilePrimaryAction();
             watchBalanceHistory(currentDriverId);
             watchDriverChat(user, currentDriverId);
             renderWorkStatus(driver, account);
@@ -1797,6 +1835,9 @@ elements.balanceHistoryToggle?.addEventListener('click', toggleBalanceHistory);
 elements.balanceHistoryMore?.addEventListener('click', () => void loadMoreBalanceHistory());
 elements.dispatcherChatToggle?.addEventListener('click', toggleDispatcherChat);
 elements.dispatcherChatForm?.addEventListener('submit', (event) => void sendDriverChatMessage(event));
+elements.mobilePrimaryAction?.addEventListener('click', () => {
+    if (elements.mobilePrimaryAction?.dataset.driverMobileAction === 'chat') openDispatcherChatFromMobile();
+});
 elements.alertsToggle?.addEventListener('click', () => void toggleOrderAlerts());
 elements.alertsTest?.addEventListener('click', () => void testOrderAlerts());
 elements.newOrderAlertClose?.addEventListener('click', hideNewOrderAlert);
@@ -1817,6 +1858,7 @@ if (orderAlertsEnabled) {
     document.addEventListener('pointerdown', () => void prepareOrderSound(), { once: true });
 }
 updateOrderAlertsControls();
+updateMobilePrimaryAction();
 
 getRedirectResult(auth).catch((error) => {
     console.error('Ошибка возврата из Google:', error);

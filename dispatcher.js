@@ -609,7 +609,26 @@ function setAllOrdersExpanded(expanded) {
 }
 
 function manualAssignmentCandidates() {
-    return drivers.filter((driver) => driverAvailabilityInfo(driver).key === 'available');
+    return drivers.filter((driver) => driver.status === 'active'
+        && normalizeUid(driver.authUid || '')
+        && driverAvailabilityInfo(driver).key !== 'busy');
+}
+
+function findManualAssignmentDriver(value) {
+    const normalizedValue = String(value || '').trim();
+    if (!normalizedValue) return null;
+    return drivers.find((driver) => String(driver.id) === normalizedValue
+        || String(driver.driverNumber ?? '') === normalizedValue) || null;
+}
+
+function manualAssignmentOptionLabel(driver) {
+    const availability = driverAvailabilityInfo(driver);
+    const connectionLabel = availability.key === 'available'
+        ? 'кабинет открыт'
+        : availability.key === 'busy'
+            ? 'занят'
+            : 'кабинет закрыт';
+    return `ID ${driver.driverNumber ?? driver.id} · ${driver.name || 'Водитель'}${driver.car ? ` · ${driver.car}` : ''} · ${connectionLabel}`;
 }
 
 function appendManualAssignmentControls(actions, order) {
@@ -618,32 +637,42 @@ function appendManualAssignmentControls(actions, order) {
         'p',
         'w-full text-xs text-slate-500 dark:text-slate-400',
         candidates.length
-            ? 'Назначайте водителя после подтверждения по телефону.'
-            : 'Свободных водителей с открытым кабинетом сейчас нет.'
+            ? 'Введите ID или выберите водителя. Если кабинет закрыт, сначала свяжитесь с ним по телефону.'
+            : 'Нет активных водителей, зарегистрированных в кабинете.'
     );
     actions.append(hint);
     if (!candidates.length) return;
+
+    const driverIdInput = document.createElement('input');
+    driverIdInput.type = 'text';
+    driverIdInput.inputMode = 'numeric';
+    driverIdInput.autocomplete = 'off';
+    driverIdInput.placeholder = 'Введите ID водителя';
+    driverIdInput.className = 'min-w-0 flex-grow rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 dark:border-blue-800 dark:bg-slate-900 dark:text-slate-100';
 
     const select = document.createElement('select');
     select.className = 'min-w-0 flex-grow rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 dark:border-blue-800 dark:bg-slate-900 dark:text-slate-100';
     const placeholder = document.createElement('option');
     placeholder.value = '';
-    placeholder.textContent = 'Выберите свободного водителя';
+    placeholder.textContent = 'Выбрать из активных водителей';
     select.append(placeholder);
     for (const driver of candidates) {
         const option = document.createElement('option');
         option.value = driver.id;
-        option.textContent = `ID ${driver.driverNumber} · ${driver.name || 'Водитель'}${driver.car ? ` · ${driver.car}` : ''}`;
+        option.textContent = manualAssignmentOptionLabel(driver);
         select.append(option);
     }
+    select.addEventListener('change', () => {
+        if (select.value) driverIdInput.value = select.value;
+    });
 
     const assign = document.createElement('button');
     assign.type = 'button';
     assign.className = 'rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-xs font-extrabold';
-    assign.textContent = 'Назначить вручную';
+    assign.textContent = 'Назначить водителя';
     assign.disabled = manualOrderAssignmentInProgress;
-    assign.addEventListener('click', () => void assignOrderManually(order.id, select.value));
-    actions.append(select, assign);
+    assign.addEventListener('click', () => void assignOrderManually(order.id, driverIdInput.value));
+    actions.append(driverIdInput, select, assign);
 }
 
 function createOnlineOrderCard(order) {
@@ -871,16 +900,34 @@ function startOrdersListeners() {
 
 async function assignOrderManually(orderId, driverId) {
     if (!currentUser || manualOrderAssignmentInProgress) return;
-    if (!driverId) {
-        setMessage(elements.onlineOrdersMessage, 'Сначала выберите свободного водителя.');
+    const selectedDriver = findManualAssignmentDriver(driverId);
+    if (!selectedDriver) {
+        setMessage(elements.onlineOrdersMessage, 'Введите корректный ID активного водителя или выберите его из списка.');
         return;
     }
+
+    const availability = driverAvailabilityInfo(selectedDriver);
+    if (availability.key === 'busy') {
+        setMessage(elements.onlineOrdersMessage, 'Этот водитель уже занят текущим заказом.');
+        return;
+    }
+    const cabinetIsOpen = availability.key === 'available';
+    if (!cabinetIsOpen) {
+        const phone = selectedDriver.phone ? ` Телефон: ${selectedDriver.phone}.` : '';
+        const confirmed = window.confirm(
+            `Кабинет водителя ID ${selectedDriver.driverNumber ?? selectedDriver.id} сейчас не открыт. `
+            + `Клиент увидит назначение, но водитель не получит бесплатный онлайн-сигнал.${phone} `
+            + 'Сначала свяжитесь с водителем. Назначить его всё равно?'
+        );
+        if (!confirmed) return;
+    }
+
     manualOrderAssignmentInProgress = true;
     setMessage(elements.onlineOrdersMessage, '');
     try {
         await runTransaction(db, async (transaction) => {
             const orderRef = doc(db, 'orders', orderId);
-            const driverRef = doc(db, 'drivers', driverId);
+            const driverRef = doc(db, 'drivers', selectedDriver.id);
             const orderSnapshot = await transaction.get(orderRef);
             const driverSnapshot = await transaction.get(driverRef);
             if (!orderSnapshot.exists() || orderSnapshot.data().status !== 'searching') {
@@ -896,16 +943,14 @@ async function assignOrderManually(orderId, driverId) {
             const stateRef = doc(db, 'driverStates', driverUid);
             const stateSnapshot = await transaction.get(stateRef);
             const state = stateSnapshot.exists() ? stateSnapshot.data() : null;
-            const connected = timestampMillis(state?.lastSeen) > 0
-                && Date.now() - timestampMillis(state.lastSeen) <= DRIVER_CONNECTION_TIMEOUT_MS;
-            if (!state || state.status !== 'available' || state.activeOrderId || !connected) {
-                throw new Error('Этот водитель уже занят, кабинет закрыт или не отвечает.');
+            if (state?.status === 'busy' || state?.activeOrderId) {
+                throw new Error('Этот водитель уже занят текущим заказом.');
             }
 
             transaction.update(orderRef, {
                 status: 'accepted',
                 assignedDriverUid: driverUid,
-                assignedDriverId: driverId,
+                assignedDriverId: selectedDriver.id,
                 driverName: driver.name || 'Водитель',
                 driverPhone: driver.phone || '',
                 driverCar: driver.car || '',
@@ -913,14 +958,21 @@ async function assignOrderManually(orderId, driverId) {
                 acceptedAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
-            transaction.update(stateRef, {
+            transaction.set(stateRef, {
+                driverId: String(selectedDriver.id),
                 status: 'busy',
                 activeOrderId: orderId,
                 lastSeen: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
         });
-        setMessage(elements.onlineOrdersMessage, 'Водитель назначен вручную. Клиент и водитель увидят заказ.', true);
+        setMessage(
+            elements.onlineOrdersMessage,
+            cabinetIsOpen
+                ? 'Водитель назначен вручную. Клиент и водитель увидят заказ.'
+                : 'Водитель назначен. Клиент уже увидит его данные; обязательно подтвердите заказ водителю по телефону.',
+            true
+        );
     } catch (error) {
         console.warn('Не удалось назначить водителя вручную:', error.code || error.message);
         setMessage(elements.onlineOrdersMessage, error.message || 'Не удалось назначить водителя вручную.');

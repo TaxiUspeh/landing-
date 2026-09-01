@@ -48,9 +48,58 @@ let activeOrderId = '';
 let activeOrder = null;
 let unsubscribeOrder = null;
 let actionInProgress = false;
+let clientOrderSoundContext = null;
+let clientOrderWatchInitialLoaded = false;
+let lastObservedOrderStatus = '';
 
 function setHidden(element, hidden) {
     if (element) element.classList.toggle('hidden', hidden);
+}
+
+function getClientOrderSoundContext() {
+    if (clientOrderSoundContext) return clientOrderSoundContext;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    clientOrderSoundContext = new AudioContextClass();
+    return clientOrderSoundContext;
+}
+
+async function prepareClientOrderSound() {
+    const context = getClientOrderSoundContext();
+    if (context?.state === 'suspended') await context.resume();
+    return context;
+}
+
+async function playClientOrderStatusSound(status) {
+    const tones = status === 'arrived'
+        ? [[0, 784], [0.2, 988], [0.4, 1175]]
+        : [[0, 659], [0.18, 784]];
+    try {
+        const context = await prepareClientOrderSound();
+        if (!context || context.state !== 'running') return;
+        const startAt = context.currentTime;
+        for (const [offset, frequency] of tones) {
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.value = frequency;
+            gain.gain.setValueAtTime(0.0001, startAt + offset);
+            gain.gain.exponentialRampToValueAtTime(0.13, startAt + offset + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startAt + offset + 0.15);
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+            oscillator.start(startAt + offset);
+            oscillator.stop(startAt + offset + 0.16);
+        }
+    } catch (error) {
+        console.warn('Звук статуса заказа недоступен:', error.message);
+    }
+}
+
+function signalClientOrderStatusChange(previousStatus, order) {
+    const nextStatus = order?.status || '';
+    if (previousStatus === nextStatus || !['accepted', 'arrived'].includes(nextStatus)) return;
+    void playClientOrderStatusSound(nextStatus);
 }
 
 function setStatus(message, success = false) {
@@ -254,6 +303,8 @@ function clearOrderWatch() {
 function startOrderWatch(orderId) {
     clearOrderWatch();
     activeOrderId = orderId;
+    clientOrderWatchInitialLoaded = false;
+    lastObservedOrderStatus = '';
     storeValue(ACTIVE_ORDER_STORAGE_KEY, orderId);
 
     unsubscribeOrder = onSnapshot(doc(db, 'orders', orderId), (snapshot) => {
@@ -262,8 +313,13 @@ function startOrderWatch(orderId) {
             setStatus('Заказ не найден. Можно оформить новый заказ.');
             return;
         }
-        activeOrder = snapshot.data();
+        const nextOrder = snapshot.data();
+        const previousStatus = lastObservedOrderStatus;
+        activeOrder = nextOrder;
         showOrderPanel(activeOrder);
+        if (clientOrderWatchInitialLoaded) signalClientOrderStatusChange(previousStatus, activeOrder);
+        lastObservedOrderStatus = activeOrder.status || '';
+        clientOrderWatchInitialLoaded = true;
     }, (error) => {
         console.warn('Не удалось обновить статус заказа:', error.code || error.message);
         setStatus('Не удалось обновить статус. Проверьте интернет или позвоните диспетчеру.');
@@ -274,6 +330,8 @@ function resetToForm() {
     clearOrderWatch();
     activeOrderId = '';
     activeOrder = null;
+    clientOrderWatchInitialLoaded = false;
+    lastObservedOrderStatus = '';
     storeValue(ACTIVE_ORDER_STORAGE_KEY, '');
     setHidden(elements.panel, true);
     setHidden(elements.form, false);
@@ -306,6 +364,9 @@ async function createOnlineOrder() {
         return;
     }
 
+    // Вызывается прямо из нажатия «Заказать онлайн»: браузер разрешает звук
+    // для последующих смен статуса без дополнительной кнопки для клиента.
+    void prepareClientOrderSound();
     setActionBusy(true);
     try {
         const user = await ensureSignedIn();

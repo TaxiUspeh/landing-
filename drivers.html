@@ -370,6 +370,42 @@
                                 </div>
                             </section>
 
+                            <section id="driver-dispatcher-chat" class="mb-4 rounded-2xl border border-sky-200 dark:border-sky-800 bg-sky-50/60 dark:bg-sky-950/20 overflow-hidden" aria-labelledby="driver-dispatcher-chat-title">
+                                <button id="driver-dispatcher-chat-toggle" type="button" aria-expanded="false" aria-controls="driver-dispatcher-chat-content"
+                                        class="w-full px-4 py-3 text-left hover:bg-sky-100/70 dark:hover:bg-sky-900/20 btn-active">
+                                    <span class="flex items-center justify-between gap-3">
+                                        <span class="min-w-0">
+                                            <span id="driver-dispatcher-chat-title" class="block font-extrabold text-sky-950 dark:text-sky-100">
+                                                <i class="fas fa-comments mr-2" aria-hidden="true"></i>Чат с диспетчером
+                                            </span>
+                                            <span id="driver-dispatcher-chat-summary" class="mt-1 block text-xs text-sky-800 dark:text-sky-300">Нажмите, чтобы написать диспетчеру</span>
+                                        </span>
+                                        <i id="driver-dispatcher-chat-icon" class="fas fa-chevron-down flex-shrink-0 text-sky-700 dark:text-sky-300 transition-transform" aria-hidden="true"></i>
+                                    </span>
+                                </button>
+                                <div id="driver-dispatcher-chat-content" class="hidden border-t border-sky-200 dark:border-sky-800">
+                                    <p class="px-4 pt-3 text-xs text-sky-800 dark:text-sky-300">Коротко опишите вопрос. Диспетчер увидит сообщение в своей панели.</p>
+                                    <div id="driver-dispatcher-chat-loading" class="px-4 py-4 text-xs text-gray-600 dark:text-gray-300" role="status">
+                                        <i class="fas fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Загружаем сообщения…
+                                    </div>
+                                    <div id="driver-dispatcher-chat-empty" class="hidden px-4 py-5 text-center text-xs text-gray-600 dark:text-gray-300">
+                                        <i class="fas fa-comment-dots text-lg mb-2" aria-hidden="true"></i>
+                                        <p class="font-bold">Переписка пока пуста</p>
+                                    </div>
+                                    <div id="driver-dispatcher-chat-list" class="hidden max-h-72 space-y-3 overflow-y-auto px-4 py-3"></div>
+                                    <form id="driver-dispatcher-chat-form" class="border-t border-sky-200 dark:border-sky-800 p-4">
+                                        <label class="sr-only" for="driver-dispatcher-chat-input">Сообщение диспетчеру</label>
+                                        <textarea id="driver-dispatcher-chat-input" class="form-control min-h-20 resize-y" maxlength="500" placeholder="Например: не могу продолжить заказ, нужна помощь…"></textarea>
+                                        <div class="mt-2 flex flex-wrap items-center gap-2">
+                                            <button id="driver-dispatcher-chat-send" type="submit" class="rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-extrabold text-white shadow-sm hover:bg-sky-700">
+                                                <i class="fas fa-paper-plane mr-2" aria-hidden="true"></i>Отправить диспетчеру
+                                            </button>
+                                            <p id="driver-dispatcher-chat-message" class="hidden text-xs" role="status"></p>
+                                        </div>
+                                    </form>
+                                </div>
+                            </section>
+
                             <section id="driver-order-alerts" class="mb-4 rounded-2xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 p-4" aria-labelledby="driver-order-alerts-title">
                                 <div class="flex items-start gap-3">
                                     <span id="driver-order-alerts-icon" class="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 flex items-center justify-center" aria-hidden="true">

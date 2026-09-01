@@ -100,12 +100,15 @@
 
         <div id="dispatcher-panel" class="hidden space-y-6">
             <nav id="dispatcher-mobile-navigation" class="mobile-dispatcher-nav rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 md:hidden" aria-label="Разделы панели диспетчера">
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-4 gap-2">
                     <button type="button" data-dispatcher-section-button="orders" class="rounded-xl bg-blue-600 px-2 py-2 text-xs font-extrabold text-white" aria-current="page">
                         <i class="fas fa-list-alt mr-1" aria-hidden="true"></i>Заказы
                     </button>
                     <button type="button" data-dispatcher-section-button="drivers" class="rounded-xl px-2 py-2 text-xs font-extrabold text-slate-600 dark:text-slate-300">
                         <i class="fas fa-car-side mr-1" aria-hidden="true"></i>Водители
+                    </button>
+                    <button type="button" data-dispatcher-section-button="messages" class="rounded-xl px-2 py-2 text-xs font-extrabold text-slate-600 dark:text-slate-300">
+                        <i class="fas fa-comments mr-1" aria-hidden="true"></i>Чат
                     </button>
                     <button type="button" data-dispatcher-section-button="settings" class="rounded-xl px-2 py-2 text-xs font-extrabold text-slate-600 dark:text-slate-300">
                         <i class="fas fa-gear mr-1" aria-hidden="true"></i>Настройки
@@ -204,6 +207,50 @@
                     <div id="driver-summary-list" class="max-h-[62vh] space-y-3 overflow-y-auto p-4"></div>
                 </section>
             </div>
+
+            <section data-dispatcher-mobile-section="messages" class="panel-card overflow-hidden rounded-2xl border border-sky-200 bg-white dark:border-sky-900 dark:bg-slate-900" aria-labelledby="dispatcher-messages-title">
+                <div class="flex flex-wrap items-start gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+                    <div class="flex-grow">
+                        <h2 id="dispatcher-messages-title" class="font-extrabold">
+                            <i class="fas fa-comments mr-2 text-sky-600 dark:text-sky-400" aria-hidden="true"></i>Сообщения водителей
+                        </h2>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Личные диалоги водителей с диспетчером. Другие водители их не видят.</p>
+                    </div>
+                    <span id="dispatcher-messages-unread" class="hidden rounded-full bg-red-100 px-3 py-1 text-xs font-extrabold text-red-700 dark:bg-red-900/30 dark:text-red-300"></span>
+                </div>
+                <div id="dispatcher-messages-loading" class="p-6 text-sm text-slate-500 dark:text-slate-400" role="status">
+                    <i class="fas fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Загружаем сообщения…
+                </div>
+                <div id="dispatcher-messages-empty" class="hidden p-8 text-center text-slate-500 dark:text-slate-400">
+                    <i class="fas fa-comment-dots mb-3 text-3xl" aria-hidden="true"></i>
+                    <p class="font-bold">Сообщений от водителей пока нет</p>
+                    <p class="mt-1 text-xs">Когда водитель напишет из кабинета, его диалог появится здесь.</p>
+                </div>
+                <div id="dispatcher-messages-content" class="hidden grid grid-cols-1 border-t border-slate-200 dark:border-slate-800 lg:grid-cols-[17rem_minmax(0,1fr)]">
+                    <aside class="border-b border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/30 lg:border-b-0 lg:border-r">
+                        <p class="mb-2 text-xs font-bold text-slate-500 dark:text-slate-400">Диалоги</p>
+                        <div id="dispatcher-messages-conversations" class="max-h-64 space-y-2 overflow-y-auto lg:max-h-[28rem]"></div>
+                    </aside>
+                    <div class="min-w-0">
+                        <div class="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+                            <p id="dispatcher-messages-conversation-title" class="font-extrabold">Выберите водителя</p>
+                            <p id="dispatcher-messages-conversation-detail" class="mt-1 text-xs text-slate-500 dark:text-slate-400">Здесь откроется личная переписка.</p>
+                        </div>
+                        <div id="dispatcher-messages-list" class="hidden max-h-80 space-y-3 overflow-y-auto p-4"></div>
+                        <p id="dispatcher-messages-no-selection" class="p-6 text-center text-sm text-slate-500 dark:text-slate-400">Выберите диалог слева, чтобы прочитать сообщения и ответить.</p>
+                        <form id="dispatcher-messages-form" class="border-t border-slate-200 p-4 dark:border-slate-800">
+                            <label class="sr-only" for="dispatcher-messages-input">Ответ водителю</label>
+                            <textarea id="dispatcher-messages-input" class="form-control min-h-20 resize-y" maxlength="500" placeholder="Выберите водителя, чтобы написать ответ" disabled></textarea>
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <button id="dispatcher-messages-send" type="submit" class="rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-extrabold text-white shadow-sm hover:bg-sky-700" disabled>
+                                    <i class="fas fa-paper-plane mr-2" aria-hidden="true"></i>Ответить водителю
+                                </button>
+                                <p id="dispatcher-messages-status" class="hidden text-xs" role="status"></p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
 
             <section data-dispatcher-mobile-section="drivers" class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" aria-labelledby="add-driver-title">
                 <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800">

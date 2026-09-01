@@ -266,6 +266,9 @@ for (const expected of [
   'id="driver-balance-history"',
   'id="driver-balance-history-list"',
   'id="driver-balance-history-more"',
+  'id="driver-dispatcher-chat"',
+  'id="driver-dispatcher-chat-form"',
+  'id="driver-dispatcher-chat-list"',
   'id="driver-order-alerts-toggle"',
   'id="driver-order-alerts-test"',
   'id="driver-new-order-alert"',
@@ -296,6 +299,9 @@ for (const expected of [
   'data-driver-stat-filter="all"',
   'data-driver-stat-filter="connected"',
   'id="driver-summary-modal"',
+  'data-dispatcher-mobile-section="messages"',
+  'id="dispatcher-messages-content"',
+  'id="dispatcher-messages-form"',
   'id="dispatcher-mobile-navigation"',
   'data-dispatcher-mobile-section="orders"',
   'data-dispatcher-mobile-section="drivers"',
@@ -359,7 +365,7 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v26-driver-summary-panel'")) failures.push('service-worker.js: driver-summary-panel cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v27-driver-dispatcher-chat'")) failures.push('service-worker.js: driver-dispatcher-chat cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
 if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
@@ -452,6 +458,14 @@ if (!firestoreIndexes.indexes.some((index) => index.collectionGroup === 'balance
   && index.fields?.[1]?.order === 'DESCENDING')) {
   failures.push('firestore.indexes.json: balance history index is missing');
 }
+if (!firestoreIndexes.indexes.some((index) => index.collectionGroup === 'driverMessages'
+  && index.queryScope === 'COLLECTION'
+  && index.fields?.[0]?.fieldPath === 'driverUid'
+  && index.fields?.[1]?.fieldPath === 'driverId'
+  && index.fields?.[2]?.fieldPath === 'createdAt'
+  && index.fields?.[2]?.order === 'DESCENDING')) {
+  failures.push('firestore.indexes.json: driver messages index is missing');
+}
 for (const expected of [
   'signInAnonymously', "collection(db, 'orders')", "doc(db, 'orderContacts'", "status: 'searching'",
   'parseMaximumPrice(priceText)', 'Подбираем другого водителя', 'CANCELLATION_REQUEST_STATUSES',
@@ -489,6 +503,11 @@ for (const expected of [
   'Нажмите, чтобы показать',
   'loadMoreBalanceHistory',
   "orderBy('changedAt', 'desc')",
+  "collection(db, 'driverMessages')",
+  "orderBy('createdAt', 'desc')",
+  'watchDriverChat(user, driverId)',
+  'sendDriverChatMessage(event)',
+  "sender: 'driver'",
   'showBalanceHistoryUnavailable',
   'lastCommissionOrderId',
   "doc(db, 'balanceHistory', orderId)",
@@ -520,6 +539,10 @@ for (const expected of [
   'openDriverSummary(filter)',
   'driverSummaryFilterDetails(filter)',
   'setOnlineOrdersSectionCollapsed(collapsed)',
+  "collection(db, 'driverMessages')",
+  'startDriverMessagesListener()',
+  'openDriverMessageConversation(driverUid)',
+  'sendDispatcherMessage(event)',
   'expandedOrderIds',
   "mobileDispatcherSection = 'orders'",
   "mobileOrdersView = 'current'",
@@ -542,6 +565,10 @@ for (const expected of [
   'assignedDriverAdvancesOrder(orderId)',
   'assignedDriverReturnsOrderToSearch(orderId)',
   'match /driverStates/{accountUid}',
+  'match /driverMessages/{messageId}',
+  'validOwnDriverMessageCreate()',
+  'validAdminDriverMessageCreate()',
+  'adminMarksDriverMessageRead()',
   'driverIsAvailable()',
   'driverBecomesBusyWithOrder(orderId)',
   'driverBecomesAvailableAfter(orderId)',

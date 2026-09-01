@@ -7,6 +7,7 @@ import {
     signOut
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
+    addDoc,
     collection,
     doc,
     getDoc,
@@ -79,6 +80,17 @@ const elements = {
     balanceHistoryEmpty: document.getElementById('driver-balance-history-empty'),
     balanceHistoryList: document.getElementById('driver-balance-history-list'),
     balanceHistoryMore: document.getElementById('driver-balance-history-more'),
+    dispatcherChatToggle: document.getElementById('driver-dispatcher-chat-toggle'),
+    dispatcherChatContent: document.getElementById('driver-dispatcher-chat-content'),
+    dispatcherChatSummary: document.getElementById('driver-dispatcher-chat-summary'),
+    dispatcherChatIcon: document.getElementById('driver-dispatcher-chat-icon'),
+    dispatcherChatLoading: document.getElementById('driver-dispatcher-chat-loading'),
+    dispatcherChatEmpty: document.getElementById('driver-dispatcher-chat-empty'),
+    dispatcherChatList: document.getElementById('driver-dispatcher-chat-list'),
+    dispatcherChatForm: document.getElementById('driver-dispatcher-chat-form'),
+    dispatcherChatInput: document.getElementById('driver-dispatcher-chat-input'),
+    dispatcherChatSend: document.getElementById('driver-dispatcher-chat-send'),
+    dispatcherChatMessage: document.getElementById('driver-dispatcher-chat-message'),
     ordersSection: document.getElementById('driver-online-orders'),
     ordersLoading: document.getElementById('driver-orders-loading'),
     ordersEmpty: document.getElementById('driver-online-orders-empty'),
@@ -114,6 +126,7 @@ let unsubscribeAccount = null;
 let unsubscribeDriver = null;
 let unsubscribeDriverState = null;
 let unsubscribeBalanceHistory = null;
+let unsubscribeDispatcherChat = null;
 let unsubscribeOpenOrders = null;
 let unsubscribeAssignedOrders = null;
 let watchedOrdersUserUid = '';
@@ -138,6 +151,10 @@ let balanceHistoryHasMore = false;
 let balanceHistoryLoadingMore = false;
 let balanceHistoryInitialLoaded = false;
 let balanceHistoryExpanded = readBalanceHistoryExpandedPreference();
+let dispatcherChatExpanded = false;
+let driverChatMessages = [];
+let driverChatLoaded = false;
+let driverChatSendInProgress = false;
 
 function setHidden(element, hidden) {
     if (element) element.classList.toggle('hidden', hidden);
@@ -448,6 +465,162 @@ function balanceHistoryTime(entry) {
 
 function balanceHistoryMillis(entry) {
     return entry.changedAt?.toMillis ? entry.changedAt.toMillis() : 0;
+}
+
+function driverChatMillis(message) {
+    return message.createdAt?.toMillis ? message.createdAt.toMillis() : 0;
+}
+
+function driverChatTime(message) {
+    if (!message.createdAt?.toDate) return 'Отправляем…';
+    return new Intl.DateTimeFormat('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(message.createdAt.toDate());
+}
+
+function showDispatcherChatMessage(text, success = false) {
+    const message = elements.dispatcherChatMessage;
+    if (!message) return;
+    message.textContent = text;
+    message.className = text
+        ? `text-xs ${success ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`
+        : 'hidden text-xs';
+}
+
+function updateDriverChatControls() {
+    setHidden(elements.dispatcherChatContent, !dispatcherChatExpanded);
+    if (elements.dispatcherChatToggle) {
+        elements.dispatcherChatToggle.setAttribute('aria-expanded', String(dispatcherChatExpanded));
+    }
+    if (elements.dispatcherChatIcon) {
+        elements.dispatcherChatIcon.className = dispatcherChatExpanded
+            ? 'fas fa-chevron-up flex-shrink-0 text-sky-700 dark:text-sky-300 transition-transform'
+            : 'fas fa-chevron-down flex-shrink-0 text-sky-700 dark:text-sky-300 transition-transform';
+    }
+    if (elements.dispatcherChatSummary) {
+        const latest = [...driverChatMessages].sort((a, b) => driverChatMillis(b) - driverChatMillis(a))[0];
+        if (dispatcherChatExpanded) elements.dispatcherChatSummary.textContent = 'Свернуть переписку';
+        else if (latest) elements.dispatcherChatSummary.textContent = `Последнее: ${latest.sender === 'dispatcher' ? 'диспетчер' : 'вы'} · ${driverChatTime(latest)}`;
+        else if (driverChatLoaded) elements.dispatcherChatSummary.textContent = 'Переписка пока пуста';
+        else elements.dispatcherChatSummary.textContent = 'Нажмите, чтобы написать диспетчеру';
+    }
+}
+
+function renderDriverChat() {
+    const messages = [...driverChatMessages].sort((a, b) => driverChatMillis(a) - driverChatMillis(b));
+    elements.dispatcherChatList.replaceChildren();
+    for (const message of messages) {
+        const own = message.sender === 'driver';
+        const item = document.createElement('article');
+        item.className = `max-w-[88%] rounded-2xl px-3 py-2 text-xs ${own
+            ? 'ml-auto bg-sky-600 text-white'
+            : 'mr-auto bg-white text-slate-800 shadow-sm dark:bg-slate-800 dark:text-slate-100'}`;
+        item.append(
+            createText('p', own ? 'font-extrabold text-sky-100' : 'font-extrabold text-sky-700 dark:text-sky-300', own ? 'Вы' : 'Диспетчер'),
+            createText('p', 'mt-1 whitespace-pre-wrap break-words', message.text || ''),
+            createText('p', own ? 'mt-1 text-[10px] text-sky-100' : 'mt-1 text-[10px] text-slate-500 dark:text-slate-400', driverChatTime(message))
+        );
+        elements.dispatcherChatList.append(item);
+    }
+    setHidden(elements.dispatcherChatLoading, true);
+    setHidden(elements.dispatcherChatEmpty, messages.length !== 0);
+    setHidden(elements.dispatcherChatList, messages.length === 0);
+    updateDriverChatControls();
+}
+
+function stopDriverChatWatch(clearData = false) {
+    if (unsubscribeDispatcherChat) unsubscribeDispatcherChat();
+    unsubscribeDispatcherChat = null;
+    if (clearData) {
+        driverChatMessages = [];
+        driverChatLoaded = false;
+    }
+    driverChatSendInProgress = false;
+    setHidden(elements.dispatcherChatLoading, false);
+    setHidden(elements.dispatcherChatEmpty, true);
+    setHidden(elements.dispatcherChatList, true);
+    showDispatcherChatMessage('');
+    updateDriverChatControls();
+}
+
+function watchDriverChat(user, driverId) {
+    const normalizedDriverId = String(driverId || '');
+    if (!user || !normalizedDriverId || unsubscribeDispatcherChat) return;
+    driverChatLoaded = false;
+    setHidden(elements.dispatcherChatLoading, false);
+    unsubscribeDispatcherChat = onSnapshot(
+        query(
+            collection(db, 'driverMessages'),
+            where('driverUid', '==', user.uid),
+            where('driverId', '==', normalizedDriverId),
+            orderBy('createdAt', 'desc'),
+            limit(100)
+        ),
+        (snapshot) => {
+            driverChatMessages = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
+            driverChatLoaded = true;
+            renderDriverChat();
+        },
+        (error) => {
+            console.warn('Чат с диспетчером не загрузился:', error.code || error.message);
+            driverChatMessages = [];
+            driverChatLoaded = true;
+            setHidden(elements.dispatcherChatLoading, true);
+            setHidden(elements.dispatcherChatList, true);
+            setHidden(elements.dispatcherChatEmpty, false);
+            const emptyText = elements.dispatcherChatEmpty?.querySelector('p');
+            if (emptyText) emptyText.textContent = error.code === 'permission-denied'
+                ? 'Чат будет доступен после публикации новых правил Firebase'
+                : 'Не удалось загрузить переписку. Проверьте интернет.';
+            updateDriverChatControls();
+        }
+    );
+}
+
+function toggleDispatcherChat() {
+    dispatcherChatExpanded = !dispatcherChatExpanded;
+    updateDriverChatControls();
+}
+
+async function sendDriverChatMessage(event) {
+    event.preventDefault();
+    const text = elements.dispatcherChatInput?.value.trim() || '';
+    if (!text) return showDispatcherChatMessage('Напишите сообщение для диспетчера.');
+    if (!currentUser || !currentDriver || !currentDriverId || driverChatSendInProgress) {
+        return showDispatcherChatMessage('Кабинет водителя ещё не подключён.');
+    }
+
+    driverChatSendInProgress = true;
+    elements.dispatcherChatSend.disabled = true;
+    showDispatcherChatMessage('');
+    try {
+        await addDoc(collection(db, 'driverMessages'), {
+            driverUid: currentUser.uid,
+            driverId: currentDriverId,
+            driverName: currentDriver.name || 'Водитель',
+            driverCar: currentDriver.car || '',
+            sender: 'driver',
+            text,
+            createdAt: serverTimestamp(),
+            readByDispatcher: false,
+            dispatcherReadAt: null
+        });
+        elements.dispatcherChatInput.value = '';
+        showDispatcherChatMessage('Сообщение отправлено диспетчеру.', true);
+    } catch (error) {
+        console.warn('Не удалось отправить сообщение диспетчеру:', error.code || error.message);
+        showDispatcherChatMessage(
+            error.code === 'permission-denied'
+                ? 'Чат ещё не включён в правилах Firebase. Обновите правила и опубликуйте их.'
+                : 'Не удалось отправить сообщение. Проверьте интернет.'
+        );
+    } finally {
+        driverChatSendInProgress = false;
+        elements.dispatcherChatSend.disabled = false;
+    }
 }
 
 function updateBalanceHistoryControls() {
@@ -922,6 +1095,7 @@ function stopProfileWatches() {
     unsubscribeDriver = null;
     unsubscribeDriverState = null;
     stopBalanceHistoryWatch(true);
+    stopDriverChatWatch(true);
     stopHeartbeat();
     currentDriverId = '';
     currentDriver = null;
@@ -1490,6 +1664,7 @@ function watchDriverProfile(user) {
         unsubscribeDriverState = null;
         stopHeartbeat();
         stopOrderWatches();
+        stopDriverChatWatch(true);
         setHidden(elements.profile, true);
         showMessage('');
 
@@ -1521,6 +1696,7 @@ function watchDriverProfile(user) {
             currentDriverId = String(account.driverId);
             currentBaseEligible = canAccessOrders(driver, account);
             watchBalanceHistory(currentDriverId);
+            watchDriverChat(user, currentDriverId);
             renderWorkStatus(driver, account);
             void loadOrdersLink(currentBaseEligible);
             watchDriverState(user, account, driver);
@@ -1570,6 +1746,8 @@ elements.logoutButton?.addEventListener('click', () => void logoutDriver());
 elements.copyUid?.addEventListener('click', copyUid);
 elements.balanceHistoryToggle?.addEventListener('click', toggleBalanceHistory);
 elements.balanceHistoryMore?.addEventListener('click', () => void loadMoreBalanceHistory());
+elements.dispatcherChatToggle?.addEventListener('click', toggleDispatcherChat);
+elements.dispatcherChatForm?.addEventListener('submit', (event) => void sendDriverChatMessage(event));
 elements.alertsToggle?.addEventListener('click', () => void toggleOrderAlerts());
 elements.alertsTest?.addEventListener('click', () => void testOrderAlerts());
 elements.newOrderAlertClose?.addEventListener('click', hideNewOrderAlert);

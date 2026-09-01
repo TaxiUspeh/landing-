@@ -433,6 +433,63 @@ service cloud.firestore {
         && getAfter(orderDocument(orderId)).data.clientUid == request.auth.uid;
     }
 
+    function validDriverMessageData(data) {
+      return data.keys().hasOnly([
+          'driverUid', 'driverId', 'driverName', 'driverCar', 'sender',
+          'text', 'createdAt', 'readByDispatcher', 'dispatcherReadAt'
+        ])
+        && data.driverUid is string
+        && data.driverUid.size() > 0
+        && data.driverUid.size() <= 128
+        && data.driverId is string
+        && data.driverId.size() > 0
+        && data.driverId.size() <= 128
+        && data.driverName is string
+        && data.driverName.size() > 0
+        && data.driverName.size() <= 80
+        && data.driverCar is string
+        && data.driverCar.size() <= 160
+        && data.sender is string
+        && data.sender in ['driver', 'dispatcher']
+        && data.text is string
+        && data.text.size() > 0
+        && data.text.size() <= 500
+        && data.createdAt == request.time
+        && data.readByDispatcher is bool;
+    }
+
+    function validOwnDriverMessageCreate() {
+      return hasDriverAccount()
+        && exists(linkedDriverDocument())
+        && validDriverMessageData(request.resource.data)
+        && request.resource.data.driverUid == request.auth.uid
+        && request.resource.data.driverId == linkedDriverId()
+        && request.resource.data.driverName == get(linkedDriverDocument()).data.get('name', 'Водитель')
+        && request.resource.data.driverCar == get(linkedDriverDocument()).data.get('car', '')
+        && request.resource.data.sender == 'driver'
+        && request.resource.data.readByDispatcher == false
+        && request.resource.data.dispatcherReadAt == null;
+    }
+
+    function validAdminDriverMessageCreate() {
+      return isAdmin()
+        && validDriverMessageData(request.resource.data)
+        && request.resource.data.sender == 'dispatcher'
+        && request.resource.data.readByDispatcher == true
+        && request.resource.data.dispatcherReadAt == request.time;
+    }
+
+    function adminMarksDriverMessageRead() {
+      return isAdmin()
+        && resource.data.sender == 'driver'
+        && resource.data.readByDispatcher == false
+        && request.resource.data.readByDispatcher == true
+        && request.resource.data.dispatcherReadAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'readByDispatcher', 'dispatcherReadAt'
+        ]);
+    }
+
     // Первую запись администратора владелец проекта создаёт вручную в консоли.
     // Клиентский сайт не может назначить администратора сам себе.
     match /admins/{adminId} {
@@ -465,6 +522,16 @@ service cloud.firestore {
         || (hasDriverAccount() && resource.data.driverId == linkedDriverId());
       allow create: if isAdmin() || (signedIn() && validOwnOnlineCommissionHistoryCreate(entryId));
       allow update, delete: if false;
+    }
+
+    match /driverMessages/{messageId} {
+      allow read: if isAdmin()
+        || (hasDriverAccount()
+          && resource.data.driverUid == request.auth.uid
+          && resource.data.driverId == linkedDriverId());
+      allow create: if validOwnDriverMessageCreate() || validAdminDriverMessageCreate();
+      allow update: if adminMarksDriverMessageRead();
+      allow delete: if false;
     }
 
     match /settings/{settingId} {

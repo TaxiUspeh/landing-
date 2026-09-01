@@ -7,9 +7,11 @@ import {
     signOut
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
+    addDoc,
     collection,
     doc,
     getDoc,
+    limit,
     onSnapshot,
     orderBy,
     query,
@@ -53,6 +55,19 @@ const elements = {
     driverSummaryDescription: document.getElementById('driver-summary-description'),
     driverSummaryList: document.getElementById('driver-summary-list'),
     driverSummaryClose: document.getElementById('driver-summary-close'),
+    dispatcherMessagesLoading: document.getElementById('dispatcher-messages-loading'),
+    dispatcherMessagesEmpty: document.getElementById('dispatcher-messages-empty'),
+    dispatcherMessagesContent: document.getElementById('dispatcher-messages-content'),
+    dispatcherMessagesUnread: document.getElementById('dispatcher-messages-unread'),
+    dispatcherMessagesConversations: document.getElementById('dispatcher-messages-conversations'),
+    dispatcherMessagesConversationTitle: document.getElementById('dispatcher-messages-conversation-title'),
+    dispatcherMessagesConversationDetail: document.getElementById('dispatcher-messages-conversation-detail'),
+    dispatcherMessagesList: document.getElementById('dispatcher-messages-list'),
+    dispatcherMessagesNoSelection: document.getElementById('dispatcher-messages-no-selection'),
+    dispatcherMessagesForm: document.getElementById('dispatcher-messages-form'),
+    dispatcherMessagesInput: document.getElementById('dispatcher-messages-input'),
+    dispatcherMessagesSend: document.getElementById('dispatcher-messages-send'),
+    dispatcherMessagesStatus: document.getElementById('dispatcher-messages-status'),
     mobileNavigation: document.getElementById('dispatcher-mobile-navigation'),
     mobileSectionButtons: [...document.querySelectorAll('[data-dispatcher-section-button]')],
     mobileSections: [...document.querySelectorAll('[data-dispatcher-mobile-section]')],
@@ -87,6 +102,7 @@ let drivers = [];
 let driverStates = new Map();
 let orders = [];
 let orderContacts = new Map();
+let driverMessages = [];
 const expandedOrderIds = new Set();
 let mobileDispatcherSection = 'orders';
 let mobileOrdersView = 'current';
@@ -96,10 +112,13 @@ let unsubscribeDrivers = null;
 let unsubscribeDriverStates = null;
 let unsubscribeOrders = null;
 let unsubscribeOrderContacts = null;
+let unsubscribeDriverMessages = null;
 let authActionInProgress = false;
 let manualOrderAssignmentInProgress = false;
 let cancellationDecisionInProgress = false;
+let dispatcherMessageSendInProgress = false;
 let driverStatusRefreshTimer = null;
+let selectedDriverMessageUid = '';
 const DRIVER_CONNECTION_TIMEOUT_MS = 3 * 60 * 1000;
 const REQUEUE_REASON_LABELS = {
     car_issue: 'Неисправность автомобиля',
@@ -271,6 +290,7 @@ function stopAdminPanel() {
     unsubscribeDriverStates = null;
     unsubscribeOrders = null;
     unsubscribeOrderContacts = null;
+    stopDriverMessagesListener();
     drivers = [];
     driverStates = new Map();
     orders = [];
@@ -305,6 +325,7 @@ async function checkAdminAccess(user) {
         startDriversListener();
         startDriverStatesListener();
         startOrdersListeners();
+        startDriverMessagesListener();
         driverStatusRefreshTimer = setInterval(refreshDriverStatusIndicators, 30 * 1000);
         await loadOrdersLink();
     } catch (error) {
@@ -490,6 +511,234 @@ function setOnlineOrdersSectionCollapsed(collapsed) {
     toggle.setAttribute('aria-expanded', String(!collapsed));
     toggle.querySelector('i').className = `fas ${collapsed ? 'fa-expand-alt' : 'fa-compress-alt'} mr-1`;
     toggle.querySelector('span').textContent = collapsed ? 'Развернуть заказы' : 'Свернуть заказы';
+}
+
+function driverMessageMillis(message) {
+    return message.createdAt?.toMillis ? message.createdAt.toMillis() : 0;
+}
+
+function driverMessageTime(message) {
+    if (!message.createdAt?.toDate) return 'Только что';
+    return new Intl.DateTimeFormat('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(message.createdAt.toDate());
+}
+
+function driverMessageConversations() {
+    const conversations = new Map();
+    for (const message of driverMessages) {
+        const driverUid = String(message.driverUid || '');
+        if (!driverUid) continue;
+        const conversation = conversations.get(driverUid) || {
+            driverUid,
+            driverId: String(message.driverId || ''),
+            driverName: message.driverName || 'Водитель',
+            driverCar: message.driverCar || '',
+            messages: []
+        };
+        conversation.messages.push(message);
+        if (driverMessageMillis(message) >= driverMessageMillis(conversation.latest || {})) {
+            conversation.latest = message;
+            conversation.driverId = String(message.driverId || conversation.driverId);
+            conversation.driverName = message.driverName || conversation.driverName;
+            conversation.driverCar = message.driverCar || conversation.driverCar;
+        }
+        conversations.set(driverUid, conversation);
+    }
+    return [...conversations.values()]
+        .map((conversation) => ({
+            ...conversation,
+            messages: conversation.messages.sort((a, b) => driverMessageMillis(a) - driverMessageMillis(b)),
+            unread: conversation.messages.filter((message) => message.sender === 'driver' && !message.readByDispatcher).length
+        }))
+        .sort((first, second) => driverMessageMillis(second.latest) - driverMessageMillis(first.latest));
+}
+
+function selectedDriverMessageConversation() {
+    return driverMessageConversations().find((conversation) => conversation.driverUid === selectedDriverMessageUid) || null;
+}
+
+function renderSelectedDriverConversation() {
+    const conversation = selectedDriverMessageConversation();
+    const hasConversation = Boolean(conversation);
+    elements.dispatcherMessagesConversationTitle.textContent = hasConversation
+        ? `ID ${conversation.driverId || '—'} · ${conversation.driverName}`
+        : 'Выберите водителя';
+    elements.dispatcherMessagesConversationDetail.textContent = hasConversation
+        ? [conversation.driverCar || 'Автомобиль не указан', 'Личная переписка с водителем'].join(' · ')
+        : 'Здесь откроется личная переписка.';
+    elements.dispatcherMessagesList.replaceChildren();
+
+    if (conversation) {
+        for (const message of conversation.messages) {
+            const fromDispatcher = message.sender === 'dispatcher';
+            const item = document.createElement('article');
+            item.className = `max-w-[88%] rounded-2xl px-3 py-2 text-xs ${fromDispatcher
+                ? 'ml-auto bg-sky-600 text-white'
+                : 'mr-auto bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100'}`;
+            item.append(
+                createOrderText('p', fromDispatcher ? 'font-extrabold text-sky-100' : 'font-extrabold text-sky-700 dark:text-sky-300', fromDispatcher ? 'Диспетчер' : conversation.driverName),
+                createOrderText('p', 'mt-1 whitespace-pre-wrap break-words', message.text || ''),
+                createOrderText('p', fromDispatcher ? 'mt-1 text-[10px] text-sky-100' : 'mt-1 text-[10px] text-slate-500 dark:text-slate-400', driverMessageTime(message))
+            );
+            elements.dispatcherMessagesList.append(item);
+        }
+    }
+
+    setHidden(elements.dispatcherMessagesList, !hasConversation);
+    setHidden(elements.dispatcherMessagesNoSelection, hasConversation);
+    elements.dispatcherMessagesInput.disabled = !hasConversation;
+    elements.dispatcherMessagesSend.disabled = !hasConversation || dispatcherMessageSendInProgress;
+    elements.dispatcherMessagesInput.placeholder = hasConversation
+        ? `Ответ для ID ${conversation.driverId || 'водителя'}`
+        : 'Выберите водителя, чтобы написать ответ';
+}
+
+function renderDriverMessages() {
+    const conversations = driverMessageConversations();
+    if (!conversations.some((conversation) => conversation.driverUid === selectedDriverMessageUid)) {
+        selectedDriverMessageUid = conversations[0]?.driverUid || '';
+    }
+    elements.dispatcherMessagesConversations.replaceChildren();
+    for (const conversation of conversations) {
+        const active = conversation.driverUid === selectedDriverMessageUid;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `w-full rounded-xl border p-3 text-left transition ${active
+            ? 'border-sky-400 bg-sky-100/70 dark:border-sky-700 dark:bg-sky-900/30'
+            : 'border-slate-200 bg-white hover:border-sky-300 dark:border-slate-800 dark:bg-slate-900'}`;
+        const header = document.createElement('div');
+        header.className = 'flex items-start justify-between gap-2';
+        const title = createOrderText('p', 'min-w-0 font-extrabold break-words', `ID ${conversation.driverId || '—'} · ${conversation.driverName}`);
+        header.append(title);
+        if (conversation.unread) {
+            header.append(createOrderText(
+                'span',
+                'flex-shrink-0 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-extrabold text-white',
+                String(conversation.unread)
+            ));
+        }
+        button.append(
+            header,
+            createOrderText('p', 'mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-300', conversation.latest?.text || 'Сообщение'),
+            createOrderText('p', 'mt-1 text-[10px] text-slate-500 dark:text-slate-400', driverMessageTime(conversation.latest || {}))
+        );
+        button.addEventListener('click', () => openDriverMessageConversation(conversation.driverUid));
+        elements.dispatcherMessagesConversations.append(button);
+    }
+
+    const unread = driverMessages.filter((message) => message.sender === 'driver' && !message.readByDispatcher).length;
+    elements.dispatcherMessagesUnread.textContent = unread ? `Новых: ${unread}` : '';
+    setHidden(elements.dispatcherMessagesUnread, unread === 0);
+    setHidden(elements.dispatcherMessagesLoading, true);
+    setHidden(elements.dispatcherMessagesEmpty, conversations.length !== 0);
+    setHidden(elements.dispatcherMessagesContent, conversations.length === 0);
+    renderSelectedDriverConversation();
+}
+
+async function markDriverMessagesRead(driverUid) {
+    if (!currentUser || !driverUid) return;
+    const unread = driverMessages.filter((message) => message.driverUid === driverUid
+        && message.sender === 'driver'
+        && !message.readByDispatcher);
+    if (!unread.length) return;
+    try {
+        const batch = writeBatch(db);
+        for (const message of unread) {
+            batch.update(doc(db, 'driverMessages', message.id), {
+                readByDispatcher: true,
+                dispatcherReadAt: serverTimestamp()
+            });
+        }
+        await batch.commit();
+    } catch (error) {
+        console.warn('Не удалось отметить сообщения прочитанными:', error.code || error.message);
+    }
+}
+
+function openDriverMessageConversation(driverUid) {
+    selectedDriverMessageUid = driverUid;
+    renderDriverMessages();
+    void markDriverMessagesRead(driverUid);
+}
+
+function stopDriverMessagesListener() {
+    if (unsubscribeDriverMessages) unsubscribeDriverMessages();
+    unsubscribeDriverMessages = null;
+    driverMessages = [];
+    selectedDriverMessageUid = '';
+    dispatcherMessageSendInProgress = false;
+    setHidden(elements.dispatcherMessagesLoading, false);
+    setHidden(elements.dispatcherMessagesEmpty, true);
+    setHidden(elements.dispatcherMessagesContent, true);
+    setHidden(elements.dispatcherMessagesUnread, true);
+    setMessage(elements.dispatcherMessagesStatus, '');
+}
+
+function startDriverMessagesListener() {
+    setHidden(elements.dispatcherMessagesLoading, false);
+    setMessage(elements.dispatcherMessagesStatus, '');
+    unsubscribeDriverMessages = onSnapshot(
+        query(collection(db, 'driverMessages'), orderBy('createdAt', 'desc'), limit(200)),
+        (snapshot) => {
+            driverMessages = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
+            renderDriverMessages();
+            if (selectedDriverMessageUid) void markDriverMessagesRead(selectedDriverMessageUid);
+        },
+        (error) => {
+            console.warn('Сообщения водителей не загрузились:', error.code || error.message);
+            driverMessages = [];
+            setHidden(elements.dispatcherMessagesLoading, true);
+            setHidden(elements.dispatcherMessagesContent, true);
+            setHidden(elements.dispatcherMessagesEmpty, false);
+            const emptyText = elements.dispatcherMessagesEmpty.querySelector('p');
+            if (emptyText) emptyText.textContent = error.code === 'permission-denied'
+                ? 'Чат будет доступен после публикации новых правил Firebase'
+                : 'Не удалось загрузить сообщения. Проверьте интернет.';
+        }
+    );
+}
+
+async function sendDispatcherMessage(event) {
+    event.preventDefault();
+    const conversation = selectedDriverMessageConversation();
+    const text = elements.dispatcherMessagesInput.value.trim();
+    if (!conversation) return setMessage(elements.dispatcherMessagesStatus, 'Сначала выберите водителя.');
+    if (!text) return setMessage(elements.dispatcherMessagesStatus, 'Напишите ответ водителю.');
+    if (!currentUser || dispatcherMessageSendInProgress) return;
+
+    dispatcherMessageSendInProgress = true;
+    elements.dispatcherMessagesSend.disabled = true;
+    setMessage(elements.dispatcherMessagesStatus, '');
+    try {
+        await addDoc(collection(db, 'driverMessages'), {
+            driverUid: conversation.driverUid,
+            driverId: conversation.driverId,
+            driverName: conversation.driverName,
+            driverCar: conversation.driverCar,
+            sender: 'dispatcher',
+            text,
+            createdAt: serverTimestamp(),
+            readByDispatcher: true,
+            dispatcherReadAt: serverTimestamp()
+        });
+        elements.dispatcherMessagesInput.value = '';
+        setMessage(elements.dispatcherMessagesStatus, 'Ответ отправлен водителю.', true);
+    } catch (error) {
+        console.warn('Не удалось отправить ответ водителю:', error.code || error.message);
+        setMessage(
+            elements.dispatcherMessagesStatus,
+            error.code === 'permission-denied'
+                ? 'Чат ещё не включён в правилах Firebase. Обновите правила и опубликуйте их.'
+                : 'Не удалось отправить ответ. Проверьте интернет.'
+        );
+    } finally {
+        dispatcherMessageSendInProgress = false;
+        renderSelectedDriverConversation();
+    }
 }
 
 function applyDriverAvailability(card, driver) {
@@ -1376,6 +1625,7 @@ elements.logoutButton.addEventListener('click', () => signOut(auth));
 elements.copyUid.addEventListener('click', copyUid);
 elements.addDriverForm.addEventListener('submit', addDriver);
 elements.ordersLinkForm.addEventListener('submit', saveOrdersLink);
+elements.dispatcherMessagesForm.addEventListener('submit', (event) => void sendDispatcherMessage(event));
 elements.driverSearch.addEventListener('input', renderDrivers);
 elements.toggleOnlineOrdersSection.addEventListener('click', () => {
     setOnlineOrdersSectionCollapsed(!onlineOrdersSectionCollapsed);

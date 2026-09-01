@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v26-driver-summary-panel';
+const CACHE_NAME = 'taxi-uspeh-v27-driver-dispatcher-chat';
 const APP_SHELL = [
   './',
   './index.html',

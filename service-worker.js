@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v32-route-rate-sum';
+const CACHE_NAME = 'taxi-uspeh-v33-driver-sticky-chat';
 const APP_SHELL = [
   './',
   './index.html',

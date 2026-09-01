@@ -44,9 +44,7 @@ service cloud.firestore {
       return hasDriverAccount()
         && get(driverAccountDocument()).data.active == true
         && exists(linkedDriverDocument())
-        && get(linkedDriverDocument()).data.status == 'active'
-        && get(linkedDriverDocument()).data.balance is number
-        && get(linkedDriverDocument()).data.balance < 0;
+        && get(linkedDriverDocument()).data.status == 'active';
     }
 
     function activeOrderStatus(status) {
@@ -95,10 +93,10 @@ service cloud.firestore {
           || getAfter(orderDocument(orderId)).data.status == 'cancelled');
     }
 
-    function driverBecomesOfflineAfterRequeue(orderId) {
+    function driverBecomesAvailableAfterRequeue(orderId) {
       return existsAfter(driverStateDocument())
         && getAfter(driverStateDocument()).data.driverId == linkedDriverId()
-        && getAfter(driverStateDocument()).data.status == 'offline'
+        && getAfter(driverStateDocument()).data.status == 'available'
         && getAfter(driverStateDocument()).data.activeOrderId == ''
         && getAfter(driverStateDocument()).data.lastSeen == request.time
         && getAfter(driverStateDocument()).data.updatedAt == request.time
@@ -262,11 +260,8 @@ service cloud.firestore {
             && request.resource.data.activeOrderId == ''
             && existsAfter(orderDocument(resource.data.activeOrderId))
             && (getAfter(orderDocument(resource.data.activeOrderId)).data.status == 'completed'
-              || getAfter(orderDocument(resource.data.activeOrderId)).data.status == 'cancelled'))
-          || (resource.data.status == 'busy'
-            && request.resource.data.status == 'offline'
-            && request.resource.data.activeOrderId == ''
-            && driverBecomesOfflineAfterRequeue(resource.data.activeOrderId))
+              || getAfter(orderDocument(resource.data.activeOrderId)).data.status == 'cancelled'
+              || driverBecomesAvailableAfterRequeue(resource.data.activeOrderId)))
         );
     }
 
@@ -414,7 +409,7 @@ service cloud.firestore {
           'driverName', 'driverPhone', 'driverCar', 'driverColor',
           'requeueReason', 'requeuedAt', 'requeueCount', 'updatedAt'
         ])
-        && driverBecomesOfflineAfterRequeue(orderId);
+        && driverBecomesAvailableAfterRequeue(orderId);
     }
 
     function validClientContactCreate(orderId) {

@@ -214,7 +214,7 @@ function statusLabel(status) {
 }
 
 function canTakeOrders(driver) {
-    return driver.status === 'active' && Number(driver.balance) < 0;
+    return driver.status === 'active';
 }
 
 async function login() {
@@ -341,7 +341,7 @@ function driverAvailabilityInfo(driver) {
         return {
             key: 'restricted',
             label: '🔴 Ограничено',
-            detail: `${statusLabel(driver.status)} · баланс ${formatMoney(driver.balance)}`,
+            detail: `${statusLabel(driver.status)} · работу с заказами ограничил диспетчер`,
             className: 'flex-shrink-0 text-xs font-extrabold rounded-full px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
         };
     }
@@ -349,7 +349,7 @@ function driverAvailabilityInfo(driver) {
         return {
             key: 'available',
             label: '🟢 Свободен',
-            detail: 'На линии · получает новые заказы',
+            detail: 'Кабинет открыт · получает новые заказы',
             className: 'flex-shrink-0 text-xs font-extrabold rounded-full px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
         };
     }
@@ -363,7 +363,7 @@ function driverAvailabilityInfo(driver) {
     }
     return {
         key: 'offline',
-        label: '⚪ Не на линии',
+        label: '⚪ Кабинет закрыт',
         detail: 'Новые онлайн-заказы не получает',
         className: 'flex-shrink-0 text-xs font-extrabold rounded-full px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
     };
@@ -619,7 +619,7 @@ function appendManualAssignmentControls(actions, order) {
         'w-full text-xs text-slate-500 dark:text-slate-400',
         candidates.length
             ? 'Назначайте водителя после подтверждения по телефону.'
-            : 'Свободных водителей на линии сейчас нет.'
+            : 'Свободных водителей с открытым кабинетом сейчас нет.'
     );
     actions.append(hint);
     if (!candidates.length) return;
@@ -889,7 +889,7 @@ async function assignOrderManually(orderId, driverId) {
             if (!driverSnapshot.exists()) throw new Error('Карточка водителя не найдена.');
             const driver = driverSnapshot.data();
             const driverUid = normalizeUid(driver.authUid || '');
-            if (!driverUid || driver.status !== 'active' || Number(driver.balance) >= 0) {
+            if (!driverUid || driver.status !== 'active') {
                 throw new Error('Водитель недоступен для онлайн-заказов.');
             }
 
@@ -899,7 +899,7 @@ async function assignOrderManually(orderId, driverId) {
             const connected = timestampMillis(state?.lastSeen) > 0
                 && Date.now() - timestampMillis(state.lastSeen) <= DRIVER_CONNECTION_TIMEOUT_MS;
             if (!state || state.status !== 'available' || state.activeOrderId || !connected) {
-                throw new Error('Этот водитель уже занят, не на линии или кабинет не отвечает.');
+                throw new Error('Этот водитель уже занят, кабинет закрыт или не отвечает.');
             }
 
             transaction.update(orderRef, {

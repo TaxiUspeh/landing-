@@ -30,6 +30,14 @@
         .dark .form-control { background: #111827; color: #f9fafb; border-color: #4b5563; }
         .dark .form-control:focus { border-color: #60a5fa; }
         button:disabled { cursor: not-allowed; opacity: 0.6; }
+        .mobile-only { display: none; }
+        @media (max-width: 767px) {
+            .mobile-dispatcher-nav { position: sticky; top: 74px; z-index: 15; }
+            .mobile-dispatcher-hidden { display: none !important; }
+            .mobile-only { display: block; }
+            #online-orders-list[data-mobile-order-view="current"] article[data-order-history="true"],
+            #online-orders-list[data-mobile-order-view="history"] article[data-order-history="false"] { display: none; }
+        }
     </style>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -91,7 +99,21 @@
         </section>
 
         <div id="dispatcher-panel" class="hidden space-y-6">
-            <section class="grid grid-cols-2 lg:grid-cols-4 gap-3" aria-label="Сводка по водителям">
+            <nav id="dispatcher-mobile-navigation" class="mobile-dispatcher-nav rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 md:hidden" aria-label="Разделы панели диспетчера">
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" data-dispatcher-section-button="orders" class="rounded-xl bg-blue-600 px-2 py-2 text-xs font-extrabold text-white" aria-current="page">
+                        <i class="fas fa-list-alt mr-1" aria-hidden="true"></i>Заказы
+                    </button>
+                    <button type="button" data-dispatcher-section-button="drivers" class="rounded-xl px-2 py-2 text-xs font-extrabold text-slate-600 dark:text-slate-300">
+                        <i class="fas fa-car-side mr-1" aria-hidden="true"></i>Водители
+                    </button>
+                    <button type="button" data-dispatcher-section-button="settings" class="rounded-xl px-2 py-2 text-xs font-extrabold text-slate-600 dark:text-slate-300">
+                        <i class="fas fa-gear mr-1" aria-hidden="true"></i>Настройки
+                    </button>
+                </div>
+            </nav>
+
+            <section data-dispatcher-mobile-section="orders" class="grid grid-cols-2 lg:grid-cols-4 gap-3" aria-label="Сводка по водителям">
                 <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
                     <p class="text-xs text-slate-500 dark:text-slate-400">Всего</p>
                     <p id="stat-total" class="text-2xl font-black">0</p>
@@ -110,7 +132,7 @@
                 </div>
             </section>
 
-            <section class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-blue-200 dark:border-blue-900 overflow-hidden" aria-labelledby="online-orders-title">
+            <section data-dispatcher-mobile-section="orders" class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-blue-200 dark:border-blue-900 overflow-hidden" aria-labelledby="online-orders-title">
                 <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-start gap-3">
                     <div class="flex-grow">
                         <h2 id="online-orders-title" class="font-extrabold">
@@ -142,6 +164,16 @@
                         <p id="orders-stat-completed" class="text-xl font-black text-green-700 dark:text-green-300">0</p>
                     </div>
                 </div>
+                <div class="mobile-only px-4 pt-4">
+                    <div class="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="tablist" aria-label="Отбор онлайн-заказов">
+                        <button id="mobile-orders-current-button" type="button" role="tab" aria-selected="true" class="rounded-lg bg-white px-3 py-2 text-xs font-extrabold text-blue-700 shadow-sm dark:bg-slate-900 dark:text-blue-300">
+                            Текущие <span id="mobile-orders-current-count">0</span>
+                        </button>
+                        <button id="mobile-orders-history-button" type="button" role="tab" aria-selected="false" class="rounded-lg px-3 py-2 text-xs font-extrabold text-slate-600 dark:text-slate-300">
+                            История <span id="mobile-orders-history-count">0</span>
+                        </button>
+                    </div>
+                </div>
                 <div id="online-orders-loading" class="p-6 text-sm text-slate-500 dark:text-slate-400" role="status">
                     <i class="fas fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Загружаем онлайн-заказы…
                 </div>
@@ -151,10 +183,11 @@
                     <p class="text-xs mt-1">Новый заказ клиента появится здесь автоматически.</p>
                 </div>
                 <p id="online-orders-message" class="hidden mx-4 mt-4 rounded-xl border p-3 text-sm" role="status"></p>
+                <p id="mobile-orders-filter-message" class="mobile-only hidden mx-4 mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-300" role="status"></p>
                 <div id="online-orders-list" class="hidden p-4 grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
             </section>
 
-            <section class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" aria-labelledby="add-driver-title">
+            <section data-dispatcher-mobile-section="drivers" class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" aria-labelledby="add-driver-title">
                 <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800">
                     <h2 id="add-driver-title" class="font-extrabold">Добавить водителя</h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">UID можно оставить пустым и привязать позже.</p>
@@ -197,7 +230,7 @@
                 </form>
             </section>
 
-            <section class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" aria-labelledby="orders-link-title">
+            <section data-dispatcher-mobile-section="settings" class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" aria-labelledby="orders-link-title">
                 <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800">
                     <h2 id="orders-link-title" class="font-extrabold">Ссылка на рабочий чат заказов</h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Ссылка хранится в Firestore и выдаётся только активным водителям с разрешённым балансом.</p>
@@ -209,7 +242,7 @@
                 <p id="orders-link-message" class="hidden px-5 pb-5 text-sm" role="status"></p>
             </section>
 
-            <section class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" aria-labelledby="drivers-list-title">
+            <section data-dispatcher-mobile-section="drivers" class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" aria-labelledby="drivers-list-title">
                 <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-3">
                     <div class="flex-grow">
                         <h2 id="drivers-list-title" class="font-extrabold">Водители и балансы</h2>

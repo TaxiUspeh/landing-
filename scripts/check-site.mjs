@@ -291,6 +291,12 @@ for (const expected of [
   'id="online-orders-list"',
   'id="expand-online-orders"',
   'id="collapse-online-orders"',
+  'id="dispatcher-mobile-navigation"',
+  'data-dispatcher-mobile-section="orders"',
+  'data-dispatcher-mobile-section="drivers"',
+  'data-dispatcher-mobile-section="settings"',
+  'id="mobile-orders-current-button"',
+  'id="mobile-orders-history-button"',
   'id="orders-stat-searching"',
   'На линии',
   'Свободны',
@@ -348,7 +354,7 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v22-collapsible-dispatcher-orders'")) failures.push('service-worker.js: collapsible-dispatcher-orders cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v23-mobile-dispatcher-navigation'")) failures.push('service-worker.js: mobile-dispatcher-navigation cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
 if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
@@ -506,6 +512,12 @@ for (const expected of [
   'setOrderExpanded(orderId, expanded)',
   'setAllOrdersExpanded(expanded)',
   'expandedOrderIds',
+  "mobileDispatcherSection = 'orders'",
+  "mobileOrdersView = 'current'",
+  'setMobileDispatcherSection(section',
+  'setMobileOrdersView(view)',
+  'updateMobileOrdersFilter(currentCount, historyCount)',
+  'dataset.orderHistory',
   "resolveClientCancellation(order, 'free')",
   "resolveClientCancellation(order, 'false_call_fee')",
   'Ложный вызов · 500 ₸'

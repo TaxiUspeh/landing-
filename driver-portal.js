@@ -155,6 +155,8 @@ let dispatcherChatExpanded = false;
 let driverChatMessages = [];
 let driverChatLoaded = false;
 let driverChatSendInProgress = false;
+let driverChatInitialLoaded = false;
+let dispatcherChatHasNewReply = false;
 
 function setHidden(element, hidden) {
     if (element) element.classList.toggle('hidden', hidden);
@@ -208,7 +210,7 @@ function updateOrderAlertsControls() {
         toggleIcon.className = 'fas fa-bell mr-2';
         toggleLabel.textContent = 'Включить уведомления';
         statusIcon.className = 'fas fa-bell-slash';
-        elements.alertsStatus.textContent = 'Нажмите кнопку, чтобы включить звук, вибрацию и уведомления телефона.';
+        elements.alertsStatus.textContent = 'Нажмите кнопку, чтобы включить сигналы новых заказов и сообщений диспетчера.';
         setHidden(elements.alertsTest, true);
         return;
     }
@@ -220,13 +222,13 @@ function updateOrderAlertsControls() {
     setHidden(elements.alertsTest, false);
 
     if (permission === 'granted') {
-        elements.alertsStatus.textContent = 'Включены звук, вибрация и уведомления в верхней панели телефона.';
+        elements.alertsStatus.textContent = 'Включены звук, вибрация и уведомления о заказах и сообщениях диспетчера.';
     } else if (permission === 'denied') {
-        elements.alertsStatus.textContent = 'Звук и вибрация включены. Системные уведомления заблокированы в настройках браузера.';
+        elements.alertsStatus.textContent = 'Звук и вибрация заказов и чата включены. Системные уведомления заблокированы в настройках браузера.';
     } else if (permission === 'unsupported') {
-        elements.alertsStatus.textContent = 'Звук и вибрация включены. Этот браузер не поддерживает системные уведомления.';
+        elements.alertsStatus.textContent = 'Звук и вибрация заказов и чата включены. Этот браузер не поддерживает системные уведомления.';
     } else {
-        elements.alertsStatus.textContent = 'Звук и вибрация включены. Разрешите системные уведомления при следующем включении.';
+        elements.alertsStatus.textContent = 'Звук и вибрация заказов и чата включены. Разрешите системные уведомления при следующем включении.';
     }
 }
 
@@ -267,8 +269,35 @@ async function playOrderSound() {
     }
 }
 
+async function playChatSound() {
+    try {
+        const context = await prepareOrderSound();
+        if (!context || context.state !== 'running') return;
+        const startAt = context.currentTime;
+        for (const [offset, frequency] of [[0, 659], [0.16, 784]]) {
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.value = frequency;
+            gain.gain.setValueAtTime(0.0001, startAt + offset);
+            gain.gain.exponentialRampToValueAtTime(0.11, startAt + offset + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startAt + offset + 0.13);
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+            oscillator.start(startAt + offset);
+            oscillator.stop(startAt + offset + 0.14);
+        }
+    } catch (error) {
+        console.warn('Звуковой сигнал чата недоступен:', error.message);
+    }
+}
+
 function vibrateForOrder() {
     if ('vibrate' in navigator) navigator.vibrate([180, 90, 180]);
+}
+
+function vibrateForChat() {
+    if ('vibrate' in navigator) navigator.vibrate([90, 70, 90]);
 }
 
 function hideNewOrderAlert() {
@@ -360,14 +389,14 @@ async function testOrderAlerts() {
     await prepareOrderSound().catch(() => null);
     showNewOrderAlert({
         title: 'Проверка уведомлений',
-        route: 'Звук, вибрация и сообщение в кабинете работают',
+        route: 'Звук, вибрация и сообщения о заказах и чате работают',
         price: 'Это не настоящий заказ'
     });
     void playOrderSound();
     vibrateForOrder();
     await showSystemNotification({
         title: 'Проверка — Такси «Успех»',
-        body: 'Уведомления о новых заказах включены.',
+        body: 'Уведомления о новых заказах и сообщениях включены.',
         tag: 'taxi-uspeh-driver-alert-test',
         url: './drivers.html#driver-online-orders'
     });
@@ -503,6 +532,7 @@ function updateDriverChatControls() {
     if (elements.dispatcherChatSummary) {
         const latest = [...driverChatMessages].sort((a, b) => driverChatMillis(b) - driverChatMillis(a))[0];
         if (dispatcherChatExpanded) elements.dispatcherChatSummary.textContent = 'Свернуть переписку';
+        else if (dispatcherChatHasNewReply) elements.dispatcherChatSummary.textContent = 'Новое сообщение от диспетчера';
         else if (latest) elements.dispatcherChatSummary.textContent = `Последнее: ${latest.sender === 'dispatcher' ? 'диспетчер' : 'вы'} · ${driverChatTime(latest)}`;
         else if (driverChatLoaded) elements.dispatcherChatSummary.textContent = 'Переписка пока пуста';
         else elements.dispatcherChatSummary.textContent = 'Нажмите, чтобы написать диспетчеру';
@@ -537,6 +567,8 @@ function stopDriverChatWatch(clearData = false) {
     if (clearData) {
         driverChatMessages = [];
         driverChatLoaded = false;
+        driverChatInitialLoaded = false;
+        dispatcherChatHasNewReply = false;
     }
     driverChatSendInProgress = false;
     setHidden(elements.dispatcherChatLoading, false);
@@ -550,6 +582,7 @@ function watchDriverChat(user, driverId) {
     const normalizedDriverId = String(driverId || '');
     if (!user || !normalizedDriverId || unsubscribeDispatcherChat) return;
     driverChatLoaded = false;
+    driverChatInitialLoaded = false;
     setHidden(elements.dispatcherChatLoading, false);
     unsubscribeDispatcherChat = onSnapshot(
         query(
@@ -560,9 +593,16 @@ function watchDriverChat(user, driverId) {
             limit(100)
         ),
         (snapshot) => {
+            const incomingReplies = driverChatInitialLoaded
+                ? snapshot.docChanges()
+                    .filter((change) => change.type === 'added' && change.doc.data().sender === 'dispatcher')
+                    .map((change) => ({ id: change.doc.id, ...change.doc.data() }))
+                : [];
             driverChatMessages = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
             driverChatLoaded = true;
             renderDriverChat();
+            driverChatInitialLoaded = true;
+            if (incomingReplies.length) signalDispatcherChatReply();
         },
         (error) => {
             console.warn('Чат с диспетчером не загрузился:', error.code || error.message);
@@ -582,7 +622,16 @@ function watchDriverChat(user, driverId) {
 
 function toggleDispatcherChat() {
     dispatcherChatExpanded = !dispatcherChatExpanded;
+    if (dispatcherChatExpanded) dispatcherChatHasNewReply = false;
     updateDriverChatControls();
+}
+
+function signalDispatcherChatReply() {
+    dispatcherChatHasNewReply = true;
+    updateDriverChatControls();
+    if (!orderAlertsEnabled) return;
+    void playChatSound();
+    vibrateForChat();
 }
 
 async function sendDriverChatMessage(event) {

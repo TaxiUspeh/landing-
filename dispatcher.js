@@ -59,6 +59,7 @@ const elements = {
     dispatcherMessagesEmpty: document.getElementById('dispatcher-messages-empty'),
     dispatcherMessagesContent: document.getElementById('dispatcher-messages-content'),
     dispatcherMessagesUnread: document.getElementById('dispatcher-messages-unread'),
+    dispatcherMessagesSoundToggle: document.getElementById('dispatcher-messages-sound-toggle'),
     dispatcherMessagesConversations: document.getElementById('dispatcher-messages-conversations'),
     dispatcherMessagesConversationTitle: document.getElementById('dispatcher-messages-conversation-title'),
     dispatcherMessagesConversationDetail: document.getElementById('dispatcher-messages-conversation-detail'),
@@ -119,6 +120,10 @@ let cancellationDecisionInProgress = false;
 let dispatcherMessageSendInProgress = false;
 let driverStatusRefreshTimer = null;
 let selectedDriverMessageUid = '';
+let dispatcherChatSoundEnabled = readDispatcherChatSoundPreference();
+let dispatcherChatAudioContext = null;
+let dispatcherMessagesInitialLoaded = false;
+const DISPATCHER_CHAT_SOUND_KEY = 'taxi-uspeh-dispatcher-chat-sound';
 const DRIVER_CONNECTION_TIMEOUT_MS = 3 * 60 * 1000;
 const REQUEUE_REASON_LABELS = {
     car_issue: 'Неисправность автомобиля',
@@ -513,6 +518,82 @@ function setOnlineOrdersSectionCollapsed(collapsed) {
     toggle.querySelector('span').textContent = collapsed ? 'Развернуть заказы' : 'Свернуть заказы';
 }
 
+function readDispatcherChatSoundPreference() {
+    try {
+        return localStorage.getItem('taxi-uspeh-dispatcher-chat-sound') === 'enabled';
+    } catch {
+        return false;
+    }
+}
+
+function saveDispatcherChatSoundPreference() {
+    try {
+        localStorage.setItem(DISPATCHER_CHAT_SOUND_KEY, dispatcherChatSoundEnabled ? 'enabled' : 'disabled');
+    } catch (error) {
+        console.warn('Не удалось сохранить настройку звука чата:', error.message);
+    }
+}
+
+function updateDispatcherChatSoundControl() {
+    const toggle = elements.dispatcherMessagesSoundToggle;
+    if (!toggle) return;
+    const icon = toggle.querySelector('i');
+    const label = toggle.querySelector('span');
+    if (dispatcherChatSoundEnabled) {
+        toggle.className = 'rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-extrabold text-red-700 dark:border-red-800 dark:bg-slate-800 dark:text-red-300';
+        icon.className = 'fas fa-volume-xmark mr-1';
+        label.textContent = 'Отключить звук чата';
+    } else {
+        toggle.className = 'rounded-xl border border-sky-300 bg-white px-3 py-2 text-xs font-extrabold text-sky-800 dark:border-sky-700 dark:bg-slate-800 dark:text-sky-200';
+        icon.className = 'fas fa-volume-high mr-1';
+        label.textContent = 'Включить звук чата';
+    }
+}
+
+function getDispatcherChatAudioContext() {
+    if (dispatcherChatAudioContext) return dispatcherChatAudioContext;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    dispatcherChatAudioContext = new AudioContextClass();
+    return dispatcherChatAudioContext;
+}
+
+async function prepareDispatcherChatSound() {
+    const context = getDispatcherChatAudioContext();
+    if (context?.state === 'suspended') await context.resume();
+    return context;
+}
+
+async function playDispatcherChatSound() {
+    try {
+        const context = await prepareDispatcherChatSound();
+        if (!context || context.state !== 'running') return;
+        const startAt = context.currentTime;
+        for (const [offset, frequency] of [[0, 740], [0.16, 880]]) {
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.value = frequency;
+            gain.gain.setValueAtTime(0.0001, startAt + offset);
+            gain.gain.exponentialRampToValueAtTime(0.12, startAt + offset + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startAt + offset + 0.13);
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+            oscillator.start(startAt + offset);
+            oscillator.stop(startAt + offset + 0.14);
+        }
+    } catch (error) {
+        console.warn('Звуковой сигнал чата недоступен:', error.message);
+    }
+}
+
+async function toggleDispatcherChatSound() {
+    dispatcherChatSoundEnabled = !dispatcherChatSoundEnabled;
+    saveDispatcherChatSoundPreference();
+    if (dispatcherChatSoundEnabled) await prepareDispatcherChatSound().catch(() => null);
+    updateDispatcherChatSoundControl();
+}
+
 function driverMessageMillis(message) {
     return message.createdAt?.toMillis ? message.createdAt.toMillis() : 0;
 }
@@ -671,6 +752,7 @@ function stopDriverMessagesListener() {
     driverMessages = [];
     selectedDriverMessageUid = '';
     dispatcherMessageSendInProgress = false;
+    dispatcherMessagesInitialLoaded = false;
     setHidden(elements.dispatcherMessagesLoading, false);
     setHidden(elements.dispatcherMessagesEmpty, true);
     setHidden(elements.dispatcherMessagesContent, true);
@@ -681,11 +763,18 @@ function stopDriverMessagesListener() {
 function startDriverMessagesListener() {
     setHidden(elements.dispatcherMessagesLoading, false);
     setMessage(elements.dispatcherMessagesStatus, '');
+    dispatcherMessagesInitialLoaded = false;
+    updateDispatcherChatSoundControl();
     unsubscribeDriverMessages = onSnapshot(
         query(collection(db, 'driverMessages'), orderBy('createdAt', 'desc'), limit(200)),
         (snapshot) => {
+            const newDriverMessages = dispatcherMessagesInitialLoaded
+                ? snapshot.docChanges().filter((change) => change.type === 'added' && change.doc.data().sender === 'driver')
+                : [];
             driverMessages = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
             renderDriverMessages();
+            dispatcherMessagesInitialLoaded = true;
+            if (newDriverMessages.length && dispatcherChatSoundEnabled) void playDispatcherChatSound();
             if (selectedDriverMessageUid) void markDriverMessagesRead(selectedDriverMessageUid);
         },
         (error) => {
@@ -1647,7 +1736,13 @@ elements.mobileSectionButtons.forEach((button) => {
 });
 elements.mobileOrdersCurrentButton.addEventListener('click', () => setMobileOrdersView('current'));
 elements.mobileOrdersHistoryButton.addEventListener('click', () => setMobileOrdersView('history'));
+elements.dispatcherMessagesSoundToggle?.addEventListener('click', () => void toggleDispatcherChatSound());
 setMobileDispatcherSection('orders', false);
+
+if (dispatcherChatSoundEnabled) {
+    document.addEventListener('pointerdown', () => void prepareDispatcherChatSound(), { once: true });
+}
+updateDispatcherChatSoundControl();
 
 getRedirectResult(auth).catch((error) => {
     console.error('Ошибка возврата из Google:', error);

@@ -114,22 +114,26 @@
             </nav>
 
             <section data-dispatcher-mobile-section="orders" class="grid grid-cols-2 lg:grid-cols-4 gap-3" aria-label="Сводка по водителям">
-                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+                <button type="button" data-driver-stat-filter="all" class="text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-blue-300 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" aria-haspopup="dialog">
                     <p class="text-xs text-slate-500 dark:text-slate-400">Всего</p>
                     <p id="stat-total" class="text-2xl font-black">0</p>
-                </div>
-                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+                    <p class="mt-1 text-[11px] font-bold text-blue-600 dark:text-blue-300">Показать водителей</p>
+                </button>
+                <button type="button" data-driver-stat-filter="connected" class="text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-blue-300 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" aria-haspopup="dialog">
                     <p class="text-xs text-slate-500 dark:text-slate-400">В кабинете</p>
                     <p id="stat-active" class="text-2xl font-black text-blue-600 dark:text-blue-400">0</p>
-                </div>
-                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+                    <p class="mt-1 text-[11px] font-bold text-blue-600 dark:text-blue-300">Кто сейчас на связи</p>
+                </button>
+                <button type="button" data-driver-stat-filter="available" class="text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-blue-300 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" aria-haspopup="dialog">
                     <p class="text-xs text-slate-500 dark:text-slate-400">Свободны</p>
                     <p id="stat-allowed" class="text-2xl font-black text-green-600 dark:text-green-400">0</p>
-                </div>
-                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+                    <p class="mt-1 text-[11px] font-bold text-green-700 dark:text-green-300">Показать список</p>
+                </button>
+                <button type="button" data-driver-stat-filter="busy" class="text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-blue-300 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" aria-haspopup="dialog">
                     <p class="text-xs text-slate-500 dark:text-slate-400">Заняты</p>
                     <p id="stat-blocked" class="text-2xl font-black text-amber-600 dark:text-amber-400">0</p>
-                </div>
+                    <p class="mt-1 text-[11px] font-bold text-amber-700 dark:text-amber-300">Показать список</p>
+                </button>
             </section>
 
             <section data-dispatcher-mobile-section="orders" class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-blue-200 dark:border-blue-900 overflow-hidden" aria-labelledby="online-orders-title">
@@ -141,51 +145,65 @@
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Заказы и статусы обновляются автоматически. WhatsApp продолжает работать отдельно.</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
-                        <button id="expand-online-orders" type="button" class="rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-extrabold text-slate-700 dark:text-slate-200">
-                            <i class="fas fa-expand-alt mr-1" aria-hidden="true"></i>Развернуть
-                        </button>
-                        <button id="collapse-online-orders" type="button" class="rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-extrabold text-slate-700 dark:text-slate-200">
-                            <i class="fas fa-compress-alt mr-1" aria-hidden="true"></i>Свернуть
+                        <button id="toggle-online-orders-section" type="button" aria-expanded="true" aria-controls="online-orders-content" class="rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-extrabold text-slate-700 dark:text-slate-200">
+                            <i class="fas fa-compress-alt mr-1" aria-hidden="true"></i><span>Свернуть заказы</span>
                         </button>
                         <span class="rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-3 py-1 text-xs font-extrabold">В реальном времени</span>
                     </div>
                 </div>
-                <div class="p-4 grid grid-cols-3 gap-3 border-b border-slate-200 dark:border-slate-800" aria-label="Сводка по онлайн-заказам">
-                    <div class="rounded-xl bg-amber-50 dark:bg-amber-900/20 p-3">
-                        <p class="text-[11px] text-amber-800 dark:text-amber-300">Ищут водителя</p>
-                        <p id="orders-stat-searching" class="text-xl font-black text-amber-700 dark:text-amber-300">0</p>
+                <div id="online-orders-content">
+                    <div class="p-4 grid grid-cols-3 gap-3 border-b border-slate-200 dark:border-slate-800" aria-label="Сводка по онлайн-заказам">
+                        <div class="rounded-xl bg-amber-50 dark:bg-amber-900/20 p-3">
+                            <p class="text-[11px] text-amber-800 dark:text-amber-300">Ищут водителя</p>
+                            <p id="orders-stat-searching" class="text-xl font-black text-amber-700 dark:text-amber-300">0</p>
+                        </div>
+                        <div class="rounded-xl bg-blue-50 dark:bg-blue-900/20 p-3">
+                            <p class="text-[11px] text-blue-800 dark:text-blue-300">В работе</p>
+                            <p id="orders-stat-active" class="text-xl font-black text-blue-700 dark:text-blue-300">0</p>
+                        </div>
+                        <div class="rounded-xl bg-green-50 dark:bg-green-900/20 p-3">
+                            <p class="text-[11px] text-green-800 dark:text-green-300">Завершено</p>
+                            <p id="orders-stat-completed" class="text-xl font-black text-green-700 dark:text-green-300">0</p>
+                        </div>
                     </div>
-                    <div class="rounded-xl bg-blue-50 dark:bg-blue-900/20 p-3">
-                        <p class="text-[11px] text-blue-800 dark:text-blue-300">В работе</p>
-                        <p id="orders-stat-active" class="text-xl font-black text-blue-700 dark:text-blue-300">0</p>
+                    <div class="mobile-only px-4 pt-4">
+                        <div class="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="tablist" aria-label="Отбор онлайн-заказов">
+                            <button id="mobile-orders-current-button" type="button" role="tab" aria-selected="true" class="rounded-lg bg-white px-3 py-2 text-xs font-extrabold text-blue-700 shadow-sm dark:bg-slate-900 dark:text-blue-300">
+                                Текущие <span id="mobile-orders-current-count">0</span>
+                            </button>
+                            <button id="mobile-orders-history-button" type="button" role="tab" aria-selected="false" class="rounded-lg px-3 py-2 text-xs font-extrabold text-slate-600 dark:text-slate-300">
+                                История <span id="mobile-orders-history-count">0</span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="rounded-xl bg-green-50 dark:bg-green-900/20 p-3">
-                        <p class="text-[11px] text-green-800 dark:text-green-300">Завершено</p>
-                        <p id="orders-stat-completed" class="text-xl font-black text-green-700 dark:text-green-300">0</p>
+                    <div id="online-orders-loading" class="p-6 text-sm text-slate-500 dark:text-slate-400" role="status">
+                        <i class="fas fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Загружаем онлайн-заказы…
                     </div>
-                </div>
-                <div class="mobile-only px-4 pt-4">
-                    <div class="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="tablist" aria-label="Отбор онлайн-заказов">
-                        <button id="mobile-orders-current-button" type="button" role="tab" aria-selected="true" class="rounded-lg bg-white px-3 py-2 text-xs font-extrabold text-blue-700 shadow-sm dark:bg-slate-900 dark:text-blue-300">
-                            Текущие <span id="mobile-orders-current-count">0</span>
-                        </button>
-                        <button id="mobile-orders-history-button" type="button" role="tab" aria-selected="false" class="rounded-lg px-3 py-2 text-xs font-extrabold text-slate-600 dark:text-slate-300">
-                            История <span id="mobile-orders-history-count">0</span>
-                        </button>
+                    <div id="online-orders-empty" class="hidden p-8 text-center text-slate-500 dark:text-slate-400">
+                        <i class="fas fa-route text-3xl mb-3" aria-hidden="true"></i>
+                        <p class="font-bold">Онлайн-заказов пока нет</p>
+                        <p class="text-xs mt-1">Новый заказ клиента появится здесь автоматически.</p>
                     </div>
+                    <p id="online-orders-message" class="hidden mx-4 mt-4 rounded-xl border p-3 text-sm" role="status"></p>
+                    <p id="mobile-orders-filter-message" class="mobile-only hidden mx-4 mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-300" role="status"></p>
+                    <div id="online-orders-list" class="hidden p-4 grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
                 </div>
-                <div id="online-orders-loading" class="p-6 text-sm text-slate-500 dark:text-slate-400" role="status">
-                    <i class="fas fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Загружаем онлайн-заказы…
-                </div>
-                <div id="online-orders-empty" class="hidden p-8 text-center text-slate-500 dark:text-slate-400">
-                    <i class="fas fa-route text-3xl mb-3" aria-hidden="true"></i>
-                    <p class="font-bold">Онлайн-заказов пока нет</p>
-                    <p class="text-xs mt-1">Новый заказ клиента появится здесь автоматически.</p>
-                </div>
-                <p id="online-orders-message" class="hidden mx-4 mt-4 rounded-xl border p-3 text-sm" role="status"></p>
-                <p id="mobile-orders-filter-message" class="mobile-only hidden mx-4 mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-300" role="status"></p>
-                <div id="online-orders-list" class="hidden p-4 grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
             </section>
+
+            <div id="driver-summary-modal" class="hidden fixed inset-0 z-50 flex items-end bg-slate-950/60 p-3 sm:items-center sm:justify-center" role="dialog" aria-modal="true" aria-labelledby="driver-summary-title">
+                <section class="max-h-[82vh] w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
+                    <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+                        <div>
+                            <h2 id="driver-summary-title" class="font-extrabold">Водители</h2>
+                            <p id="driver-summary-description" class="mt-1 text-xs text-slate-500 dark:text-slate-400"></p>
+                        </div>
+                        <button id="driver-summary-close" type="button" class="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Закрыть список водителей">
+                            <i class="fas fa-xmark text-lg" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div id="driver-summary-list" class="max-h-[62vh] space-y-3 overflow-y-auto p-4"></div>
+                </section>
+            </div>
 
             <section data-dispatcher-mobile-section="drivers" class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" aria-labelledby="add-driver-title">
                 <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800">

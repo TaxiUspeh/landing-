@@ -291,8 +291,11 @@ for (const expected of [
   'id="add-driver-form"',
   'id="online-orders-title"',
   'id="online-orders-list"',
-  'id="expand-online-orders"',
-  'id="collapse-online-orders"',
+  'id="toggle-online-orders-section"',
+  'id="online-orders-content"',
+  'data-driver-stat-filter="all"',
+  'data-driver-stat-filter="connected"',
+  'id="driver-summary-modal"',
   'id="dispatcher-mobile-navigation"',
   'data-dispatcher-mobile-section="orders"',
   'data-dispatcher-mobile-section="drivers"',
@@ -356,7 +359,7 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v25-manual-driver-id-assignment'")) failures.push('service-worker.js: manual-driver-id-assignment cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v26-driver-summary-panel'")) failures.push('service-worker.js: driver-summary-panel cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
 if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
@@ -514,7 +517,9 @@ for (const expected of [
   'Кабинет водителя ID',
   'Подробнее и действия',
   'setOrderExpanded(orderId, expanded)',
-  'setAllOrdersExpanded(expanded)',
+  'openDriverSummary(filter)',
+  'driverSummaryFilterDetails(filter)',
+  'setOnlineOrdersSectionCollapsed(collapsed)',
   'expandedOrderIds',
   "mobileDispatcherSection = 'orders'",
   "mobileOrdersView = 'current'",

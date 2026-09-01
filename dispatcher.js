@@ -45,8 +45,14 @@ const elements = {
     onlineOrdersEmpty: document.getElementById('online-orders-empty'),
     onlineOrdersList: document.getElementById('online-orders-list'),
     onlineOrdersMessage: document.getElementById('online-orders-message'),
-    expandOnlineOrders: document.getElementById('expand-online-orders'),
-    collapseOnlineOrders: document.getElementById('collapse-online-orders'),
+    onlineOrdersContent: document.getElementById('online-orders-content'),
+    toggleOnlineOrdersSection: document.getElementById('toggle-online-orders-section'),
+    driverStatsButtons: [...document.querySelectorAll('[data-driver-stat-filter]')],
+    driverSummaryModal: document.getElementById('driver-summary-modal'),
+    driverSummaryTitle: document.getElementById('driver-summary-title'),
+    driverSummaryDescription: document.getElementById('driver-summary-description'),
+    driverSummaryList: document.getElementById('driver-summary-list'),
+    driverSummaryClose: document.getElementById('driver-summary-close'),
     mobileNavigation: document.getElementById('dispatcher-mobile-navigation'),
     mobileSectionButtons: [...document.querySelectorAll('[data-dispatcher-section-button]')],
     mobileSections: [...document.querySelectorAll('[data-dispatcher-mobile-section]')],
@@ -84,6 +90,8 @@ let orderContacts = new Map();
 const expandedOrderIds = new Set();
 let mobileDispatcherSection = 'orders';
 let mobileOrdersView = 'current';
+let activeDriverSummaryFilter = '';
+let onlineOrdersSectionCollapsed = false;
 let unsubscribeDrivers = null;
 let unsubscribeDriverStates = null;
 let unsubscribeOrders = null;
@@ -269,6 +277,8 @@ function stopAdminPanel() {
     orderContacts = new Map();
     if (driverStatusRefreshTimer) clearInterval(driverStatusRefreshTimer);
     driverStatusRefreshTimer = null;
+    closeDriverSummary();
+    setOnlineOrdersSectionCollapsed(false);
     setHidden(elements.panel, true);
     setHidden(elements.driversList, true);
     setHidden(elements.driversEmpty, true);
@@ -312,11 +322,22 @@ function timestampMillis(value) {
     return 0;
 }
 
-function driverAvailabilityInfo(driver) {
+function isDriverConnected(driver) {
     const uid = normalizeUid(driver.authUid || '');
     const state = uid ? driverStates.get(uid) : null;
     const lastSeen = timestampMillis(state?.lastSeen);
-    const connected = lastSeen > 0 && Date.now() - lastSeen <= DRIVER_CONNECTION_TIMEOUT_MS;
+    return Boolean(
+        uid
+        && (state?.status === 'available' || state?.status === 'busy')
+        && lastSeen > 0
+        && Date.now() - lastSeen <= DRIVER_CONNECTION_TIMEOUT_MS
+    );
+}
+
+function driverAvailabilityInfo(driver) {
+    const uid = normalizeUid(driver.authUid || '');
+    const state = uid ? driverStates.get(uid) : null;
+    const connected = isDriverConnected(driver);
 
     if (state?.status === 'busy' && state.activeOrderId) {
         const order = orders.find((item) => item.id === state.activeOrderId);
@@ -371,13 +392,104 @@ function driverAvailabilityInfo(driver) {
 
 function updateStats() {
     const states = drivers.map(driverAvailabilityInfo);
-    const onLine = states.filter((state) => state.key === 'available' || state.key === 'busy').length;
+    const onLine = drivers.filter(isDriverConnected).length;
     const available = states.filter((state) => state.key === 'available').length;
     const busy = states.filter((state) => state.key === 'busy').length;
     elements.total.textContent = String(drivers.length);
     elements.active.textContent = String(onLine);
     elements.allowed.textContent = String(available);
     elements.blocked.textContent = String(busy);
+    if (activeDriverSummaryFilter) renderDriverSummary(activeDriverSummaryFilter);
+}
+
+function driverSummaryFilterDetails(filter) {
+    return ({
+        all: {
+            title: 'Все водители',
+            description: 'Все карточки водителей в диспетчерской.',
+            matches: () => true
+        },
+        connected: {
+            title: 'Водители в кабинете',
+            description: 'Кабинет открыт и связь с водителем есть сейчас.',
+            matches: (_state, driver) => isDriverConnected(driver)
+        },
+        available: {
+            title: 'Свободные водители',
+            description: 'Могут принять следующий онлайн-заказ.',
+            matches: (state) => state.key === 'available'
+        },
+        busy: {
+            title: 'Занятые водители',
+            description: 'Выполняют назначенный онлайн-заказ.',
+            matches: (state) => state.key === 'busy'
+        }
+    })[filter] || null;
+}
+
+function renderDriverSummary(filter) {
+    const config = driverSummaryFilterDetails(filter);
+    if (!config) return;
+    const matchingDrivers = drivers
+        .map((driver) => ({ driver, state: driverAvailabilityInfo(driver) }))
+        .filter(({ driver, state }) => config.matches(state, driver))
+        .sort((first, second) => Number(first.driver.driverNumber ?? first.driver.id) - Number(second.driver.driverNumber ?? second.driver.id));
+
+    elements.driverSummaryTitle.textContent = config.title;
+    elements.driverSummaryDescription.textContent = matchingDrivers.length
+        ? `${config.description} Сейчас: ${matchingDrivers.length}.`
+        : `${config.description} Сейчас список пуст.`;
+    elements.driverSummaryList.replaceChildren();
+
+    if (!matchingDrivers.length) {
+        elements.driverSummaryList.append(createOrderText(
+            'p',
+            'rounded-xl bg-slate-100 p-4 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+            'В этом списке пока нет водителей.'
+        ));
+        return;
+    }
+
+    for (const { driver, state } of matchingDrivers) {
+        const item = document.createElement('article');
+        item.className = 'rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/60';
+        const header = document.createElement('div');
+        header.className = 'flex items-start justify-between gap-3';
+        const details = document.createElement('div');
+        details.className = 'min-w-0';
+        details.append(
+            createOrderText('p', 'font-extrabold break-words', `ID ${driver.driverNumber ?? driver.id} · ${driver.name || 'Водитель'}`),
+            createOrderText('p', 'mt-1 text-xs text-slate-500 dark:text-slate-400 break-words', [driver.car, driver.color].filter(Boolean).join(', ') || 'Автомобиль не указан')
+        );
+        const badge = createOrderText('span', state.className, state.label);
+        header.append(details, badge);
+        item.append(header, createOrderText('p', 'mt-2 text-xs text-slate-600 dark:text-slate-300', state.detail));
+        elements.driverSummaryList.append(item);
+    }
+}
+
+function openDriverSummary(filter) {
+    const config = driverSummaryFilterDetails(filter);
+    if (!config) return;
+    activeDriverSummaryFilter = filter;
+    renderDriverSummary(filter);
+    setHidden(elements.driverSummaryModal, false);
+    document.body.classList.add('overflow-hidden');
+}
+
+function closeDriverSummary() {
+    activeDriverSummaryFilter = '';
+    setHidden(elements.driverSummaryModal, true);
+    document.body.classList.remove('overflow-hidden');
+}
+
+function setOnlineOrdersSectionCollapsed(collapsed) {
+    onlineOrdersSectionCollapsed = collapsed;
+    setHidden(elements.onlineOrdersContent, collapsed);
+    const toggle = elements.toggleOnlineOrdersSection;
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+    toggle.querySelector('i').className = `fas ${collapsed ? 'fa-expand-alt' : 'fa-compress-alt'} mr-1`;
+    toggle.querySelector('span').textContent = collapsed ? 'Развернуть заказы' : 'Свернуть заказы';
 }
 
 function applyDriverAvailability(card, driver) {
@@ -598,13 +710,6 @@ function orderDetailsId(orderId) {
 function setOrderExpanded(orderId, expanded) {
     if (expanded) expandedOrderIds.add(orderId);
     else expandedOrderIds.delete(orderId);
-    renderOnlineOrders();
-}
-
-function setAllOrdersExpanded(expanded) {
-    const visibleOrderIds = orders.slice(0, 50).map((order) => order.id);
-    if (expanded) visibleOrderIds.forEach((orderId) => expandedOrderIds.add(orderId));
-    else visibleOrderIds.forEach((orderId) => expandedOrderIds.delete(orderId));
     renderOnlineOrders();
 }
 
@@ -859,8 +964,6 @@ function renderOnlineOrders() {
     for (const orderId of Array.from(expandedOrderIds)) {
         if (!visibleOrderIds.has(orderId)) expandedOrderIds.delete(orderId);
     }
-    elements.expandOnlineOrders.disabled = sorted.length === 0;
-    elements.collapseOnlineOrders.disabled = sorted.length === 0;
     elements.onlineOrdersList.dataset.mobileOrderView = mobileOrdersView;
     updateMobileOrdersFilter(currentCount, historyCount);
     elements.onlineOrdersList.replaceChildren();
@@ -1274,8 +1377,21 @@ elements.copyUid.addEventListener('click', copyUid);
 elements.addDriverForm.addEventListener('submit', addDriver);
 elements.ordersLinkForm.addEventListener('submit', saveOrdersLink);
 elements.driverSearch.addEventListener('input', renderDrivers);
-elements.expandOnlineOrders.addEventListener('click', () => setAllOrdersExpanded(true));
-elements.collapseOnlineOrders.addEventListener('click', () => setAllOrdersExpanded(false));
+elements.toggleOnlineOrdersSection.addEventListener('click', () => {
+    setOnlineOrdersSectionCollapsed(!onlineOrdersSectionCollapsed);
+});
+elements.driverStatsButtons.forEach((button) => {
+    button.addEventListener('click', () => openDriverSummary(button.dataset.driverStatFilter));
+});
+elements.driverSummaryClose.addEventListener('click', closeDriverSummary);
+elements.driverSummaryModal.addEventListener('click', (event) => {
+    if (event.target === elements.driverSummaryModal) closeDriverSummary();
+});
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !elements.driverSummaryModal.classList.contains('hidden')) {
+        closeDriverSummary();
+    }
+});
 elements.mobileSectionButtons.forEach((button) => {
     button.addEventListener('click', () => setMobileDispatcherSection(button.dataset.dispatcherSectionButton));
 });

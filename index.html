@@ -2111,13 +2111,58 @@
             { name: "Касым Кайсенов", keys: ["касым кайсенов", "касым-кайсенов", "молодежный", "кайсенов"], min: 8800, max: 9660 }
         ];
 
+        function intercityRateForCity(city) {
+            return city ? INTERCITY_RATES.find(rate => rate.name === city) || null : null;
+        }
+
         function selectedIntercityRate(selectId) {
-            const selectedCity = document.getElementById(selectId)?.value || '';
-            return selectedCity ? INTERCITY_RATES.find(rate => rate.name === selectedCity) || null : null;
+            return intercityRateForCity(document.getElementById(selectId)?.value || '');
         }
 
         function selectedTaxiCity(selectId) {
             return document.getElementById(selectId)?.value || 'Белоусовка';
+        }
+
+        function fillTaxiStopCityOptions(select) {
+            const cityTemplate = document.getElementById('taxiCitySelect');
+            if (!select || !cityTemplate) return;
+            select.innerHTML = cityTemplate.innerHTML;
+        }
+
+        function getTaxiStopPoints() {
+            const container = document.getElementById('additionalStops');
+            if (!container) return [];
+            return Array.from(container.querySelectorAll('.additional-stop-item')).map((stop) => {
+                const address = stop.querySelector('[data-taxi-stop-address], input')?.value.trim() || '';
+                const city = stop.querySelector('[data-taxi-stop-city]')?.value || 'Белоусовка';
+                return { address, city };
+            }).filter((point) => point.address);
+        }
+
+        function getTaxiRatePoints() {
+            const fromAddress = document.getElementById('taxiFrom')?.value.trim() || '';
+            const toAddress = document.getElementById('taxiTo')?.value.trim() || '';
+            return [
+                { address: fromAddress, city: selectedTaxiCity('taxiFromCitySelect') },
+                ...getTaxiStopPoints(),
+                { address: toAddress, city: selectedTaxiCity('taxiCitySelect') }
+            ];
+        }
+
+        function getTaxiRoutePoints() {
+            return getTaxiRatePoints().filter((point) => point.address);
+        }
+
+        function calculateTaxiDatabaseFallback() {
+            const points = getTaxiRatePoints();
+            const rates = points.map((point) => intercityRateForCity(point.city)).filter(Boolean);
+            if (!rates.length) return null;
+            return {
+                min: rates.reduce((total, rate) => total + rate.min, 0),
+                max: rates.reduce((total, rate) => total + rate.max, 0),
+                routeLabel: points.map((point) => point.city).join(' → '),
+                usesSeveralBaseRates: rates.length > 1
+            };
         }
 
         function ensureTaxiFromCityOptions() {
@@ -2606,9 +2651,11 @@
             return null;
         }
 
-        async function getRouteDistance(coord1, coord2) {
+        async function getRouteDistance(coordinates) {
+            if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
             try {
-                const url = `https://router.project-osrm.org/route/v1/driving/${coord1.lon},${coord1.lat};${coord2.lon},${coord2.lat}?overview=false`;
+                const routeCoordinates = coordinates.map((coord) => `${coord.lon},${coord.lat}`).join(';');
+                const url = `https://router.project-osrm.org/route/v1/driving/${routeCoordinates}?overview=false`;
                 const response = await fetchWithTimeout(url);
                 if (!response.ok) return null;
                 const data = await response.json();
@@ -2626,27 +2673,19 @@
         }
 
         async function calculateTaxiPriceOSRM() {
-            const fromInput = document.getElementById('taxiFrom')?.value.trim() || '';
-            const toInput = document.getElementById('taxiTo')?.value.trim() || '';
             const priceEl = document.getElementById('taxiPriceEstimate');
             const requestId = taxiRouteCalculationId;
-            const fromCity = selectedTaxiCity('taxiFromCitySelect');
-            const toCity = selectedTaxiCity('taxiCitySelect');
-            const rateFrom = selectedIntercityRate('taxiFromCitySelect');
-            const rateTo = selectedIntercityRate('taxiCitySelect');
-            const isIntercity = Boolean(rateFrom || rateTo);
-            const hasDatabaseFallback = isIntercity && !(rateFrom && rateTo);
+            const routePoints = getTaxiRoutePoints();
+            const databaseFallback = calculateTaxiDatabaseFallback();
+            const isIntercity = Boolean(databaseFallback);
 
-            if (fromInput.length < 3 || toInput.length < 3 || !priceEl) return;
+            if (routePoints.length < 2 || routePoints.some((point) => point.address.length < 3) || !priceEl) return;
             setTaxiRouteHint('Считаем расстояние по маршруту…');
-            const [coordFrom, coordTo] = await Promise.all([
-                getCoordinates(fromInput, fromCity),
-                getCoordinates(toInput, toCity)
-            ]);
+            const coordinates = await Promise.all(routePoints.map((point) => getCoordinates(point.address, point.city)));
             if (requestId !== taxiRouteCalculationId) return;
 
-            if (coordFrom && coordTo) {
-                const distMeters = await getRouteDistance(coordFrom, coordTo);
+            if (coordinates.every(Boolean)) {
+                const distMeters = await getRouteDistance(coordinates);
                 if (requestId !== taxiRouteCalculationId) return;
                 if (distMeters !== null) {
                     const distKm = distMeters / 1000;
@@ -2670,15 +2709,15 @@
 
                     priceEl.innerText = `~ ${price} ₸`;
                     const routeText = isIntercity
-                        ? `${fromCity} → ${toCity} · ${distanceText} км · расчёт по маршруту`
+                        ? `${routePoints.map((point) => point.city).join(' → ')} · ${distanceText} км · расчёт по маршруту`
                         : `${distanceText} км · расчёт по маршруту`;
                     setTaxiRouteHint(routeText);
                     return;
                 }
             }
-            const fallbackMessage = hasDatabaseFallback
+            const fallbackMessage = databaseFallback
                 ? 'Показываем тариф из базы: маршрут временно не удалось построить.'
-                : (isIntercity ? 'Маршрут временно не удалось построить. Цену уточнит диспетчер.' : 'Маршрут временно не удалось построить.');
+                : 'Маршрут временно не удалось построить.';
             setTaxiRouteHint(fallbackMessage, 'fallback');
         }
         
@@ -3163,16 +3202,22 @@
             if (stopCounter >= 3) { displayMessageModal('Лимит', 'Максимальное количество дополнительных адресов (3) достигнуто.', false); return; }
             stopCounter++;
             const stopsContainer = document.getElementById(containerId);
+            if (!stopsContainer) return;
             const stopId = `${containerId}Input${stopCounter}`;
+            const stopCityId = `${stopId}City`;
             const stopLabel = `Дополнительный адрес ${stopCounter}`;
             const stopDiv = document.createElement('div');
-            stopDiv.className = "flex space-x-2 additional-stop-item input-with-plus-btn"; 
+            stopDiv.className = "additional-stop-item space-y-2.5";
             const divId = `stopDiv${containerId}${stopCounter}`;
             stopDiv.id = divId;
             const inputEvents = (mode === 'taxi') ? 'oninput="updateTaxiPrice()"' : '';
-            stopDiv.innerHTML = `<div class="input-wrapper"><i class="fas fa-map-marker-alt input-icon"></i><input id="${stopId}" name="${stopId}" type="text" list="toHistory" autocomplete="off" class="form-input-control pl-10" placeholder="${stopLabel} (обязательно)" required ${inputEvents}></div><button type="button" onclick="removeStop('${divId}', '${mode}')" class="remove-stop-btn btn-active" title="Удалить адрес"><i class="fas fa-minus"></i></button>`;
+            const citySelector = mode === 'taxi'
+                ? `<label class="block rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"><span class="mb-1 block"><i class="fas fa-city mr-1 text-amber-500"></i>Город дополнительной остановки</span><select id="${stopCityId}" data-taxi-stop-city class="form-input-control py-2 text-sm" onchange="updateTaxiPrice()"></select></label>`
+                : '';
+            stopDiv.innerHTML = `<div class="flex space-x-2 input-with-plus-btn"><div class="input-wrapper"><i class="fas fa-map-marker-alt input-icon"></i><input id="${stopId}" data-taxi-stop-address name="${stopId}" type="text" list="toHistory" autocomplete="off" class="form-input-control pl-10" placeholder="${stopLabel} (обязательно)" required ${inputEvents}></div><button type="button" onclick="removeStop('${divId}', '${mode}')" class="remove-stop-btn btn-active" title="Удалить адрес"><i class="fas fa-minus"></i></button></div>${citySelector}`;
             stopsContainer.appendChild(stopDiv);
-            setAddressHistory(); 
+            if (mode === 'taxi') fillTaxiStopCityOptions(document.getElementById(stopCityId));
+            setAddressHistory();
             if (mode === 'taxi') updateTaxiPrice();
         }
         
@@ -3210,32 +3255,22 @@
                 }
             }
 
-            // Город определяется только двумя списками, а не словами из улицы.
-            // Поэтому «Суворова» больше не может быть ошибочно принята за «Уварово».
-            const rateFrom = selectedIntercityRate('taxiFromCitySelect');
-            const rateTo = selectedIntercityRate('taxiCitySelect');
-            const fromCity = selectedTaxiCity('taxiFromCitySelect');
-            const toCity = selectedTaxiCity('taxiCitySelect');
-
-            if (rateFrom && rateTo) {
-                priceEl.textContent = `Цена уточняется диспетчером (${fromCity} → ${toCity})`;
-                setTaxiRouteHint('Построим маршрут по адресам, когда оба поля будут заполнены.', 'fallback');
-                debouncedOSRM();
-                return;
-            }
-
-            const intercityRate = rateFrom || rateTo;
-            if (intercityRate) {
-                const minPrice = Math.ceil((intercityRate.min * priceMultiplier) / 50) * 50;
-                const maxPrice = Math.ceil((intercityRate.max * priceMultiplier) / 50) * 50;
+            // Город определяется только списками, а не словами из улицы.
+            // Резервный тариф складывает все известные участки через Белоусовку.
+            const databaseFallback = calculateTaxiDatabaseFallback();
+            if (databaseFallback) {
+                const minPrice = Math.ceil((databaseFallback.min * priceMultiplier) / 50) * 50;
+                const maxPrice = Math.ceil((databaseFallback.max * priceMultiplier) / 50) * 50;
                 let priceText = (minPrice === maxPrice) ? `~ ${minPrice} ₸` : `от ${minPrice}–${maxPrice} ₸`;
 
                 if (priceMultiplier > 1) priceText += " (Тариф повышен)";
                 if (isLuckyDiscount) priceText += " (Скидка применена)";
 
-                const routeName = rateFrom ? `${intercityRate.name} → Белоусовка` : `Белоусовка → ${intercityRate.name}`;
-                priceEl.textContent = `${priceText} (${routeName})`;
-                setTaxiRouteHint('Тариф из базы. Укажите оба адреса для расчёта расстояния.', 'fallback');
+                priceEl.textContent = priceText;
+                const fallbackNote = databaseFallback.usesSeveralBaseRates
+                    ? `Сумма тарифов из базы: ${databaseFallback.routeLabel} через Белоусовку.`
+                    : `Тариф из базы: ${databaseFallback.routeLabel}.`;
+                setTaxiRouteHint(`${fallbackNote} OSRM уточнит расстояние после заполнения адресов.`, 'fallback');
                 debouncedOSRM();
                 return;
             }
@@ -4725,10 +4760,13 @@
                     let stops = '';
                     const container = document.getElementById(containerId);
                     if (container) {
-                        container.querySelectorAll('input').forEach((input, index) => {
-                            if (input.value.trim()) {
+                        container.querySelectorAll('.additional-stop-item').forEach((stop, index) => {
+                            const input = stop.querySelector('[data-taxi-stop-address], input');
+                            const city = stop.querySelector('[data-taxi-stop-city]')?.value || '';
+                            if (input?.value.trim()) {
                                 const stopLabel = `Доп. адрес ${index + 1}`;
-                                stops += `*${stopLabel}*:\n${input.value.trim()}\n\n`;
+                                const stopAddress = city ? `${input.value.trim()} (${city})` : input.value.trim();
+                                stops += `*${stopLabel}*:\n${stopAddress}\n\n`;
                             }
                         });
                     }

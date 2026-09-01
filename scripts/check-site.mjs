@@ -68,14 +68,18 @@ for (const expected of [
   if (!index.includes(expected)) failures.push('index.html: missing hybrid online order behavior ' + expected);
 }
 for (const expected of [
-  "selectedIntercityRate('taxiFromCitySelect')",
-  "selectedIntercityRate('taxiCitySelect')",
-  'Цена уточняется диспетчером',
+  'intercityRateForCity(city)',
+  "selectedTaxiCity('taxiFromCitySelect')",
+  "selectedTaxiCity('taxiCitySelect')",
   'INTERCITY_PRICE_PER_KM: 230',
   'buildTaxiGeocodingQuery(address, city)',
   'fetchWithTimeout(url, timeoutMs = 8000)',
-  'getCoordinates(fromInput, fromCity)',
-  'getCoordinates(toInput, toCity)',
+  'getTaxiRatePoints()',
+  'getTaxiRoutePoints()',
+  'calculateTaxiDatabaseFallback()',
+  'getRouteDistance(coordinates)',
+  'data-taxi-stop-city',
+  'Сумма тарифов из базы',
   'Показываем тариф из базы'
 ]) {
   if (!index.includes(expected)) failures.push('index.html: city-based taxi pricing is missing ' + expected);
@@ -386,7 +390,7 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v31-osrm-route-fallback'")) failures.push('service-worker.js: OSRM route cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v32-route-rate-sum'")) failures.push('service-worker.js: route rate fallback cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
 if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');

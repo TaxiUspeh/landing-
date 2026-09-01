@@ -163,8 +163,12 @@ function combineAddress(baseId, houseId, aptId) {
 }
 
 function collectStops() {
-    return Array.from(document.querySelectorAll('#additionalStops input'))
-        .map((input) => input.value.trim())
+    return Array.from(document.querySelectorAll('#additionalStops .additional-stop-item'))
+        .map((stop) => {
+            const address = stop.querySelector('[data-taxi-stop-address], input')?.value.trim() || '';
+            const city = stop.querySelector('[data-taxi-stop-city]')?.value || 'Белоусовка';
+            return address ? `${address} (${city})` : '';
+        })
         .filter(Boolean)
         .slice(0, 5);
 }

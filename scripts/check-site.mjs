@@ -46,6 +46,9 @@ for (const expected of ['BASE_PRICE: 800', 'от <strong>800 тенге</strong>
 for (const expected of [
   'id="taxiCustomerPhone"',
   'id="taxiWishes"',
+  'id="taxiFromCitySelect"',
+  'Город отправления:',
+  'Город назначения:',
   'id="taxi-wishes-toggle"',
   'id="taxiWishesContent"',
   'toggleTaxiWishes()',
@@ -63,6 +66,16 @@ for (const expected of [
   'src="./client-orders.js"'
 ]) {
   if (!index.includes(expected)) failures.push('index.html: missing hybrid online order behavior ' + expected);
+}
+for (const expected of [
+  "selectedIntercityRate('taxiFromCitySelect')",
+  "selectedIntercityRate('taxiCitySelect')",
+  'Цена уточняется диспетчером'
+]) {
+  if (!index.includes(expected)) failures.push('index.html: city-based taxi pricing is missing ' + expected);
+}
+if (index.includes('findIntercityRate(destination)') || index.includes('findIntercityRate(origin)')) {
+  failures.push('index.html: taxi pricing still infers a city from street text');
 }
 
 const carouselStart = index.indexOf('<!-- MAIN ORDER, SERVICES AND QUICK ACTIONS CAROUSEL -->');
@@ -367,7 +380,7 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v29-client-order-sounds'")) failures.push('service-worker.js: client-order-sounds cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v30-route-cities'")) failures.push('service-worker.js: route-cities cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
 if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');

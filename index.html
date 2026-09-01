@@ -1306,6 +1306,14 @@
                                 <input id="taxiHouse" name="taxiHouse" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Дом">
                                 <input id="taxiApt" name="taxiApt" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Подъезд">
                             </div>
+                            <div class="flex flex-col bg-slate-800 dark:bg-gray-700 p-3 rounded-xl border border-slate-700 dark:border-gray-600 mt-2.5">
+                                <label for="taxiFromCitySelect" class="text-xs font-bold text-white dark:text-blue-200 mb-1.5 flex items-center gap-1">
+                                    <i class="fas fa-city text-amber-400"></i> Город отправления:
+                                </label>
+                                <select id="taxiFromCitySelect" name="fromCitySelect" class="form-input-control py-2 text-sm bg-slate-900 text-white dark:bg-gray-800 border-slate-600" onchange="onTaxiCitySelectChange()">
+                                    <option value="">🏠 Белоусовка (по посёлку)</option>
+                                </select>
+                            </div>
                             <div id="taxiHistoryChips" class="history-chips-container mt-2"></div>
                         </div>
                         <div class="relative flex justify-center -my-3 z-10">
@@ -1324,10 +1332,10 @@
 
                             <div class="flex flex-col bg-slate-800 dark:bg-gray-700 p-3 rounded-xl border border-slate-700 dark:border-gray-600 mt-2.5">
                                 <label for="taxiCitySelect" class="text-xs font-bold text-white dark:text-blue-200 mb-1.5 flex items-center gap-1">
-                                    <i class="fas fa-city text-amber-400"></i> Выберите направление или город:
+                                    <i class="fas fa-city text-amber-400"></i> Город назначения:
                                 </label>
                                 <select id="taxiCitySelect" name="citySelect" class="form-input-control py-2 text-sm bg-slate-900 text-white dark:bg-gray-800 border-slate-600" onchange="onCitySelectChange()">
-                                    <option value="">🏠 Посёлок Белоусовка (Внутри посёлка / Улица)</option>
+                                    <option value="">🏠 Белоусовка (по посёлку)</option>
                                     <option value="Усть-Каменогорск">🌆 Усть-Каменогорск (4800—6210 ₸)</option>
                                     <option value="Кшт">🏙️ КШТ (8600—10000 ₸)</option>
                                     <option value="Аэропорт">✈️ Аэропорт (5500 ₸)</option>
@@ -2101,67 +2109,39 @@
             { name: "Касым Кайсенов", keys: ["касым кайсенов", "касым-кайсенов", "молодежный", "кайсенов"], min: 8800, max: 9660 }
         ];
 
-        function levenshtein(a, b) {
-            if (a.length === 0) return b.length;
-            if (b.length === 0) return a.length;
-            const matrix = [];
-            for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-            for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-            for (let i = 1; i <= b.length; i++) {
-                for (let j = 1; j <= a.length; j++) {
-                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                        matrix[i][j] = matrix[i - 1][j - 1];
-                    } else {
-                        matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
-                    }
-                }
-            }
-            return matrix[b.length][a.length];
+        function selectedIntercityRate(selectId) {
+            const selectedCity = document.getElementById(selectId)?.value || '';
+            return selectedCity ? INTERCITY_RATES.find(rate => rate.name === selectedCity) || null : null;
         }
 
-        function findIntercityRate(input) {
-            const cleanInput = input.trim().toLowerCase();
-            if (cleanInput.length < 3) return null;
-            
-            if (cleanInput.includes("алтайская")) return null;
-            
-            for (const rate of INTERCITY_RATES) {
-                for (const key of rate.keys) {
-                    if (cleanInput === key || cleanInput.includes("г. " + key) || cleanInput.includes("город " + key) || cleanInput.includes("до " + key)) {
-                        return rate;
-                    }
-                }
-            }
-
-            let bestMatch = null;
-            let lowestDist = 999;
-            for (const rate of INTERCITY_RATES) {
-                for (const key of rate.keys) {
-                    const dist = levenshtein(cleanInput, key);
-                    const threshold = Math.max(2, Math.floor(key.length / 3));
-                    if (dist <= threshold && dist < lowestDist) {
-                        lowestDist = dist;
-                        bestMatch = rate;
-                    }
-                }
-            }
-            return bestMatch;
+        function selectedTaxiCity(selectId) {
+            return document.getElementById(selectId)?.value || 'Белоусовка';
         }
 
-        window.onCitySelectChange = function() {
-            const select = document.getElementById('taxiCitySelect');
+        function ensureTaxiFromCityOptions() {
+            const fromSelect = document.getElementById('taxiFromCitySelect');
+            const toSelect = document.getElementById('taxiCitySelect');
+            if (!fromSelect || !toSelect || fromSelect.options.length > 1) return;
+            fromSelect.innerHTML = toSelect.innerHTML;
+        }
+
+        function updateTaxiCityPlaceholders() {
+            ensureTaxiFromCityOptions();
+            const fromInput = document.getElementById('taxiFrom');
             const toInput = document.getElementById('taxiTo');
-            if (!select || !toInput) return;
-            const val = select.value;
-            
-            if (val) {
-                toInput.placeholder = `Улица или объект в: ${val}`;
-            } else {
-                toInput.placeholder = 'Улица, дом или объект (Белоусовка)';
-            }
-            
+            if (!fromInput || !toInput) return;
+
+            fromInput.placeholder = `Улица или объект в: ${selectedTaxiCity('taxiFromCitySelect')}`;
+            toInput.placeholder = `Улица или объект в: ${selectedTaxiCity('taxiCitySelect')}`;
+        }
+
+        window.onTaxiCitySelectChange = function() {
+            updateTaxiCityPlaceholders();
             updateTaxiPrice();
         }
+
+        // Сохраняем имя обработчика для уже существующего списка города назначения.
+        window.onCitySelectChange = window.onTaxiCitySelectChange;
 
         window.onDeliveryCitySelectChange = function() {
             const select = document.getElementById('deliveryCitySelect');
@@ -2992,6 +2972,7 @@
              loadTheme();
              initPhoneMask();
              setAddressHistory();
+             updateTaxiCityPlaceholders();
              updateHolidayBanner();
              checkLineStatus();
              initPwaPushNotifications();
@@ -3166,12 +3147,7 @@
         window.updateTaxiPrice = function() {
             const priceEl = document.getElementById('taxiPriceEstimate');
             const waitTimeEl = document.getElementById('taxiWaitTime');
-            const citySelect = document.getElementById('taxiCitySelect');
             if (!priceEl) return;
-            const toInput = document.getElementById('taxiTo');
-            const fromInput = document.getElementById('taxiFrom');
-            const destination = toInput ? toInput.value.trim() : '';
-            const origin = fromInput ? fromInput.value.trim() : '';
             
             if (waitTimeEl) {
                 if (priceMultiplier > 1) {
@@ -3183,48 +3159,30 @@
                 }
             }
 
-            let rateTo = null;
-            if (citySelect && citySelect.value) {
-                rateTo = INTERCITY_RATES.find(r => r.name === citySelect.value);
-            }
-            if (!rateTo) {
-                rateTo = findIntercityRate(destination);
-            }
-            
-            let rateFrom = findIntercityRate(origin);
-            
-            if (rateFrom || rateTo) {
-                let totalMin = 0;
-                let totalMax = 0;
-                let routeNames = [];
+            // Город определяется только двумя списками, а не словами из улицы.
+            // Поэтому «Суворова» больше не может быть ошибочно принята за «Уварово».
+            const rateFrom = selectedIntercityRate('taxiFromCitySelect');
+            const rateTo = selectedIntercityRate('taxiCitySelect');
+            const fromCity = selectedTaxiCity('taxiFromCitySelect');
+            const toCity = selectedTaxiCity('taxiCitySelect');
 
-                if (rateFrom && rateTo && rateFrom.name !== rateTo.name) {
-                    totalMin = rateFrom.min + rateTo.min;
-                    totalMax = rateFrom.max + rateTo.max;
-                    routeNames.push(`${rateFrom.name} ➔ ${rateTo.name}`);
-                } else if (rateFrom) {
-                    totalMin = rateFrom.min;
-                    totalMax = rateFrom.max;
-                    routeNames.push(rateFrom.name);
-                } else if (rateTo) {
-                    totalMin = rateTo.min;
-                    totalMax = rateTo.max;
-                    routeNames.push(rateTo.name);
-                } else if (rateFrom && rateTo && rateFrom.name === rateTo.name) {
-                    totalMin = rateFrom.min;
-                    totalMax = rateFrom.max;
-                    routeNames.push(rateFrom.name);
-                }
+            if (rateFrom && rateTo) {
+                priceEl.textContent = `Цена уточняется диспетчером (${fromCity} → ${toCity})`;
+                return;
+            }
 
-                const minPrice = Math.ceil((totalMin * priceMultiplier) / 50) * 50;
-                const maxPrice = Math.ceil((totalMax * priceMultiplier) / 50) * 50;
+            const intercityRate = rateFrom || rateTo;
+            if (intercityRate) {
+                const minPrice = Math.ceil((intercityRate.min * priceMultiplier) / 50) * 50;
+                const maxPrice = Math.ceil((intercityRate.max * priceMultiplier) / 50) * 50;
                 let priceText = (minPrice === maxPrice) ? `~ ${minPrice} ₸` : `от ${minPrice}–${maxPrice} ₸`;
-                
+
                 if (priceMultiplier > 1) priceText += " (Тариф повышен)";
                 if (isLuckyDiscount) priceText += " (Скидка применена)";
-                
-                priceEl.textContent = `${priceText} (${routeNames.join('')})`;
-                return; 
+
+                const routeName = rateFrom ? `${intercityRate.name} → Белоусовка` : `Белоусовка → ${intercityRate.name}`;
+                priceEl.textContent = `${priceText} (${routeName})`;
+                return;
             }
 
             const addressCount = countFilledAddresses();
@@ -3249,21 +3207,11 @@
         window.updateDeliveryPrice = function() {
             const priceEl = document.getElementById('deliveryPriceEstimate');
             const waitTimeEl = document.getElementById('deliveryWaitTime');
-            const citySelect = document.getElementById('deliveryCitySelect');
             if(waitTimeEl) waitTimeEl.textContent = "Ожидание: 15-30 мин";
 
             if (!priceEl) return;
-            
-            const addressInput = document.getElementById('deliveryAddress');
-            const destination = addressInput ? addressInput.value.trim() : '';
 
-            let rateTo = null;
-            if (citySelect && citySelect.value) {
-                rateTo = INTERCITY_RATES.find(r => r.name === citySelect.value);
-            }
-            if (!rateTo) {
-                rateTo = findIntercityRate(destination);
-            }
+            const rateTo = selectedIntercityRate('deliveryCitySelect');
 
             if (rateTo) {
                 const minPrice = Math.ceil(((rateTo.min + CONFIG.DELIVERY.BASE_PRICE) * priceMultiplier) / 50) * 50;
@@ -4592,10 +4540,18 @@
         window.swapTaxiAddresses = function() {
             const fromEl = document.getElementById('taxiFrom');
             const toEl = document.getElementById('taxiTo');
+            const fromCityEl = document.getElementById('taxiFromCitySelect');
+            const toCityEl = document.getElementById('taxiCitySelect');
+            if (!fromEl || !toEl) return;
             const temp = fromEl.value;
             fromEl.value = toEl.value;
             toEl.value = temp;
-            updateTaxiPrice();
+            if (fromCityEl && toCityEl) {
+                const cityTemp = fromCityEl.value;
+                fromCityEl.value = toCityEl.value;
+                toCityEl.value = cityTemp;
+            }
+            window.onTaxiCitySelectChange();
         }
 
         window.addWish = function(text) {
@@ -4749,9 +4705,11 @@
                         if(!toAddressRaw) requiredFieldsMissing = true;
                         
                         let taxiFrom = appendHouseAndApt(fromAddressRaw, 'taxiHouse', 'taxiApt');
+                        let taxiFromCity = document.getElementById('taxiFromCitySelect')?.value || 'Белоусовка';
+                        let taxiToCity = document.getElementById('taxiCitySelect')?.value || 'Белоусовка';
                         message = handlePreorder('taxiDateTime', message);
-                        message += `*Откуда*:\n${taxiFrom}\n\n`;
-                        message += `*Куда*:\n${toAddressRaw}\n\n`;
+                        message += `*Откуда*:\n${taxiFrom} (${taxiFromCity})\n\n`;
+                        message += `*Куда*:\n${toAddressRaw} (${taxiToCity})\n\n`;
                         message += collectStops('additionalStops');
                         
                         let wishes = document.getElementById('taxiWishes').value.trim();
@@ -4768,11 +4726,6 @@
                         if(customerName) message += `*Имя клиента*:\n${customerName}\n\n`;
                         if(customerPhone) message += `*Телефон для связи*:\n${customerPhone}\n\n`;
                         
-                        let citySel = document.getElementById('taxiCitySelect');
-                        if(citySel && citySel.value) {
-                             message += `*Направление*:\n${citySel.value}\n\n`;
-                        }
-
                         let estPrice = document.getElementById('taxiPriceEstimate').innerText;
                         message += `*Ориентировочная цена*: ${estPrice}\n`;
                         

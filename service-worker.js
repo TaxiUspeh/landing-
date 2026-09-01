@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v31-osrm-route-fallback';
+const CACHE_NAME = 'taxi-uspeh-v32-route-rate-sum';
 const APP_SHELL = [
   './',
   './index.html',

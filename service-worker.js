@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v22-collapsible-dispatcher-orders';
+const CACHE_NAME = 'taxi-uspeh-v23-mobile-dispatcher-navigation';
 const APP_SHELL = [
   './',
   './index.html',

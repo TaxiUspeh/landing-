@@ -47,6 +47,14 @@ const elements = {
     onlineOrdersMessage: document.getElementById('online-orders-message'),
     expandOnlineOrders: document.getElementById('expand-online-orders'),
     collapseOnlineOrders: document.getElementById('collapse-online-orders'),
+    mobileNavigation: document.getElementById('dispatcher-mobile-navigation'),
+    mobileSectionButtons: [...document.querySelectorAll('[data-dispatcher-section-button]')],
+    mobileSections: [...document.querySelectorAll('[data-dispatcher-mobile-section]')],
+    mobileOrdersCurrentButton: document.getElementById('mobile-orders-current-button'),
+    mobileOrdersHistoryButton: document.getElementById('mobile-orders-history-button'),
+    mobileOrdersCurrentCount: document.getElementById('mobile-orders-current-count'),
+    mobileOrdersHistoryCount: document.getElementById('mobile-orders-history-count'),
+    mobileOrdersFilterMessage: document.getElementById('mobile-orders-filter-message'),
     addDriverForm: document.getElementById('add-driver-form'),
     addDriverButton: document.getElementById('add-driver-button'),
     addDriverMessage: document.getElementById('add-driver-message'),
@@ -74,6 +82,8 @@ let driverStates = new Map();
 let orders = [];
 let orderContacts = new Map();
 const expandedOrderIds = new Set();
+let mobileDispatcherSection = 'orders';
+let mobileOrdersView = 'current';
 let unsubscribeDrivers = null;
 let unsubscribeDriverStates = null;
 let unsubscribeOrders = null;
@@ -97,6 +107,64 @@ const CLIENT_CANCELLATION_REASON_LABELS = {
 
 function setHidden(element, hidden) {
     if (element) element.classList.toggle('hidden', hidden);
+}
+
+function isMobileViewport() {
+    return window.matchMedia('(max-width: 767px)').matches;
+}
+
+function setMobileDispatcherSection(section, scrollToNavigation = true) {
+    mobileDispatcherSection = section;
+    for (const panelSection of elements.mobileSections) {
+        panelSection.classList.toggle('mobile-dispatcher-hidden', panelSection.dataset.dispatcherMobileSection !== section);
+    }
+    for (const button of elements.mobileSectionButtons) {
+        const active = button.dataset.dispatcherSectionButton === section;
+        button.setAttribute('aria-current', active ? 'page' : 'false');
+        button.classList.toggle('bg-blue-600', active);
+        button.classList.toggle('text-white', active);
+        button.classList.toggle('text-slate-600', !active);
+        button.classList.toggle('dark:text-slate-300', !active);
+    }
+    if (scrollToNavigation && isMobileViewport() && elements.mobileNavigation) {
+        const top = window.scrollY + elements.mobileNavigation.getBoundingClientRect().top - 82;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    }
+}
+
+function isOrderHistory(order) {
+    return order.status === 'completed' || order.status === 'cancelled';
+}
+
+function setMobileOrdersView(view) {
+    mobileOrdersView = view;
+    renderOnlineOrders();
+}
+
+function updateMobileOrdersFilter(currentCount, historyCount) {
+    elements.mobileOrdersCurrentCount.textContent = String(currentCount);
+    elements.mobileOrdersHistoryCount.textContent = String(historyCount);
+    const currentSelected = mobileOrdersView === 'current';
+    elements.mobileOrdersCurrentButton.setAttribute('aria-selected', String(currentSelected));
+    elements.mobileOrdersHistoryButton.setAttribute('aria-selected', String(!currentSelected));
+    for (const [button, active] of [
+        [elements.mobileOrdersCurrentButton, currentSelected],
+        [elements.mobileOrdersHistoryButton, !currentSelected]
+    ]) {
+        button.classList.toggle('bg-white', active);
+        button.classList.toggle('dark:bg-slate-900', active);
+        button.classList.toggle('text-blue-700', active);
+        button.classList.toggle('dark:text-blue-300', active);
+        button.classList.toggle('shadow-sm', active);
+        button.classList.toggle('text-slate-600', !active);
+        button.classList.toggle('dark:text-slate-300', !active);
+    }
+
+    const count = currentSelected ? currentCount : historyCount;
+    setHidden(elements.mobileOrdersFilterMessage, currentCount + historyCount === 0 || count !== 0);
+    elements.mobileOrdersFilterMessage.textContent = currentSelected
+        ? 'Сейчас нет текущих заказов. Завершённые и отменённые находятся во вкладке «История».'
+        : 'История заказов пока пуста.';
 }
 
 function setMessage(element, text, success = false) {
@@ -582,6 +650,7 @@ function createOnlineOrderCard(order) {
     const card = document.createElement('article');
     card.className = 'overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60';
     card.dataset.orderId = order.id;
+    card.dataset.orderHistory = String(isOrderHistory(order));
     const expanded = expandedOrderIds.has(order.id);
     const detailsId = orderDetailsId(order.id);
 
@@ -754,6 +823,8 @@ function renderOnlineOrders() {
         const bTime = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
         return bTime - aTime;
     }).slice(0, 50);
+    const currentCount = sorted.filter((order) => !isOrderHistory(order)).length;
+    const historyCount = sorted.length - currentCount;
 
     const visibleOrderIds = new Set(sorted.map((order) => order.id));
     for (const orderId of Array.from(expandedOrderIds)) {
@@ -761,6 +832,8 @@ function renderOnlineOrders() {
     }
     elements.expandOnlineOrders.disabled = sorted.length === 0;
     elements.collapseOnlineOrders.disabled = sorted.length === 0;
+    elements.onlineOrdersList.dataset.mobileOrderView = mobileOrdersView;
+    updateMobileOrdersFilter(currentCount, historyCount);
     elements.onlineOrdersList.replaceChildren();
     for (const order of sorted) elements.onlineOrdersList.append(createOnlineOrderCard(order));
     setHidden(elements.onlineOrdersLoading, true);
@@ -1151,6 +1224,12 @@ elements.ordersLinkForm.addEventListener('submit', saveOrdersLink);
 elements.driverSearch.addEventListener('input', renderDrivers);
 elements.expandOnlineOrders.addEventListener('click', () => setAllOrdersExpanded(true));
 elements.collapseOnlineOrders.addEventListener('click', () => setAllOrdersExpanded(false));
+elements.mobileSectionButtons.forEach((button) => {
+    button.addEventListener('click', () => setMobileDispatcherSection(button.dataset.dispatcherSectionButton));
+});
+elements.mobileOrdersCurrentButton.addEventListener('click', () => setMobileOrdersView('current'));
+elements.mobileOrdersHistoryButton.addEventListener('click', () => setMobileOrdersView('history'));
+setMobileDispatcherSection('orders', false);
 
 getRedirectResult(auth).catch((error) => {
     console.error('Ошибка возврата из Google:', error);

@@ -1447,6 +1447,7 @@
                             <div>
                             <div class="price-note text-xs font-semibold text-gray-500 uppercase tracking-wide">Примерная стоимость:</div>
                             <div id="taxiPriceEstimate" class="text-2xl font-black text-indigo-700">-- тг</div>
+                            <div id="taxiRouteDistance" class="hidden mt-1 text-xs font-semibold text-indigo-600" aria-live="polite"></div>
                             <div class="flex items-center mt-1 text-gray-500 text-xs font-semibold">
                                 <i class="fas fa-clock mr-1"></i> <span id="taxiWaitTime">5-10 мин</span>
                             </div>
@@ -2005,6 +2006,7 @@
                 BASE_PRICE: 800,      // Базовая цена (до 2 км)
                 BASE_DISTANCE_KM: 2,  // Включенные км
                 PRICE_PER_KM: 120,    // Цена за км сверх нормы
+                INTERCITY_PRICE_PER_KM: 230, // Межгород: расчёт по построенному маршруту
                 MIN_PRICE_RANGE_OFFSET: 200, // Разброс "800-1000"
                 MANY_STOPS_MIN: 1500, // Если > 2 остановок
                 MANY_STOPS_MAX: 2000,
@@ -2556,15 +2558,48 @@
             };
         }
 
-        async function getCoordinates(query) {
-            if (query.includes('[ГЕО]') || query.includes('[КООРДИНАТЫ]')) {
-                const parts = query.match(/(\d+\.\d+),\s*(\d+\.\d+)/);
+        const TAXI_CITY_GEOCODING_NAMES = {
+            'Белоусовка': 'посёлок Белоусовка, Глубоковский район, Восточно-Казахстанская область, Казахстан',
+            'Усть-Каменогорск': 'Усть-Каменогорск, Восточно-Казахстанская область, Казахстан',
+            'Кшт': 'район КШТ, Усть-Каменогорск, Восточно-Казахстанская область, Казахстан',
+            'Аэропорт': 'Аэропорт Усть-Каменогорск, Восточно-Казахстанская область, Казахстан'
+        };
+        let taxiRouteCalculationId = 0;
+
+        function buildTaxiGeocodingQuery(address, city) {
+            const cityName = city || 'Белоусовка';
+            const location = TAXI_CITY_GEOCODING_NAMES[cityName]
+                || `${cityName}, Восточно-Казахстанская область, Казахстан`;
+            return `${address}, ${location}`;
+        }
+
+        function setTaxiRouteHint(message, tone = 'info') {
+            const hint = document.getElementById('taxiRouteDistance');
+            if (!hint) return;
+            hint.textContent = message || '';
+            hint.className = `mt-1 text-xs font-semibold ${tone === 'fallback' ? 'text-gray-500' : 'text-indigo-600'}${message ? '' : ' hidden'}`;
+        }
+
+        async function fetchWithTimeout(url, timeoutMs = 8000) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                return await fetch(url, { signal: controller.signal });
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
+        async function getCoordinates(address, city) {
+            if (address.includes('[ГЕО]') || address.includes('[КООРДИНАТЫ]')) {
+                const parts = address.match(/(\d+\.\d+),\s*(\d+\.\d+)/);
                 if (parts && parts.length === 3) return { lat: parseFloat(parts[1]), lon: parseFloat(parts[2]) };
             }
             try {
-                const searchQuery = `${query}, Белоусовка, Восточно-Казахстанская область`;
+                const searchQuery = buildTaxiGeocodingQuery(address, city);
                 const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`;
-                const response = await fetch(url, { headers: { 'User-Agent': 'TaxiUspehApp/1.0' } });
+                const response = await fetchWithTimeout(url);
+                if (!response.ok) return null;
                 const data = await response.json();
                 if (data && data.length > 0) return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
             } catch (e) { console.warn("Geocoding failed:", e); }
@@ -2574,9 +2609,10 @@
         async function getRouteDistance(coord1, coord2) {
             try {
                 const url = `https://router.project-osrm.org/route/v1/driving/${coord1.lon},${coord1.lat};${coord2.lon},${coord2.lat}?overview=false`;
-                const response = await fetch(url);
+                const response = await fetchWithTimeout(url);
+                if (!response.ok) return null;
                 const data = await response.json();
-                if (data.code === 'Ok' && data.routes.length > 0) return data.routes[0].distance; 
+                if (data.code === 'Ok' && data.routes.length > 0) return data.routes[0].distance;
             } catch (e) { console.warn("Routing failed:", e); }
             return null;
         }
@@ -2590,47 +2626,60 @@
         }
 
         async function calculateTaxiPriceOSRM() {
-            const fromInput = document.getElementById('taxiFrom').value.trim();
-            const toInput = document.getElementById('taxiTo').value.trim();
+            const fromInput = document.getElementById('taxiFrom')?.value.trim() || '';
+            const toInput = document.getElementById('taxiTo')?.value.trim() || '';
             const priceEl = document.getElementById('taxiPriceEstimate');
-            const waitTimeEl = document.getElementById('taxiWaitTime');
+            const requestId = taxiRouteCalculationId;
+            const fromCity = selectedTaxiCity('taxiFromCitySelect');
+            const toCity = selectedTaxiCity('taxiCitySelect');
+            const rateFrom = selectedIntercityRate('taxiFromCitySelect');
+            const rateTo = selectedIntercityRate('taxiCitySelect');
+            const isIntercity = Boolean(rateFrom || rateTo);
+            const hasDatabaseFallback = isIntercity && !(rateFrom && rateTo);
 
-            if (fromInput.length < 3 || toInput.length < 3) return;
-            priceEl.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Считаем...';
-            const coordFrom = await getCoordinates(fromInput);
-            const coordTo = await getCoordinates(toInput);
+            if (fromInput.length < 3 || toInput.length < 3 || !priceEl) return;
+            setTaxiRouteHint('Считаем расстояние по маршруту…');
+            const [coordFrom, coordTo] = await Promise.all([
+                getCoordinates(fromInput, fromCity),
+                getCoordinates(toInput, toCity)
+            ]);
+            if (requestId !== taxiRouteCalculationId) return;
+
             if (coordFrom && coordTo) {
                 const distMeters = await getRouteDistance(coordFrom, coordTo);
+                if (requestId !== taxiRouteCalculationId) return;
                 if (distMeters !== null) {
-                    const distKm = (distMeters / 1000).toFixed(1);
-                    let price = CONFIG.TAXI.BASE_PRICE;
-                    if (distKm > CONFIG.TAXI.BASE_DISTANCE_KM) {
-                        price += (distKm - CONFIG.TAXI.BASE_DISTANCE_KM) * CONFIG.TAXI.PRICE_PER_KM;
+                    const distKm = distMeters / 1000;
+                    const distanceText = distKm.toFixed(1);
+                    let price;
+
+                    if (isIntercity) {
+                        price = Math.ceil((distKm * CONFIG.TAXI.INTERCITY_PRICE_PER_KM * priceMultiplier) / 50) * 50;
+                    } else {
+                        price = CONFIG.TAXI.BASE_PRICE;
+                        if (distKm > CONFIG.TAXI.BASE_DISTANCE_KM) {
+                            price += (distKm - CONFIG.TAXI.BASE_DISTANCE_KM) * CONFIG.TAXI.PRICE_PER_KM;
+                        }
+                        price = Math.ceil((price * priceMultiplier) / 10) * 10;
                     }
-                    price = price * priceMultiplier;
-                    price = Math.ceil(price / 10) * 10;
-                    
+
                     if (isLuckyDiscount) {
                         price -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
                         if (price < 500) price = 500;
                     }
 
-                    priceEl.innerText = `~${distKm} км • ${price} ₸`;
+                    priceEl.innerText = `~ ${price} ₸`;
+                    const routeText = isIntercity
+                        ? `${fromCity} → ${toCity} · ${distanceText} км · расчёт по маршруту`
+                        : `${distanceText} км · расчёт по маршруту`;
+                    setTaxiRouteHint(routeText);
                     return;
                 }
             }
-            const addressCount = countFilledAddresses();
-            let baseMin = (addressCount >= 3) ? CONFIG.TAXI.MANY_STOPS_MIN : CONFIG.TAXI.BASE_PRICE;
-            let baseMax = (addressCount >= 3) ? CONFIG.TAXI.MANY_STOPS_MAX : (CONFIG.TAXI.BASE_PRICE + CONFIG.TAXI.MIN_PRICE_RANGE_OFFSET);
-            baseMin = Math.ceil((baseMin * priceMultiplier) / 10) * 10;
-            baseMax = Math.ceil((baseMax * priceMultiplier) / 10) * 10;
-            
-            if (isLuckyDiscount) {
-                baseMin -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
-                baseMax -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
-            }
-
-            priceEl.innerText = `от ${baseMin}–${baseMax} тг`;
+            const fallbackMessage = hasDatabaseFallback
+                ? 'Показываем тариф из базы: маршрут временно не удалось построить.'
+                : (isIntercity ? 'Маршрут временно не удалось построить. Цену уточнит диспетчер.' : 'Маршрут временно не удалось построить.');
+            setTaxiRouteHint(fallbackMessage, 'fallback');
         }
         
         const debouncedOSRM = debounce(calculateTaxiPriceOSRM, 1500);
@@ -3148,6 +3197,8 @@
             const priceEl = document.getElementById('taxiPriceEstimate');
             const waitTimeEl = document.getElementById('taxiWaitTime');
             if (!priceEl) return;
+            taxiRouteCalculationId += 1;
+            setTaxiRouteHint('');
             
             if (waitTimeEl) {
                 if (priceMultiplier > 1) {
@@ -3168,6 +3219,8 @@
 
             if (rateFrom && rateTo) {
                 priceEl.textContent = `Цена уточняется диспетчером (${fromCity} → ${toCity})`;
+                setTaxiRouteHint('Построим маршрут по адресам, когда оба поля будут заполнены.', 'fallback');
+                debouncedOSRM();
                 return;
             }
 
@@ -3182,6 +3235,8 @@
 
                 const routeName = rateFrom ? `${intercityRate.name} → Белоусовка` : `Белоусовка → ${intercityRate.name}`;
                 priceEl.textContent = `${priceText} (${routeName})`;
+                setTaxiRouteHint('Тариф из базы. Укажите оба адреса для расчёта расстояния.', 'fallback');
+                debouncedOSRM();
                 return;
             }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v28-chat-sounds';
+const CACHE_NAME = 'taxi-uspeh-v29-client-order-sounds';
 const APP_SHELL = [
   './',
   './index.html',

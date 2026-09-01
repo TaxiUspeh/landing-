@@ -367,7 +367,7 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v28-chat-sounds'")) failures.push('service-worker.js: chat-sounds cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v29-client-order-sounds'")) failures.push('service-worker.js: client-order-sounds cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
 if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
@@ -471,6 +471,8 @@ if (!firestoreIndexes.indexes.some((index) => index.collectionGroup === 'driverM
 for (const expected of [
   'signInAnonymously', "collection(db, 'orders')", "doc(db, 'orderContacts'", "status: 'searching'",
   'parseMaximumPrice(priceText)', 'Подбираем другого водителя', 'CANCELLATION_REQUEST_STATUSES',
+  'prepareClientOrderSound()', 'playClientOrderStatusSound(status)', 'signalClientOrderStatusChange(previousStatus, activeOrder)',
+  "['accepted', 'arrived']",
   "cancellationRequestStatus: 'pending'", 'компенсацию 500 ₸'
 ]) {
   if (!clientOrders.includes(expected)) failures.push('client-orders.js: missing ' + expected);

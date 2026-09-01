@@ -508,6 +508,36 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Один документ — одно устройство водителя. Сам водитель не читает токен,
+    // а только обновляет его при разрешении системных уведомлений.
+    match /driverPushTokens/{tokenId} {
+      allow read: if isAdmin();
+      allow create: if hasDriverAccount()
+        && request.resource.data.keys().hasOnly(['uid', 'driverId', 'token', 'enabled', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.driverId == linkedDriverId()
+        && request.resource.data.token is string
+        && request.resource.data.token.size() > 0
+        && request.resource.data.token.size() <= 4096
+        && request.resource.data.enabled is bool
+        && request.resource.data.updatedAt == request.time;
+      allow update: if hasDriverAccount()
+        && resource.data.uid == request.auth.uid
+        && resource.data.driverId == linkedDriverId()
+        && request.resource.data.keys().hasOnly(['uid', 'driverId', 'token', 'enabled', 'updatedAt'])
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.driverId == resource.data.driverId
+        && request.resource.data.token is string
+        && request.resource.data.token.size() > 0
+        && request.resource.data.token.size() <= 4096
+        && request.resource.data.enabled is bool
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['token', 'enabled', 'updatedAt']);
+      allow delete: if hasDriverAccount()
+        && resource.data.uid == request.auth.uid
+        && resource.data.driverId == linkedDriverId();
+    }
+
     match /driverStates/{accountUid} {
       allow read: if signedIn() && (request.auth.uid == accountUid || isAdmin());
       allow create: if isAdmin()

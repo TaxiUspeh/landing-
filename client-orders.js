@@ -342,13 +342,13 @@ async function createOnlineOrder() {
     if (!ONLINE_ORDERS_ENABLED || actionInProgress) return;
     setStatus('');
 
-    const fromAddress = combineAddress('taxiFrom', 'taxiHouse', 'taxiApt');
-    const toAddress = document.getElementById('taxiTo')?.value.trim() || '';
+    const rawFromAddress = combineAddress('taxiFrom', 'taxiHouse', 'taxiApt');
+    const rawToAddress = document.getElementById('taxiTo')?.value.trim() || '';
     const customerName = elements.customerName?.value.trim() || '';
     const customerPhone = normalizePhone(elements.customerPhone?.value);
     const passengerPhone = normalizePhone(document.getElementById('passengerPhone')?.value);
 
-    if (!fromAddress || !toAddress) {
+    if (!rawFromAddress || !rawToAddress) {
         setStatus('Заполните адрес отправления и адрес назначения.');
         elements.form?.reportValidity();
         return;
@@ -369,11 +369,15 @@ async function createOnlineOrder() {
     void prepareClientOrderSound();
     setActionBusy(true);
     try {
+        const fromCity = document.getElementById('taxiFromCitySelect')?.value || 'Белоусовка';
+        const toCity = document.getElementById('taxiCitySelect')?.value || 'Белоусовка';
+        const fromAddress = `${rawFromAddress} (${fromCity})`;
+        const toAddress = `${rawToAddress} (${toCity})`;
         const user = await ensureSignedIn();
         const orderRef = doc(collection(db, 'orders'));
         const contactRef = doc(db, 'orderContacts', orderRef.id);
         const priceText = document.getElementById('taxiPriceEstimate')?.textContent.trim() || 'Цена уточняется';
-        const direction = document.getElementById('taxiCitySelect')?.value || '';
+        const direction = toCity === 'Белоусовка' ? '' : toCity;
         const scheduledFor = document.getElementById('taxiDateTime')?.value || '';
         const wishes = document.getElementById('taxiWishes')?.value.trim() || '';
         const batch = writeBatch(db);

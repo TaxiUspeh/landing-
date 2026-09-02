@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v35-dispatcher-service-details';
+const CACHE_NAME = 'taxi-uspeh-v36-route-stops';
 const APP_SHELL = [
   './',
   './index.html',

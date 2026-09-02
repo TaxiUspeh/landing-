@@ -270,11 +270,11 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly([
           'orderNumber', 'serviceType', 'source', 'clientUid',
           'fromAddress', 'toAddress', 'stops', 'wishes', 'scheduledFor',
-          'direction', 'priceText', 'priceAmount', 'status',
+          'direction', 'priceText', 'priceAmount', 'serviceDetails', 'status',
           'createdAt', 'updatedAt'
         ])
         && request.resource.data.clientUid == request.auth.uid
-        && request.resource.data.serviceType == 'taxi'
+        && request.resource.data.serviceType in ['taxi', 'delivery']
         && request.resource.data.source == 'online'
         && request.resource.data.status == 'searching'
         && request.resource.data.orderNumber is string
@@ -299,6 +299,18 @@ service cloud.firestore {
         && request.resource.data.priceAmount is number
         && request.resource.data.priceAmount >= 0
         && request.resource.data.priceAmount <= 10000000
+        && (
+          (request.resource.data.serviceType == 'taxi'
+            && !request.resource.data.keys().hasAny(['serviceDetails']))
+          || (request.resource.data.serviceType == 'delivery'
+            && request.resource.data.serviceDetails is map
+            && request.resource.data.serviceDetails.keys().hasOnly(['store', 'items'])
+            && request.resource.data.serviceDetails.store is string
+            && request.resource.data.serviceDetails.store.size() <= 160
+            && request.resource.data.serviceDetails.items is string
+            && request.resource.data.serviceDetails.items.size() > 0
+            && request.resource.data.serviceDetails.items.size() <= 700)
+        )
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
     }

@@ -1519,7 +1519,7 @@
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🛍️ Доставка Товаров</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="deliveryModal">×</button></div>
                 <form id="deliveryForm" class="space-y-4">
-                    <div class="flex flex-col"><label for="deliveryItems" class="text-sm font-medium text-gray-700 mb-1">Список товаров *</label><textarea id="deliveryItems" name="items" rows="3" class="form-input-control" placeholder="Например: хлеб, пиво..." required></textarea></div>
+                    <div class="flex flex-col"><label for="deliveryItems" class="text-sm font-medium text-gray-700 mb-1">Список товаров *</label><textarea id="deliveryItems" name="items" rows="3" class="form-input-control" placeholder="Например: хлеб, продукты…" required></textarea></div>
                     <div class="flex flex-col"><label for="deliveryStore" class="text-sm font-medium text-gray-700 mb-1">Пожелания по магазину</label>
                         <div class="input-wrapper">
                             <i class="fas fa-store input-icon"></i>
@@ -1584,8 +1584,24 @@
                             </select>
                         </div>
                     </div>
+                    <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-3.5 space-y-3">
+                        <div>
+                            <p class="text-sm font-bold text-indigo-900">Контакт для онлайн-заказа</p>
+                            <p class="text-xs text-indigo-700 mt-0.5">Для WhatsApp эти поля можно оставить пустыми. Онлайн-доставка доступна для разрешённых товаров.</p>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label for="deliveryCustomerName" class="text-xs font-semibold text-gray-700">
+                                Ваше имя
+                                <input id="deliveryCustomerName" name="deliveryCustomerName" type="text" maxlength="80" autocomplete="name" class="form-input-control mt-1" placeholder="Например, Виталий">
+                            </label>
+                            <label for="deliveryCustomerPhone" class="text-xs font-semibold text-gray-700">
+                                Телефон для связи
+                                <input id="deliveryCustomerPhone" name="deliveryCustomerPhone" type="tel" maxlength="32" autocomplete="tel" inputmode="tel" class="form-input-control mt-1" placeholder="+7 777 000 00 00">
+                            </label>
+                        </div>
+                    </div>
                     <div id="deliveryStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
-                    <div class="pt-4 border-t mt-6 flex justify-between items-center">
+                    <div class="pt-4 border-t mt-6">
                         <div>
                             <div class="price-note text-xs font-semibold text-gray-500">Примерная стоимость:</div>
                             <div id="deliveryPriceEstimate" class="text-xl font-black text-indigo-700">-- тг</div>
@@ -1593,9 +1609,61 @@
                                 <i class="fas fa-clock mr-1"></i> <span id="deliveryWaitTime">15-30 мин</span>
                             </div>
                         </div>
-                        <button type="submit" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg transition duration-200 btn-active btn-hover">Оформить</button>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 w-full">
+                            <button id="delivery-online-order-button" type="button" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 btn-active btn-hover flex items-center justify-center gap-2">
+                                <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
+                                <span data-delivery-online-label>Заказать онлайн</span>
+                            </button>
+                            <button id="delivery-whatsapp-order-button" type="submit" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 btn-active btn-hover flex items-center justify-center gap-2">
+                                <i class="fab fa-whatsapp text-lg" aria-hidden="true"></i>
+                                <span>Заказать в WhatsApp</span>
+                            </button>
+                        </div>
                     </div>
                 </form>
+                <section id="delivery-online-order-panel" class="hidden space-y-4" aria-live="polite">
+                    <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <p class="text-xs font-semibold text-emerald-700">Онлайн-доставка</p>
+                                <p id="delivery-online-order-number" class="font-black text-emerald-950">—</p>
+                            </div>
+                            <i class="fas fa-box-open text-2xl text-emerald-600" aria-hidden="true"></i>
+                        </div>
+                        <div id="delivery-online-order-status" class="mt-3 rounded-xl border p-3 text-sm font-extrabold">Статус обновляется</div>
+                        <dl class="mt-3 space-y-2 text-sm text-gray-800">
+                            <div><dt class="text-xs text-gray-500">Доставка</dt><dd id="delivery-online-order-route" class="font-semibold break-words">—</dd></div>
+                            <div><dt class="text-xs text-gray-500">Стоимость</dt><dd id="delivery-online-order-price" class="font-bold">—</dd></div>
+                        </dl>
+                    </div>
+
+                    <div id="delivery-online-driver" class="hidden rounded-2xl border border-green-200 bg-green-50 p-4">
+                        <p class="text-xs font-semibold text-green-700">Назначенный водитель</p>
+                        <p id="delivery-online-driver-name" class="font-black text-green-950 mt-1">—</p>
+                        <p id="delivery-online-driver-car" class="text-sm text-green-800">—</p>
+                        <a id="delivery-online-driver-call" href="#" class="hidden mt-3 w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-3 font-bold text-center block">
+                            <i class="fas fa-phone mr-2" aria-hidden="true"></i>Позвонить водителю
+                        </a>
+                    </div>
+
+                    <p id="delivery-online-order-message" class="hidden rounded-xl border p-3 text-sm" role="status"></p>
+                    <p id="delivery-online-cancellation-notice" class="hidden rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-900" role="status"></p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <select id="delivery-online-cancel-reason" class="hidden rounded-xl border border-red-200 bg-white px-3 py-3 text-sm font-semibold text-gray-800">
+                            <option value="">Причина отмены</option>
+                            <option value="plans_changed">Изменились планы</option>
+                            <option value="no_longer_needed">Доставка больше не нужна</option>
+                            <option value="called_other_taxi">Выбрал другой способ доставки</option>
+                            <option value="other">Другая причина</option>
+                        </select>
+                        <button id="delivery-online-cancel-button" type="button" class="hidden bg-red-100 hover:bg-red-200 text-red-800 border border-red-200 rounded-xl py-3 font-bold">Отменить заказ</button>
+                        <button id="delivery-online-new-order-button" type="button" class="hidden bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 font-bold">Новая доставка</button>
+                        <a id="delivery-online-dispatcher-call" href="tel:+77770649648" class="bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-xl py-3 font-bold text-center">
+                            <i class="fas fa-headset mr-2" aria-hidden="true"></i>Позвонить диспетчеру
+                        </a>
+                    </div>
+                </section>
             </div>
         </div>
     </div>

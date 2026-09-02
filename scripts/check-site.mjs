@@ -395,10 +395,16 @@ const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v40-dispatcher-completion-fix'")) failures.push('service-worker.js: dispatcher-completion-fix cache version was not updated');
+const dispatcherQuickSearchHtml = await readFile('dispatcher.html', 'utf8');
+const dispatcherQuickSearchScript = await readFile('dispatcher.js', 'utf8');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v41-driver-quick-search'")) failures.push('service-worker.js: driver-quick-search cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
 if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (!dispatcherQuickSearchHtml.includes('id="driver-quick-search"')) failures.push('dispatcher.html: quick driver search field is missing');
+if (!dispatcherQuickSearchHtml.includes('id="driver-quick-search-results"')) failures.push('dispatcher.html: quick driver search results are missing');
+if (!dispatcherQuickSearchScript.includes('function driverMatchesSearch(')) failures.push('dispatcher.js: unified driver search matcher is missing');
+if (!dispatcherQuickSearchScript.includes('function openDriverFromQuickSearch(')) failures.push('dispatcher.js: quick search driver navigation is missing');
 for (const expected of [
   "'./food.webmanifest'",
   "'./shashlyk.webmanifest'",

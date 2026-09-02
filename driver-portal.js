@@ -43,9 +43,10 @@ const CLIENT_CANCELLATION_REASON_LABELS = {
     other: 'Другая причина'
 };
 const NEXT_ORDER_STATUS = {
-    accepted: ['en_route', 'Выехал к клиенту'],
-    en_route: ['arrived', 'Я приехал'],
-    arrived: ['in_trip', 'Начать поездку'],
+    accepted: ['arrived', 'Я подъехал'],
+    // Старый промежуточный статус оставлен только для заказов, созданных до упрощения.
+    en_route: ['arrived', 'Я подъехал'],
+    arrived: ['completed', 'Завершить заказ'],
     in_trip: ['completed', 'Завершить поездку']
 };
 const ORDER_ALERTS_PREFERENCE_KEY = 'taxi-uspeh-driver-order-alerts';
@@ -1154,7 +1155,7 @@ function orderStatusLabel(status) {
     return ({
         accepted: 'Заказ принят',
         en_route: 'Еду к клиенту',
-        arrived: 'Ожидаю клиента',
+        arrived: 'Подъехал к клиенту',
         in_trip: 'Поездка выполняется'
     })[status] || 'Свободный заказ';
 }

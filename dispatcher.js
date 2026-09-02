@@ -139,7 +139,12 @@ const elements = {
     driversLoading: document.getElementById('drivers-loading'),
     driversEmpty: document.getElementById('drivers-empty'),
     driversList: document.getElementById('drivers-list'),
-    driverSearch: document.getElementById('driver-search')
+    driverSearch: document.getElementById('driver-search'),
+    driverQuickSearch: document.getElementById('driver-quick-search'),
+    driverQuickSearchClear: document.getElementById('driver-quick-search-clear'),
+    driverQuickSearchCount: document.getElementById('driver-quick-search-count'),
+    driverQuickSearchResults: document.getElementById('driver-quick-search-results'),
+    driverQuickSearchEmpty: document.getElementById('driver-quick-search-empty')
 };
 
 let currentUser = null;
@@ -517,6 +522,103 @@ function driverBalanceSummary(driver) {
         text: `На счёте: ${formatMoney(Math.abs(balance))}`,
         className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200'
     };
+}
+
+function driverMatchesSearch(driver, queryText) {
+    const query = String(queryText || '').trim().toLocaleLowerCase('ru');
+    if (!query) return true;
+    const queryDigits = query.replace(/\D/g, '');
+    const availability = driverAvailabilityInfo(driver);
+    const balance = Number(driver.balance);
+    const textValues = [
+        driver.driverNumber,
+        driver.id,
+        driver.name,
+        driver.phone,
+        driver.car,
+        driver.color,
+        driver.status,
+        availability.key,
+        availability.label,
+        availability.detail,
+        Number.isFinite(balance) ? String(balance) : '',
+        balance > 0 ? 'долг' : balance < 0 ? 'на счёте остаток' : 'баланс'
+    ];
+    if (textValues.some((value) => String(value || '').toLocaleLowerCase('ru').includes(query))) return true;
+    if (!queryDigits) return false;
+    return [driver.driverNumber, driver.id, driver.phone, balance]
+        .some((value) => String(value || '').replace(/\D/g, '').includes(queryDigits));
+}
+
+function createQuickDriverSearchResult(driver) {
+    const availability = driverAvailabilityInfo(driver);
+    const balance = driverBalanceSummary(driver);
+    const result = document.createElement('button');
+    result.type = 'button';
+    result.className = 'flex w-full items-start justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left transition hover:border-blue-400 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-blue-700 dark:hover:bg-blue-950/20';
+
+    const details = document.createElement('div');
+    details.className = 'min-w-0';
+    details.append(
+        createOrderText('p', 'font-extrabold break-words', `ID ${driver.driverNumber ?? driver.id} · ${driver.name || 'Водитель'}`),
+        createOrderText('p', 'mt-1 break-words text-xs text-slate-600 dark:text-slate-300', [driver.phone, [driver.car, driver.color].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || 'Контакты и автомобиль не указаны'),
+        createOrderText('p', 'mt-1 text-xs text-slate-500 dark:text-slate-400', availability.detail)
+    );
+
+    const badges = document.createElement('div');
+    badges.className = 'flex max-w-[9rem] flex-col items-end gap-1.5 text-right';
+    badges.append(
+        createOrderText('span', availability.className, availability.label),
+        createOrderText('span', `whitespace-nowrap rounded-full px-3 py-1 text-xs font-extrabold ${balance.className}`, balance.text)
+    );
+    result.append(details, badges);
+    result.addEventListener('click', () => openDriverFromQuickSearch(driver.id));
+    return result;
+}
+
+function renderQuickDriverSearch() {
+    const search = elements.driverQuickSearch?.value.trim() || '';
+    const hasSearch = Boolean(search);
+    setHidden(elements.driverQuickSearchClear, !hasSearch);
+    setHidden(elements.driverQuickSearchResults, true);
+    setHidden(elements.driverQuickSearchEmpty, true);
+    setHidden(elements.driverQuickSearchCount, true);
+    elements.driverQuickSearchResults.replaceChildren();
+    if (!hasSearch) return;
+
+    const matchingDrivers = drivers.filter((driver) => driverMatchesSearch(driver, search));
+    if (!matchingDrivers.length) {
+        setHidden(elements.driverQuickSearchEmpty, false);
+        return;
+    }
+
+    const visibleDrivers = matchingDrivers.slice(0, 8);
+    for (const driver of visibleDrivers) elements.driverQuickSearchResults.append(createQuickDriverSearchResult(driver));
+    elements.driverQuickSearchCount.textContent = matchingDrivers.length > visibleDrivers.length
+        ? `Найдено: ${matchingDrivers.length}. Показаны первые ${visibleDrivers.length}`
+        : `Найдено: ${matchingDrivers.length}`;
+    setHidden(elements.driverQuickSearchCount, false);
+    setHidden(elements.driverQuickSearchResults, false);
+}
+
+function openDriverFromQuickSearch(driverId) {
+    const driver = drivers.find((item) => item.id === driverId);
+    if (!driver) return;
+    setMobileDispatcherSection('drivers', false);
+    elements.driverSearch.value = String(driver.driverNumber ?? driver.id);
+    renderDrivers();
+    window.requestAnimationFrame(() => {
+        const card = [...elements.driversList.querySelectorAll('[data-driver-id]')]
+            .find((item) => item.dataset.driverId === driver.id);
+        if (!card) return;
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.style.outline = '3px solid rgb(37 99 235)';
+        card.style.outlineOffset = '3px';
+        window.setTimeout(() => {
+            card.style.outline = '';
+            card.style.outlineOffset = '';
+        }, 2200);
+    });
 }
 
 function renderDriverSummary(filter) {
@@ -920,6 +1022,7 @@ function refreshDriverStatusIndicators() {
         const driver = drivers.find((item) => item.id === card.dataset.driverId);
         if (driver) applyDriverAvailability(card, driver);
     }
+    renderQuickDriverSearch();
 }
 
 function createInput(labelText, className, value, options = {}) {
@@ -1023,8 +1126,7 @@ function renderDrivers() {
     updateStats();
     const search = elements.driverSearch.value.trim().toLocaleLowerCase('ru');
     const filtered = search
-        ? drivers.filter((driver) => [driver.driverNumber, driver.name, driver.car, driver.phone]
-            .some((value) => String(value || '').toLocaleLowerCase('ru').includes(search)))
+        ? drivers.filter((driver) => driverMatchesSearch(driver, search))
         : drivers;
 
     elements.driversList.replaceChildren();
@@ -1040,6 +1142,7 @@ function renderDrivers() {
         elements.driversEmpty.querySelector('p').textContent = 'Водителей пока нет';
         elements.driversEmpty.querySelector('p + p').classList.remove('hidden');
     }
+    renderQuickDriverSearch();
 }
 
 function startDriversListener() {
@@ -2408,6 +2511,12 @@ elements.phoneOrderModal?.addEventListener('click', (event) => {
     if (event.target === elements.phoneOrderModal) closePhoneOrderModal();
 });
 elements.driverSearch.addEventListener('input', renderDrivers);
+elements.driverQuickSearch?.addEventListener('input', renderQuickDriverSearch);
+elements.driverQuickSearchClear?.addEventListener('click', () => {
+    elements.driverQuickSearch.value = '';
+    renderQuickDriverSearch();
+    elements.driverQuickSearch.focus();
+});
 elements.toggleOnlineOrdersSection.addEventListener('click', () => {
     setOnlineOrdersSectionCollapsed(!onlineOrdersSectionCollapsed);
 });

@@ -365,8 +365,10 @@ service cloud.firestore {
     }
 
     function validDriverStatusTransition() {
-      return (resource.data.status == 'accepted' && request.resource.data.status == 'en_route')
+      return (resource.data.status == 'accepted' && request.resource.data.status == 'arrived')
+        || (resource.data.status == 'accepted' && request.resource.data.status == 'en_route')
         || (resource.data.status == 'en_route' && request.resource.data.status == 'arrived')
+        || (resource.data.status == 'arrived' && request.resource.data.status == 'completed')
         || (resource.data.status == 'arrived' && request.resource.data.status == 'in_trip')
         || (resource.data.status == 'in_trip' && request.resource.data.status == 'completed');
     }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v40-dispatcher-completion-fix';
+const CACHE_NAME = 'taxi-uspeh-v41-driver-quick-search';
 const APP_SHELL = [
   './',
   './index.html',

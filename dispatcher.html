@@ -201,29 +201,123 @@
                     <div class="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4 dark:border-slate-800 dark:bg-slate-900">
                         <div>
                             <h2 id="phone-order-title" class="font-extrabold">
-                                <i class="fas fa-phone-volume mr-2 text-blue-600 dark:text-blue-400" aria-hidden="true"></i>Заказ по телефону
+                                <i class="fas fa-phone-volume mr-2 text-blue-600 dark:text-blue-400" aria-hidden="true"></i>Новый заказ диспетчера
                             </h2>
-                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Запишите звонок клиента и сразу отправьте заказ всем водителям или конкретному водителю.</p>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Выберите услугу, запишите заявку позвонившего клиента и отправьте её всем или одному водителю.</p>
                         </div>
                         <button id="phone-order-close" type="button" class="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Закрыть форму заказа">
                             <i class="fas fa-xmark text-lg" aria-hidden="true"></i>
                         </button>
                     </div>
                     <form id="phone-order-form" class="space-y-4 p-5">
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <input id="phone-order-service-type" type="hidden" value="taxi">
+                        <fieldset>
+                            <legend class="mb-2 block text-sm font-extrabold">Услуга *</legend>
+                            <div id="phone-order-services" class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                <button type="button" data-phone-order-service="taxi" aria-pressed="true" class="rounded-xl border border-blue-300 bg-blue-50 px-3 py-3 text-xs font-extrabold text-blue-900 transition hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-100">
+                                    <i class="fas fa-car block text-lg text-blue-600" aria-hidden="true"></i><span class="mt-1 block">Такси</span>
+                                </button>
+                                <button type="button" data-phone-order-service="auction" aria-pressed="false" class="rounded-xl border border-amber-300 bg-amber-50 px-3 py-3 text-xs font-extrabold text-amber-900 transition hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+                                    <i class="fas fa-gavel block text-lg text-amber-600" aria-hidden="true"></i><span class="mt-1 block">Аукцион</span>
+                                </button>
+                                <button type="button" data-phone-order-service="delivery" aria-pressed="false" class="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-3 text-xs font-extrabold text-emerald-900 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100">
+                                    <i class="fas fa-box-open block text-lg text-emerald-600" aria-hidden="true"></i><span class="mt-1 block">Доставка</span>
+                                </button>
+                                <button type="button" data-phone-order-service="cargo" aria-pressed="false" class="rounded-xl border border-orange-300 bg-orange-50 px-3 py-3 text-xs font-extrabold text-orange-900 transition hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-100">
+                                    <i class="fas fa-truck-loading block text-lg text-orange-600" aria-hidden="true"></i><span class="mt-1 block">Грузовой</span>
+                                </button>
+                                <button type="button" data-phone-order-service="soberDriver" aria-pressed="false" class="rounded-xl border border-rose-300 bg-rose-50 px-3 py-3 text-xs font-extrabold text-rose-900 transition hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-100">
+                                    <i class="fas fa-key block text-lg text-rose-600" aria-hidden="true"></i><span class="mt-1 block">Трезвый водитель</span>
+                                </button>
+                                <button type="button" data-phone-order-service="assistance" aria-pressed="false" class="rounded-xl border border-indigo-300 bg-indigo-50 px-3 py-3 text-xs font-extrabold text-indigo-900 transition hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-100">
+                                    <i class="fas fa-life-ring block text-lg text-indigo-600" aria-hidden="true"></i><span class="mt-1 block">Помощь</span>
+                                </button>
+                            </div>
+                        </fieldset>
+
+                        <div data-phone-order-section="route" class="grid gap-4 sm:grid-cols-2">
                             <div>
-                                <label for="phone-order-from" class="mb-1 block text-sm font-bold">Откуда *</label>
-                                <input id="phone-order-from" class="form-control" type="text" maxlength="240" autocomplete="off" placeholder="Белоусовка, Суворова, 15" required>
+                                <label id="phone-order-from-label" for="phone-order-from" class="mb-1 block text-sm font-bold">Откуда *</label>
+                                <input id="phone-order-from" class="form-control" type="text" maxlength="240" autocomplete="off" placeholder="Белоусовка, Суворова, 15">
                             </div>
                             <div>
-                                <label for="phone-order-to" class="mb-1 block text-sm font-bold">Куда *</label>
-                                <input id="phone-order-to" class="form-control" type="text" maxlength="240" autocomplete="off" placeholder="Белоусовка, Ленина, 20" required>
+                                <label id="phone-order-to-label" for="phone-order-to" class="mb-1 block text-sm font-bold">Куда *</label>
+                                <input id="phone-order-to" class="form-control" type="text" maxlength="240" autocomplete="off" placeholder="Белоусовка, Ленина, 20">
                             </div>
                         </div>
-                        <div>
+                        <div data-phone-order-section="stops">
                             <label for="phone-order-stops" class="mb-1 block text-sm font-bold">Остановки по пути</label>
                             <input id="phone-order-stops" class="form-control" type="text" maxlength="500" autocomplete="off" placeholder="Необязательно, через запятую">
                         </div>
+
+                        <div data-phone-order-section="delivery" hidden class="space-y-4 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="phone-order-delivery-store" class="mb-1 block text-sm font-bold">Магазин</label>
+                                    <input id="phone-order-delivery-store" class="form-control" type="text" maxlength="160" autocomplete="off" placeholder="Например, Строй Дом">
+                                </div>
+                                <div>
+                                    <label for="phone-order-delivery-address" class="mb-1 block text-sm font-bold">Куда доставить *</label>
+                                    <input id="phone-order-delivery-address" class="form-control" type="text" maxlength="240" autocomplete="off" placeholder="Белоусовка, Ленина, 20">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="phone-order-delivery-items" class="mb-1 block text-sm font-bold">Что доставить *</label>
+                                <textarea id="phone-order-delivery-items" class="form-control min-h-20 resize-y" maxlength="700" placeholder="Список товаров, посылка или поручение"></textarea>
+                            </div>
+                        </div>
+
+                        <div data-phone-order-section="cargo" hidden class="space-y-4 rounded-xl border border-orange-200 bg-orange-50/60 p-3 dark:border-orange-900 dark:bg-orange-950/20">
+                            <div>
+                                <label for="phone-order-cargo-description" class="mb-1 block text-sm font-bold">Что везём *</label>
+                                <textarea id="phone-order-cargo-description" class="form-control min-h-20 resize-y" maxlength="700" placeholder="Например, холодильник, мебель, коробки"></textarea>
+                            </div>
+                            <label class="block text-sm font-bold">Грузчики
+                                <select id="phone-order-cargo-movers" class="form-control mt-1">
+                                    <option value="0">Не требуются</option>
+                                    <option value="1">1 человек</option>
+                                    <option value="2">2 человека</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div data-phone-order-section="soberDriver" hidden class="rounded-xl border border-rose-200 bg-rose-50/60 p-3 dark:border-rose-900 dark:bg-rose-950/20">
+                            <label for="phone-order-sober-car" class="mb-1 block text-sm font-bold">Марка автомобиля клиента *</label>
+                            <input id="phone-order-sober-car" class="form-control" type="text" maxlength="160" autocomplete="off" placeholder="Например, Toyota Camry">
+                        </div>
+
+                        <div data-phone-order-section="assistance" hidden class="space-y-4 rounded-xl border border-indigo-200 bg-indigo-50/60 p-3 dark:border-indigo-900 dark:bg-indigo-950/20">
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="phone-order-assistance-type" class="mb-1 block text-sm font-bold">Тип помощи *</label>
+                                    <select id="phone-order-assistance-type" class="form-control">
+                                        <option value="">Выберите…</option>
+                                        <option value="Подкачать колесо">Подкачать колесо</option>
+                                        <option value="Прикурить автомобиль">Прикурить автомобиль</option>
+                                        <option value="Прочее поручение/помощь">Прочее поручение/помощь</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="phone-order-assistance-address" class="mb-1 block text-sm font-bold">Адрес помощи *</label>
+                                    <input id="phone-order-assistance-address" class="form-control" type="text" maxlength="240" autocomplete="off" placeholder="Белоусовка, Суворова, 15">
+                                </div>
+                            </div>
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="phone-order-assistance-car" class="mb-1 block text-sm font-bold">Марка авто</label>
+                                    <input id="phone-order-assistance-car" class="form-control" type="text" maxlength="160" autocomplete="off" placeholder="Необязательно">
+                                </div>
+                                <div>
+                                    <label for="phone-order-assistance-plate" class="mb-1 block text-sm font-bold">Гос. номер</label>
+                                    <input id="phone-order-assistance-plate" class="form-control" type="text" maxlength="32" autocomplete="off" placeholder="Необязательно">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="phone-order-assistance-task" class="mb-1 block text-sm font-bold">Детали</label>
+                                <textarea id="phone-order-assistance-task" class="form-control min-h-20 resize-y" maxlength="700" placeholder="Что требуется сделать"></textarea>
+                            </div>
+                        </div>
+
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
                                 <label for="phone-order-customer-name" class="mb-1 block text-sm font-bold">Имя клиента</label>
@@ -234,17 +328,22 @@
                                 <input id="phone-order-customer-phone" class="form-control" type="tel" inputmode="tel" maxlength="32" autocomplete="tel" placeholder="8705 123 45 67" required>
                             </div>
                         </div>
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div id="phone-order-standard-price" class="grid gap-4 sm:grid-cols-2">
                             <div>
-                                <label for="phone-order-price-from" class="mb-1 block text-sm font-bold">Цена от, ₸ *</label>
+                                <label id="phone-order-price-from-label" for="phone-order-price-from" class="mb-1 block text-sm font-bold">Цена от, ₸ *</label>
                                 <input id="phone-order-price-from" class="form-control" type="number" min="0" max="10000000" step="1" inputmode="numeric" placeholder="800" required>
                             </div>
                             <div>
-                                <label for="phone-order-price-to" class="mb-1 block text-sm font-bold">Цена до, ₸</label>
+                                <label id="phone-order-price-to-label" for="phone-order-price-to" class="mb-1 block text-sm font-bold">Цена до, ₸</label>
                                 <input id="phone-order-price-to" class="form-control" type="number" min="0" max="10000000" step="1" inputmode="numeric" placeholder="Если цена одна — не заполняйте">
                             </div>
                         </div>
-                        <p class="-mt-2 text-xs text-slate-500 dark:text-slate-400">При диапазоне комиссия рассчитается с верхней суммы, как и у онлайн-заказа.</p>
+                        <div id="phone-order-auction-price" hidden class="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/20">
+                            <label for="phone-order-auction-price-value" class="mb-1 block text-sm font-bold text-amber-950 dark:text-amber-100">Предложенная клиентом цена, ₸ *</label>
+                            <input id="phone-order-auction-price-value" class="form-control" type="number" min="500" max="10000000" step="1" inputmode="numeric" placeholder="Минимум 500">
+                            <p class="mt-1 text-xs text-amber-800 dark:text-amber-200">Это аукцион: водитель увидит именно цену, предложенную клиентом.</p>
+                        </div>
+                        <p id="phone-order-price-note" class="-mt-2 text-xs text-slate-500 dark:text-slate-400">При диапазоне комиссия рассчитается с верхней суммы, как и у онлайн-заказа.</p>
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
                                 <label for="phone-order-scheduled-for" class="mb-1 block text-sm font-bold">Время подачи</label>

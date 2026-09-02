@@ -1349,6 +1349,49 @@ function createText(tag, className, text) {
     return element;
 }
 
+function orderServiceLabel(order) {
+    const labels = {
+        taxi: 'Такси',
+        auction: 'Аукцион',
+        delivery: 'Доставка',
+        cargo: 'Грузовой',
+        soberDriver: 'Трезвый водитель',
+        assistance: 'Помощь'
+    };
+    return order.serviceLabel || labels[order.serviceType] || 'Такси';
+}
+
+function orderServiceDetailsText(order) {
+    const details = order.serviceDetails || {};
+    if (order.serviceType === 'auction' && Number.isFinite(Number(details.proposedPrice))) {
+        return `Аукцион: клиент предлагает ${Number(details.proposedPrice).toLocaleString('ru-RU')} ₸.`;
+    }
+    if (order.serviceType === 'delivery') {
+        return [
+            details.store ? `Магазин: ${details.store}` : '',
+            details.items ? `Что доставить: ${details.items}` : ''
+        ].filter(Boolean).join(' · ');
+    }
+    if (order.serviceType === 'cargo') {
+        return [
+            details.cargoDescription ? `Груз: ${details.cargoDescription}` : '',
+            Number(details.movers) > 0 ? `Грузчики: ${details.movers}` : 'Грузчики не требуются'
+        ].filter(Boolean).join(' · ');
+    }
+    if (order.serviceType === 'soberDriver') {
+        return details.carModel ? `Автомобиль клиента: ${details.carModel}` : '';
+    }
+    if (order.serviceType === 'assistance') {
+        return [
+            details.assistanceType || '',
+            details.carModel ? `Автомобиль: ${details.carModel}` : '',
+            details.licencePlate ? `Гос. номер: ${details.licencePlate}` : '',
+            details.task ? `Детали: ${details.task}` : ''
+        ].filter(Boolean).join(' · ');
+    }
+    return '';
+}
+
 function createOrderCard(order, assigned) {
     const card = document.createElement('article');
     card.id = `driver-order-${order.id}`;
@@ -1369,9 +1412,15 @@ function createOrderCard(order, assigned) {
     );
     header.append(title, badge);
 
+    const service = createText('p', 'mt-2 text-[11px] font-extrabold uppercase tracking-wide text-blue-700 dark:text-blue-300', orderServiceLabel(order));
     const route = createText('p', 'mt-2 text-sm font-bold break-words', `${order.fromAddress || '—'} → ${order.toAddress || '—'}`);
     const price = createText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', order.priceText || 'Цена уточняется');
-    card.append(header, route, price);
+    card.append(header, service, route, price);
+
+    const serviceDetails = orderServiceDetailsText(order);
+    if (serviceDetails) {
+        card.append(createText('p', 'mt-2 rounded-lg bg-slate-100 p-2 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200', serviceDetails));
+    }
 
     const cancellationPending = assigned && order.cancellationRequestStatus === 'pending';
     if (cancellationPending) {

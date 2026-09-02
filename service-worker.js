@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v34-fcm-driver-push';
+const CACHE_NAME = 'taxi-uspeh-v35-dispatcher-service-details';
 const APP_SHELL = [
   './',
   './index.html',

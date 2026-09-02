@@ -21,7 +21,7 @@ function chunks(values, size) {
   return result;
 }
 
-async function eligibleDriverPushSubscriptions() {
+async function eligibleDriverPushSubscriptions(targetDriverUid = '') {
   const tokenSnapshot = await db.collection('driverPushTokens').where('enabled', '==', true).get();
   if (tokenSnapshot.empty) return [];
 
@@ -50,6 +50,7 @@ async function eligibleDriverPushSubscriptions() {
     return Boolean(
       typeof subscription.token === 'string'
       && subscription.token.length > 0
+      && (!targetDriverUid || uid === targetDriverUid)
       && account?.active === true
       && String(account.driverId || '') === driverId
       && driver?.status === 'active'
@@ -59,11 +60,20 @@ async function eligibleDriverPushSubscriptions() {
 
 exports.notifyDriversOfNewOnlineOrder = onDocumentCreated('orders/{orderId}', async event => {
   const order = event.data?.data();
-  if (!order || order.status !== 'searching' || order.source !== 'online') return;
+  if (!order) return;
 
-  const subscriptions = await eligibleDriverPushSubscriptions();
+  const sendToAllDrivers = order.status === 'searching'
+    && ['online', 'dispatcher'].includes(order.source);
+  const assignedDriverUid = String(order.assignedDriverUid || '');
+  const sendToAssignedDriver = order.source === 'dispatcher'
+    && order.status === 'accepted'
+    && order.assignmentSource === 'dispatcher'
+    && assignedDriverUid;
+  if (!sendToAllDrivers && !sendToAssignedDriver) return;
+
+  const subscriptions = await eligibleDriverPushSubscriptions(sendToAssignedDriver ? assignedDriverUid : '');
   if (!subscriptions.length) {
-    logger.info('Нет активных устройств для пуша нового заказа.', { orderId: event.params.orderId });
+    logger.info('Нет активных устройств для пуша заказа.', { orderId: event.params.orderId });
     return;
   }
 
@@ -73,7 +83,9 @@ exports.notifyDriversOfNewOnlineOrder = onDocumentCreated('orders/{orderId}', as
     data: {
       type: 'new_order',
       orderId,
-      title: 'Новый онлайн-заказ',
+      title: sendToAssignedDriver
+        ? 'Диспетчер назначил заказ'
+        : order.source === 'dispatcher' ? 'Новый заказ от диспетчера' : 'Новый онлайн-заказ',
       body: 'Откройте кабинет, чтобы посмотреть маршрут и цену.',
       url
     },
@@ -92,8 +104,9 @@ exports.notifyDriversOfNewOnlineOrder = onDocumentCreated('orders/{orderId}', as
     response.responses.forEach((result, index) => {
       if (!result.success && INVALID_TOKEN_CODES.has(result.error?.code)) invalidSubscriptions.push(group[index].ref);
     });
-    logger.info('Пуш нового заказа обработан.', {
+    logger.info('Пуш заказа обработан.', {
       orderId,
+      delivery: sendToAssignedDriver ? 'assigned_driver' : 'all_drivers',
       sent: response.successCount,
       failed: response.failureCount
     });

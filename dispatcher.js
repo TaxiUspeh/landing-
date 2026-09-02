@@ -498,6 +498,26 @@ function driverSummaryFilterDetails(filter) {
     })[filter] || null;
 }
 
+function driverBalanceSummary(driver) {
+    const balance = Number(driver.balance);
+    if (!Number.isFinite(balance) || balance === 0) {
+        return {
+            text: 'Баланс: 0 ₸',
+            className: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'
+        };
+    }
+    if (balance > 0) {
+        return {
+            text: `Долг: ${formatMoney(balance)}`,
+            className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
+        };
+    }
+    return {
+        text: `На счёте: ${formatMoney(Math.abs(balance))}`,
+        className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200'
+    };
+}
+
 function renderDriverSummary(filter) {
     const config = driverSummaryFilterDetails(filter);
     if (!config) return;
@@ -533,7 +553,14 @@ function renderDriverSummary(filter) {
             createOrderText('p', 'mt-1 text-xs text-slate-500 dark:text-slate-400 break-words', [driver.car, driver.color].filter(Boolean).join(', ') || 'Автомобиль не указан')
         );
         const badge = createOrderText('span', state.className, state.label);
-        header.append(details, badge);
+        const balance = driverBalanceSummary(driver);
+        const badges = document.createElement('div');
+        badges.className = 'flex flex-col items-end gap-1.5 text-right';
+        badges.append(
+            badge,
+            createOrderText('span', `whitespace-nowrap rounded-full px-3 py-1 text-xs font-extrabold ${balance.className}`, balance.text)
+        );
+        header.append(details, badges);
         item.append(header, createOrderText('p', 'mt-2 text-xs text-slate-600 dark:text-slate-300', state.detail));
         elements.driverSummaryList.append(item);
     }

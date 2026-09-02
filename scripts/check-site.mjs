@@ -394,13 +394,27 @@ const driversManifest = JSON.parse(await readFile('drivers.webmanifest', 'utf8')
 const foodManifest = JSON.parse(await readFile('food.webmanifest', 'utf8'));
 const shashlykManifest = JSON.parse(await readFile('shashlyk.webmanifest', 'utf8'));
 const serviceWorker = await readFile('service-worker.js', 'utf8');
+const tailwindStyles = await readFile('styles/tailwind.css', 'utf8');
+const tailwindConfig = await readFile('tailwind.config.cjs', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
 const dispatcherQuickSearchHtml = await readFile('dispatcher.html', 'utf8');
 const dispatcherQuickSearchScript = await readFile('dispatcher.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v44-driver-three-step-order'")) failures.push('service-worker.js: driver-three-step-order cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v45-local-tailwind-styles'")) failures.push('service-worker.js: local Tailwind cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
+if (!serviceWorker.includes("'./styles/tailwind.css'")) failures.push('service-worker.js: local Tailwind stylesheet is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v(?:[1-9]|[1-3][0-9]|4[0-4])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (tailwindStyles.length < 50000) failures.push('styles/tailwind.css: compiled stylesheet is unexpectedly small');
+for (const expected of ['.bg-app-green', '.text-app-gold', '.bg-grill-dark', '.text-grill-accent']) {
+  if (!tailwindStyles.includes(expected)) failures.push('styles/tailwind.css: missing ' + expected);
+}
+for (const expected of ["darkMode: 'class'", "'app-green': '#25D366'", "'grill-accent': '#FF8C00'"]) {
+  if (!tailwindConfig.includes(expected)) failures.push('tailwind.config.cjs: missing ' + expected);
+}
+for (const [file, html] of htmlByFile) {
+  if (/cdn\.tailwindcss\.com/.test(html)) failures.push(file + ': external Tailwind CDN remains');
+  if (!html.includes('./styles/tailwind.css')) failures.push(file + ': local Tailwind stylesheet is missing');
+}
 if (!dispatcherQuickSearchHtml.includes('id="driver-quick-search"')) failures.push('dispatcher.html: quick driver search field is missing');
 if (!dispatcherQuickSearchHtml.includes('id="driver-quick-search-results"')) failures.push('dispatcher.html: quick driver search results are missing');
 if (!dispatcherQuickSearchScript.includes('function driverMatchesSearch(')) failures.push('dispatcher.js: unified driver search matcher is missing');

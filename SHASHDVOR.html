@@ -47,33 +47,9 @@
     }
     </script>
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./styles/tailwind.css">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-    <script>
-        // Безопасная проверка загрузки Tailwind перед применением конфига
-        if (typeof tailwind !== 'undefined') {
-            tailwind.config = {
-                theme: {
-                    extend: {
-                        colors: {
-                            'grill-dark': '#2E1E1E', 
-                            'grill-red': '#A52A2A',  
-                            'grill-accent': '#FF8C00', 
-                            'grill-green': '#25D366', // WhatsApp Green
-                        },
-                        fontFamily: {
-                            sans: ['Inter', 'sans-serif'],
-                        },
-                        screens: {
-                            'xs': '375px', // Для очень маленьких экранов
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         /* Улучшение для PWA: отключение "резиновой" прокрутки и выделения при тапе */

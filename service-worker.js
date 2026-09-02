@@ -1,7 +1,8 @@
-const CACHE_NAME = 'taxi-uspeh-v44-driver-three-step-order';
+const CACHE_NAME = 'taxi-uspeh-v45-local-tailwind-styles';
 const APP_SHELL = [
   './',
   './index.html',
+  './styles/tailwind.css',
   './client-orders.js',
   './holiday-calendar.js',
   './drivers.html',

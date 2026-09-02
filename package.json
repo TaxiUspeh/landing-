@@ -1,0 +1,12 @@
+{
+  "name": "taxi-uspeh-landing",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:styles": "npx tailwindcss@3.4.17 -c tailwind.config.cjs -i styles/tailwind.input.css -o styles/tailwind.css --minify",
+    "check": "node scripts/check-site.mjs"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

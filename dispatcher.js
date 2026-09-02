@@ -53,13 +53,40 @@ const elements = {
     phoneOrderModal: document.getElementById('phone-order-modal'),
     phoneOrderClose: document.getElementById('phone-order-close'),
     phoneOrderForm: document.getElementById('phone-order-form'),
+    phoneOrderServiceType: document.getElementById('phone-order-service-type'),
+    phoneOrderServiceButtons: [...document.querySelectorAll('[data-phone-order-service]')],
+    phoneOrderRouteSection: document.querySelector('[data-phone-order-section="route"]'),
+    phoneOrderStopsSection: document.querySelector('[data-phone-order-section="stops"]'),
+    phoneOrderDeliverySection: document.querySelector('[data-phone-order-section="delivery"]'),
+    phoneOrderCargoSection: document.querySelector('[data-phone-order-section="cargo"]'),
+    phoneOrderSoberDriverSection: document.querySelector('[data-phone-order-section="soberDriver"]'),
+    phoneOrderAssistanceSection: document.querySelector('[data-phone-order-section="assistance"]'),
     phoneOrderFrom: document.getElementById('phone-order-from'),
+    phoneOrderFromLabel: document.getElementById('phone-order-from-label'),
     phoneOrderTo: document.getElementById('phone-order-to'),
+    phoneOrderToLabel: document.getElementById('phone-order-to-label'),
     phoneOrderStops: document.getElementById('phone-order-stops'),
+    phoneOrderDeliveryStore: document.getElementById('phone-order-delivery-store'),
+    phoneOrderDeliveryAddress: document.getElementById('phone-order-delivery-address'),
+    phoneOrderDeliveryItems: document.getElementById('phone-order-delivery-items'),
+    phoneOrderCargoDescription: document.getElementById('phone-order-cargo-description'),
+    phoneOrderCargoMovers: document.getElementById('phone-order-cargo-movers'),
+    phoneOrderSoberCar: document.getElementById('phone-order-sober-car'),
+    phoneOrderAssistanceType: document.getElementById('phone-order-assistance-type'),
+    phoneOrderAssistanceAddress: document.getElementById('phone-order-assistance-address'),
+    phoneOrderAssistanceCar: document.getElementById('phone-order-assistance-car'),
+    phoneOrderAssistancePlate: document.getElementById('phone-order-assistance-plate'),
+    phoneOrderAssistanceTask: document.getElementById('phone-order-assistance-task'),
     phoneOrderCustomerName: document.getElementById('phone-order-customer-name'),
     phoneOrderCustomerPhone: document.getElementById('phone-order-customer-phone'),
+    phoneOrderStandardPrice: document.getElementById('phone-order-standard-price'),
+    phoneOrderPriceFromLabel: document.getElementById('phone-order-price-from-label'),
     phoneOrderPriceFrom: document.getElementById('phone-order-price-from'),
+    phoneOrderPriceToLabel: document.getElementById('phone-order-price-to-label'),
     phoneOrderPriceTo: document.getElementById('phone-order-price-to'),
+    phoneOrderAuctionPrice: document.getElementById('phone-order-auction-price'),
+    phoneOrderAuctionPriceValue: document.getElementById('phone-order-auction-price-value'),
+    phoneOrderPriceNote: document.getElementById('phone-order-price-note'),
     phoneOrderScheduledFor: document.getElementById('phone-order-scheduled-for'),
     phoneOrderDriver: document.getElementById('phone-order-driver'),
     phoneOrderWishes: document.getElementById('phone-order-wishes'),
@@ -1136,6 +1163,56 @@ function appendManualAssignmentControls(actions, order) {
     actions.append(driverIdInput, select, assign);
 }
 
+const DISPATCHER_ORDER_SERVICES = {
+    taxi: {
+        label: 'Такси',
+        route: true,
+        stops: true,
+        fromLabel: 'Откуда *',
+        toLabel: 'Куда *',
+        priceFromLabel: 'Цена от, ₸ *',
+        priceToLabel: 'Цена до, ₸'
+    },
+    auction: {
+        label: 'Аукцион',
+        route: true,
+        stops: true,
+        auction: true,
+        fromLabel: 'Откуда *',
+        toLabel: 'Куда *'
+    },
+    delivery: {
+        label: 'Доставка',
+        delivery: true,
+        priceFromLabel: 'Цена от, ₸ *',
+        priceToLabel: 'Цена до, ₸'
+    },
+    cargo: {
+        label: 'Грузовой',
+        route: true,
+        cargo: true,
+        fromLabel: 'Адрес погрузки *',
+        toLabel: 'Адрес выгрузки *',
+        priceFromLabel: 'Стоимость от, ₸ *',
+        priceToLabel: 'Стоимость до, ₸'
+    },
+    soberDriver: {
+        label: 'Трезвый водитель',
+        route: true,
+        soberDriver: true,
+        fromLabel: 'Где автомобиль *',
+        toLabel: 'Куда отвезти *',
+        priceFromLabel: 'Цена от, ₸ *',
+        priceToLabel: 'Цена до, ₸'
+    },
+    assistance: {
+        label: 'Помощь',
+        assistance: true,
+        priceFromLabel: 'Цена от, ₸ *',
+        priceToLabel: 'Цена до, ₸'
+    }
+};
+
 function createDispatcherOrderNumber() {
     const now = new Date();
     const date = [
@@ -1162,6 +1239,63 @@ function formatOrderPrice(minimum, maximum) {
     return maximum > minimum
         ? `от ${formatNumber(minimum)}–${formatNumber(maximum)} ₸`
         : `${formatNumber(minimum)} ₸`;
+}
+
+function currentPhoneOrderService() {
+    const value = elements.phoneOrderServiceType?.value || 'taxi';
+    return DISPATCHER_ORDER_SERVICES[value] ? value : 'taxi';
+}
+
+function setPhoneOrderSection(section, visible) {
+    if (section) section.hidden = !visible;
+}
+
+function setPhoneOrderRequired(input, required) {
+    if (input) input.required = required;
+}
+
+function setPhoneOrderService(serviceType) {
+    const normalizedType = DISPATCHER_ORDER_SERVICES[serviceType] ? serviceType : 'taxi';
+    const service = DISPATCHER_ORDER_SERVICES[normalizedType];
+    if (elements.phoneOrderServiceType) elements.phoneOrderServiceType.value = normalizedType;
+
+    elements.phoneOrderServiceButtons.forEach((button) => {
+        const selected = button.dataset.phoneOrderService === normalizedType;
+        button.setAttribute('aria-pressed', String(selected));
+        button.classList.toggle('ring-2', selected);
+        button.classList.toggle('ring-slate-700', selected);
+        button.classList.toggle('dark:ring-white', selected);
+    });
+
+    setPhoneOrderSection(elements.phoneOrderRouteSection, service.route);
+    setPhoneOrderSection(elements.phoneOrderStopsSection, service.stops);
+    setPhoneOrderSection(elements.phoneOrderDeliverySection, service.delivery);
+    setPhoneOrderSection(elements.phoneOrderCargoSection, service.cargo);
+    setPhoneOrderSection(elements.phoneOrderSoberDriverSection, service.soberDriver);
+    setPhoneOrderSection(elements.phoneOrderAssistanceSection, service.assistance);
+    setPhoneOrderSection(elements.phoneOrderStandardPrice, !service.auction);
+    setPhoneOrderSection(elements.phoneOrderAuctionPrice, Boolean(service.auction));
+
+    if (elements.phoneOrderFromLabel) elements.phoneOrderFromLabel.textContent = service.fromLabel || 'Откуда *';
+    if (elements.phoneOrderToLabel) elements.phoneOrderToLabel.textContent = service.toLabel || 'Куда *';
+    if (elements.phoneOrderPriceFromLabel) elements.phoneOrderPriceFromLabel.textContent = service.priceFromLabel || 'Цена от, ₸ *';
+    if (elements.phoneOrderPriceToLabel) elements.phoneOrderPriceToLabel.textContent = service.priceToLabel || 'Цена до, ₸';
+    if (elements.phoneOrderPriceNote) {
+        elements.phoneOrderPriceNote.textContent = service.cargo
+            ? 'Укажите согласованную стоимость; при диапазоне комиссия рассчитается с верхней суммы.'
+            : 'При диапазоне комиссия рассчитается с верхней суммы, как и у онлайн-заказа.';
+    }
+
+    setPhoneOrderRequired(elements.phoneOrderFrom, Boolean(service.route));
+    setPhoneOrderRequired(elements.phoneOrderTo, Boolean(service.route));
+    setPhoneOrderRequired(elements.phoneOrderDeliveryAddress, Boolean(service.delivery));
+    setPhoneOrderRequired(elements.phoneOrderDeliveryItems, Boolean(service.delivery));
+    setPhoneOrderRequired(elements.phoneOrderCargoDescription, Boolean(service.cargo));
+    setPhoneOrderRequired(elements.phoneOrderSoberCar, Boolean(service.soberDriver));
+    setPhoneOrderRequired(elements.phoneOrderAssistanceType, Boolean(service.assistance));
+    setPhoneOrderRequired(elements.phoneOrderAssistanceAddress, Boolean(service.assistance));
+    setPhoneOrderRequired(elements.phoneOrderPriceFrom, !service.auction);
+    setPhoneOrderRequired(elements.phoneOrderAuctionPriceValue, Boolean(service.auction));
 }
 
 function populatePhoneOrderDrivers() {
@@ -1197,6 +1331,7 @@ function setPhoneOrderBusy(busy) {
 function openPhoneOrderModal() {
     if (!elements.phoneOrderModal || !elements.phoneOrderForm) return;
     elements.phoneOrderForm.reset();
+    setPhoneOrderService('taxi');
     populatePhoneOrderDrivers();
     setMessage(elements.phoneOrderMessage, '');
     setHidden(elements.phoneOrderModal, false);
@@ -1229,26 +1364,139 @@ function phoneOrderContactData(customerName, customerPhone) {
     };
 }
 
+function standardPhoneOrderPrice() {
+    const minimumPrice = parseOrderPrice(elements.phoneOrderPriceFrom?.value);
+    const upperPriceValue = elements.phoneOrderPriceTo?.value.trim() || '';
+    const maximumPrice = upperPriceValue ? parseOrderPrice(upperPriceValue) : minimumPrice;
+    if (minimumPrice === null || maximumPrice === null || minimumPrice <= 0 || maximumPrice < minimumPrice) {
+        return { error: 'Проверьте стоимость: укажите положительную цену, а верхняя сумма не должна быть меньше нижней.' };
+    }
+    return {
+        minimumPrice,
+        maximumPrice,
+        priceText: formatOrderPrice(minimumPrice, maximumPrice)
+    };
+}
+
+function createPhoneOrderPayload() {
+    const serviceType = currentPhoneOrderService();
+    const service = DISPATCHER_ORDER_SERVICES[serviceType];
+    const common = {
+        serviceType,
+        serviceLabel: service.label,
+        stops: service.stops ? phoneOrderStops() : [],
+        wishes: elements.phoneOrderWishes?.value.trim() || '',
+        scheduledFor: elements.phoneOrderScheduledFor?.value || '',
+        serviceDetails: {}
+    };
+    const fromAddress = elements.phoneOrderFrom?.value.trim() || '';
+    const toAddress = elements.phoneOrderTo?.value.trim() || '';
+
+    if (service.route && (!fromAddress || !toAddress)) {
+        return { error: `Заполните поля «${service.fromLabel.replace(' *', '')}» и «${service.toLabel.replace(' *', '')}».` };
+    }
+
+    if (serviceType === 'auction') {
+        const proposedPrice = parseOrderPrice(elements.phoneOrderAuctionPriceValue?.value);
+        if (proposedPrice === null || proposedPrice < 500) {
+            return { error: 'Для аукциона укажите цену клиента не меньше 500 ₸.' };
+        }
+        return {
+            ...common,
+            fromAddress,
+            toAddress,
+            priceText: `Аукцион: ${formatOrderPrice(proposedPrice, proposedPrice)}`,
+            priceAmount: proposedPrice,
+            serviceDetails: { proposedPrice, priceSource: 'customer_offer' }
+        };
+    }
+
+    const price = standardPhoneOrderPrice();
+    if (price.error) return price;
+
+    if (serviceType === 'delivery') {
+        const store = elements.phoneOrderDeliveryStore?.value.trim() || '';
+        const deliveryAddress = elements.phoneOrderDeliveryAddress?.value.trim() || '';
+        const items = elements.phoneOrderDeliveryItems?.value.trim() || '';
+        if (!deliveryAddress || !items) return { error: 'Для доставки укажите адрес и что требуется доставить.' };
+        return {
+            ...common,
+            fromAddress: store ? `Магазин: ${store}` : 'Доставка',
+            toAddress: deliveryAddress,
+            priceText: price.priceText,
+            priceAmount: price.maximumPrice,
+            serviceDetails: { store, items }
+        };
+    }
+
+    if (serviceType === 'cargo') {
+        const cargoDescription = elements.phoneOrderCargoDescription?.value.trim() || '';
+        const movers = elements.phoneOrderCargoMovers?.value || '0';
+        if (!cargoDescription) return { error: 'Опишите груз для водителя.' };
+        return {
+            ...common,
+            fromAddress,
+            toAddress,
+            priceText: price.priceText,
+            priceAmount: price.maximumPrice,
+            serviceDetails: { cargoDescription, movers: Number(movers) || 0 }
+        };
+    }
+
+    if (serviceType === 'soberDriver') {
+        const carModel = elements.phoneOrderSoberCar?.value.trim() || '';
+        if (!carModel) return { error: 'Укажите марку автомобиля клиента.' };
+        return {
+            ...common,
+            fromAddress,
+            toAddress,
+            priceText: price.priceText,
+            priceAmount: price.maximumPrice,
+            serviceDetails: { carModel }
+        };
+    }
+
+    if (serviceType === 'assistance') {
+        const assistanceType = elements.phoneOrderAssistanceType?.value || '';
+        const address = elements.phoneOrderAssistanceAddress?.value.trim() || '';
+        if (!assistanceType || !address) return { error: 'Для помощи выберите тип и укажите адрес.' };
+        return {
+            ...common,
+            fromAddress: address,
+            toAddress: `Помощь: ${assistanceType}`,
+            priceText: price.priceText,
+            priceAmount: price.maximumPrice,
+            serviceDetails: {
+                assistanceType,
+                carModel: elements.phoneOrderAssistanceCar?.value.trim() || '',
+                licencePlate: elements.phoneOrderAssistancePlate?.value.trim() || '',
+                task: elements.phoneOrderAssistanceTask?.value.trim() || ''
+            }
+        };
+    }
+
+    return {
+        ...common,
+        fromAddress,
+        toAddress,
+        priceText: price.priceText,
+        priceAmount: price.maximumPrice
+    };
+}
+
 async function createPhoneOrder(event) {
     event.preventDefault();
     if (!currentUser || phoneOrderSubmitInProgress) return;
 
-    const fromAddress = elements.phoneOrderFrom.value.trim();
-    const toAddress = elements.phoneOrderTo.value.trim();
     const customerName = elements.phoneOrderCustomerName.value.trim();
     const customerPhone = elements.phoneOrderCustomerPhone.value.trim();
-    const minimumPrice = parseOrderPrice(elements.phoneOrderPriceFrom.value);
-    const upperPriceValue = elements.phoneOrderPriceTo.value.trim();
-    const maximumPrice = upperPriceValue ? parseOrderPrice(upperPriceValue) : minimumPrice;
+    const payload = createPhoneOrderPayload();
     const selectedDriver = elements.phoneOrderDriver.value
         ? findManualAssignmentDriver(elements.phoneOrderDriver.value)
         : null;
 
-    if (!fromAddress || !toAddress) return setMessage(elements.phoneOrderMessage, 'Заполните адрес отправления и адрес назначения.');
+    if (payload.error) return setMessage(elements.phoneOrderMessage, payload.error);
     if (!validCustomerPhone(customerPhone)) return setMessage(elements.phoneOrderMessage, 'Укажите номер телефона клиента: от 10 до 15 цифр.');
-    if (minimumPrice === null || maximumPrice === null || minimumPrice <= 0 || maximumPrice < minimumPrice) {
-        return setMessage(elements.phoneOrderMessage, 'Проверьте стоимость: укажите положительную цену, а верхняя сумма не должна быть меньше нижней.');
-    }
     if (elements.phoneOrderDriver.value && !selectedDriver) {
         return setMessage(elements.phoneOrderMessage, 'Выбранный водитель больше не доступен. Откройте форму ещё раз и выберите другого.');
     }
@@ -1270,20 +1518,12 @@ async function createPhoneOrder(event) {
 
     const orderRef = doc(collection(db, 'orders'));
     const contactRef = doc(db, 'orderContacts', orderRef.id);
-    const priceText = formatOrderPrice(minimumPrice, maximumPrice);
     const baseOrder = {
         orderNumber: createDispatcherOrderNumber(),
-        serviceType: 'taxi',
+        ...payload,
         source: 'dispatcher',
         clientUid: '',
-        fromAddress,
-        toAddress,
-        stops: phoneOrderStops(),
-        wishes: elements.phoneOrderWishes.value.trim(),
-        scheduledFor: elements.phoneOrderScheduledFor.value || '',
         direction: '',
-        priceText,
-        priceAmount: maximumPrice,
         createdByUid: currentUser.uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -1306,7 +1546,7 @@ async function createPhoneOrder(event) {
             });
             batch.set(contactRef, phoneOrderContactData(customerName, customerPhone));
             await batch.commit();
-            setMessage(elements.onlineOrdersMessage, `Заказ ${baseOrder.orderNumber} отправлен всем водителям.`, true);
+            setMessage(elements.onlineOrdersMessage, `${baseOrder.serviceLabel}: заказ ${baseOrder.orderNumber} отправлен всем водителям.`, true);
         } else {
             await runTransaction(db, async (transaction) => {
                 const driverRef = doc(db, 'drivers', selectedDriver.id);
@@ -1345,12 +1585,13 @@ async function createPhoneOrder(event) {
             setMessage(
                 elements.onlineOrdersMessage,
                 cabinetIsOpen
-                    ? `Заказ ${baseOrder.orderNumber} назначен водителю ID ${selectedDriver.driverNumber ?? selectedDriver.id}.`
-                    : `Заказ ${baseOrder.orderNumber} назначен водителю ID ${selectedDriver.driverNumber ?? selectedDriver.id}. Пуш отправлен; при необходимости подтвердите заказ звонком.`,
+                    ? `${baseOrder.serviceLabel}: заказ ${baseOrder.orderNumber} назначен водителю ID ${selectedDriver.driverNumber ?? selectedDriver.id}.`
+                    : `${baseOrder.serviceLabel}: заказ ${baseOrder.orderNumber} назначен водителю ID ${selectedDriver.driverNumber ?? selectedDriver.id}. Пуш отправлен; при необходимости подтвердите заказ звонком.`,
                 true
             );
         }
         elements.phoneOrderForm.reset();
+        setPhoneOrderService('taxi');
         closePhoneOrderModal(true);
     } catch (error) {
         console.error('Не удалось создать заказ по телефону:', error);
@@ -1358,6 +1599,41 @@ async function createPhoneOrder(event) {
     } finally {
         setPhoneOrderBusy(false);
     }
+}
+
+function dispatcherOrderServiceLabel(order) {
+    return order.serviceLabel || DISPATCHER_ORDER_SERVICES[order.serviceType]?.label || 'Такси';
+}
+
+function dispatcherOrderServiceDetailsText(order) {
+    const details = order.serviceDetails || {};
+    if (order.serviceType === 'auction' && Number.isFinite(Number(details.proposedPrice))) {
+        return `Аукцион: клиент предлагает ${Number(details.proposedPrice).toLocaleString('ru-RU')} ₸.`;
+    }
+    if (order.serviceType === 'delivery') {
+        return [
+            details.store ? `Магазин: ${details.store}` : '',
+            details.items ? `Что доставить: ${details.items}` : ''
+        ].filter(Boolean).join(' · ');
+    }
+    if (order.serviceType === 'cargo') {
+        return [
+            details.cargoDescription ? `Груз: ${details.cargoDescription}` : '',
+            Number(details.movers) > 0 ? `Грузчики: ${details.movers}` : 'Грузчики не требуются'
+        ].filter(Boolean).join(' · ');
+    }
+    if (order.serviceType === 'soberDriver') {
+        return details.carModel ? `Автомобиль клиента: ${details.carModel}` : '';
+    }
+    if (order.serviceType === 'assistance') {
+        return [
+            details.assistanceType || '',
+            details.carModel ? `Автомобиль: ${details.carModel}` : '',
+            details.licencePlate ? `Гос. номер: ${details.licencePlate}` : '',
+            details.task ? `Детали: ${details.task}` : ''
+        ].filter(Boolean).join(' · ');
+    }
+    return '';
 }
 
 function createOnlineOrderCard(order) {
@@ -1383,6 +1659,7 @@ function createOnlineOrderCard(order) {
     const badge = createOrderText('span', `flex-shrink-0 rounded-full px-3 py-1 text-[11px] font-extrabold ${statusClass}`, statusText);
     header.append(titleWrap, badge);
 
+    const service = createOrderText('p', 'mt-2 text-[11px] font-extrabold uppercase tracking-wide text-blue-700 dark:text-blue-300', dispatcherOrderServiceLabel(order));
     const route = createOrderText('p', 'mt-3 font-bold break-words', `${order.fromAddress || '—'} → ${order.toAddress || '—'}`);
     const price = createOrderText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', order.priceText || 'Цена уточняется');
     const toggle = document.createElement('button');
@@ -1397,7 +1674,7 @@ function createOnlineOrderCard(order) {
     toggleIcon.setAttribute('aria-hidden', 'true');
     toggle.append(toggleText, toggleIcon);
     toggle.addEventListener('click', () => setOrderExpanded(order.id, !expanded));
-    summary.append(header, route, price, toggle);
+    summary.append(header, service, route, price, toggle);
 
     const detailsPanel = document.createElement('div');
     detailsPanel.id = detailsId;
@@ -1410,6 +1687,15 @@ function createOnlineOrderCard(order) {
             'p',
             'mb-3 rounded-xl bg-sky-50 px-3 py-2 text-xs font-bold text-sky-800 dark:bg-sky-900/30 dark:text-sky-200',
             'Заказ записан диспетчером по телефону.'
+        ));
+    }
+
+    const serviceDetails = dispatcherOrderServiceDetailsText(order);
+    if (serviceDetails) {
+        detailsPanel.append(createOrderText(
+            'p',
+            'mb-3 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200',
+            serviceDetails
         ));
     }
 
@@ -1967,6 +2253,9 @@ elements.addDriverForm.addEventListener('submit', addDriver);
 elements.ordersLinkForm.addEventListener('submit', saveOrdersLink);
 elements.dispatcherMessagesForm.addEventListener('submit', (event) => void sendDispatcherMessage(event));
 elements.createPhoneOrderButton?.addEventListener('click', openPhoneOrderModal);
+elements.phoneOrderServiceButtons.forEach((button) => {
+    button.addEventListener('click', () => setPhoneOrderService(button.dataset.phoneOrderService));
+});
 elements.phoneOrderForm?.addEventListener('submit', (event) => void createPhoneOrder(event));
 elements.phoneOrderClose?.addEventListener('click', closePhoneOrderModal);
 elements.phoneOrderCancel?.addEventListener('click', closePhoneOrderModal);

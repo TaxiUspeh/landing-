@@ -520,8 +520,22 @@ async function showSystemNotification({ title, body, tag, url }) {
     }
 }
 
+function orderRoutePoints(order) {
+    const start = order.fromAddress || 'Адрес подачи не указан';
+    const stops = Array.isArray(order.stops)
+        ? order.stops.map((stop) => String(stop || '').trim()).filter(Boolean)
+        : [];
+    const destination = order.toAddress || 'Адрес назначения не указан';
+    return [start, ...stops, destination];
+}
+
 function orderRoute(order) {
-    return `${order.fromAddress || 'Адрес подачи не указан'} → ${order.toAddress || 'Адрес назначения не указан'}`;
+    return orderRoutePoints(order).join(' → ');
+}
+
+function orderNavigationUrl(order) {
+    const routeText = orderRoutePoints(order).join('~');
+    return `https://yandex.kz/maps/?mode=routes&rtext=${encodeURIComponent(routeText)}&rtt=auto`;
 }
 
 function signalNewOrder(order) {
@@ -1413,7 +1427,7 @@ function createOrderCard(order, assigned) {
     header.append(title, badge);
 
     const service = createText('p', 'mt-2 text-[11px] font-extrabold uppercase tracking-wide text-blue-700 dark:text-blue-300', orderServiceLabel(order));
-    const route = createText('p', 'mt-2 text-sm font-bold break-words', `${order.fromAddress || '—'} → ${order.toAddress || '—'}`);
+    const route = createText('p', 'mt-2 text-sm font-bold break-words', orderRoute(order));
     const price = createText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', order.priceText || 'Цена уточняется');
     card.append(header, service, route, price);
 
@@ -1432,7 +1446,7 @@ function createOrderCard(order, assigned) {
     }
 
     if (Array.isArray(order.stops) && order.stops.length) {
-        card.append(createText('p', 'mt-2 text-xs text-gray-600 dark:text-gray-300', `Остановки: ${order.stops.join(' → ')}`));
+        card.append(createText('p', 'mt-2 text-xs font-semibold text-blue-700 dark:text-blue-300', 'Маршрут включает промежуточные остановки.'));
     }
     if (order.scheduledFor) {
         card.append(createText('p', 'mt-1 text-xs text-gray-600 dark:text-gray-300', `Время: ${order.scheduledFor.replace('T', ' ')}`));
@@ -1444,11 +1458,11 @@ function createOrderCard(order, assigned) {
     const actions = document.createElement('div');
     actions.className = 'mt-3 flex flex-wrap gap-2';
     const navigation = document.createElement('a');
-    navigation.href = `https://yandex.kz/maps/?text=${encodeURIComponent(order.fromAddress || '')}`;
+    navigation.href = orderNavigationUrl(order);
     navigation.target = '_blank';
     navigation.rel = 'noopener noreferrer';
     navigation.className = 'rounded-lg bg-gray-200 dark:bg-gray-700 px-3 py-2 text-xs font-extrabold';
-    navigation.textContent = 'Маршрут';
+    navigation.textContent = Array.isArray(order.stops) && order.stops.length ? 'Маршрут с остановками' : 'Маршрут';
     actions.append(navigation);
 
     if (!assigned) {

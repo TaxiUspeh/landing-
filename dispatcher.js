@@ -162,6 +162,7 @@ let authActionInProgress = false;
 let manualOrderAssignmentInProgress = false;
 let phoneOrderSubmitInProgress = false;
 let cancellationDecisionInProgress = false;
+let dispatcherCompletionInProgress = false;
 let dispatcherMessageSendInProgress = false;
 let driverStatusRefreshTimer = null;
 let selectedDriverMessageUid = '';
@@ -1832,6 +1833,15 @@ function createOnlineOrderCard(order) {
         falseCall.addEventListener('click', () => void resolveClientCancellation(order, 'false_call_fee'));
         actions.append(freeCancel, falseCall);
     } else if (CANCELLABLE_ORDER_STATUSES.has(order.status)) {
+        if (order.assignedDriverId) {
+            const complete = document.createElement('button');
+            complete.type = 'button';
+            complete.className = 'rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-extrabold';
+            complete.textContent = 'Завершить заказ';
+            complete.disabled = dispatcherCompletionInProgress;
+            complete.addEventListener('click', () => void completeOnlineOrder(order));
+            actions.append(complete);
+        }
         const cancel = document.createElement('button');
         cancel.type = 'button';
         cancel.className = 'rounded-xl border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-2 text-xs font-extrabold';
@@ -2025,6 +2035,116 @@ async function cancelOnlineOrder(order) {
     } catch (error) {
         console.error('Не удалось отменить заказ:', error);
         setMessage(elements.onlineOrdersMessage, 'Не удалось отменить заказ. Обновите страницу и попробуйте ещё раз.');
+    }
+}
+
+async function completeOnlineOrder(order) {
+    if (!currentUser || dispatcherCompletionInProgress || !ACTIVE_ORDER_STATUSES.has(order.status)) return;
+    if (!order.assignedDriverId) {
+        setMessage(elements.onlineOrdersMessage, 'Нельзя завершить заказ: водитель не назначен.');
+        return;
+    }
+    if (!window.confirm(`Завершить заказ ${order.orderNumber || order.id} от имени диспетчера? Комиссия будет учтена, а водитель снова станет свободным.`)) return;
+
+    dispatcherCompletionInProgress = true;
+    setMessage(elements.onlineOrdersMessage, '');
+    renderOnlineOrders();
+    try {
+        let commissionAmount = 0;
+        await runTransaction(db, async (transaction) => {
+            const orderRef = doc(db, 'orders', order.id);
+            const orderSnapshot = await transaction.get(orderRef);
+            if (!orderSnapshot.exists() || !ACTIVE_ORDER_STATUSES.has(orderSnapshot.data().status)) {
+                throw new Error('Статус заказа уже изменился.');
+            }
+            const currentOrder = orderSnapshot.data();
+            const driverId = String(currentOrder.assignedDriverId || '');
+            if (!driverId) throw new Error('У заказа нет назначенного водителя.');
+
+            const driverRef = doc(db, 'drivers', driverId);
+            const historyRef = doc(db, 'balanceHistory', order.id);
+            const driverSnapshot = await transaction.get(driverRef);
+            const historySnapshot = await transaction.get(historyRef);
+            if (!driverSnapshot.exists()) throw new Error('Карточка назначенного водителя не найдена.');
+
+            let previousBalance = Number(driverSnapshot.data().balance);
+            let newBalance = previousBalance;
+            let commissionBaseAmount = Number(currentOrder.priceAmount);
+            if (!Number.isFinite(previousBalance)) throw new Error('В карточке водителя указан некорректный баланс.');
+
+            if (historySnapshot.exists()) {
+                const history = historySnapshot.data();
+                commissionAmount = Number(history.commissionAmount);
+                commissionBaseAmount = Number(history.commissionBaseAmount);
+                previousBalance = Number(history.previousBalance);
+                newBalance = Number(history.newBalance);
+                if (!Number.isFinite(commissionAmount) || !Number.isFinite(commissionBaseAmount)
+                    || !Number.isFinite(previousBalance) || !Number.isFinite(newBalance)) {
+                    throw new Error('История комиссии по заказу заполнена некорректно.');
+                }
+            } else {
+                if (!Number.isFinite(commissionBaseAmount) || commissionBaseAmount < 0) {
+                    throw new Error('В заказе нет корректной цены для комиссии.');
+                }
+                commissionAmount = commissionBaseAmount / 5;
+                newBalance = previousBalance + commissionAmount;
+                transaction.update(driverRef, {
+                    balance: newBalance,
+                    lastCommissionOrderId: order.id,
+                    updatedAt: serverTimestamp()
+                });
+                transaction.set(historyRef, {
+                    driverId,
+                    driverNumber: driverSnapshot.data().driverNumber,
+                    orderId: order.id,
+                    orderNumber: currentOrder.orderNumber || '',
+                    source: 'online',
+                    commissionRate: 20,
+                    commissionBaseAmount,
+                    commissionAmount,
+                    previousBalance,
+                    newBalance,
+                    difference: commissionAmount,
+                    reason: 'Комиссия 20% от максимальной цены онлайн-заказа',
+                    changedAt: serverTimestamp(),
+                    changedBy: currentUser.uid
+                });
+            }
+
+            transaction.update(orderRef, {
+                status: 'completed',
+                commissionRate: 20,
+                commissionBaseAmount,
+                commissionAmount,
+                commissionBalanceBefore: previousBalance,
+                commissionBalanceAfter: newBalance,
+                commissionChargedAt: serverTimestamp(),
+                completedByDispatcherUid: currentUser.uid,
+                updatedAt: serverTimestamp()
+            });
+
+            const driverUid = normalizeUid(currentOrder.assignedDriverUid || '');
+            if (driverUid) {
+                const stateRef = doc(db, 'driverStates', driverUid);
+                const stateSnapshot = await transaction.get(stateRef);
+                if (!stateSnapshot.exists() || stateSnapshot.data().activeOrderId === order.id) {
+                    transaction.set(stateRef, {
+                        driverId,
+                        status: 'available',
+                        activeOrderId: '',
+                        lastSeen: serverTimestamp(),
+                        updatedAt: serverTimestamp()
+                    }, { merge: true });
+                }
+            }
+        });
+        setMessage(elements.onlineOrdersMessage, `Заказ завершён диспетчером. Комиссия ${formatMoney(commissionAmount)} учтена.`, true);
+    } catch (error) {
+        console.error('Не удалось завершить заказ диспетчером:', error);
+        setMessage(elements.onlineOrdersMessage, error.message || 'Не удалось завершить заказ. Обновите страницу и повторите попытку.');
+    } finally {
+        dispatcherCompletionInProgress = false;
+        renderOnlineOrders();
     }
 }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v38-driver-balance-summary';
+const CACHE_NAME = 'taxi-uspeh-v39-dispatcher-order-completion';
 const APP_SHELL = [
   './',
   './index.html',

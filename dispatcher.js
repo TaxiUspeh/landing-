@@ -2065,6 +2065,9 @@ async function completeOnlineOrder(order) {
             const historyRef = doc(db, 'balanceHistory', order.id);
             const driverSnapshot = await transaction.get(driverRef);
             const historySnapshot = await transaction.get(historyRef);
+            const driverUid = normalizeUid(currentOrder.assignedDriverUid || '');
+            const stateRef = driverUid ? doc(db, 'driverStates', driverUid) : null;
+            const stateSnapshot = stateRef ? await transaction.get(stateRef) : null;
             if (!driverSnapshot.exists()) throw new Error('Карточка назначенного водителя не найдена.');
 
             let previousBalance = Number(driverSnapshot.data().balance);
@@ -2123,19 +2126,14 @@ async function completeOnlineOrder(order) {
                 updatedAt: serverTimestamp()
             });
 
-            const driverUid = normalizeUid(currentOrder.assignedDriverUid || '');
-            if (driverUid) {
-                const stateRef = doc(db, 'driverStates', driverUid);
-                const stateSnapshot = await transaction.get(stateRef);
-                if (!stateSnapshot.exists() || stateSnapshot.data().activeOrderId === order.id) {
-                    transaction.set(stateRef, {
-                        driverId,
-                        status: 'available',
-                        activeOrderId: '',
-                        lastSeen: serverTimestamp(),
-                        updatedAt: serverTimestamp()
-                    }, { merge: true });
-                }
+            if (stateRef && (!stateSnapshot.exists() || stateSnapshot.data().activeOrderId === order.id)) {
+                transaction.set(stateRef, {
+                    driverId,
+                    status: 'available',
+                    activeOrderId: '',
+                    lastSeen: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
             }
         });
         setMessage(elements.onlineOrdersMessage, `Заказ завершён диспетчером. Комиссия ${formatMoney(commissionAmount)} учтена.`, true);

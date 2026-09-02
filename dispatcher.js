@@ -49,6 +49,23 @@ const elements = {
     onlineOrdersMessage: document.getElementById('online-orders-message'),
     onlineOrdersContent: document.getElementById('online-orders-content'),
     toggleOnlineOrdersSection: document.getElementById('toggle-online-orders-section'),
+    createPhoneOrderButton: document.getElementById('create-phone-order-button'),
+    phoneOrderModal: document.getElementById('phone-order-modal'),
+    phoneOrderClose: document.getElementById('phone-order-close'),
+    phoneOrderForm: document.getElementById('phone-order-form'),
+    phoneOrderFrom: document.getElementById('phone-order-from'),
+    phoneOrderTo: document.getElementById('phone-order-to'),
+    phoneOrderStops: document.getElementById('phone-order-stops'),
+    phoneOrderCustomerName: document.getElementById('phone-order-customer-name'),
+    phoneOrderCustomerPhone: document.getElementById('phone-order-customer-phone'),
+    phoneOrderPriceFrom: document.getElementById('phone-order-price-from'),
+    phoneOrderPriceTo: document.getElementById('phone-order-price-to'),
+    phoneOrderScheduledFor: document.getElementById('phone-order-scheduled-for'),
+    phoneOrderDriver: document.getElementById('phone-order-driver'),
+    phoneOrderWishes: document.getElementById('phone-order-wishes'),
+    phoneOrderMessage: document.getElementById('phone-order-message'),
+    phoneOrderCancel: document.getElementById('phone-order-cancel'),
+    phoneOrderSubmit: document.getElementById('phone-order-submit'),
     driverStatsButtons: [...document.querySelectorAll('[data-driver-stat-filter]')],
     driverSummaryModal: document.getElementById('driver-summary-modal'),
     driverSummaryTitle: document.getElementById('driver-summary-title'),
@@ -116,6 +133,7 @@ let unsubscribeOrderContacts = null;
 let unsubscribeDriverMessages = null;
 let authActionInProgress = false;
 let manualOrderAssignmentInProgress = false;
+let phoneOrderSubmitInProgress = false;
 let cancellationDecisionInProgress = false;
 let dispatcherMessageSendInProgress = false;
 let driverStatusRefreshTimer = null;
@@ -1118,6 +1136,230 @@ function appendManualAssignmentControls(actions, order) {
     actions.append(driverIdInput, select, assign);
 }
 
+function createDispatcherOrderNumber() {
+    const now = new Date();
+    const date = [
+        String(now.getFullYear()).slice(-2),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        String(now.getDate()).padStart(2, '0')
+    ].join('');
+    const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+    return `TU-${date}-${suffix}`;
+}
+
+function validCustomerPhone(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+    return digits.length >= 10 && digits.length <= 15;
+}
+
+function parseOrderPrice(value) {
+    const amount = Number(String(value || '').replace(/\s/g, '').replace(',', '.'));
+    return Number.isInteger(amount) && amount >= 0 && amount <= 10000000 ? amount : null;
+}
+
+function formatOrderPrice(minimum, maximum) {
+    const formatNumber = (value) => new Intl.NumberFormat('ru-RU').format(value);
+    return maximum > minimum
+        ? `от ${formatNumber(minimum)}–${formatNumber(maximum)} ₸`
+        : `${formatNumber(minimum)} ₸`;
+}
+
+function populatePhoneOrderDrivers() {
+    const select = elements.phoneOrderDriver;
+    if (!select) return;
+    const selected = select.value;
+    select.replaceChildren();
+    const searchOption = document.createElement('option');
+    searchOption.value = '';
+    searchOption.textContent = 'В поиск — всем водителям';
+    select.append(searchOption);
+    for (const driver of manualAssignmentCandidates()) {
+        const option = document.createElement('option');
+        option.value = driver.id;
+        option.textContent = manualAssignmentOptionLabel(driver);
+        select.append(option);
+    }
+    if ([...select.options].some((option) => option.value === selected)) select.value = selected;
+}
+
+function setPhoneOrderBusy(busy) {
+    phoneOrderSubmitInProgress = busy;
+    if (elements.phoneOrderSubmit) {
+        elements.phoneOrderSubmit.disabled = busy;
+        elements.phoneOrderSubmit.innerHTML = busy
+            ? '<i class="fas fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Отправляем…'
+            : '<i class="fas fa-paper-plane mr-2" aria-hidden="true"></i>Создать и отправить';
+    }
+    if (elements.phoneOrderCancel) elements.phoneOrderCancel.disabled = busy;
+    if (elements.phoneOrderClose) elements.phoneOrderClose.disabled = busy;
+}
+
+function openPhoneOrderModal() {
+    if (!elements.phoneOrderModal || !elements.phoneOrderForm) return;
+    elements.phoneOrderForm.reset();
+    populatePhoneOrderDrivers();
+    setMessage(elements.phoneOrderMessage, '');
+    setHidden(elements.phoneOrderModal, false);
+    document.body.classList.add('overflow-hidden');
+    setTimeout(() => elements.phoneOrderFrom?.focus(), 0);
+}
+
+function closePhoneOrderModal(force = false) {
+    if (phoneOrderSubmitInProgress && !force) return;
+    setHidden(elements.phoneOrderModal, true);
+    document.body.classList.remove('overflow-hidden');
+}
+
+function phoneOrderStops() {
+    return String(elements.phoneOrderStops?.value || '')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .slice(0, 5);
+}
+
+function phoneOrderContactData(customerName, customerPhone) {
+    return {
+        clientUid: '',
+        customerName: customerName || 'Клиент',
+        customerPhone,
+        passengerPhone: '',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+    };
+}
+
+async function createPhoneOrder(event) {
+    event.preventDefault();
+    if (!currentUser || phoneOrderSubmitInProgress) return;
+
+    const fromAddress = elements.phoneOrderFrom.value.trim();
+    const toAddress = elements.phoneOrderTo.value.trim();
+    const customerName = elements.phoneOrderCustomerName.value.trim();
+    const customerPhone = elements.phoneOrderCustomerPhone.value.trim();
+    const minimumPrice = parseOrderPrice(elements.phoneOrderPriceFrom.value);
+    const upperPriceValue = elements.phoneOrderPriceTo.value.trim();
+    const maximumPrice = upperPriceValue ? parseOrderPrice(upperPriceValue) : minimumPrice;
+    const selectedDriver = elements.phoneOrderDriver.value
+        ? findManualAssignmentDriver(elements.phoneOrderDriver.value)
+        : null;
+
+    if (!fromAddress || !toAddress) return setMessage(elements.phoneOrderMessage, 'Заполните адрес отправления и адрес назначения.');
+    if (!validCustomerPhone(customerPhone)) return setMessage(elements.phoneOrderMessage, 'Укажите номер телефона клиента: от 10 до 15 цифр.');
+    if (minimumPrice === null || maximumPrice === null || minimumPrice <= 0 || maximumPrice < minimumPrice) {
+        return setMessage(elements.phoneOrderMessage, 'Проверьте стоимость: укажите положительную цену, а верхняя сумма не должна быть меньше нижней.');
+    }
+    if (elements.phoneOrderDriver.value && !selectedDriver) {
+        return setMessage(elements.phoneOrderMessage, 'Выбранный водитель больше не доступен. Откройте форму ещё раз и выберите другого.');
+    }
+
+    let cabinetIsOpen = false;
+    if (selectedDriver) {
+        const availability = driverAvailabilityInfo(selectedDriver);
+        if (availability.key === 'busy') return setMessage(elements.phoneOrderMessage, 'Этот водитель уже занят текущим заказом.');
+        cabinetIsOpen = availability.key === 'available';
+        if (!cabinetIsOpen) {
+            const phone = selectedDriver.phone ? ` Телефон: ${selectedDriver.phone}.` : '';
+            const confirmed = window.confirm(
+                `Кабинет водителя ID ${selectedDriver.driverNumber ?? selectedDriver.id} сейчас не открыт.${phone} `
+                + 'Ему будет отправлен пуш; если уведомления не включены, подтвердите заказ также по телефону. Назначить?'
+            );
+            if (!confirmed) return;
+        }
+    }
+
+    const orderRef = doc(collection(db, 'orders'));
+    const contactRef = doc(db, 'orderContacts', orderRef.id);
+    const priceText = formatOrderPrice(minimumPrice, maximumPrice);
+    const baseOrder = {
+        orderNumber: createDispatcherOrderNumber(),
+        serviceType: 'taxi',
+        source: 'dispatcher',
+        clientUid: '',
+        fromAddress,
+        toAddress,
+        stops: phoneOrderStops(),
+        wishes: elements.phoneOrderWishes.value.trim(),
+        scheduledFor: elements.phoneOrderScheduledFor.value || '',
+        direction: '',
+        priceText,
+        priceAmount: maximumPrice,
+        createdByUid: currentUser.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+    };
+
+    setPhoneOrderBusy(true);
+    setMessage(elements.phoneOrderMessage, '');
+    try {
+        if (!selectedDriver) {
+            const batch = writeBatch(db);
+            batch.set(orderRef, {
+                ...baseOrder,
+                status: 'searching',
+                assignedDriverUid: '',
+                assignedDriverId: '',
+                driverName: '',
+                driverPhone: '',
+                driverCar: '',
+                driverColor: ''
+            });
+            batch.set(contactRef, phoneOrderContactData(customerName, customerPhone));
+            await batch.commit();
+            setMessage(elements.onlineOrdersMessage, `Заказ ${baseOrder.orderNumber} отправлен всем водителям.`, true);
+        } else {
+            await runTransaction(db, async (transaction) => {
+                const driverRef = doc(db, 'drivers', selectedDriver.id);
+                const driverSnapshot = await transaction.get(driverRef);
+                if (!driverSnapshot.exists()) throw new Error('Карточка водителя не найдена.');
+                const driver = driverSnapshot.data();
+                const driverUid = normalizeUid(driver.authUid || '');
+                if (!driverUid || driver.status !== 'active') throw new Error('Водитель недоступен для назначения.');
+
+                const stateRef = doc(db, 'driverStates', driverUid);
+                const stateSnapshot = await transaction.get(stateRef);
+                const state = stateSnapshot.exists() ? stateSnapshot.data() : null;
+                if (state?.status === 'busy' || state?.activeOrderId) throw new Error('Этот водитель уже занят текущим заказом.');
+
+                transaction.set(orderRef, {
+                    ...baseOrder,
+                    status: 'accepted',
+                    assignedDriverUid: driverUid,
+                    assignedDriverId: selectedDriver.id,
+                    driverName: driver.name || 'Водитель',
+                    driverPhone: driver.phone || '',
+                    driverCar: driver.car || '',
+                    driverColor: driver.color || '',
+                    assignmentSource: 'dispatcher',
+                    acceptedAt: serverTimestamp()
+                });
+                transaction.set(contactRef, phoneOrderContactData(customerName, customerPhone));
+                transaction.set(stateRef, {
+                    driverId: String(selectedDriver.id),
+                    status: 'busy',
+                    activeOrderId: orderRef.id,
+                    lastSeen: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
+            });
+            setMessage(
+                elements.onlineOrdersMessage,
+                cabinetIsOpen
+                    ? `Заказ ${baseOrder.orderNumber} назначен водителю ID ${selectedDriver.driverNumber ?? selectedDriver.id}.`
+                    : `Заказ ${baseOrder.orderNumber} назначен водителю ID ${selectedDriver.driverNumber ?? selectedDriver.id}. Пуш отправлен; при необходимости подтвердите заказ звонком.`,
+                true
+            );
+        }
+        elements.phoneOrderForm.reset();
+        closePhoneOrderModal(true);
+    } catch (error) {
+        console.error('Не удалось создать заказ по телефону:', error);
+        setMessage(elements.phoneOrderMessage, error.message || 'Не удалось сохранить заказ. Проверьте интернет и повторите попытку.');
+    } finally {
+        setPhoneOrderBusy(false);
+    }
+}
+
 function createOnlineOrderCard(order) {
     const card = document.createElement('article');
     card.className = 'overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60';
@@ -1162,6 +1404,14 @@ function createOnlineOrderCard(order) {
     detailsPanel.className = 'border-t border-slate-200 p-4 dark:border-slate-800';
     detailsPanel.hidden = !expanded;
     card.append(summary, detailsPanel);
+
+    if (order.source === 'dispatcher') {
+        detailsPanel.append(createOrderText(
+            'p',
+            'mb-3 rounded-xl bg-sky-50 px-3 py-2 text-xs font-bold text-sky-800 dark:bg-sky-900/30 dark:text-sky-200',
+            'Заказ записан диспетчером по телефону.'
+        ));
+    }
 
     const pendingCancellation = order.cancellationRequestStatus === 'pending';
     if (pendingCancellation) {
@@ -1396,6 +1646,7 @@ async function assignOrderManually(orderId, driverId) {
                 driverPhone: driver.phone || '',
                 driverCar: driver.car || '',
                 driverColor: driver.color || '',
+                assignmentSource: 'dispatcher',
                 acceptedAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
@@ -1715,6 +1966,13 @@ elements.copyUid.addEventListener('click', copyUid);
 elements.addDriverForm.addEventListener('submit', addDriver);
 elements.ordersLinkForm.addEventListener('submit', saveOrdersLink);
 elements.dispatcherMessagesForm.addEventListener('submit', (event) => void sendDispatcherMessage(event));
+elements.createPhoneOrderButton?.addEventListener('click', openPhoneOrderModal);
+elements.phoneOrderForm?.addEventListener('submit', (event) => void createPhoneOrder(event));
+elements.phoneOrderClose?.addEventListener('click', closePhoneOrderModal);
+elements.phoneOrderCancel?.addEventListener('click', closePhoneOrderModal);
+elements.phoneOrderModal?.addEventListener('click', (event) => {
+    if (event.target === elements.phoneOrderModal) closePhoneOrderModal();
+});
 elements.driverSearch.addEventListener('input', renderDrivers);
 elements.toggleOnlineOrdersSection.addEventListener('click', () => {
     setOnlineOrdersSectionCollapsed(!onlineOrdersSectionCollapsed);
@@ -1729,6 +1987,9 @@ elements.driverSummaryModal.addEventListener('click', (event) => {
 document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !elements.driverSummaryModal.classList.contains('hidden')) {
         closeDriverSummary();
+    }
+    if (event.key === 'Escape' && !elements.phoneOrderModal?.classList.contains('hidden')) {
+        closePhoneOrderModal();
     }
 });
 elements.mobileSectionButtons.forEach((button) => {

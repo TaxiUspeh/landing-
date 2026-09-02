@@ -148,6 +148,9 @@
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Заказы и статусы обновляются автоматически. WhatsApp продолжает работать отдельно.</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
+                        <button id="create-phone-order-button" type="button" class="rounded-xl bg-blue-600 px-3 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-blue-700">
+                            <i class="fas fa-phone-volume mr-1" aria-hidden="true"></i>Записать заказ
+                        </button>
                         <button id="toggle-online-orders-section" type="button" aria-expanded="true" aria-controls="online-orders-content" class="rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-extrabold text-slate-700 dark:text-slate-200">
                             <i class="fas fa-compress-alt mr-1" aria-hidden="true"></i><span>Свернуть заказы</span>
                         </button>
@@ -192,6 +195,84 @@
                     <div id="online-orders-list" class="hidden p-4 grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
                 </div>
             </section>
+
+            <div id="phone-order-modal" class="hidden fixed inset-0 z-50 flex items-end bg-slate-950/60 p-3 sm:items-center sm:justify-center" role="dialog" aria-modal="true" aria-labelledby="phone-order-title">
+                <section class="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
+                    <div class="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4 dark:border-slate-800 dark:bg-slate-900">
+                        <div>
+                            <h2 id="phone-order-title" class="font-extrabold">
+                                <i class="fas fa-phone-volume mr-2 text-blue-600 dark:text-blue-400" aria-hidden="true"></i>Заказ по телефону
+                            </h2>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Запишите звонок клиента и сразу отправьте заказ всем водителям или конкретному водителю.</p>
+                        </div>
+                        <button id="phone-order-close" type="button" class="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Закрыть форму заказа">
+                            <i class="fas fa-xmark text-lg" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <form id="phone-order-form" class="space-y-4 p-5">
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="phone-order-from" class="mb-1 block text-sm font-bold">Откуда *</label>
+                                <input id="phone-order-from" class="form-control" type="text" maxlength="240" autocomplete="off" placeholder="Белоусовка, Суворова, 15" required>
+                            </div>
+                            <div>
+                                <label for="phone-order-to" class="mb-1 block text-sm font-bold">Куда *</label>
+                                <input id="phone-order-to" class="form-control" type="text" maxlength="240" autocomplete="off" placeholder="Белоусовка, Ленина, 20" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="phone-order-stops" class="mb-1 block text-sm font-bold">Остановки по пути</label>
+                            <input id="phone-order-stops" class="form-control" type="text" maxlength="500" autocomplete="off" placeholder="Необязательно, через запятую">
+                        </div>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="phone-order-customer-name" class="mb-1 block text-sm font-bold">Имя клиента</label>
+                                <input id="phone-order-customer-name" class="form-control" type="text" maxlength="80" autocomplete="name" placeholder="Например, Виталий">
+                            </div>
+                            <div>
+                                <label for="phone-order-customer-phone" class="mb-1 block text-sm font-bold">Телефон клиента *</label>
+                                <input id="phone-order-customer-phone" class="form-control" type="tel" inputmode="tel" maxlength="32" autocomplete="tel" placeholder="8705 123 45 67" required>
+                            </div>
+                        </div>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="phone-order-price-from" class="mb-1 block text-sm font-bold">Цена от, ₸ *</label>
+                                <input id="phone-order-price-from" class="form-control" type="number" min="0" max="10000000" step="1" inputmode="numeric" placeholder="800" required>
+                            </div>
+                            <div>
+                                <label for="phone-order-price-to" class="mb-1 block text-sm font-bold">Цена до, ₸</label>
+                                <input id="phone-order-price-to" class="form-control" type="number" min="0" max="10000000" step="1" inputmode="numeric" placeholder="Если цена одна — не заполняйте">
+                            </div>
+                        </div>
+                        <p class="-mt-2 text-xs text-slate-500 dark:text-slate-400">При диапазоне комиссия рассчитается с верхней суммы, как и у онлайн-заказа.</p>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="phone-order-scheduled-for" class="mb-1 block text-sm font-bold">Время подачи</label>
+                                <input id="phone-order-scheduled-for" class="form-control" type="datetime-local">
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Оставьте пустым, если ехать нужно сейчас.</p>
+                            </div>
+                            <div>
+                                <label for="phone-order-driver" class="mb-1 block text-sm font-bold">Кому отправить</label>
+                                <select id="phone-order-driver" class="form-control">
+                                    <option value="">В поиск — всем водителям</option>
+                                </select>
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Выберите ID, чтобы сразу назначить конкретного водителя.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="phone-order-wishes" class="mb-1 block text-sm font-bold">Комментарий диспетчера</label>
+                            <textarea id="phone-order-wishes" class="form-control min-h-20 resize-y" maxlength="500" placeholder="Например: нужен универсал, подъезд, оплата переводом"></textarea>
+                        </div>
+                        <p id="phone-order-message" class="hidden rounded-xl border p-3 text-sm" role="status"></p>
+                        <div class="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
+                            <button id="phone-order-cancel" type="button" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-extrabold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Отмена</button>
+                            <button id="phone-order-submit" type="submit" class="rounded-xl bg-green-600 px-4 py-2.5 text-sm font-extrabold text-white shadow-sm hover:bg-green-700">
+                                <i class="fas fa-paper-plane mr-2" aria-hidden="true"></i>Создать и отправить
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            </div>
 
             <div id="driver-summary-modal" class="hidden fixed inset-0 z-50 flex items-end bg-slate-950/60 p-3 sm:items-center sm:justify-center" role="dialog" aria-modal="true" aria-labelledby="driver-summary-title">
                 <section class="max-h-[82vh] w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900">

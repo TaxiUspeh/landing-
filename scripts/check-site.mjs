@@ -397,7 +397,7 @@ const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
 const dispatcherQuickSearchHtml = await readFile('dispatcher.html', 'utf8');
 const dispatcherQuickSearchScript = await readFile('dispatcher.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v42-driver-share-bar'")) failures.push('service-worker.js: driver-share-bar cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v43-driver-passenger-bar'")) failures.push('service-worker.js: driver-passenger-bar cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
 if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
@@ -406,6 +406,7 @@ if (!dispatcherQuickSearchHtml.includes('id="driver-quick-search-results"')) fai
 if (!dispatcherQuickSearchScript.includes('function driverMatchesSearch(')) failures.push('dispatcher.js: unified driver search matcher is missing');
 if (!dispatcherQuickSearchScript.includes('function openDriverFromQuickSearch(')) failures.push('dispatcher.js: quick search driver navigation is missing');
 if (!drivers.includes('id="driver-mobile-share"')) failures.push('drivers.html: persistent mobile share button is missing');
+if (!drivers.includes('href="./index.html"') || !drivers.includes('Пассажир')) failures.push('drivers.html: passenger mode button is missing');
 for (const expected of [
   "'./food.webmanifest'",
   "'./shashlyk.webmanifest'",

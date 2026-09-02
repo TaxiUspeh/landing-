@@ -721,11 +721,11 @@ function updateMobilePrimaryAction() {
     const hasDriverCabinet = Boolean(currentUser && currentDriver && currentDriverId);
     action.dataset.driverMobileAction = hasDriverCabinet ? 'chat' : 'documents';
     action.className = hasDriverCabinet
-        ? 'bg-sky-600 hover:bg-sky-700 text-white flex-grow py-3 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2'
-        : 'bg-green-600 hover:bg-green-700 text-white flex-grow py-3 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2';
+        ? 'bg-sky-600 hover:bg-sky-700 text-white flex-grow min-w-0 py-3 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-1'
+        : 'bg-green-600 hover:bg-green-700 text-white flex-grow min-w-0 py-3 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-1';
     elements.mobilePrimaryIcon.className = hasDriverCabinet
-        ? 'fas fa-comments text-xl'
-        : 'fab fa-whatsapp text-2xl';
+        ? 'fas fa-comments text-lg'
+        : 'fab fa-whatsapp text-lg';
     elements.mobilePrimaryLabel.textContent = hasDriverCabinet ? 'Написать диспетчеру' : 'Стать водителем';
     action.setAttribute('aria-label', hasDriverCabinet ? 'Написать диспетчеру' : 'Стать водителем');
 }

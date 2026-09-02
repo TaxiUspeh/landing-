@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v42-driver-share-bar';
+const CACHE_NAME = 'taxi-uspeh-v43-driver-passenger-bar';
 const APP_SHELL = [
   './',
   './index.html',

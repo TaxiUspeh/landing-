@@ -98,6 +98,9 @@ const elements = {
     dispatcherChatInput: document.getElementById('driver-dispatcher-chat-input'),
     dispatcherChatSend: document.getElementById('driver-dispatcher-chat-send'),
     dispatcherChatMessage: document.getElementById('driver-dispatcher-chat-message'),
+    mobileShare: document.getElementById('driver-mobile-share'),
+    mobileShareIcon: document.getElementById('driver-mobile-share-icon'),
+    mobileShareLabel: document.getElementById('driver-mobile-share-label'),
     mobilePrimaryAction: document.getElementById('driver-mobile-primary-action'),
     mobilePrimaryIcon: document.getElementById('driver-mobile-primary-icon'),
     mobilePrimaryLabel: document.getElementById('driver-mobile-primary-label'),
@@ -168,6 +171,7 @@ let driverChatLoaded = false;
 let driverChatSendInProgress = false;
 let driverChatInitialLoaded = false;
 let dispatcherChatHasNewReply = false;
+let mobileShareResetTimer = null;
 let driverPushVapidKey = '';
 let driverPushState = 'not_configured';
 let driverPushSyncInProgress = false;
@@ -724,6 +728,59 @@ function updateMobilePrimaryAction() {
         : 'fab fa-whatsapp text-2xl';
     elements.mobilePrimaryLabel.textContent = hasDriverCabinet ? 'Написать диспетчеру' : 'Стать водителем';
     action.setAttribute('aria-label', hasDriverCabinet ? 'Написать диспетчеру' : 'Стать водителем');
+}
+
+function setMobileShareFeedback(label, iconClass = 'fas fa-check text-lg') {
+    if (!elements.mobileShareLabel || !elements.mobileShareIcon) return;
+    elements.mobileShareLabel.textContent = label;
+    elements.mobileShareIcon.className = iconClass;
+    if (mobileShareResetTimer) window.clearTimeout(mobileShareResetTimer);
+    mobileShareResetTimer = window.setTimeout(() => {
+        elements.mobileShareLabel.textContent = 'Поделиться';
+        elements.mobileShareIcon.className = 'fas fa-share-nodes text-lg';
+    }, 2200);
+}
+
+async function copyTaxiUspehWorkLink(url) {
+    if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        return true;
+    }
+    const temporaryInput = document.createElement('textarea');
+    temporaryInput.value = url;
+    temporaryInput.setAttribute('readonly', '');
+    temporaryInput.style.position = 'fixed';
+    temporaryInput.style.opacity = '0';
+    document.body.append(temporaryInput);
+    temporaryInput.select();
+    const copied = document.execCommand('copy');
+    temporaryInput.remove();
+    return copied;
+}
+
+async function shareTaxiUspehWorkLink() {
+    const url = 'https://taxiuspeh.github.io/landing-/drivers.html';
+    const shareData = {
+        title: 'Работа в такси «Успех»',
+        text: 'Присоединяйтесь к водителям Такси «Успех»',
+        url
+    };
+    try {
+        if (navigator.share) {
+            await navigator.share(shareData);
+            return;
+        }
+        await copyTaxiUspehWorkLink(url);
+        setMobileShareFeedback('Готово');
+    } catch (error) {
+        if (error?.name === 'AbortError') return;
+        try {
+            const copied = await copyTaxiUspehWorkLink(url);
+            setMobileShareFeedback(copied ? 'Готово' : 'Ошибка', copied ? 'fas fa-check text-lg' : 'fas fa-triangle-exclamation text-lg');
+        } catch {
+            setMobileShareFeedback('Ошибка', 'fas fa-triangle-exclamation text-lg');
+        }
+    }
 }
 
 function openDispatcherChatFromMobile() {
@@ -2055,6 +2112,7 @@ elements.balanceHistoryToggle?.addEventListener('click', toggleBalanceHistory);
 elements.balanceHistoryMore?.addEventListener('click', () => void loadMoreBalanceHistory());
 elements.dispatcherChatToggle?.addEventListener('click', toggleDispatcherChat);
 elements.dispatcherChatForm?.addEventListener('submit', (event) => void sendDriverChatMessage(event));
+elements.mobileShare?.addEventListener('click', () => void shareTaxiUspehWorkLink());
 elements.mobilePrimaryAction?.addEventListener('click', () => {
     if (elements.mobilePrimaryAction?.dataset.driverMobileAction === 'chat') openDispatcherChatFromMobile();
 });

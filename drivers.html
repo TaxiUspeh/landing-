@@ -749,11 +749,15 @@
     <div class="fixed bottom-0 left-0 w-full p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-[0_-5px_15px_rgba(0,0,0,0.1)] md:hidden z-50">
         <div class="flex gap-2">
             <a href="tel:+77770649648" 
-               class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-800 dark:text-white p-3 rounded-xl shadow-md flex items-center justify-center w-12">
-                <i class="fas fa-phone-alt"></i>
+               class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-800 dark:text-white p-3 rounded-xl shadow-md flex items-center justify-center w-12 flex-shrink-0" aria-label="Позвонить диспетчеру">
+                <i class="fas fa-phone-alt" aria-hidden="true"></i>
             </a>
+            <button id="driver-mobile-share" type="button" class="w-14 flex-shrink-0 rounded-xl bg-emerald-50 p-1 text-emerald-700 shadow-md transition hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50" aria-label="Поделиться ссылкой на приложение Работа в такси">
+                <i id="driver-mobile-share-icon" class="fas fa-share-nodes block text-lg" aria-hidden="true"></i>
+                <span id="driver-mobile-share-label" class="mt-0.5 block text-[10px] font-extrabold leading-tight">Поделиться</span>
+            </button>
             <button id="driver-mobile-primary-action" type="button" data-driver-mobile-action="documents"
-               class="bg-green-600 hover:bg-green-700 text-white flex-grow py-3 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
+               class="bg-green-600 hover:bg-green-700 text-white flex-grow min-w-0 py-3 rounded-xl text-base font-bold shadow-md flex items-center justify-center gap-2">
                 <i id="driver-mobile-primary-icon" class="fab fa-whatsapp text-2xl" aria-hidden="true"></i>
                 <span id="driver-mobile-primary-label">Стать водителем</span>
             </button>

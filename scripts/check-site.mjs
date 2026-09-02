@@ -397,7 +397,7 @@ const serviceWorker = await readFile('service-worker.js', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
 const dispatcherQuickSearchHtml = await readFile('dispatcher.html', 'utf8');
 const dispatcherQuickSearchScript = await readFile('dispatcher.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v43-driver-passenger-bar'")) failures.push('service-worker.js: driver-passenger-bar cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v44-driver-three-step-order'")) failures.push('service-worker.js: driver-three-step-order cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
 if (/taxi-uspeh-v(?:[1-9]|1[0-9]|20)(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
@@ -551,6 +551,8 @@ for (const expected of [
   'mobileShare',
   'shareTaxiUspehWorkLink()',
   "https://taxiuspeh.github.io/landing-/drivers.html",
+  "accepted: ['arrived', 'Я подъехал']",
+  "arrived: ['completed', 'Завершить заказ']",
   'updateMobilePrimaryAction()',
   'openDispatcherChatFromMobile()',
   "dataset.driverMobileAction === 'chat'",
@@ -572,6 +574,12 @@ for (const expected of [
   'Ожидайте решения диспетчера'
 ]) {
   if (!driverPortal.includes(expected)) failures.push('driver-portal.js: missing ' + expected);
+}
+if (!firestoreRules.includes("resource.data.status == 'accepted' && request.resource.data.status == 'arrived'")) {
+  failures.push('firestore.rules: direct accepted-to-arrived transition is missing');
+}
+if (!firestoreRules.includes("resource.data.status == 'arrived' && request.resource.data.status == 'completed'")) {
+  failures.push('firestore.rules: direct arrived-to-completed transition is missing');
 }
 for (const expected of [
   "collection(db, 'orders')",

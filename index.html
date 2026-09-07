@@ -29,7 +29,7 @@
 
     <!-- Tailwind CSS & Font Awesome -->
     <link rel="stylesheet" href="./styles/tailwind.css">
-    <link rel="stylesheet" href="./styles/booking-screen.css">
+    <link rel="stylesheet" href="./styles/booking-screen.css?v=48">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <!-- Leaflet Map (Для карты с машинками) -->
@@ -2064,7 +2064,7 @@
     <!-- ========================================================= -->
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
-        import { initBookingScreen } from "./booking-screen.js";
+        import { initBookingScreen } from "./booking-screen.js?v=48";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";

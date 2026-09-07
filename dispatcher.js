@@ -43,9 +43,13 @@ const elements = {
     ordersSearching: document.getElementById('orders-stat-searching'),
     ordersActive: document.getElementById('orders-stat-active'),
     ordersCompleted: document.getElementById('orders-stat-completed'),
+    ordersCancelled: document.getElementById('orders-stat-cancelled'),
+    orderReportFilters: [...document.querySelectorAll('[data-order-report-filter]')],
     onlineOrdersLoading: document.getElementById('online-orders-loading'),
     onlineOrdersEmpty: document.getElementById('online-orders-empty'),
     onlineOrdersList: document.getElementById('online-orders-list'),
+    onlineOrdersMoreWrap: document.getElementById('online-orders-more-wrap'),
+    onlineOrdersMore: document.getElementById('online-orders-more'),
     onlineOrdersMessage: document.getElementById('online-orders-message'),
     onlineOrdersContent: document.getElementById('online-orders-content'),
     toggleOnlineOrdersSection: document.getElementById('toggle-online-orders-section'),
@@ -99,6 +103,17 @@ const elements = {
     driverSummaryDescription: document.getElementById('driver-summary-description'),
     driverSummaryList: document.getElementById('driver-summary-list'),
     driverSummaryClose: document.getElementById('driver-summary-close'),
+    driverOrdersReportModal: document.getElementById('driver-orders-report-modal'),
+    driverOrdersReportTitle: document.getElementById('driver-orders-report-title'),
+    driverOrdersReportDescription: document.getElementById('driver-orders-report-description'),
+    driverOrdersReportTotal: document.getElementById('driver-orders-report-total'),
+    driverOrdersReportCompleted: document.getElementById('driver-orders-report-completed'),
+    driverOrdersReportCancelled: document.getElementById('driver-orders-report-cancelled'),
+    driverOrdersReportRequeued: document.getElementById('driver-orders-report-requeued'),
+    driverOrdersReportList: document.getElementById('driver-orders-report-list'),
+    driverOrdersReportMoreWrap: document.getElementById('driver-orders-report-more-wrap'),
+    driverOrdersReportMore: document.getElementById('driver-orders-report-more'),
+    driverOrdersReportClose: document.getElementById('driver-orders-report-close'),
     dispatcherMessagesLoading: document.getElementById('dispatcher-messages-loading'),
     dispatcherMessagesEmpty: document.getElementById('dispatcher-messages-empty'),
     dispatcherMessagesContent: document.getElementById('dispatcher-messages-content'),
@@ -157,6 +172,10 @@ const expandedOrderIds = new Set();
 let mobileDispatcherSection = 'orders';
 let mobileOrdersView = 'current';
 let activeDriverSummaryFilter = '';
+let activeOrderReportFilter = 'all';
+let orderReportDisplayLimit = 100;
+let activeDriverOrdersReportId = '';
+let driverOrdersReportDisplayLimit = 60;
 let onlineOrdersSectionCollapsed = false;
 let unsubscribeDrivers = null;
 let unsubscribeDriverStates = null;
@@ -176,6 +195,8 @@ let dispatcherChatAudioContext = null;
 let dispatcherMessagesInitialLoaded = false;
 const DISPATCHER_CHAT_SOUND_KEY = 'taxi-uspeh-dispatcher-chat-sound';
 const DRIVER_CONNECTION_TIMEOUT_MS = 3 * 60 * 1000;
+const ORDER_REPORT_PAGE_SIZE = 100;
+const DRIVER_ORDERS_REPORT_PAGE_SIZE = 60;
 const REQUEUE_REASON_LABELS = {
     car_issue: 'Неисправность автомобиля',
     cannot_continue: 'Водитель не может продолжить',
@@ -354,6 +375,7 @@ function stopAdminPanel() {
     if (driverStatusRefreshTimer) clearInterval(driverStatusRefreshTimer);
     driverStatusRefreshTimer = null;
     closeDriverSummary();
+    closeDriverOrdersReport();
     setOnlineOrdersSectionCollapsed(false);
     setHidden(elements.panel, true);
     setHidden(elements.driversList, true);
@@ -664,7 +686,12 @@ function renderDriverSummary(filter) {
             createOrderText('span', `whitespace-nowrap rounded-full px-3 py-1 text-xs font-extrabold ${balance.className}`, balance.text)
         );
         header.append(details, badges);
-        item.append(header, createOrderText('p', 'mt-2 text-xs text-slate-600 dark:text-slate-300', state.detail));
+        const ordersButton = document.createElement('button');
+        ordersButton.type = 'button';
+        ordersButton.className = 'mt-3 rounded-lg border border-blue-200 px-3 py-2 text-xs font-extrabold text-blue-700 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-300 dark:hover:bg-blue-950/40';
+        ordersButton.textContent = 'Открыть отчёт по заказам';
+        ordersButton.addEventListener('click', () => openDriverOrdersReport(driver.id));
+        item.append(header, createOrderText('p', 'mt-2 text-xs text-slate-600 dark:text-slate-300', state.detail), ordersButton);
         elements.driverSummaryList.append(item);
     }
 }
@@ -681,7 +708,7 @@ function openDriverSummary(filter) {
 function closeDriverSummary() {
     activeDriverSummaryFilter = '';
     setHidden(elements.driverSummaryModal, true);
-    document.body.classList.remove('overflow-hidden');
+    if (elements.driverOrdersReportModal.classList.contains('hidden')) document.body.classList.remove('overflow-hidden');
 }
 
 function setOnlineOrdersSectionCollapsed(collapsed) {
@@ -1093,6 +1120,10 @@ function renderDriverCard(driver) {
 
     const footer = document.createElement('div');
     footer.className = 'mt-4 flex flex-wrap items-center gap-3';
+    const reportButton = document.createElement('button');
+    reportButton.type = 'button';
+    reportButton.className = 'rounded-xl border border-blue-300 px-4 py-2.5 text-sm font-extrabold text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-950/40';
+    reportButton.textContent = 'Заказы водителя';
     const saveButton = document.createElement('button');
     saveButton.type = 'button';
     saveButton.className = 'bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-2.5 text-sm font-extrabold shadow-sm';
@@ -1103,7 +1134,7 @@ function renderDriverCard(driver) {
     const message = document.createElement('p');
     message.className = 'hidden text-xs w-full';
     message.setAttribute('role', 'status');
-    footer.append(saveButton, currentBalance, message);
+    footer.append(reportButton, saveButton, currentBalance, message);
     card.append(header, availabilityDetail, grid, footer);
     applyDriverAvailability(card, driver);
 
@@ -1118,6 +1149,7 @@ function renderDriverCard(driver) {
         button: saveButton,
         message
     }));
+    reportButton.addEventListener('click', () => openDriverOrdersReport(driver.id));
 
     return card;
 }
@@ -1208,6 +1240,159 @@ function orderTime(order) {
         hour: '2-digit',
         minute: '2-digit'
     }).format(order.createdAt.toDate());
+}
+
+function orderReportFilterDetails(filter) {
+    return ({
+        all: { label: 'Все заказы', matches: () => true },
+        searching: { label: 'Ищут водителя', matches: (order) => order.status === 'searching' },
+        active: { label: 'В работе', matches: (order) => ACTIVE_ORDER_STATUSES.has(order.status) },
+        completed: { label: 'Завершённые', matches: (order) => order.status === 'completed' },
+        cancelled: { label: 'Отменённые', matches: (order) => order.status === 'cancelled' }
+    })[filter] || null;
+}
+
+function orderReportTimestamp(order) {
+    return timestampMillis(order.updatedAt)
+        || timestampMillis(order.cancelledAt)
+        || timestampMillis(order.completedAt)
+        || timestampMillis(order.createdAt);
+}
+
+function sortedOrders(items) {
+    return [...items].sort((first, second) => orderReportTimestamp(second) - orderReportTimestamp(first));
+}
+
+function setOrderReportFilter(filter) {
+    if (!orderReportFilterDetails(filter)) return;
+    activeOrderReportFilter = filter;
+    orderReportDisplayLimit = ORDER_REPORT_PAGE_SIZE;
+    if (filter !== 'all') mobileOrdersView = 'all';
+    renderOnlineOrders();
+}
+
+function renderOrderReportFilters() {
+    for (const button of elements.orderReportFilters) {
+        const active = button.dataset.orderReportFilter === activeOrderReportFilter;
+        button.setAttribute('aria-pressed', String(active));
+        button.classList.toggle('bg-blue-600', active);
+        button.classList.toggle('text-white', active);
+        button.classList.toggle('border-blue-600', active);
+        button.classList.toggle('border-slate-300', !active);
+        button.classList.toggle('dark:border-slate-700', !active);
+        button.classList.toggle('text-slate-700', !active);
+        button.classList.toggle('dark:text-slate-200', !active);
+    }
+}
+
+function cancellationActorDetails(order) {
+    if (order.status !== 'cancelled' && !order.requeuedAt) return null;
+    if (order.requeuedAt) {
+        return {
+            label: 'Водитель вернул заказ в поиск',
+            detail: REQUEUE_REASON_LABELS[order.requeueReason] || 'причина не указана'
+        };
+    }
+    const actor = order.cancelledBy
+        || (order.cancellationReason || order.cancellationRequestStatus ? 'client' : 'dispatcher');
+    const labels = {
+        client: 'Отменил клиент',
+        driver: 'Отменил водитель',
+        dispatcher: 'Отменил диспетчер'
+    };
+    const reason = order.cancellationReason
+        ? CLIENT_CANCELLATION_REASON_LABELS[order.cancellationReason] || order.cancellationReason
+        : order.cancellationDecision === 'false_call_fee'
+            ? 'ложный вызов · компенсация 500 ₸'
+            : order.cancellationDecision === 'free'
+                ? 'без компенсации'
+                : 'причина не указана';
+    return { label: labels[actor] || 'Заказ отменён', detail: reason };
+}
+
+function orderAuditText(order) {
+    const cancellation = cancellationActorDetails(order);
+    if (cancellation) return `${cancellation.label}: ${cancellation.detail}.`;
+    if (order.status === 'completed') {
+        return order.completedByDispatcherUid
+            ? 'Заказ завершил диспетчер.'
+            : 'Заказ выполнил водитель.';
+    }
+    return '';
+}
+
+function orderRelatedToDriver(order, driverId) {
+    const normalizedId = String(driverId);
+    return String(order.assignedDriverId || '') === normalizedId
+        || String(order.requeuedByDriverId || '') === normalizedId;
+}
+
+function driverReportOrders(driverId) {
+    return sortedOrders(orders.filter((order) => orderRelatedToDriver(order, driverId)));
+}
+
+function createDriverOrderReportCard(order) {
+    const card = document.createElement('article');
+    card.className = 'rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/60';
+    const [statusText, statusClasses] = onlineOrderStatus(order);
+    const header = document.createElement('div');
+    header.className = 'flex items-start justify-between gap-3';
+    const details = document.createElement('div');
+    details.className = 'min-w-0';
+    details.append(
+        createOrderText('p', 'font-extrabold break-words', order.orderNumber || order.id),
+        createOrderText('p', 'mt-1 text-sm font-bold break-words', `${order.fromAddress || '—'} → ${order.toAddress || '—'}`),
+        createOrderText('p', 'mt-1 text-xs text-slate-500 dark:text-slate-400', orderTime(order) || 'Дата не указана')
+    );
+    header.append(details, createOrderText('span', `flex-shrink-0 rounded-full px-3 py-1 text-xs font-extrabold ${statusClasses}`, statusText));
+    card.append(header, createOrderText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', order.priceText || 'Цена уточняется'));
+    const audit = orderAuditText(order);
+    if (audit) card.append(createOrderText('p', 'mt-2 rounded-lg bg-white p-2 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200', audit));
+    return card;
+}
+
+function renderDriverOrdersReport() {
+    const driver = drivers.find((item) => item.id === activeDriverOrdersReportId);
+    if (!driver) {
+        closeDriverOrdersReport();
+        return;
+    }
+    const allOrders = driverReportOrders(driver.id);
+    const shownOrders = allOrders.slice(0, driverOrdersReportDisplayLimit);
+    const cancelled = allOrders.filter((order) => order.status === 'cancelled').length;
+    const requeued = allOrders.filter((order) => String(order.requeuedByDriverId || '') === String(driver.id)).length;
+    elements.driverOrdersReportTitle.textContent = `Заказы: ID ${driver.driverNumber ?? driver.id} · ${driver.name || 'Водитель'}`;
+    elements.driverOrdersReportDescription.textContent = allOrders.length
+        ? `Полная история назначенных онлайн-заказов: ${allOrders.length}.`
+        : 'Назначенных онлайн-заказов пока нет.';
+    elements.driverOrdersReportTotal.textContent = String(allOrders.length);
+    elements.driverOrdersReportCompleted.textContent = String(allOrders.filter((order) => order.status === 'completed').length);
+    elements.driverOrdersReportCancelled.textContent = String(cancelled);
+    elements.driverOrdersReportRequeued.textContent = String(requeued);
+    elements.driverOrdersReportList.replaceChildren();
+    if (!shownOrders.length) {
+        elements.driverOrdersReportList.append(createOrderText('p', 'rounded-xl bg-slate-100 p-4 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300', 'Для этого водителя ещё нет заказов в журнале.'));
+    } else {
+        for (const order of shownOrders) elements.driverOrdersReportList.append(createDriverOrderReportCard(order));
+    }
+    setHidden(elements.driverOrdersReportMoreWrap, allOrders.length <= shownOrders.length);
+    elements.driverOrdersReportMore.textContent = `Показать ещё (${allOrders.length - shownOrders.length})`;
+}
+
+function openDriverOrdersReport(driverId) {
+    const driver = drivers.find((item) => item.id === driverId);
+    if (!driver) return;
+    activeDriverOrdersReportId = driver.id;
+    driverOrdersReportDisplayLimit = DRIVER_ORDERS_REPORT_PAGE_SIZE;
+    renderDriverOrdersReport();
+    setHidden(elements.driverOrdersReportModal, false);
+    document.body.classList.add('overflow-hidden');
+}
+
+function closeDriverOrdersReport() {
+    activeDriverOrdersReportId = '';
+    setHidden(elements.driverOrdersReportModal, true);
+    if (elements.driverSummaryModal.classList.contains('hidden')) document.body.classList.remove('overflow-hidden');
 }
 
 function createOrderText(tag, className, text) {
@@ -1860,6 +2045,15 @@ function createOnlineOrderCard(order) {
         detailsPanel.append(returned);
     }
 
+    const audit = orderAuditText(order);
+    if (audit) {
+        detailsPanel.append(createOrderText(
+            'p',
+            'mt-3 rounded-xl border border-slate-200 bg-slate-100 p-3 text-xs font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200',
+            audit
+        ));
+    }
+
     if (order.status === 'completed' && Number.isFinite(Number(order.commissionAmount))) {
         const accounting = document.createElement('div');
         accounting.className = 'mt-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-xs';
@@ -1962,29 +2156,29 @@ function renderOnlineOrders() {
     elements.ordersSearching.textContent = String(orders.filter((order) => order.status === 'searching').length);
     elements.ordersActive.textContent = String(active);
     elements.ordersCompleted.textContent = String(orders.filter((order) => order.status === 'completed').length);
+    elements.ordersCancelled.textContent = String(orders.filter((order) => order.status === 'cancelled').length);
 
-    const priority = { searching: 0, accepted: 1, en_route: 1, arrived: 1, in_trip: 1, completed: 2, cancelled: 3 };
-    const sorted = [...orders].sort((a, b) => {
-        const priorityDifference = (priority[a.status] ?? 4) - (priority[b.status] ?? 4);
-        if (priorityDifference) return priorityDifference;
-        const aTime = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-        const bTime = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-        return bTime - aTime;
-    }).slice(0, 50);
-    const currentCount = sorted.filter((order) => !isOrderHistory(order)).length;
-    const historyCount = sorted.length - currentCount;
+    const filter = orderReportFilterDetails(activeOrderReportFilter) || orderReportFilterDetails('all');
+    const filteredOrders = sortedOrders(orders.filter((order) => filter.matches(order)));
+    const shownOrders = filteredOrders.slice(0, orderReportDisplayLimit);
+    const currentCount = filteredOrders.filter((order) => !isOrderHistory(order)).length;
+    const historyCount = filteredOrders.length - currentCount;
 
-    const visibleOrderIds = new Set(sorted.map((order) => order.id));
+    const visibleOrderIds = new Set(shownOrders.map((order) => order.id));
     for (const orderId of Array.from(expandedOrderIds)) {
         if (!visibleOrderIds.has(orderId)) expandedOrderIds.delete(orderId);
     }
-    elements.onlineOrdersList.dataset.mobileOrderView = mobileOrdersView;
+    elements.onlineOrdersList.dataset.mobileOrderView = activeOrderReportFilter === 'all' ? mobileOrdersView : 'all';
+    renderOrderReportFilters();
     updateMobileOrdersFilter(currentCount, historyCount);
     elements.onlineOrdersList.replaceChildren();
-    for (const order of sorted) elements.onlineOrdersList.append(createOnlineOrderCard(order));
+    for (const order of shownOrders) elements.onlineOrdersList.append(createOnlineOrderCard(order));
+    setHidden(elements.onlineOrdersMoreWrap, filteredOrders.length <= shownOrders.length);
+    elements.onlineOrdersMore.textContent = `Показать ещё (${filteredOrders.length - shownOrders.length})`;
     setHidden(elements.onlineOrdersLoading, true);
-    setHidden(elements.onlineOrdersEmpty, sorted.length !== 0);
-    setHidden(elements.onlineOrdersList, sorted.length === 0);
+    setHidden(elements.onlineOrdersEmpty, shownOrders.length !== 0);
+    setHidden(elements.onlineOrdersList, shownOrders.length === 0);
+    if (activeDriverOrdersReportId) renderDriverOrdersReport();
 }
 
 function handleOnlineOrdersError(error) {
@@ -2121,6 +2315,8 @@ async function cancelOnlineOrder(order) {
 
             transaction.update(orderRef, {
                 status: 'cancelled',
+                cancelledBy: 'dispatcher',
+                cancelledAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
             if (stateRef
@@ -2279,6 +2475,8 @@ async function resolveClientCancellation(order, decision) {
 
             transaction.update(orderRef, {
                 status: 'cancelled',
+                cancelledBy: 'client',
+                cancelledAt: serverTimestamp(),
                 cancellationRequestStatus: falseCall ? 'approved_false_call' : 'approved_free',
                 cancellationDecision: falseCall ? 'false_call_fee' : 'free',
                 cancellationFeeAmount: falseCall ? 500 : 0,
@@ -2520,6 +2718,13 @@ elements.driverQuickSearchClear?.addEventListener('click', () => {
 elements.toggleOnlineOrdersSection.addEventListener('click', () => {
     setOnlineOrdersSectionCollapsed(!onlineOrdersSectionCollapsed);
 });
+elements.orderReportFilters.forEach((button) => {
+    button.addEventListener('click', () => setOrderReportFilter(button.dataset.orderReportFilter));
+});
+elements.onlineOrdersMore?.addEventListener('click', () => {
+    orderReportDisplayLimit += ORDER_REPORT_PAGE_SIZE;
+    renderOnlineOrders();
+});
 elements.driverStatsButtons.forEach((button) => {
     button.addEventListener('click', () => openDriverSummary(button.dataset.driverStatFilter));
 });
@@ -2527,7 +2732,19 @@ elements.driverSummaryClose.addEventListener('click', closeDriverSummary);
 elements.driverSummaryModal.addEventListener('click', (event) => {
     if (event.target === elements.driverSummaryModal) closeDriverSummary();
 });
+elements.driverOrdersReportClose.addEventListener('click', closeDriverOrdersReport);
+elements.driverOrdersReportModal.addEventListener('click', (event) => {
+    if (event.target === elements.driverOrdersReportModal) closeDriverOrdersReport();
+});
+elements.driverOrdersReportMore.addEventListener('click', () => {
+    driverOrdersReportDisplayLimit += DRIVER_ORDERS_REPORT_PAGE_SIZE;
+    renderDriverOrdersReport();
+});
 document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !elements.driverOrdersReportModal.classList.contains('hidden')) {
+        closeDriverOrdersReport();
+        return;
+    }
     if (event.key === 'Escape' && !elements.driverSummaryModal.classList.contains('hidden')) {
         closeDriverSummary();
     }

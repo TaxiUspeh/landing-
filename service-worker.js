@@ -1,10 +1,10 @@
-const CACHE_NAME = 'taxi-uspeh-v48-mobile-booking';
+const CACHE_NAME = 'taxi-uspeh-v49-mobile-booking';
 const APP_SHELL = [
   './',
   './index.html',
   './styles/tailwind.css',
-  './styles/booking-screen.css',
-  './booking-screen.js',
+  './styles/booking-screen.css?v=48',
+  './booking-screen.js?v=48',
   './booking-core.js',
   './client-orders.js',
   './holiday-calendar.js',
@@ -31,7 +31,9 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(
+    APP_SHELL.map(url => new Request(url, { cache: 'reload' }))
+  )));
   self.skipWaiting();
 });
 

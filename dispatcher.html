@@ -179,19 +179,30 @@
                     </div>
                 </div>
                 <div id="online-orders-content">
-                    <div class="p-4 grid grid-cols-3 gap-3 border-b border-slate-200 dark:border-slate-800" aria-label="Сводка по онлайн-заказам">
-                        <div class="rounded-xl bg-amber-50 dark:bg-amber-900/20 p-3">
+                    <div class="p-4 grid grid-cols-2 gap-3 border-b border-slate-200 dark:border-slate-800 sm:grid-cols-4" aria-label="Сводка по онлайн-заказам">
+                        <button type="button" data-order-report-filter="searching" class="rounded-xl bg-amber-50 p-3 text-left transition hover:ring-2 hover:ring-amber-400 dark:bg-amber-900/20">
                             <p class="text-[11px] text-amber-800 dark:text-amber-300">Ищут водителя</p>
                             <p id="orders-stat-searching" class="text-xl font-black text-amber-700 dark:text-amber-300">0</p>
-                        </div>
-                        <div class="rounded-xl bg-blue-50 dark:bg-blue-900/20 p-3">
+                        </button>
+                        <button type="button" data-order-report-filter="active" class="rounded-xl bg-blue-50 p-3 text-left transition hover:ring-2 hover:ring-blue-400 dark:bg-blue-900/20">
                             <p class="text-[11px] text-blue-800 dark:text-blue-300">В работе</p>
                             <p id="orders-stat-active" class="text-xl font-black text-blue-700 dark:text-blue-300">0</p>
-                        </div>
-                        <div class="rounded-xl bg-green-50 dark:bg-green-900/20 p-3">
+                        </button>
+                        <button type="button" data-order-report-filter="completed" class="rounded-xl bg-green-50 p-3 text-left transition hover:ring-2 hover:ring-green-400 dark:bg-green-900/20">
                             <p class="text-[11px] text-green-800 dark:text-green-300">Завершено</p>
                             <p id="orders-stat-completed" class="text-xl font-black text-green-700 dark:text-green-300">0</p>
-                        </div>
+                        </button>
+                        <button type="button" data-order-report-filter="cancelled" class="rounded-xl bg-red-50 p-3 text-left transition hover:ring-2 hover:ring-red-400 dark:bg-red-900/20">
+                            <p class="text-[11px] text-red-800 dark:text-red-300">Отменено</p>
+                            <p id="orders-stat-cancelled" class="text-xl font-black text-red-700 dark:text-red-300">0</p>
+                        </button>
+                    </div>
+                    <div id="order-report-filters" class="flex gap-2 overflow-x-auto border-b border-slate-200 px-4 py-3 dark:border-slate-800" aria-label="Фильтр отчёта по заказам">
+                        <button type="button" data-order-report-filter="all" class="whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-extrabold">Все заказы</button>
+                        <button type="button" data-order-report-filter="searching" class="whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-extrabold">Ищут</button>
+                        <button type="button" data-order-report-filter="active" class="whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-extrabold">В работе</button>
+                        <button type="button" data-order-report-filter="completed" class="whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-extrabold">Завершённые</button>
+                        <button type="button" data-order-report-filter="cancelled" class="whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-extrabold">Отменённые</button>
                     </div>
                     <div class="mobile-only px-4 pt-4">
                         <div class="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="tablist" aria-label="Отбор онлайн-заказов">
@@ -214,6 +225,9 @@
                     <p id="online-orders-message" class="hidden mx-4 mt-4 rounded-xl border p-3 text-sm" role="status"></p>
                     <p id="mobile-orders-filter-message" class="mobile-only hidden mx-4 mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-300" role="status"></p>
                     <div id="online-orders-list" class="hidden p-4 grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
+                    <div class="hidden px-4 pb-4 text-center" id="online-orders-more-wrap">
+                        <button id="online-orders-more" type="button" class="rounded-xl border border-blue-300 px-4 py-2 text-xs font-extrabold text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-950/30">Показать ещё заказы</button>
+                    </div>
                 </div>
             </section>
 
@@ -406,6 +420,30 @@
                         </button>
                     </div>
                     <div id="driver-summary-list" class="max-h-[62vh] space-y-3 overflow-y-auto p-4"></div>
+                </section>
+            </div>
+
+            <div id="driver-orders-report-modal" class="hidden fixed inset-0 z-50 flex items-end bg-slate-950/60 p-3 sm:items-center sm:justify-center" role="dialog" aria-modal="true" aria-labelledby="driver-orders-report-title">
+                <section class="max-h-[88vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
+                    <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+                        <div>
+                            <h2 id="driver-orders-report-title" class="font-extrabold">Заказы водителя</h2>
+                            <p id="driver-orders-report-description" class="mt-1 text-xs text-slate-500 dark:text-slate-400"></p>
+                        </div>
+                        <button id="driver-orders-report-close" type="button" class="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Закрыть отчёт водителя">
+                            <i class="fas fa-xmark text-lg" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 border-b border-slate-200 p-4 text-center dark:border-slate-800 sm:grid-cols-4">
+                        <div class="rounded-xl bg-slate-100 p-2 dark:bg-slate-800"><p class="text-[10px] text-slate-500 dark:text-slate-400">Всего</p><p id="driver-orders-report-total" class="text-lg font-black">0</p></div>
+                        <div class="rounded-xl bg-green-50 p-2 dark:bg-green-900/20"><p class="text-[10px] text-green-700 dark:text-green-300">Выполнил</p><p id="driver-orders-report-completed" class="text-lg font-black text-green-700 dark:text-green-300">0</p></div>
+                        <div class="rounded-xl bg-red-50 p-2 dark:bg-red-900/20"><p class="text-[10px] text-red-700 dark:text-red-300">Отменены</p><p id="driver-orders-report-cancelled" class="text-lg font-black text-red-700 dark:text-red-300">0</p></div>
+                        <div class="rounded-xl bg-amber-50 p-2 dark:bg-amber-900/20"><p class="text-[10px] text-amber-700 dark:text-amber-300">Вернул в поиск</p><p id="driver-orders-report-requeued" class="text-lg font-black text-amber-700 dark:text-amber-300">0</p></div>
+                    </div>
+                    <div id="driver-orders-report-list" class="max-h-[47vh] space-y-3 overflow-y-auto p-4"></div>
+                    <div id="driver-orders-report-more-wrap" class="hidden border-t border-slate-200 p-4 text-center dark:border-slate-800">
+                        <button id="driver-orders-report-more" type="button" class="rounded-xl border border-blue-300 px-4 py-2 text-xs font-extrabold text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-950/30">Показать ещё заказы водителя</button>
+                    </div>
                 </section>
             </div>
 

@@ -321,8 +321,12 @@ service cloud.firestore {
         && resource.data.clientUid == request.auth.uid
         && resource.data.status == 'searching'
         && request.resource.data.status == 'cancelled'
+        && request.resource.data.cancelledBy == 'client'
+        && request.resource.data.cancelledAt == request.time
         && request.resource.data.updatedAt == request.time
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'cancelledBy', 'cancelledAt', 'updatedAt'
+        ]);
     }
 
     function clientRequestsCancellationAfterAssignment() {
@@ -337,10 +341,11 @@ service cloud.firestore {
         && request.resource.data.cancellationReason in [
           'plans_changed', 'no_longer_needed', 'called_other_taxi', 'other'
         ]
+        && request.resource.data.cancellationRequestedBy == 'client'
         && request.resource.data.cancellationRequestedAt == request.time
         && request.resource.data.updatedAt == request.time
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'cancellationRequestStatus', 'cancellationReason',
+          'cancellationRequestStatus', 'cancellationReason', 'cancellationRequestedBy',
           'cancellationRequestedAt', 'updatedAt'
         ]);
     }
@@ -415,6 +420,8 @@ service cloud.firestore {
         && request.resource.data.driverColor == ''
         && request.resource.data.requeueReason is string
         && request.resource.data.requeueReason in ['car_issue', 'cannot_continue', 'other']
+        && request.resource.data.requeuedBy == 'driver'
+        && request.resource.data.requeuedByDriverId == linkedDriverId()
         && request.resource.data.requeuedAt == request.time
         && request.resource.data.requeueCount is number
         && request.resource.data.requeueCount == resource.data.get('requeueCount', 0) + 1
@@ -422,7 +429,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'status', 'assignedDriverUid', 'assignedDriverId',
           'driverName', 'driverPhone', 'driverCar', 'driverColor',
-          'requeueReason', 'requeuedAt', 'requeueCount', 'updatedAt'
+          'requeueReason', 'requeuedBy', 'requeuedByDriverId', 'requeuedAt', 'requeueCount', 'updatedAt'
         ])
         && driverBecomesAvailableAfterRequeue(orderId);
     }

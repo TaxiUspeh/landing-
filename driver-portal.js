@@ -1929,6 +1929,8 @@ async function returnOrderToSearch(orderId, expectedStatus, reason) {
                 driverCar: '',
                 driverColor: '',
                 requeueReason: REQUEUE_REASONS.some(([value]) => value === reason) ? reason : 'other',
+                requeuedBy: 'driver',
+                requeuedByDriverId: currentDriverId,
                 requeuedAt: serverTimestamp(),
                 requeueCount: Number(order.requeueCount || 0) + 1,
                 updatedAt: serverTimestamp()

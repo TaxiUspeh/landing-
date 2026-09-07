@@ -1,8 +1,11 @@
-const CACHE_NAME = 'taxi-uspeh-v46-dispatcher-full-reports';
+const CACHE_NAME = 'taxi-uspeh-v47-map-booking';
 const APP_SHELL = [
   './',
   './index.html',
   './styles/tailwind.css',
+  './styles/booking-screen.css',
+  './booking-screen.js',
+  './booking-core.js',
   './client-orders.js',
   './holiday-calendar.js',
   './drivers.html',

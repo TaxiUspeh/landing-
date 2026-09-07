@@ -29,6 +29,7 @@
 
     <!-- Tailwind CSS & Font Awesome -->
     <link rel="stylesheet" href="./styles/tailwind.css">
+    <link rel="stylesheet" href="./styles/booking-screen.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <!-- Leaflet Map (Для карты с машинками) -->
@@ -2063,6 +2064,7 @@
     <!-- ========================================================= -->
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
+        import { initBookingScreen } from "./booking-screen.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -2708,6 +2710,7 @@
                 const parts = address.match(/(\d+\.\d+),\s*(\d+\.\d+)/);
                 if (parts && parts.length === 3) return { lat: parseFloat(parts[1]), lon: parseFloat(parts[2]) };
             }
+            if (window.bookingScreen) return window.bookingScreen.coordinates(address, city);
             try {
                 const searchQuery = buildTaxiGeocodingQuery(address, city);
                 const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`;
@@ -2721,6 +2724,7 @@
 
         async function getRouteDistance(coordinates) {
             if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
+            if (window.bookingScreen) return window.bookingScreen.getRouteDistance(coordinates);
             try {
                 const routeCoordinates = coordinates.map((coord) => `${coord.lon},${coord.lat}`).join(';');
                 const url = `https://router.project-osrm.org/route/v1/driving/${routeCoordinates}?overview=false`;
@@ -2745,7 +2749,7 @@
             const requestId = taxiRouteCalculationId;
             const routePoints = getTaxiRoutePoints();
             const databaseFallback = calculateTaxiDatabaseFallback();
-            const isIntercity = Boolean(databaseFallback);
+            const isIntercity = routePoints.some(point => point.city !== 'Белоусовка');
 
             if (routePoints.length < 2 || routePoints.some((point) => point.address.length < 3) || !priceEl) return;
             setTaxiRouteHint('Считаем расстояние по маршруту…');
@@ -3343,6 +3347,13 @@
                 return;
             }
 
+            if (getTaxiRatePoints().some(point => point.city !== 'Белоусовка')) {
+                priceEl.textContent = 'Стоимость уточняется';
+                setTaxiRouteHint('Уточняем маршрут между населёнными пунктами.', 'fallback');
+                debouncedOSRM();
+                return;
+            }
+
             const addressCount = countFilledAddresses();
             let baseMin = (addressCount >= 3) ? CONFIG.TAXI.MANY_STOPS_MIN : CONFIG.TAXI.BASE_PRICE;
             let baseMax = (addressCount >= 3) ? CONFIG.TAXI.MANY_STOPS_MAX : (CONFIG.TAXI.BASE_PRICE + CONFIG.TAXI.MIN_PRICE_RANGE_OFFSET);
@@ -3755,6 +3766,7 @@
                 const userPoint = [userLat, userLng];
                 const accuracy = Math.max(10, Math.min(2000, Number(position.coords.accuracy) || 50));
                 window.latestSimUserLocation = { point: userPoint, accuracy };
+                void window.bookingScreen?.onLocation(position);
 
                 if (window.userMarker) {
                     window.userMarker.setLatLng(userPoint);
@@ -3796,6 +3808,7 @@
             }
 
             function handleSimulationLocationError(error) {
+                window.bookingScreen?.locationError();
                 console.warn('Не удалось получить геопозицию пользователя:', error);
                 mapState.geolocation = error && error.code === 1 ? 'denied' : 'unavailable';
                 renderMapOverlay();
@@ -5247,6 +5260,7 @@
         }
 
         initServicesActionsCarousel();
+        initBookingScreen();
 
     </script>
     <script type="module" src="./client-orders.js"></script>

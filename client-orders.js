@@ -433,6 +433,7 @@ function resetToForm() {
 }
 
 async function createOnlineOrder() {
+    if (window.bookingScreen?.isPreview()) return;
     if (!ONLINE_ORDERS_ENABLED || actionInProgress) return;
     activeOrderView = 'taxi';
     setStatus('', false, 'taxi');
@@ -527,6 +528,7 @@ function containsRestrictedDeliveryItems(value) {
 }
 
 async function createOnlineDeliveryOrder() {
+    if (window.bookingScreen?.isPreview()) return;
     if (!ONLINE_ORDERS_ENABLED || actionInProgress) return;
     activeOrderView = 'delivery';
     setStatus('', false, 'delivery');
@@ -534,6 +536,7 @@ async function createOnlineDeliveryOrder() {
     const items = document.getElementById('deliveryItems')?.value.trim() || '';
     const store = document.getElementById('deliveryStore')?.value.trim() || '';
     const rawDeliveryAddress = combineAddress('deliveryAddress', 'deliveryHouse', 'deliveryApt');
+    const bookingDelivery = window.bookingScreen?.deliveryData();
     const customerName = elements.deliveryCustomerName?.value.trim() || '';
     const customerPhone = normalizePhone(elements.deliveryCustomerPhone?.value);
 
@@ -571,8 +574,8 @@ async function createOnlineDeliveryOrder() {
             clientUid: user.uid,
             fromAddress,
             toAddress,
-            stops: [],
-            wishes: '',
+            stops: bookingDelivery?.stops || [],
+            wishes: bookingDelivery?.wishes || '',
             scheduledFor: '',
             direction: deliveryCity === 'Белоусовка' ? '' : deliveryCity,
             priceText,

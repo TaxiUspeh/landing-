@@ -61,7 +61,8 @@ service cloud.firestore {
         && get(driverStateDocument()).data.status == 'available'
         && get(driverStateDocument()).data.activeOrderId == ''
         && get(driverStateDocument()).data.lastSeen is timestamp
-        && get(driverStateDocument()).data.lastSeen >= request.time - duration.value(3, 'm');
+        // Занятый водитель может завершить свой назначенный заказ, даже если телефон
+        // приостановил фоновый таймер. Принадлежность заказа проверяется выше.
     }
 
     function driverIsBusyWithOrder(orderId) {

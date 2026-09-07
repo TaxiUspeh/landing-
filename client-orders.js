@@ -627,6 +627,7 @@ async function cancelOnlineOrder() {
             await updateDoc(doc(db, 'orders', activeOrderId), {
                 cancellationRequestStatus: 'pending',
                 cancellationReason: reason,
+                cancellationRequestedBy: 'client',
                 cancellationRequestedAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
@@ -646,6 +647,8 @@ async function cancelOnlineOrder() {
     try {
         await updateDoc(doc(db, 'orders', activeOrderId), {
             status: 'cancelled',
+            cancelledBy: 'client',
+            cancelledAt: serverTimestamp(),
             updatedAt: serverTimestamp()
         });
     } catch (error) {

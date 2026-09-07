@@ -67,9 +67,11 @@ export function initBookingScreen({ preview = false } = {}) {
           <footer class="booking-footer" id="bookingFooter">
             <div class="booking-price-row">
               <div><span class="booking-price-caption" id="bookingPriceCaption">Примерная стоимость</span><div class="booking-price" id="bookingPrice">Укажите маршрут</div></div>
-              <div class="booking-channel" role="group" aria-label="Способ заказа"><button type="button" id="bookingOnline" aria-pressed="true">Онлайн</button><button type="button" id="bookingWhatsapp" aria-pressed="false">WhatsApp</button></div>
             </div>
-            <button type="button" class="booking-submit" id="bookingSubmit">Заказать онлайн</button>
+            <div class="booking-actions" role="group" aria-label="Оформить заказ">
+              <button type="button" class="booking-submit" id="bookingSubmit">Заказать онлайн</button>
+              <button type="button" class="booking-submit booking-whatsapp" id="bookingWhatsapp">Заказать через WhatsApp</button>
+            </div>
           </footer>
         </section>
       </div>
@@ -113,6 +115,14 @@ export function initBookingScreen({ preview = false } = {}) {
     if (phone) {
       const contact = Array.from(form.children).find(child => child.contains(phone));
       contact?.classList.add('booking-contact');
+      const fields = phone.closest('label').parentElement;
+      fields.prepend(phone.closest('label'));
+      const name = $(`${key}CustomerName`);
+      if (name) name.closest('label').firstChild.textContent = 'Ваше имя (необязательно)';
+      const hint = contact.querySelector('div:first-child p:last-child');
+      hint.id = `${key}ContactHint`;
+      hint.textContent = 'Введите телефон для онлайн-заказа. Для WhatsApp эти поля можно не заполнять.';
+      phone.setAttribute('aria-describedby', hint.id);
     }
   }
   $('taxiWishes').closest('section').classList.add('booking-source-hidden');
@@ -123,6 +133,7 @@ export function initBookingScreen({ preview = false } = {}) {
   const passengerSection = Array.from($('taxiForm').children).find(child => child.contains($('passengerPhone')));
   // Keep ordering for somebody else as an optional details section.
   passengerSection.querySelector('button').textContent = 'Заказать другому человеку';
+  passengerSection.querySelector('button').classList.add('booking-passenger-toggle');
   const initialCityOptions = Array.from($('taxiCitySelect').options).map(option => option.value || 'Белоусовка');
   for (const city of new Set(initialCityOptions)) { const option = document.createElement('option'); option.value = city; $('bookingCityList').append(option); }
 
@@ -239,16 +250,16 @@ export function initBookingScreen({ preview = false } = {}) {
     $('bookingCommon').hidden = hasCard;
     $('bookingFooter').hidden = hasCard;
     const contact = panels.get(service.form).querySelector('.booking-contact');
-    if (contact) contact.hidden = state.channel !== 'online';
-    $('bookingOnline').hidden = !service.online;
-    $('bookingOnline').setAttribute('aria-pressed', String(state.channel === 'online'));
-    $('bookingWhatsapp').setAttribute('aria-pressed', String(state.channel === 'whatsapp'));
+    if (contact) contact.hidden = !service.online;
+    $('bookingSubmit').hidden = !service.online;
     const onlineButton = $(`${service.form}-online-order-button`);
     const busy = submitting || (state.channel === 'online' && onlineButton?.disabled);
     $('bookingCommon').inert = Boolean(busy);
     $('bookingPanels').inert = Boolean(busy && !hasCard);
-    $('bookingSubmit').disabled = busy || (state.channel === 'online' && (!onlineButton || onlineButton.classList.contains('hidden')));
-    $('bookingSubmit').textContent = submitting ? 'Оформляем…' : state.channel === 'online' ? 'Заказать онлайн' : 'Заказать через WhatsApp';
+    $('bookingSubmit').disabled = busy || !onlineButton || onlineButton.classList.contains('hidden');
+    $('bookingWhatsapp').disabled = busy;
+    $('bookingSubmit').textContent = submitting && state.channel === 'online' ? 'Оформляем…' : 'Заказать онлайн';
+    $('bookingWhatsapp').textContent = submitting && state.channel === 'whatsapp' ? 'Открываем WhatsApp…' : 'Заказать через WhatsApp';
     const full = state.from.address && (service.form === 'assistance' || state.to.address);
     let price = service.form === 'taxi' ? $('taxiPriceEstimate').textContent : service.form === 'delivery' ? $('deliveryPriceEstimate').textContent : service.form === 'cargo' ? $('cargoTotalPrice').textContent : service.form === 'auction' ? ($('auctionPrice').value ? `${$('auctionPrice').value} ₸` : 'Ваша цена') : service.form === 'assistance' ? 'от 1500 тг' : 'от 3800 тг';
     $('bookingPrice').textContent = full ? price : 'Укажите адрес';
@@ -284,8 +295,10 @@ export function initBookingScreen({ preview = false } = {}) {
     if (invalid) { invalid.reportValidity(); return false; }
     return true;
   }
-  async function submit() {
-    if (submitting || !validate()) return;
+  async function submit(channel) {
+    if (submitting) return;
+    state.channel = channel;
+    if (!validate()) return;
     if (preview) { showError('Режим просмотра: адреса и услуга выбраны. Заказ не отправляется.'); return; }
     sync();
     // Add common notes and stops to services whose legacy forms have no wishes field.
@@ -555,9 +568,8 @@ export function initBookingScreen({ preview = false } = {}) {
   $('bookingNote').oninput = event => { state.note = event.target.value; state.revision++; sync(); };
   $('bookingAddStop').onclick = () => { if (state.stops.length >= 3) return; state.stops.push({ ...emptyPoint(), city: state.from.city }); changed(); openPicker(state.stops.length - 1); };
   $('bookingSwap').onclick = () => { const formerFrom = { ...state.from, address: [state.from.address, state.details].filter(Boolean).join(', ') }; state.from = state.to; state.to = formerFrom; state.details = ''; changed(); };
-  $('bookingOnline').onclick = () => { state.channel = 'online'; refresh(); };
-  $('bookingWhatsapp').onclick = () => { state.channel = 'whatsapp'; refresh(); };
-  $('bookingSubmit').onclick = submit;
+  $('bookingWhatsapp').onclick = () => submit('whatsapp');
+  $('bookingSubmit').onclick = () => submit('online');
   $('auctionPrice').addEventListener('input', refresh);
   $('bookingPickerBack').onclick = closePicker;
   $('bookingSearchButton').onclick = search;

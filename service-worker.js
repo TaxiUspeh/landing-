@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v47-map-booking';
+const CACHE_NAME = 'taxi-uspeh-v48-mobile-booking';
 const APP_SHELL = [
   './',
   './index.html',

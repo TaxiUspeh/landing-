@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v45-local-tailwind-styles';
+const CACHE_NAME = 'taxi-uspeh-v46-dispatcher-full-reports';
 const APP_SHELL = [
   './',
   './index.html',

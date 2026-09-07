@@ -399,11 +399,11 @@ const tailwindConfig = await readFile('tailwind.config.cjs', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
 const dispatcherQuickSearchHtml = await readFile('dispatcher.html', 'utf8');
 const dispatcherQuickSearchScript = await readFile('dispatcher.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v45-local-tailwind-styles'")) failures.push('service-worker.js: local Tailwind cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v46-dispatcher-full-reports'")) failures.push('service-worker.js: dispatcher report cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("'./styles/tailwind.css'")) failures.push('service-worker.js: local Tailwind stylesheet is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
-if (/taxi-uspeh-v(?:[1-9]|[1-3][0-9]|4[0-4])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
+if (/taxi-uspeh-v(?:[1-9]|[1-3][0-9]|4[0-5])(?:-|')/.test(serviceWorker)) failures.push('service-worker.js: stale cache name remains');
 if (tailwindStyles.length < 50000) failures.push('styles/tailwind.css: compiled stylesheet is unexpectedly small');
 for (const expected of ['.bg-app-green', '.text-app-gold', '.bg-grill-dark', '.text-grill-accent']) {
   if (!tailwindStyles.includes(expected)) failures.push('styles/tailwind.css: missing ' + expected);
@@ -419,6 +419,12 @@ if (!dispatcherQuickSearchHtml.includes('id="driver-quick-search"')) failures.pu
 if (!dispatcherQuickSearchHtml.includes('id="driver-quick-search-results"')) failures.push('dispatcher.html: quick driver search results are missing');
 if (!dispatcherQuickSearchScript.includes('function driverMatchesSearch(')) failures.push('dispatcher.js: unified driver search matcher is missing');
 if (!dispatcherQuickSearchScript.includes('function openDriverFromQuickSearch(')) failures.push('dispatcher.js: quick search driver navigation is missing');
+for (const expected of ['id="orders-stat-cancelled"', 'data-order-report-filter="cancelled"', 'id="driver-orders-report-modal"']) {
+  if (!dispatcherQuickSearchHtml.includes(expected)) failures.push('dispatcher.html: missing full order report control ' + expected);
+}
+for (const expected of ['function openDriverOrdersReport(', 'function cancellationActorDetails(', "cancelledBy: 'dispatcher'", "cancelledBy: 'client'"]) {
+  if (!dispatcherQuickSearchScript.includes(expected)) failures.push('dispatcher.js: missing cancellation or driver report detail ' + expected);
+}
 if (!drivers.includes('id="driver-mobile-share"')) failures.push('drivers.html: persistent mobile share button is missing');
 if (!drivers.includes('href="./index.html"') || !drivers.includes('Пассажир')) failures.push('drivers.html: passenger mode button is missing');
 for (const expected of [
@@ -504,6 +510,15 @@ const dispatcherScript = await readFile('dispatcher.js', 'utf8');
 const firestoreRules = await readFile('firestore.rules', 'utf8');
 const driverPushFunctions = await readFile('functions/index.js', 'utf8');
 const firestoreIndexes = JSON.parse(await readFile('firestore.indexes.json', 'utf8'));
+for (const expected of ["cancelledBy: 'client'", "cancellationRequestedBy: 'client'"]) {
+  if (!clientOrders.includes(expected)) failures.push('client-orders.js: missing client cancellation audit field ' + expected);
+}
+for (const expected of ["requeuedBy: 'driver'", 'requeuedByDriverId: currentDriverId']) {
+  if (!driverPortal.includes(expected)) failures.push('driver-portal.js: missing driver requeue audit field ' + expected);
+}
+for (const expected of ["request.resource.data.cancelledBy == 'client'", "request.resource.data.cancellationRequestedBy == 'client'", "request.resource.data.requeuedBy == 'driver'"]) {
+  if (!firestoreRules.includes(expected)) failures.push('firestore.rules: missing order audit permission ' + expected);
+}
 if (!firestoreIndexes.indexes.some((index) => index.collectionGroup === 'balanceHistory'
   && index.queryScope === 'COLLECTION'
   && index.fields?.[0]?.fieldPath === 'driverId'

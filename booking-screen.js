@@ -1,4 +1,4 @@
-import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js';
+import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=51';
 
 export function initBookingScreen({ preview = false } = {}) {
   const $ = id => document.getElementById(id);
@@ -234,7 +234,7 @@ export function initBookingScreen({ preview = false } = {}) {
       const local = new Date(Date.now() + 60000); local.setMinutes(local.getMinutes() - local.getTimezoneOffset());
       $('taxiDateTime').min = local.toISOString().slice(0, 16);
     }
-    $('bookingServiceHelp').textContent = state.service.wish ? 'Пожелание увидят водитель и диспетчер. Подходящий автомобиль подтвердят при принятии заказа.' : id === 'intercity' ? 'Укажите населённый пункт назначения в поле «Куда».' : id === 'delivery' ? '«Откуда» — магазин или место получения, «Куда» — адрес доставки. Перечислите товары ниже.' : !state.service.online ? 'Эта услуга оформляется через WhatsApp.' : '';
+    $('bookingServiceHelp').textContent = state.service.wish ? 'Пожелание увидят водитель и диспетчер. Подходящий автомобиль подтвердят при принятии заказа.' : id === 'intercity' ? 'Укажите населённый пункт назначения в поле «Куда».' : id === 'delivery' ? '«Откуда» — магазин или место получения, «Куда» — адрес доставки. Перечислите товары ниже.' : id === 'auction' ? 'Укажите свою цену. Водители предложат стоимость и время подачи — выберите подходящее предложение.' : !state.service.online ? 'Эта услуга оформляется через WhatsApp.' : '';
     changed();
   }
   function activeCard() {
@@ -249,13 +249,14 @@ export function initBookingScreen({ preview = false } = {}) {
     const contact = panels.get(service.form).querySelector('.booking-contact');
     if (contact) contact.hidden = !service.online;
     $('bookingSubmit').hidden = !service.online;
+    $('bookingWhatsapp').hidden = service.form === 'auction';
     const onlineButton = $(`${service.form}-online-order-button`);
     const busy = submitting || (state.channel === 'online' && onlineButton?.disabled);
     $('bookingCommon').inert = Boolean(busy);
     $('bookingPanels').inert = Boolean(busy && !hasCard);
     $('bookingSubmit').disabled = busy || !onlineButton || onlineButton.classList.contains('hidden');
     $('bookingWhatsapp').disabled = busy;
-    $('bookingSubmit').textContent = submitting && state.channel === 'online' ? 'Оформляем…' : 'Заказать онлайн';
+    $('bookingSubmit').textContent = submitting && state.channel === 'online' ? 'Оформляем…' : service.form === 'auction' ? 'Найти водителя' : 'Заказать онлайн';
     $('bookingWhatsapp').textContent = submitting && state.channel === 'whatsapp' ? 'Открываем WhatsApp…' : 'Заказать через WhatsApp';
     const full = state.from.address && (service.form === 'assistance' || state.to.address);
     let price = service.form === 'taxi' ? $('taxiPriceEstimate').textContent : service.form === 'delivery' ? $('deliveryPriceEstimate').textContent : service.form === 'cargo' ? $('cargoTotalPrice').textContent : service.form === 'auction' ? ($('auctionPrice').value ? `${$('auctionPrice').value} ₸` : 'Ваша цена') : service.form === 'assistance' ? 'от 1500 тг' : 'от 3800 тг';
@@ -269,7 +270,7 @@ export function initBookingScreen({ preview = false } = {}) {
   }
   const observer = new MutationObserver(queueRefresh);
   for (const id of ['taxiPriceEstimate', 'deliveryPriceEstimate', 'cargoTotalPrice']) observer.observe($(id), { childList: true, subtree: true, characterData: true });
-  for (const key of ['taxi', 'delivery']) {
+  for (const key of ['taxi', 'delivery', 'auction']) {
     observer.observe($(`${key}-online-order-panel`), { attributes: true, attributeFilter: ['class'] });
     observer.observe($(`${key}-online-order-button`), { attributes: true, attributeFilter: ['disabled', 'class'] });
   }
@@ -294,7 +295,7 @@ export function initBookingScreen({ preview = false } = {}) {
   }
   async function submit(channel) {
     if (submitting) return;
-    state.channel = channel;
+    state.channel = state.service.form === 'auction' ? 'online' : channel;
     if (!validate()) return;
     if (preview) { showError('Режим просмотра: адреса и услуга выбраны. Заказ не отправляется.'); return; }
     sync();
@@ -307,7 +308,6 @@ export function initBookingScreen({ preview = false } = {}) {
     if (key === 'cargo' && extra) append('cargoDescription', extra);
     if (key === 'assistance' && state.note) append('assistanceTask', state.note);
     if (key === 'soberDriver' && extra) append('soberDriverTo', extra);
-    if (key === 'auction' && state.note) append('auctionTo', `Примечание: ${state.note}`);
     submitting = true; refresh();
     if (state.channel === 'online') $(`${key}-online-order-button`).click();
     else $(`${key}Form`).requestSubmit();
@@ -505,7 +505,7 @@ export function initBookingScreen({ preview = false } = {}) {
     }
   }
   function open(id = state.service.id) {
-    const currentOrder = ['taxi', 'delivery'].find(key => !$(`${key}-online-order-panel`).classList.contains('hidden'));
+    const currentOrder = ['taxi', 'delivery', 'auction'].find(key => !$(`${key}-online-order-panel`).classList.contains('hidden'));
     if (currentOrder) id = currentOrder;
     if (!opened) {
       returnFocus = document.activeElement; opened = true;
@@ -545,6 +545,7 @@ export function initBookingScreen({ preview = false } = {}) {
     onLocation, locationError, coordinates,
     getRouteDistance: async points => (await getRoute(points))?.distance ?? null,
     isOpen: () => opened, isPreview: () => preview,
+    auctionData: () => ({ stops: state.stops.map(p => addressWithCity(p)), wishes: state.note }),
     deliveryData: () => opened && state.service.form === 'delivery' ? { stops: state.stops.map(p => addressWithCity(p)), wishes: state.note } : null
   };
   window.repeatOrder = (from, to) => {

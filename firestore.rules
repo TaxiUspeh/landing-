@@ -60,9 +60,7 @@ service cloud.firestore {
         && get(driverStateDocument()).data.driverId == linkedDriverId()
         && get(driverStateDocument()).data.status == 'available'
         && get(driverStateDocument()).data.activeOrderId == ''
-        && get(driverStateDocument()).data.lastSeen is timestamp
-        // Занятый водитель может завершить свой назначенный заказ, даже если телефон
-        // приостановил фоновый таймер. Принадлежность заказа проверяется выше.
+        && get(driverStateDocument()).data.lastSeen is timestamp;
     }
 
     function driverIsBusyWithOrder(orderId) {
@@ -95,21 +93,23 @@ service cloud.firestore {
     }
 
     function driverBecomesAvailableAfterRequeue(orderId) {
+      let stateAfter = getAfter(driverStateDocument()).data;
+      let orderAfter = getAfter(orderDocument(orderId)).data;
       return existsAfter(driverStateDocument())
-        && getAfter(driverStateDocument()).data.driverId == linkedDriverId()
-        && getAfter(driverStateDocument()).data.status == 'available'
-        && getAfter(driverStateDocument()).data.activeOrderId == ''
-        && getAfter(driverStateDocument()).data.lastSeen == request.time
-        && getAfter(driverStateDocument()).data.updatedAt == request.time
+        && stateAfter.driverId == linkedDriverId()
+        && stateAfter.status == 'available'
+        && stateAfter.activeOrderId == ''
+        && stateAfter.lastSeen == request.time
+        && stateAfter.updatedAt == request.time
         && existsAfter(orderDocument(orderId))
-        && getAfter(orderDocument(orderId)).data.status == 'searching'
-        && getAfter(orderDocument(orderId)).data.assignedDriverUid == ''
-        && getAfter(orderDocument(orderId)).data.assignedDriverId == ''
-        && getAfter(orderDocument(orderId)).data.driverName == ''
-        && getAfter(orderDocument(orderId)).data.driverPhone == ''
-        && getAfter(orderDocument(orderId)).data.driverCar == ''
-        && getAfter(orderDocument(orderId)).data.driverColor == ''
-        && getAfter(orderDocument(orderId)).data.requeuedAt == request.time;
+        && orderAfter.status in ['searching', 'bidding']
+        && orderAfter.assignedDriverUid == ''
+        && orderAfter.assignedDriverId == ''
+        && orderAfter.driverName == ''
+        && orderAfter.driverPhone == ''
+        && orderAfter.driverCar == ''
+        && orderAfter.driverColor == ''
+        && orderAfter.requeuedAt == request.time;
     }
 
     function orderDocument(orderId) {
@@ -185,7 +185,8 @@ service cloud.firestore {
         && request.resource.data.previousBalance is number
         && request.resource.data.newBalance is number
         && request.resource.data.difference is number
-        && request.resource.data.reason == 'Комиссия 20% от максимальной цены онлайн-заказа'
+        && request.resource.data.reason == (getAfter(orderDocument(request.resource.data.orderId)).data.get('auctionRound', 0) > 0
+          ? 'Комиссия 20% от согласованной цены аукциона' : 'Комиссия 20% от максимальной цены онлайн-заказа')
         && request.resource.data.changedAt == request.time
         && request.resource.data.changedBy == request.auth.uid
         && request.resource.data.commissionBaseAmount == commissionBaseAmountForOrder(request.resource.data.orderId)
@@ -266,18 +267,90 @@ service cloud.firestore {
         );
     }
 
+    function validAuctionPrice(amount) {
+      return amount is int && amount >= 500 && amount <= 1000000;
+    }
+
+    function auctionOfferDocument(offerId) {
+      return /databases/$(database)/documents/auctionOffers/$(offerId);
+    }
+
+    function validOwnAuctionOffer(offerId) {
+      let data = request.resource.data;
+      return driverIsAvailable()
+        && data.keys().hasOnly(['orderId', 'driverUid', 'driverId', 'driverName', 'driverPhone',
+          'driverCar', 'driverColor', 'priceAmount', 'arrivalMinutes', 'round', 'status', 'expiresAt', 'updatedAt'])
+        && data.driverUid == request.auth.uid
+        && data.driverId == linkedDriverId()
+        && data.orderId is string
+        && offerId == data.orderId + '_' + request.auth.uid
+        && get(orderDocument(data.orderId)).data.status == 'bidding'
+        && get(orderDocument(data.orderId)).data.serviceType == 'auction'
+        && data.round == get(orderDocument(data.orderId)).data.auctionRound
+        && data.driverName == get(linkedDriverDocument()).data.get('name', 'Водитель')
+        && data.driverPhone == get(linkedDriverDocument()).data.get('phone', '')
+        && data.driverCar == get(linkedDriverDocument()).data.get('car', '')
+        && data.driverColor == get(linkedDriverDocument()).data.get('color', '')
+        && validAuctionPrice(data.priceAmount)
+        && data.arrivalMinutes is int && data.arrivalMinutes >= 1 && data.arrivalMinutes <= 120
+        && data.status == 'active'
+        && data.expiresAt is timestamp
+        && data.expiresAt > request.time
+        && data.expiresAt <= request.time + duration.value(3, 'm')
+        && data.updatedAt == request.time;
+    }
+
+    function validAuctionSelection(orderId, before, after) {
+      let offer = get(auctionOfferDocument(after.selectedOfferId)).data;
+      let accountPath = /databases/$(database)/documents/driverAccounts/$(offer.driverUid);
+      let statePath = /databases/$(database)/documents/driverStates/$(offer.driverUid);
+      return signedIn() && before.clientUid == request.auth.uid
+        && before.serviceType == 'auction' && before.status == 'bidding'
+        && after.status == 'accepted'
+        && after.selectedOfferId == orderId + '_' + offer.driverUid
+        && offer.orderId == orderId && offer.status == 'active'
+        && offer.round == before.auctionRound && offer.expiresAt > request.time
+        && get(accountPath).data.active == true && get(accountPath).data.driverId == offer.driverId
+        && get(driverDocument(offer.driverId)).data.status == 'active'
+        && get(statePath).data.driverId == offer.driverId
+        && get(statePath).data.status == 'available' && get(statePath).data.activeOrderId == ''
+        && get(statePath).data.lastSeen > request.time - duration.value(2, 'm')
+        && after.assignedDriverUid == offer.driverUid && after.assignedDriverId == offer.driverId
+        && after.driverName == offer.driverName && after.driverPhone == offer.driverPhone
+        && after.driverCar == offer.driverCar && after.driverColor == offer.driverColor
+        && after.priceAmount == offer.priceAmount && after.priceText == string(offer.priceAmount) + ' ₸'
+        && after.arrivalMinutes == offer.arrivalMinutes
+        && after.acceptedAt == request.time && after.updatedAt == request.time
+        && after.diff(before).affectedKeys().hasOnly(['status', 'assignedDriverUid', 'assignedDriverId',
+          'driverName', 'driverPhone', 'driverCar', 'driverColor', 'priceAmount', 'priceText',
+          'selectedOfferId', 'arrivalMinutes', 'acceptedAt', 'updatedAt'])
+        && getAfter(statePath).data.status == 'busy' && getAfter(statePath).data.activeOrderId == orderId
+        && getAfter(statePath).data.lastSeen == request.time && getAfter(statePath).data.updatedAt == request.time;
+    }
+
+    function clientReservesAuctionDriver(accountUid) {
+      let orderId = request.resource.data.activeOrderId;
+      return signedIn() && resource.data.status == 'available'
+        && request.resource.data.status == 'busy'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'activeOrderId', 'lastSeen', 'updatedAt'])
+        && getAfter(orderDocument(orderId)).data.assignedDriverUid == accountUid
+        && validAuctionSelection(orderId, get(orderDocument(orderId)).data, getAfter(orderDocument(orderId)).data);
+    }
+
     function validClientOrderCreate() {
       return signedIn()
         && request.resource.data.keys().hasOnly([
           'orderNumber', 'serviceType', 'source', 'clientUid',
           'fromAddress', 'toAddress', 'stops', 'wishes', 'scheduledFor',
           'direction', 'priceText', 'priceAmount', 'serviceDetails', 'status',
-          'createdAt', 'updatedAt'
+          'createdAt', 'updatedAt', 'proposedPrice', 'auctionRound'
         ])
         && request.resource.data.clientUid == request.auth.uid
-        && request.resource.data.serviceType in ['taxi', 'delivery']
+        && request.resource.data.serviceType in ['taxi', 'delivery', 'auction']
         && request.resource.data.source == 'online'
-        && request.resource.data.status == 'searching'
+        && ((request.resource.data.serviceType == 'auction' && request.resource.data.status == 'bidding')
+          || (request.resource.data.serviceType != 'auction' && request.resource.data.status == 'searching'
+            && !request.resource.data.keys().hasAny(['proposedPrice', 'auctionRound'])))
         && request.resource.data.orderNumber is string
         && request.resource.data.orderNumber.size() > 0
         && request.resource.data.orderNumber.size() <= 32
@@ -303,6 +376,12 @@ service cloud.firestore {
         && (
           (request.resource.data.serviceType == 'taxi'
             && !request.resource.data.keys().hasAny(['serviceDetails']))
+          || (request.resource.data.serviceType == 'auction'
+            && !request.resource.data.keys().hasAny(['serviceDetails'])
+            && validAuctionPrice(request.resource.data.proposedPrice)
+            && request.resource.data.priceAmount == request.resource.data.proposedPrice
+            && request.resource.data.priceText == string(request.resource.data.proposedPrice) + ' ₸'
+            && request.resource.data.auctionRound == 1)
           || (request.resource.data.serviceType == 'delivery'
             && request.resource.data.serviceDetails is map
             && request.resource.data.serviceDetails.keys().hasOnly(['store', 'items'])
@@ -319,7 +398,7 @@ service cloud.firestore {
     function clientCancelsOwnSearchingOrder() {
       return signedIn()
         && resource.data.clientUid == request.auth.uid
-        && resource.data.status == 'searching'
+        && resource.data.status in ['searching', 'bidding']
         && request.resource.data.status == 'cancelled'
         && request.resource.data.cancelledBy == 'client'
         && request.resource.data.cancelledAt == request.time
@@ -411,7 +490,16 @@ service cloud.firestore {
         && resource.data.assignedDriverId == linkedDriverId()
         && resource.data.get('cancellationRequestStatus', '') != 'pending'
         && requeueableDriverOrderStatus(resource.data.status)
-        && request.resource.data.status == 'searching'
+        && ((resource.data.get('auctionRound', 0) > 0
+            && request.resource.data.status == 'bidding'
+            && request.resource.data.auctionRound == resource.data.auctionRound + 1
+            && request.resource.data.selectedOfferId == ''
+            && request.resource.data.arrivalMinutes == 0
+            && request.resource.data.priceAmount == resource.data.proposedPrice
+            && request.resource.data.priceText == string(resource.data.proposedPrice) + ' ₸')
+          || (resource.data.get('auctionRound', 0) == 0
+            && request.resource.data.status == 'searching'
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['auctionRound', 'selectedOfferId', 'arrivalMinutes', 'priceAmount', 'priceText'])))
         && request.resource.data.assignedDriverUid == ''
         && request.resource.data.assignedDriverId == ''
         && request.resource.data.driverName == ''
@@ -429,7 +517,8 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'status', 'assignedDriverUid', 'assignedDriverId',
           'driverName', 'driverPhone', 'driverCar', 'driverColor',
-          'requeueReason', 'requeuedBy', 'requeuedByDriverId', 'requeuedAt', 'requeueCount', 'updatedAt'
+          'requeueReason', 'requeuedBy', 'requeuedByDriverId', 'requeuedAt', 'requeueCount', 'updatedAt',
+          'auctionRound', 'selectedOfferId', 'arrivalMinutes', 'priceAmount', 'priceText'
         ])
         && driverBecomesAvailableAfterRequeue(orderId);
     }
@@ -565,12 +654,27 @@ service cloud.firestore {
       allow create: if isAdmin()
         || (signedIn() && request.auth.uid == accountUid && validOwnDriverStateCreate());
       allow update: if isAdmin()
-        || (signedIn() && request.auth.uid == accountUid && validOwnDriverStateUpdate());
+        || (signedIn() && request.auth.uid == accountUid && validOwnDriverStateUpdate())
+        || clientReservesAuctionDriver(accountUid);
       allow delete: if isAdmin();
     }
 
     match /balanceHistory/{entryId} {
-      allow read: if isAdmin()
+      // Перед завершением водитель читает документ с ID заказа, чтобы не списать
+      // комиссию дважды. Разрешаем отсутствие только для своего текущего заказа.
+      allow get: if isAdmin()
+        || (hasDriverAccount()
+          && (
+            (exists(onlineCommissionHistoryDocument(entryId))
+              && resource.data.driverId == linkedDriverId())
+            || (!exists(onlineCommissionHistoryDocument(entryId))
+              && driverIsBusyWithOrder(entryId)
+              && exists(orderDocument(entryId))
+              && get(orderDocument(entryId)).data.assignedDriverUid == request.auth.uid
+              && get(orderDocument(entryId)).data.assignedDriverId == linkedDriverId()
+              && get(orderDocument(entryId)).data.status in ['arrived', 'in_trip'])
+          ));
+      allow list: if isAdmin()
         || (hasDriverAccount() && resource.data.driverId == linkedDriverId());
       allow create: if isAdmin() || (signedIn() && validOwnOnlineCommissionHistoryCreate(entryId));
       allow update, delete: if false;
@@ -595,15 +699,30 @@ service cloud.firestore {
       allow create: if isAdmin() || validClientOrderCreate();
       allow read: if isAdmin()
         || (signedIn() && resource.data.clientUid == request.auth.uid)
-        || (driverIsAvailable() && resource.data.status == 'searching')
+        || (driverIsAvailable() && resource.data.status in ['searching', 'bidding'])
         || (signedIn() && resource.data.get('assignedDriverUid', '') == request.auth.uid);
       allow update: if isAdmin()
-        || clientCancelsOwnSearchingOrder()
-        || clientRequestsCancellationAfterAssignment()
-        || driverAcceptsSearchingOrder(orderId)
-        || assignedDriverAdvancesOrder(orderId)
-        || assignedDriverReturnsOrderToSearch(orderId);
+        || (resource.data.clientUid == request.auth.uid
+          && (clientCancelsOwnSearchingOrder() || clientRequestsCancellationAfterAssignment()))
+        || (resource.data.status == 'bidding' && request.resource.data.status == 'accepted'
+          && validAuctionSelection(orderId, resource.data, request.resource.data))
+        || (resource.data.status == 'searching' && request.resource.data.status == 'accepted'
+          && driverAcceptsSearchingOrder(orderId))
+        || (resource.data.get('assignedDriverUid', '') == request.auth.uid
+          && ((request.resource.data.status in ['searching', 'bidding'] && assignedDriverReturnsOrderToSearch(orderId))
+            || (!(request.resource.data.status in ['searching', 'bidding']) && assignedDriverAdvancesOrder(orderId))));
       allow delete: if isAdmin();
+    }
+
+    match /auctionOffers/{offerId} {
+      allow read: if isAdmin() || (signedIn() && (resource.data.driverUid == request.auth.uid
+        || get(orderDocument(resource.data.orderId)).data.clientUid == request.auth.uid));
+      allow create: if validOwnAuctionOffer(offerId);
+      allow update: if signedIn() && resource.data.driverUid == request.auth.uid
+        && (validOwnAuctionOffer(offerId)
+          || (request.resource.data.status == 'withdrawn' && request.resource.data.updatedAt == request.time
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])));
+      allow delete: if false;
     }
 
     match /orderContacts/{orderId} {

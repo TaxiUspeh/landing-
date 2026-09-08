@@ -1,3 +1,4 @@
+import { currentAuctionOffer } from './auction-core.js?v=51';
 import { auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -10,7 +11,7 @@ import {
     addDoc,
     collection,
     doc,
-    getDoc,
+    getDoc, getDocs, where,
     limit,
     onSnapshot,
     orderBy,
@@ -1211,7 +1212,7 @@ function startDriverStatesListener() {
 }
 
 const ACTIVE_ORDER_STATUSES = new Set(['accepted', 'en_route', 'arrived', 'in_trip']);
-const CANCELLABLE_ORDER_STATUSES = new Set(['searching', ...ACTIVE_ORDER_STATUSES]);
+const CANCELLABLE_ORDER_STATUSES = new Set(['searching', 'bidding', ...ACTIVE_ORDER_STATUSES]);
 
 function onlineOrderStatus(order) {
     const status = typeof order === 'string' ? order : order.status;
@@ -1222,6 +1223,7 @@ function onlineOrderStatus(order) {
         return ['Ложный вызов · 500 ₸', 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'];
     }
     return ({
+        bidding: ['Ждёт предложений', 'bg-amber-100 text-amber-800'],
         searching: ['Ищет водителя', 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300'],
         accepted: ['Водитель принял', 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'],
         en_route: ['Водитель в пути', 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'],
@@ -1245,7 +1247,7 @@ function orderTime(order) {
 function orderReportFilterDetails(filter) {
     return ({
         all: { label: 'Все заказы', matches: () => true },
-        searching: { label: 'Ищут водителя', matches: (order) => order.status === 'searching' },
+        searching: { label: 'Ищут водителя', matches: (order) => ['searching', 'bidding'].includes(order.status) },
         active: { label: 'В работе', matches: (order) => ACTIVE_ORDER_STATUSES.has(order.status) },
         completed: { label: 'Завершённые', matches: (order) => order.status === 'completed' },
         cancelled: { label: 'Отменённые', matches: (order) => order.status === 'cancelled' }
@@ -1922,6 +1924,7 @@ function dispatcherOrderServiceLabel(order) {
 }
 
 function dispatcherOrderServiceDetailsText(order) {
+    if (order.auctionRound) return `Предложение клиента: ${formatMoney(order.proposedPrice)}. ${order.status === 'bidding' ? 'Ожидает выбора клиента.' : 'Согласованная цена: ' + formatMoney(order.priceAmount) + '.'}`;
     const details = order.serviceDetails || {};
     if (order.serviceType === 'auction' && Number.isFinite(Number(details.proposedPrice))) {
         return `Аукцион: клиент предлагает ${Number(details.proposedPrice).toLocaleString('ru-RU')} ₸.`;
@@ -2036,7 +2039,7 @@ function createOnlineOrderCard(order) {
         ));
     }
 
-    if (order.status === 'searching' && order.requeuedAt) {
+    if (['searching', 'bidding'].includes(order.status) && order.requeuedAt) {
         const returned = createOrderText(
             'p',
             'mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200',
@@ -2067,7 +2070,7 @@ function createOnlineOrderCard(order) {
             accounting.append(createOrderText(
                 'p',
                 'mt-1 text-emerald-800 dark:text-emerald-300',
-                `Расчёт: ${rate}% от максимальной цены ${formatMoney(order.commissionBaseAmount)}`
+                `Расчёт: ${rate}% от ${order.auctionRound ? 'согласованной' : 'максимальной'} цены ${formatMoney(order.commissionBaseAmount)}`
             ));
         }
         if (Number.isFinite(Number(order.commissionBalanceBefore)) && Number.isFinite(Number(order.commissionBalanceAfter))) {
@@ -2146,6 +2149,24 @@ function createOnlineOrderCard(order) {
         cancel.addEventListener('click', () => cancelOnlineOrder(order));
         actions.append(cancel);
     }
+    if (order.status === 'bidding') {
+        const offersButton = createOrderText('button', 'rounded-xl bg-blue-600 text-white px-4 py-2 text-xs font-extrabold', 'Предложения водителей');
+        offersButton.type = 'button';
+        const offerList = document.createElement('div'); offerList.className = 'w-full space-y-2 text-sm';
+        offersButton.addEventListener('click', async () => {
+            offersButton.disabled = true; offerList.textContent = 'Загружаем…';
+            try {
+                const snapshot = await getDocs(query(collection(db, 'auctionOffers'), where('orderId', '==', order.id)));
+                const offers = snapshot.docs.map(item => item.data()).filter(offer => currentAuctionOffer(offer, order));
+                offerList.replaceChildren();
+                for (const offer of offers) offerList.append(createOrderText('p', '', `${offer.driverName} · ${offer.driverCar} · ${formatMoney(offer.priceAmount)} · подача ${offer.arrivalMinutes} мин`));
+                if (!offers.length) offerList.textContent = 'Действующих предложений пока нет.';
+                offersButton.textContent = 'Обновить предложения';
+            } catch { offerList.textContent = 'Не удалось загрузить предложения.'; }
+            finally { offersButton.disabled = false; }
+        });
+        actions.append(offersButton, offerList);
+    }
     if (order.status === 'searching') appendManualAssignmentControls(actions, order);
     if (actions.childElementCount) detailsPanel.append(actions);
     return card;
@@ -2153,7 +2174,7 @@ function createOnlineOrderCard(order) {
 
 function renderOnlineOrders() {
     const active = orders.filter((order) => ACTIVE_ORDER_STATUSES.has(order.status)).length;
-    elements.ordersSearching.textContent = String(orders.filter((order) => order.status === 'searching').length);
+    elements.ordersSearching.textContent = String(orders.filter((order) => ['searching', 'bidding'].includes(order.status)).length);
     elements.ordersActive.textContent = String(active);
     elements.ordersCompleted.textContent = String(orders.filter((order) => order.status === 'completed').length);
     elements.ordersCancelled.textContent = String(orders.filter((order) => order.status === 'cancelled').length);
@@ -2407,7 +2428,7 @@ async function completeOnlineOrder(order) {
                     previousBalance,
                     newBalance,
                     difference: commissionAmount,
-                    reason: 'Комиссия 20% от максимальной цены онлайн-заказа',
+                    reason: currentOrder.auctionRound ? 'Комиссия 20% от согласованной цены аукциона' : 'Комиссия 20% от максимальной цены онлайн-заказа',
                     changedAt: serverTimestamp(),
                     changedBy: currentUser.uid
                 });

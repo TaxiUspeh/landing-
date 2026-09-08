@@ -1,6 +1,6 @@
 export const BOOKING_SERVICES = [
   { id: 'taxi', label: 'Легковой', icon: 'taxi', form: 'taxi', online: true },
-  { id: 'auction', label: 'Аукцион', icon: 'gavel', form: 'auction' },
+  { id: 'auction', label: 'Аукцион', icon: 'gavel', form: 'auction', online: true },
   { id: 'intercity', label: 'Межгород', icon: 'route', form: 'taxi', online: true },
   { id: 'delivery', label: 'Доставка', icon: 'box-open', form: 'delivery', online: true },
   { id: 'wagon', label: 'Универсал', icon: 'car-side', form: 'taxi', online: true, wish: 'Нужен универсал' },

@@ -119,10 +119,7 @@ export function initBookingScreen({ preview = false } = {}) {
       fields.prepend(phone.closest('label'));
       const name = $(`${key}CustomerName`);
       if (name) name.closest('label').firstChild.textContent = 'Ваше имя (необязательно)';
-      const hint = contact.querySelector('div:first-child p:last-child');
-      hint.id = `${key}ContactHint`;
-      hint.textContent = 'Введите телефон для онлайн-заказа. Для WhatsApp эти поля можно не заполнять.';
-      phone.setAttribute('aria-describedby', hint.id);
+      contact.firstElementChild.remove();
     }
   }
   $('taxiWishes').closest('section').classList.add('booking-source-hidden');

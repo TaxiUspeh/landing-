@@ -29,8 +29,9 @@
 
     <!-- Tailwind CSS & Font Awesome -->
     <link rel="stylesheet" href="./styles/tailwind.css">
+    <link rel="stylesheet" href="./styles/vehicle-categories.css?v=52">
     <link rel="stylesheet" href="./styles/auction.css?v=51">
-    <link rel="stylesheet" href="./styles/booking-screen.css?v=51">
+    <link rel="stylesheet" href="./styles/booking-screen.css?v=52">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <!-- Leaflet Map (Для карты с машинками) -->
@@ -2120,7 +2121,8 @@
     <!-- ========================================================= -->
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
-        import { initBookingScreen } from "./booking-screen.js?v=51";
+        import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=52";
+        import { initBookingScreen } from "./booking-screen.js?v=52";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -2800,6 +2802,21 @@
             }
         }
 
+        let taxiFareSnapshot = null;
+        function publishTaxiEstimate(baseMin, baseMax, originalText) {
+            const category = window.bookingScreen?.vehicleRequest().vehicleCategory || 'sedan';
+            const fare = calculateCategoryFare(baseMin, baseMax, category);
+            const priceEl = document.getElementById('taxiPriceEstimate');
+            taxiFareSnapshot = fare ? { ...fare, revision: taxiRouteCalculationId } : null;
+            if (!fare) { priceEl.textContent = 'Стоимость уточняется'; return; }
+            priceEl.textContent = category === 'sedan' ? originalText : formatCategoryFare(fare);
+        }
+        window.getTaxiFareForOrder = () => {
+            const category = window.bookingScreen?.vehicleRequest().vehicleCategory || 'sedan';
+            return taxiFareSnapshot?.revision === taxiRouteCalculationId && taxiFareSnapshot.vehicleCategory === category
+                ? { ...taxiFareSnapshot } : null;
+        };
+
         async function calculateTaxiPriceOSRM() {
             const priceEl = document.getElementById('taxiPriceEstimate');
             const requestId = taxiRouteCalculationId;
@@ -2835,7 +2852,7 @@
                         if (price < 500) price = 500;
                     }
 
-                    priceEl.innerText = `~ ${price} ₸`;
+                    publishTaxiEstimate(price, price, `~ ${price} ₸`);
                     const routeText = isIntercity
                         ? `${routePoints.map((point) => point.city).join(' → ')} · ${distanceText} км · расчёт по маршруту`
                         : `${distanceText} км · расчёт по маршруту`;
@@ -3371,6 +3388,7 @@
             const waitTimeEl = document.getElementById('taxiWaitTime');
             if (!priceEl) return;
             taxiRouteCalculationId += 1;
+            taxiFareSnapshot = null;
             setTaxiRouteHint('');
             
             if (waitTimeEl) {
@@ -3394,7 +3412,7 @@
                 if (priceMultiplier > 1) priceText += " (Тариф повышен)";
                 if (isLuckyDiscount) priceText += " (Скидка применена)";
 
-                priceEl.textContent = priceText;
+                publishTaxiEstimate(minPrice, maxPrice, priceText);
                 const fallbackNote = databaseFallback.usesSeveralBaseRates
                     ? `Сумма тарифов из базы: ${databaseFallback.routeLabel} через Белоусовку.`
                     : `Тариф из базы: ${databaseFallback.routeLabel}.`;
@@ -3425,7 +3443,7 @@
             if (priceMultiplier > 1) priceText += " (Тариф повышен)";
             if (isLuckyDiscount) priceText += " (Скидка!)";
             
-            priceEl.textContent = priceText;
+            publishTaxiEstimate(baseMin, baseMax, priceText);
             debouncedOSRM();
         }
         
@@ -4956,6 +4974,11 @@
                         if(customerName) message += `*Имя клиента*:\n${customerName}\n\n`;
                         if(customerPhone) message += `*Телефон для связи*:\n${customerPhone}\n\n`;
                         
+                        const vehicleRequest = window.bookingScreen?.vehicleRequest();
+                        if (vehicleRequest && vehicleRequest.vehicleCategory !== 'sedan') {
+                            message += `*Автомобиль*: ${categoryLabel(vehicleRequest.vehicleCategory)}\n`;
+                            if (vehicleRequest.vehicleCategory === 'minivan') message += `*Пассажиров*: ${vehicleRequest.passengerCount}\n`;
+                        }
                         let estPrice = document.getElementById('taxiPriceEstimate').innerText;
                         message += `*Ориентировочная цена*: ${estPrice}\n`;
                         
@@ -5319,6 +5342,6 @@
         initBookingScreen();
 
     </script>
-    <script type="module" src="./client-orders.js?v=51"></script>
+    <script type="module" src="./client-orders.js?v=52"></script>
 </body>
 </html>

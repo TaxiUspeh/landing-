@@ -337,16 +337,71 @@ service cloud.firestore {
         && validAuctionSelection(orderId, get(orderDocument(orderId)).data, getAfter(orderDocument(orderId)).data);
     }
 
+    function validVehicleProfile(data) {
+      return (!data.keys().hasAny(['serviceCategories', 'passengerSeats']))
+        || (data.serviceCategories is list
+          && data.serviceCategories.hasAll(['sedan'])
+          && data.serviceCategories.hasOnly(['sedan', 'wagon', 'minivan'])
+          && data.serviceCategories.size() >= 1 && data.serviceCategories.size() <= 3
+          && data.serviceCategories.toSet().size() == data.serviceCategories.size()
+          && data.passengerSeats is int && data.passengerSeats >= 1 && data.passengerSeats <= 8
+          && (!data.serviceCategories.hasAny(['minivan']) || data.passengerSeats >= 5));
+    }
+
+    function vehicleFitsOrder(order, driver) {
+      let category = order.get('vehicleCategory', 'sedan');
+      let passengers = order.get('passengerCount', 1);
+      let seats = driver.get('passengerSeats', 4);
+      return order.get('serviceType', 'taxi') != 'taxi'
+        || (category in ['sedan', 'wagon', 'minivan']
+          && (category == 'sedan' || driver.get('serviceCategories', ['sedan']).hasAny([category]))
+          && passengers is int && passengers >= 1 && passengers <= seats
+          && (category != 'minivan' || seats >= 5));
+    }
+
+    function validVehicleFare(data) {
+      let category = data.get('vehicleCategory', 'sedan');
+      let factor = category == 'wagon' ? 120 : 150;
+      return !data.keys().hasAny(['vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax'])
+        || (data.serviceType == 'taxi'
+          && data.keys().hasAll(['vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax'])
+          && category in ['sedan', 'wagon', 'minivan']
+          && data.passengerCount is int && data.passengerCount >= 1 && data.passengerCount <= 8
+          && data.basePriceMin is int && data.basePriceMin >= 0
+          && data.basePriceMax is int && data.basePriceMax >= data.basePriceMin && data.basePriceMax <= 10000000
+          && data.priceAmount is int && data.priceAmount <= 10000000
+          && ((category == 'sedan' && data.priceAmount == data.basePriceMax)
+            || (category != 'sedan' && data.basePriceMin > 0
+              && data.priceAmount % 100 == 0
+              && data.priceAmount * 100 >= data.basePriceMax * factor
+              && (data.priceAmount - 100) * 100 < data.basePriceMax * factor)));
+    }
+
+    function adminAssignsSuitableVehicle(data) {
+      return data.get('assignedDriverUid', '') == ''
+        || vehicleFitsOrder(data, get(driverDocument(data.assignedDriverId)).data);
+    }
+
+    function validAdminCategoryUpdate() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return (!changed.hasAny(['vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax', 'priceAmount'])
+          || validVehicleFare(request.resource.data))
+        && (!changed.hasAny(['assignedDriverUid', 'assignedDriverId', 'vehicleCategory', 'passengerCount'])
+          || adminAssignsSuitableVehicle(request.resource.data));
+    }
+
     function validClientOrderCreate() {
       return signedIn()
         && request.resource.data.keys().hasOnly([
           'orderNumber', 'serviceType', 'source', 'clientUid',
           'fromAddress', 'toAddress', 'stops', 'wishes', 'scheduledFor',
           'direction', 'priceText', 'priceAmount', 'serviceDetails', 'status',
-          'createdAt', 'updatedAt', 'proposedPrice', 'auctionRound'
+          'createdAt', 'updatedAt', 'proposedPrice', 'auctionRound',
+          'vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax'
         ])
         && request.resource.data.clientUid == request.auth.uid
         && request.resource.data.serviceType in ['taxi', 'delivery', 'auction']
+        && validVehicleFare(request.resource.data)
         && request.resource.data.source == 'online'
         && ((request.resource.data.serviceType == 'auction' && request.resource.data.status == 'bidding')
           || (request.resource.data.serviceType != 'auction' && request.resource.data.status == 'searching'
@@ -431,6 +486,7 @@ service cloud.firestore {
 
     function driverAcceptsSearchingOrder(orderId) {
       return driverIsAvailable()
+        && vehicleFitsOrder(resource.data, get(linkedDriverDocument()).data)
         && resource.data.status == 'searching'
         && request.resource.data.status == 'accepted'
         && request.resource.data.assignedDriverUid == request.auth.uid
@@ -610,8 +666,9 @@ service cloud.firestore {
 
     match /drivers/{driverId} {
       allow read: if isAdmin() || isLinkedDriver(driverId);
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin() || driverAppliesOwnOnlineCommission(driverId);
+      allow create: if isAdmin() && validVehicleProfile(request.resource.data);
+      allow delete: if isAdmin();
+      allow update: if (isAdmin() && validVehicleProfile(request.resource.data)) || driverAppliesOwnOnlineCommission(driverId);
     }
 
     match /driverAccounts/{accountUid} {
@@ -696,12 +753,12 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      allow create: if isAdmin() || validClientOrderCreate();
+      allow create: if (isAdmin() && validVehicleFare(request.resource.data) && adminAssignsSuitableVehicle(request.resource.data)) || validClientOrderCreate();
       allow read: if isAdmin()
         || (signedIn() && resource.data.clientUid == request.auth.uid)
         || (driverIsAvailable() && resource.data.status in ['searching', 'bidding'])
         || (signedIn() && resource.data.get('assignedDriverUid', '') == request.auth.uid);
-      allow update: if isAdmin()
+      allow update: if (isAdmin() && validAdminCategoryUpdate())
         || (resource.data.clientUid == request.auth.uid
           && (clientCancelsOwnSearchingOrder() || clientRequestsCancellationAfterAssignment()))
         || (resource.data.status == 'bidding' && request.resource.data.status == 'accepted'

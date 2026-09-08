@@ -1,0 +1,12 @@
+.vehicle-profile-wide, .vehicle-profile-controls { grid-column: 1 / -1; min-width: 0; }
+.vehicle-profile-controls { display: grid; gap: 10px; margin: 8px 0; padding: 14px; border: 1px solid #93c5fd; border-radius: 12px; }
+.vehicle-profile-controls legend { padding: 0 5px; font-size: 14px; font-weight: 800; }
+.vehicle-category-choice { display: flex; align-items: center; gap: 10px; min-height: 40px; font-size: 14px; font-weight: 700; }
+.vehicle-category-choice input { width: 20px; height: 20px; accent-color: #1d4ed8; flex: 0 0 auto; }
+.vehicle-seat-label, .booking-passenger-count { display: grid; gap: 7px; font-size: 14px; font-weight: 700; }
+.vehicle-seat-label input, .booking-passenger-count input { width: 100%; min-width: 0; min-height: 46px; border: 1px solid #94a3b8; border-radius: 10px; padding: 10px 12px; color: #172554; background: white; font-size: 16px; }
+.vehicle-seat-label small, .booking-passenger-count small { font-size: 12px; font-weight: 400; }
+#phone-order-vehicle-options[hidden], #phone-order-passenger-field[hidden] { display: none !important; }
+#phone-order-vehicle-options { display: grid; gap: 12px; }
+#mapModal .booking-passenger-count { padding: 12px; background: #eff6ff; color: #172554; border-radius: 12px; }
+.dark .vehicle-profile-controls { border-color: #3b82f6; }

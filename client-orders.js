@@ -1,3 +1,4 @@
+import { orderCategorySummary } from './vehicle-categories.js?v=52';
 import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=51';
 import { auth, db } from './firebase-config.js';
 import {
@@ -361,6 +362,7 @@ function showOrderPanel(order) {
     const deliveryItems = order.serviceType === 'delivery' ? String(order.serviceDetails?.items || '').trim() : '';
     if (view.orderRoute) {
         view.orderRoute.textContent = [
+            orderCategorySummary(order),
             `${order.fromAddress || '—'} → ${order.toAddress || '—'}`,
             deliveryItems ? `Что доставить: ${deliveryItems}` : ''
         ].filter(Boolean).join(' · ');
@@ -480,6 +482,18 @@ async function createOnlineOrder() {
         return;
     }
 
+    const vehicleRequest = window.bookingScreen?.vehicleRequest() || { vehicleCategory: 'sedan', passengerCount: 1 };
+    const quotedFare = window.getTaxiFareForOrder?.();
+    const priceText = document.getElementById('taxiPriceEstimate')?.textContent.trim() || 'Цена уточняется';
+    if (vehicleRequest.vehicleCategory !== 'sedan' && (!quotedFare || quotedFare.priceMax <= 0)) {
+        setStatus('Дождитесь расчёта стоимости выбранного автомобиля. Если цена не появилась, уточните маршрут.', false, 'taxi'); return;
+    }
+    if (!Number.isInteger(vehicleRequest.passengerCount) || vehicleRequest.passengerCount < 1 || vehicleRequest.passengerCount > 8) {
+        setStatus('Укажите от 1 до 8 пассажиров.', false, 'taxi'); return;
+    }
+    const categoryFields = vehicleRequest.vehicleCategory === 'sedan' ? {}
+        : { ...vehicleRequest, basePriceMin: quotedFare.basePriceMin, basePriceMax: quotedFare.basePriceMax };
+
     // Вызывается прямо из нажатия «Заказать онлайн»: браузер разрешает звук
     // для последующих смен статуса без дополнительной кнопки для клиента.
     void prepareClientOrderSound();
@@ -492,7 +506,6 @@ async function createOnlineOrder() {
         const user = await ensureSignedIn();
         const orderRef = doc(collection(db, 'orders'));
         const contactRef = doc(db, 'orderContacts', orderRef.id);
-        const priceText = document.getElementById('taxiPriceEstimate')?.textContent.trim() || 'Цена уточняется';
         const direction = toCity === 'Белоусовка' ? '' : toCity;
         const scheduledFor = document.getElementById('taxiDateTime')?.value || '';
         const wishes = document.getElementById('taxiWishes')?.value.trim() || '';
@@ -501,6 +514,7 @@ async function createOnlineOrder() {
         batch.set(orderRef, {
             orderNumber: createOrderNumber(),
             serviceType: 'taxi',
+            ...categoryFields,
             source: 'online',
             clientUid: user.uid,
             fromAddress,
@@ -511,7 +525,7 @@ async function createOnlineOrder() {
             direction,
             priceText,
             // Для диапазона «800–1000 ₸» расчётной суммой является 1000 ₸.
-            priceAmount: parseMaximumPrice(priceText),
+            priceAmount: quotedFare?.priceMax ?? parseMaximumPrice(priceText),
             status: 'searching',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()

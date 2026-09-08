@@ -1,3 +1,4 @@
+import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=52';
 import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=51';
 import { auth, db, googleProvider } from './firebase-config.js';
 import {
@@ -612,7 +613,7 @@ async function toggleOrderAlerts() {
 }
 
 function updateOrdersPageTitle() {
-    const availableCount = currentCanTakeOrders ? openOrders.length : 0;
+    const availableCount = currentCanTakeOrders ? [...openOrders, ...auctionOrders].filter(order => driverCanServeOrder(currentDriver, order)).length : 0;
     const assignedCount = assignedOrders.filter((order) => ACTIVE_ORDER_STATUSES.has(order.status)).length;
     const visibleCount = availableCount + assignedCount;
     document.title = visibleCount > 0 ? `(${visibleCount}) Заказы — Такси «Успех»` : DEFAULT_PAGE_TITLE;
@@ -1442,7 +1443,7 @@ function orderServiceLabel(order) {
         soberDriver: 'Трезвый водитель',
         assistance: 'Помощь'
     };
-    return order.serviceLabel || labels[order.serviceType] || 'Такси';
+    return orderCategorySummary(order) || order.serviceLabel || labels[order.serviceType] || 'Такси';
 }
 
 function orderServiceDetailsText(order) {
@@ -1691,7 +1692,7 @@ function renderOnlineOrders() {
         .filter((order) => ACTIVE_ORDER_STATUSES.has(order.status))
         .sort((a, b) => createdAtMillis(b) - createdAtMillis(a));
     const available = currentCanTakeOrders
-        ? [...openOrders, ...auctionOrders].sort((a, b) => createdAtMillis(a) - createdAtMillis(b))
+        ? [...openOrders, ...auctionOrders].filter(order => driverCanServeOrder(currentDriver, order)).sort((a, b) => createdAtMillis(a) - createdAtMillis(b))
         : [];
     const allVisible = [
         ...assignedActive.map((order) => [order, true]),
@@ -1771,7 +1772,7 @@ function startOpenOrdersWatch() {
             openOrders = nextOpenOrders;
             openOrdersLoaded = true;
             renderOnlineOrders();
-            for (const order of newlyAddedOrders) signalNewOrder(order);
+            for (const order of newlyAddedOrders) if (driverCanServeOrder(currentDriver, order)) signalNewOrder(order);
         },
         (error) => {
             unsubscribeOpenOrders = null;
@@ -1844,6 +1845,8 @@ async function acceptOrder(orderId) {
             if (!orderSnapshot.exists() || orderSnapshot.data().status !== 'searching') {
                 throw new Error('Этот заказ уже принял другой водитель.');
             }
+            const driverSnapshot = await transaction.get(doc(db, 'drivers', currentDriverId));
+            if (!driverSnapshot.exists() || !driverCanServeOrder(driverSnapshot.data(), orderSnapshot.data())) throw new Error('Этот заказ требует другой категории автомобиля или большего числа мест.');
             const state = normalizedDriverState(stateSnapshot, currentDriverId);
             if (!stateSnapshot.exists() || state.status !== 'available' || state.activeOrderId) {
                 throw new Error('Вы уже заняты или кабинет ещё подключается к заказам.');
@@ -2152,7 +2155,7 @@ function watchDriverProfile(user) {
 
             const driver = driverSnapshot.data();
             elements.profileName.textContent = `ID ${driver.driverNumber ?? account.driverId} · ${driver.name || 'Водитель'}`;
-            elements.profileCar.textContent = carDescription(driver);
+            elements.profileCar.textContent = `${carDescription(driver)} · ${driverCategorySummary(driver)}`;
             elements.profileBalance.textContent = formatMoney(driver.balance);
             setHidden(elements.pending, true);
             setHidden(elements.profile, false);

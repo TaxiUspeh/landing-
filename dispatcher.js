@@ -1,3 +1,5 @@
+import { createVehicleControls } from './vehicle-category-controls.js?v=52';
+import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=52';
 import { currentAuctionOffer } from './auction-core.js?v=51';
 import { auth, db, googleProvider } from './firebase-config.js';
 import {
@@ -1119,6 +1121,10 @@ function renderDriverCard(driver) {
     uid.label.classList.add('sm:col-span-2');
     grid.append(name.label, phone.label, car.label, color.label, balance.label, status.label, uid.label);
 
+    const vehicleControls = createVehicleControls(driver);
+    grid.append(vehicleControls.element);
+    subtitle.textContent += ` · ${driverCategorySummary(driver)}`;
+
     const footer = document.createElement('div');
     footer.className = 'mt-4 flex flex-wrap items-center gap-3';
     const reportButton = document.createElement('button');
@@ -1148,6 +1154,7 @@ function renderDriverCard(driver) {
         status: status.input,
         uid: uid.input,
         button: saveButton,
+        vehicleControls,
         message
     }));
     reportButton.addEventListener('click', () => openDriverOrdersReport(driver.id));
@@ -1414,10 +1421,11 @@ function setOrderExpanded(orderId, expanded) {
     renderOnlineOrders();
 }
 
-function manualAssignmentCandidates() {
+function manualAssignmentCandidates(order = {}) {
     return drivers.filter((driver) => driver.status === 'active'
         && normalizeUid(driver.authUid || '')
-        && driverAvailabilityInfo(driver).key !== 'busy');
+        && driverAvailabilityInfo(driver).key !== 'busy'
+        && driverCanServeOrder(driver, order));
 }
 
 function findManualAssignmentDriver(value) {
@@ -1438,13 +1446,13 @@ function manualAssignmentOptionLabel(driver) {
 }
 
 function appendManualAssignmentControls(actions, order) {
-    const candidates = manualAssignmentCandidates();
+    const candidates = manualAssignmentCandidates(order);
     const hint = createOrderText(
         'p',
         'w-full text-xs text-slate-500 dark:text-slate-400',
         candidates.length
             ? 'Введите ID или выберите водителя. Если кабинет закрыт, сначала свяжитесь с ним по телефону.'
-            : 'Нет активных водителей, зарегистрированных в кабинете.'
+            : 'Нет подходящих активных водителей. Проверьте категории автомобилей и число мест в карточках.'
     );
     actions.append(hint);
     if (!candidates.length) return;
@@ -1559,6 +1567,28 @@ function formatOrderPrice(minimum, maximum) {
         : `${formatNumber(minimum)} ₸`;
 }
 
+function phoneVehicleRequest() {
+    const serviceType = currentPhoneOrderService();
+    const vehicleCategory = serviceType === 'taxi' ? document.getElementById('phone-order-vehicle-category').value : 'sedan';
+    return { serviceType, vehicleCategory, passengerCount: vehicleCategory === 'minivan' ? Number(document.getElementById('phone-order-passenger-count').value) : 1 };
+}
+function syncPhoneVehicleCategory() {
+    const request = phoneVehicleRequest();
+    document.getElementById('phone-order-vehicle-options').hidden = request.serviceType !== 'taxi';
+    document.getElementById('phone-order-passenger-field').hidden = request.vehicleCategory !== 'minivan';
+    document.getElementById('phone-order-passenger-count').disabled = request.vehicleCategory !== 'minivan';
+    const premium = request.serviceType === 'taxi' && request.vehicleCategory !== 'sedan';
+    if (request.serviceType === 'taxi') {
+        elements.phoneOrderPriceFromLabel.textContent = premium ? 'Обычный тариф от, ₸ *' : 'Цена от, ₸ *';
+        elements.phoneOrderPriceToLabel.textContent = premium ? 'Обычный тариф до, ₸' : 'Цена до, ₸';
+    }
+    const min = Number(elements.phoneOrderPriceFrom.value), max = Number(elements.phoneOrderPriceTo.value || min);
+    const fare = calculateCategoryFare(min, max, request.vehicleCategory);
+    document.getElementById('phone-order-category-quote').textContent = premium
+        ? (fare && min > 0 ? `Итого за ${categoryLabel(request.vehicleCategory).toLowerCase()}: ${formatCategoryFare(fare)}` : 'Введите обычную стоимость маршрута ниже. Доплата рассчитается автоматически.') : '';
+    populatePhoneOrderDrivers();
+}
+
 function currentPhoneOrderService() {
     const value = elements.phoneOrderServiceType?.value || 'taxi';
     return DISPATCHER_ORDER_SERVICES[value] ? value : 'taxi';
@@ -1614,6 +1644,7 @@ function setPhoneOrderService(serviceType) {
     setPhoneOrderRequired(elements.phoneOrderAssistanceAddress, Boolean(service.assistance));
     setPhoneOrderRequired(elements.phoneOrderPriceFrom, !service.auction);
     setPhoneOrderRequired(elements.phoneOrderAuctionPriceValue, Boolean(service.auction));
+    syncPhoneVehicleCategory();
 }
 
 function populatePhoneOrderDrivers() {
@@ -1623,9 +1654,9 @@ function populatePhoneOrderDrivers() {
     select.replaceChildren();
     const searchOption = document.createElement('option');
     searchOption.value = '';
-    searchOption.textContent = 'В поиск — всем водителям';
+    searchOption.textContent = 'В поиск — подходящим водителям';
     select.append(searchOption);
-    for (const driver of manualAssignmentCandidates()) {
+    for (const driver of manualAssignmentCandidates(phoneVehicleRequest())) {
         const option = document.createElement('option');
         option.value = driver.id;
         option.textContent = manualAssignmentOptionLabel(driver);
@@ -1793,6 +1824,13 @@ function createPhoneOrderPayload() {
         };
     }
 
+    if (serviceType === 'taxi') {
+        const vehicle = phoneVehicleRequest();
+        if (!Number.isInteger(vehicle.passengerCount) || vehicle.passengerCount < 1 || vehicle.passengerCount > 8) return { error: 'Укажите от 1 до 8 пассажиров.' };
+        const fare = calculateCategoryFare(price.minimumPrice, price.maximumPrice, vehicle.vehicleCategory);
+        if (!fare) return { error: 'Проверьте стоимость обычной поездки.' };
+        return { ...common, ...vehicle, fromAddress, toAddress, serviceLabel: categoryLabel(vehicle.vehicleCategory), basePriceMin: fare.basePriceMin, basePriceMax: fare.basePriceMax, priceText: formatCategoryFare(fare), priceAmount: fare.priceMax };
+    }
     return {
         ...common,
         fromAddress,
@@ -1864,7 +1902,7 @@ async function createPhoneOrder(event) {
             });
             batch.set(contactRef, phoneOrderContactData(customerName, customerPhone));
             await batch.commit();
-            setMessage(elements.onlineOrdersMessage, `${baseOrder.serviceLabel}: заказ ${baseOrder.orderNumber} отправлен всем водителям.`, true);
+            setMessage(elements.onlineOrdersMessage, `${baseOrder.serviceLabel}: заказ ${baseOrder.orderNumber} отправлен подходящим водителям.`, true);
         } else {
             await runTransaction(db, async (transaction) => {
                 const driverRef = doc(db, 'drivers', selectedDriver.id);
@@ -1873,6 +1911,7 @@ async function createPhoneOrder(event) {
                 const driver = driverSnapshot.data();
                 const driverUid = normalizeUid(driver.authUid || '');
                 if (!driverUid || driver.status !== 'active') throw new Error('Водитель недоступен для назначения.');
+                if (!driverCanServeOrder(driver, baseOrder)) throw new Error('Автомобиль водителя не подходит по категории или числу мест.');
 
                 const stateRef = doc(db, 'driverStates', driverUid);
                 const stateSnapshot = await transaction.get(stateRef);
@@ -1920,7 +1959,7 @@ async function createPhoneOrder(event) {
 }
 
 function dispatcherOrderServiceLabel(order) {
-    return order.serviceLabel || DISPATCHER_ORDER_SERVICES[order.serviceType]?.label || 'Такси';
+    return orderCategorySummary(order) || order.serviceLabel || DISPATCHER_ORDER_SERVICES[order.serviceType]?.label || 'Такси';
 }
 
 function dispatcherOrderServiceDetailsText(order) {
@@ -2267,6 +2306,7 @@ async function assignOrderManually(orderId, driverId) {
             }
             if (!driverSnapshot.exists()) throw new Error('Карточка водителя не найдена.');
             const driver = driverSnapshot.data();
+            if (!driverCanServeOrder(driver, orderSnapshot.data())) throw new Error('Автомобиль водителя не подходит по категории или числу мест.');
             const driverUid = normalizeUid(driver.authUid || '');
             if (!driverUid || driver.status !== 'active') {
                 throw new Error('Водитель недоступен для онлайн-заказов.');
@@ -2546,6 +2586,8 @@ async function saveDriver(original, controls) {
     const balance = parseBalance(controls.balance.value);
     const authUid = normalizeUid(controls.uid.value);
     const status = controls.status.value;
+    const vehicleProfile = controls.vehicleControls.read();
+    if (!validVehicleProfile(vehicleProfile.serviceCategories, vehicleProfile.passengerSeats)) return setMessage(controls.message, 'Укажите реальные пассажирские места: от 1 до 8, для минивэна — от 5 до 8.');
     if (!name) return setMessage(controls.message, 'Укажите имя водителя.');
     if (balance === null) return setMessage(controls.message, 'Баланс должен быть числом.');
     if (!validateUid(authUid)) return setMessage(controls.message, 'UID содержит недопустимые символы. Скопируйте его полностью из Firebase.');
@@ -2561,6 +2603,7 @@ async function saveDriver(original, controls) {
             throw new Error('Нельзя менять UID, пока водитель выполняет заказ.');
         }
         const updatedDriver = {
+            ...vehicleProfile,
             name,
             phone: controls.phone.value.trim(),
             car: controls.car.value.trim(),
@@ -2617,6 +2660,8 @@ async function addDriver(event) {
     const balance = parseBalance(elements.newDriverBalance.value);
     const authUid = normalizeUid(elements.newDriverUid.value);
     const status = elements.newDriverStatus.value;
+    const vehicleProfile = newDriverVehicleControls.read();
+    if (!validVehicleProfile(vehicleProfile.serviceCategories, vehicleProfile.passengerSeats)) return setMessage(elements.addDriverMessage, 'Укажите реальные пассажирские места: от 1 до 8, для минивэна — от 5 до 8.');
 
     if (!/^\d+$/.test(rawNumber) || !Number.isInteger(driverNumber) || driverNumber <= 0) {
         return setMessage(elements.addDriverMessage, 'ID водителя должен быть положительным целым числом.');
@@ -2635,6 +2680,7 @@ async function addDriver(event) {
 
         const batch = writeBatch(db);
         batch.set(driverRef, {
+            ...vehicleProfile,
             driverNumber,
             name,
             phone: elements.newDriverPhone.value.trim(),
@@ -2669,6 +2715,7 @@ async function addDriver(event) {
 
         await batch.commit();
         elements.addDriverForm.reset();
+        newDriverVehicleControls.reset();
         elements.newDriverBalance.value = '0';
         elements.newDriverStatus.value = 'active';
         setMessage(elements.addDriverMessage, `Водитель ID ${driverNumber} добавлен.`, true);
@@ -2711,6 +2758,12 @@ async function saveOrdersLink(event) {
     } finally {
         elements.saveOrdersLink.disabled = false;
     }
+}
+
+const newDriverVehicleControls = createVehicleControls();
+document.getElementById('new-driver-vehicle-controls').append(newDriverVehicleControls.element);
+for (const id of ['phone-order-vehicle-category', 'phone-order-passenger-count', 'phone-order-price-from', 'phone-order-price-to']) {
+    document.getElementById(id).addEventListener('input', syncPhoneVehicleCategory);
 }
 
 elements.loginButton.addEventListener('click', login);

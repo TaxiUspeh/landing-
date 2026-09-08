@@ -1,3 +1,4 @@
+import { categoryForService, categoryCaption } from './vehicle-categories.js?v=52';
 import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=51';
 
 export function initBookingScreen({ preview = false } = {}) {
@@ -10,7 +11,7 @@ export function initBookingScreen({ preview = false } = {}) {
   const mapMessage = $('mapOverlayText');
   const geocoder = createGeocoder();
   const emptyPoint = () => ({ address: '', city: 'Белоусовка', lat: null, lon: null });
-  const state = { from: emptyPoint(), to: emptyPoint(), stops: [], details: '', note: '', service: BOOKING_SERVICES[0], channel: 'online', revision: 0 };
+  const state = { from: emptyPoint(), to: emptyPoint(), stops: [], details: '', note: '', passengerCount: 5, service: BOOKING_SERVICES[0], channel: 'online', revision: 0 };
   let opened = false, returnFocus = null, pickerTarget = null, pickerRevision = 0;
   let locating = false, initialLocationRequested = false, locationRevision = 0, searchRevision = 0;
   let routeRevision = 0, routeLayer = null, routeMarkers = [], pickedPoint = null, pickMarker = null;
@@ -60,6 +61,7 @@ export function initBookingScreen({ preview = false } = {}) {
                 <button type="button" class="booking-icon-button booking-service-arrow" id="bookingServicesNext" aria-label="Следующие услуги">›</button>
               </div>
               <p id="bookingServiceHelp" class="booking-help"></p>
+              <label id="bookingPassengerCountField" class="booking-passenger-count" hidden>Количество пассажиров<input id="bookingPassengerCount" type="number" inputmode="numeric" min="1" max="8" step="1" value="5" required><small>Стоимость указана за автомобиль целиком.</small></label>
             </div>
             <div id="bookingPanels"></div>
             <p id="bookingStatus" class="booking-status" role="alert"></p>
@@ -222,6 +224,8 @@ export function initBookingScreen({ preview = false } = {}) {
     if (!state.service.online) state.channel = 'whatsapp';
     for (const [key, panel] of panels) panel.hidden = key !== state.service.form;
     for (const button of $('bookingServices').children) button.setAttribute('aria-pressed', String(button.dataset.bookingService === state.service.id));
+    $('bookingPassengerCountField').hidden = id !== 'minivan';
+    $('bookingPassengerCount').disabled = id !== 'minivan';
     const scheduled = id === 'preorder';
     preorderSection.hidden = !scheduled;
     $('taxiDateTime').required = scheduled;
@@ -234,7 +238,7 @@ export function initBookingScreen({ preview = false } = {}) {
       const local = new Date(Date.now() + 60000); local.setMinutes(local.getMinutes() - local.getTimezoneOffset());
       $('taxiDateTime').min = local.toISOString().slice(0, 16);
     }
-    $('bookingServiceHelp').textContent = state.service.wish ? 'Пожелание увидят водитель и диспетчер. Подходящий автомобиль подтвердят при принятии заказа.' : id === 'intercity' ? 'Укажите населённый пункт назначения в поле «Куда».' : id === 'delivery' ? '«Откуда» — магазин или место получения, «Куда» — адрес доставки. Перечислите товары ниже.' : id === 'auction' ? 'Укажите свою цену. Водители предложат стоимость и время подачи — выберите подходящее предложение.' : !state.service.online ? 'Эта услуга оформляется через WhatsApp.' : '';
+    $('bookingServiceHelp').textContent = ['wagon', 'minivan'].includes(id) ? `${categoryCaption(id)} к стоимости обычной поездки. Подбираем подходящий автомобиль.` : state.service.wish ? 'Пожелание увидят водитель и диспетчер. Подходящий автомобиль подтвердят при принятии заказа.' : id === 'intercity' ? 'Укажите населённый пункт назначения в поле «Куда».' : id === 'delivery' ? '«Откуда» — магазин или место получения, «Куда» — адрес доставки. Перечислите товары ниже.' : id === 'auction' ? 'Укажите свою цену. Водители предложат стоимость и время подачи — выберите подходящее предложение.' : !state.service.online ? 'Эта услуга оформляется через WhatsApp.' : '';
     changed();
   }
   function activeCard() {
@@ -283,6 +287,7 @@ export function initBookingScreen({ preview = false } = {}) {
     const missing = state.stops.findIndex(point => !point.address || !point.city);
     if (state.service.form !== 'assistance' && missing >= 0) { openPicker(missing); return showError('Заполните остановку или удалите её.'); }
     if (state.service.id === 'preorder' && (!Number.isFinite(new Date($('taxiDateTime').value).getTime()) || new Date($('taxiDateTime').value) <= new Date())) return showError('Выберите будущую дату и время поездки.', $('taxiDateTime'));
+    if (state.service.id === 'minivan' && (!Number.isInteger(state.passengerCount) || state.passengerCount < 1 || state.passengerCount > 8)) return showError('Укажите от 1 до 8 пассажиров.', $('bookingPassengerCount'));
     const form = $(`${state.service.form}Form`);
     if (state.channel === 'online') {
       if (addressWithCity(state.from, state.details).length > 230 || addressWithCity(state.to).length > 230) return showError('Сократите адрес до 230 символов. Дополнительные указания можно написать в примечании.');
@@ -545,6 +550,7 @@ export function initBookingScreen({ preview = false } = {}) {
     onLocation, locationError, coordinates,
     getRouteDistance: async points => (await getRoute(points))?.distance ?? null,
     isOpen: () => opened, isPreview: () => preview,
+    vehicleRequest: () => ({ vehicleCategory: categoryForService(state.service.id), passengerCount: state.service.id === 'minivan' ? state.passengerCount : 1 }),
     auctionData: () => ({ stops: state.stops.map(p => addressWithCity(p)), wishes: state.note }),
     deliveryData: () => opened && state.service.form === 'delivery' ? { stops: state.stops.map(p => addressWithCity(p)), wishes: state.note } : null
   };
@@ -563,6 +569,7 @@ export function initBookingScreen({ preview = false } = {}) {
   $('bookingFrom').onclick = () => openPicker('from'); $('bookingCity').onclick = () => { openPicker('from'); $('bookingSearchCity').focus(); };
   $('bookingTo').onclick = () => openPicker('to');
   $('bookingDetails').oninput = event => { state.details = event.target.value; state.revision++; sync(); };
+  $('bookingPassengerCount').oninput = event => { state.passengerCount = Number(event.target.value); };
   $('bookingNote').oninput = event => { state.note = event.target.value; state.revision++; sync(); };
   $('bookingAddStop').onclick = () => { if (state.stops.length >= 3) return; state.stops.push({ ...emptyPoint(), city: state.from.city }); changed(); openPicker(state.stops.length - 1); };
   $('bookingSwap').onclick = () => { const formerFrom = { ...state.from, address: [state.from.address, state.details].filter(Boolean).join(', ') }; state.from = state.to; state.to = formerFrom; state.details = ''; changed(); };

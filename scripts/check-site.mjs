@@ -63,7 +63,7 @@ for (const expected of [
   'href="./drivers.html"',
   'Заказать онлайн',
   'Через WhatsApp',
-  'src="./client-orders.js?v=51"'
+  'src="./client-orders.js?v=52"'
 ]) {
   if (!index.includes(expected)) failures.push('index.html: missing hybrid online order behavior ' + expected);
 }
@@ -304,7 +304,7 @@ for (const expected of [
   'id="driver-online-orders"',
   'id="driver-online-orders-list"',
   'Рабочий чат WhatsApp',
-  'src="./driver-portal.js?v=51"',
+  'src="./driver-portal.js?v=52"',
   '<link rel="manifest" href="./drivers.webmanifest">',
   "register('./service-worker.js', { updateViaCache: 'none' })"
 ]) {
@@ -343,7 +343,7 @@ for (const expected of [
   'Свободны',
   'Заняты',
   'id="drivers-list"',
-  'src="./dispatcher.js?v=51"'
+  'src="./dispatcher.js?v=52"'
 ]) {
   if (!dispatcher.includes(expected)) failures.push('dispatcher.html: missing protected dispatcher behavior ' + expected);
 }
@@ -399,7 +399,7 @@ const tailwindConfig = await readFile('tailwind.config.cjs', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
 const dispatcherQuickSearchHtml = await readFile('dispatcher.html', 'utf8');
 const dispatcherQuickSearchScript = await readFile('dispatcher.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v51-online-auction'")) failures.push('service-worker.js: map booking cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v52-vehicle-categories'")) failures.push('service-worker.js: map booking cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("'./styles/tailwind.css'")) failures.push('service-worker.js: local Tailwind stylesheet is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
@@ -434,12 +434,12 @@ for (const expected of [
   "'./food-icon-512.png'",
   "'./shashlyk-icon-192.png'",
   "'./shashlyk-icon-512.png'",
-  "'./driver-portal.js?v=51'",
+  "'./driver-portal.js?v=52'",
   "'./drivers.webmanifest'",
   "'./dispatcher.html'",
-  "'./dispatcher.js?v=51'",
+  "'./dispatcher.js?v=52'",
   "'./firebase-config.js'",
-  "'./client-orders.js?v=51'",
+  "'./client-orders.js?v=52'",
   'const cachedPage = await caches.match(event.request)'
 ]) {
   if (!serviceWorker.includes(expected)) failures.push('service-worker.js: missing ' + expected);
@@ -621,7 +621,7 @@ for (const expected of [
   'commissionBaseAmount',
   'Комиссия ${rate}%',
   'assignOrderManually(orderId, driverId)',
-  'manualAssignmentCandidates()',
+  'manualAssignmentCandidates(order',
   'Введите ID водителя',
   'Назначить водителя',
   'Кабинет водителя ID',

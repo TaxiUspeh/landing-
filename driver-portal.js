@@ -1,3 +1,4 @@
+import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=51';
 import { auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -7,6 +8,7 @@ import {
     signOut
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
+    Timestamp,
     addDoc,
     collection,
     doc,
@@ -28,6 +30,13 @@ import {
     getToken,
     isSupported as isMessagingSupported
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging.js';
+
+let unsubscribeOwnOffers = null;
+let unsubscribeAuctionOrders = null;
+let auctionOrders = [];
+const ownAuctionOffers = new Map();
+const auctionDrafts = new Map();
+let withdrawingOffers = false;
 
 const ACTIVE_ORDER_STATUSES = new Set(['accepted', 'en_route', 'arrived', 'in_trip']);
 const REQUEUEABLE_ORDER_STATUSES = new Set(['accepted', 'en_route', 'arrived']);
@@ -1153,6 +1162,7 @@ function createdAtMillis(order) {
 
 function orderStatusLabel(status) {
     return ({
+        bidding: 'Ждёт предложений',
         accepted: 'Заказ принят',
         en_route: 'Еду к клиенту',
         arrived: 'Подъехал к клиенту',
@@ -1371,6 +1381,8 @@ async function loadOrdersLink(canTakeOrders) {
 }
 
 function stopOrderWatches() {
+    unsubscribeAuctionOrders?.(); unsubscribeAuctionOrders = null; auctionOrders = [];
+    unsubscribeOwnOffers?.(); unsubscribeOwnOffers = null; ownAuctionOffers.clear(); auctionDrafts.clear();
     if (unsubscribeOpenOrders) unsubscribeOpenOrders();
     if (unsubscribeAssignedOrders) unsubscribeAssignedOrders();
     unsubscribeOpenOrders = null;
@@ -1434,6 +1446,7 @@ function orderServiceLabel(order) {
 }
 
 function orderServiceDetailsText(order) {
+    if (order.auctionRound) return `Клиент предлагает ${formatMoney(order.proposedPrice)}. ${order.status === 'bidding' ? 'Водителя выбирает клиент.' : 'Согласованная цена: ' + formatMoney(order.priceAmount) + '.'}`;
     const details = order.serviceDetails || {};
     if (order.serviceType === 'auction' && Number.isFinite(Number(details.proposedPrice))) {
         return `Аукцион: клиент предлагает ${Number(details.proposedPrice).toLocaleString('ru-RU')} ₸.`;
@@ -1462,6 +1475,77 @@ function orderServiceDetailsText(order) {
         ].filter(Boolean).join(' · ');
     }
     return '';
+}
+
+function startOwnOffersWatch() {
+    if (unsubscribeOwnOffers || !currentUser) return;
+    unsubscribeOwnOffers = onSnapshot(query(collection(db, 'auctionOffers'), where('driverUid', '==', currentUser.uid)), snapshot => {
+        ownAuctionOffers.clear();
+        snapshot.forEach(item => ownAuctionOffers.set(item.data().orderId, { id: item.id, ...item.data() }));
+        renderOnlineOrders(); void withdrawUnavailableOffers();
+    }, error => { console.warn('Предложения не загрузились:', error.code); showOrdersMessage('Не удалось загрузить ваши предложения аукциона. Проверьте интернет и обновите страницу.'); });
+}
+async function withdrawUnavailableOffers() {
+    if (withdrawingOffers || !currentDriverState.exists || currentDriverState.status === 'available') return;
+    const active = [...ownAuctionOffers.values()].filter(offer => offer.status === 'active');
+    if (!active.length) return;
+    withdrawingOffers = true;
+    try {
+        await Promise.all(active.map(offer => updateDoc(doc(db, 'auctionOffers', offer.id), { status: 'withdrawn', updatedAt: serverTimestamp() })));
+    } catch (error) { console.warn('Не удалось отозвать предложения:', error.code); }
+    finally { withdrawingOffers = false; }
+}
+function appendAuctionControls(actions, order) {
+    const own = ownAuctionOffers.get(order.id);
+    const active = own && currentAuctionOffer(own, order);
+    const draft = auctionDrafts.get(order.id) || { price: own?.priceAmount || order.proposedPrice, minutes: own?.arrivalMinutes || 5 };
+    auctionDrafts.set(order.id, draft);
+    const form = document.createElement('form'); form.className = 'auction-driver-form';
+    const status = createText('p', 'text-sm font-bold', active ? `Ваше предложение: ${formatMoney(own.priceAmount)}, подача ${own.arrivalMinutes} мин. Ожидайте выбора клиента.` : 'Предложите цену и время подачи. Заказ появится в ваших поездках после выбора клиентом.');
+    const priceLabel = createText('label', '', 'Ваша цена, ₸');
+    const price = document.createElement('input'); price.type = 'number'; price.inputMode = 'numeric'; price.min = '500'; price.max = '1000000'; price.step = '1'; price.required = true; price.value = draft.price;
+    price.addEventListener('input', () => { draft.price = price.value; }); priceLabel.append(price);
+    const minutesLabel = createText('label', '', 'Через сколько минут подъедете');
+    const minutes = document.createElement('input'); minutes.type = 'number'; minutes.inputMode = 'numeric'; minutes.min = '1'; minutes.max = '120'; minutes.step = '1'; minutes.required = true; minutes.value = draft.minutes;
+    minutes.addEventListener('input', () => { draft.minutes = minutes.value; }); minutesLabel.append(minutes);
+    const send = createText('button', 'auction-primary', active ? 'Обновить предложение' : 'Предложить свою цену'); send.type = 'submit';
+    const same = createText('button', 'auction-secondary', `Поеду за ${formatMoney(order.proposedPrice)}`); same.type = 'button';
+    same.addEventListener('click', () => { price.value = order.proposedPrice; draft.price = price.value; form.requestSubmit(); });
+    form.addEventListener('submit', event => { event.preventDefault(); void sendAuctionOffer(order, Number(price.value), Number(minutes.value)); });
+    form.append(status, priceLabel, minutesLabel, send, same);
+    if (active) {
+        const withdraw = createText('button', 'auction-secondary', 'Отозвать предложение'); withdraw.type = 'button';
+        withdraw.addEventListener('click', () => withdrawAuctionOffer(own)); form.append(withdraw);
+    }
+    form.append(createText('p', 'text-xs', 'Предложение действует 2 минуты. После истечения отправьте его заново.'));
+    for (const button of form.querySelectorAll('button')) button.disabled = orderActionInProgress || !currentCanTakeOrders;
+    actions.append(form);
+}
+async function sendAuctionOffer(order, priceAmount, arrivalMinutes) {
+    if (!currentUser || !currentCanTakeOrders || orderActionInProgress) return;
+    if (!validAuctionPrice(priceAmount) || !validArrivalMinutes(arrivalMinutes)) { showOrdersMessage('Укажите целую цену от 500 до 1 000 000 ₸ и подачу от 1 до 120 минут.'); return; }
+    orderActionInProgress = true; renderOnlineOrders();
+    try {
+        await setDoc(doc(db, 'auctionOffers', auctionOfferId(order.id, currentUser.uid)), {
+            orderId: order.id, driverUid: currentUser.uid, driverId: currentDriverId,
+            driverName: currentDriver.name || 'Водитель', driverPhone: currentDriver.phone || '',
+            driverCar: currentDriver.car || '', driverColor: currentDriver.color || '',
+            priceAmount, arrivalMinutes, round: order.auctionRound, status: 'active',
+            expiresAt: Timestamp.fromMillis(Date.now() + OFFER_LIFETIME_MS), updatedAt: serverTimestamp()
+        });
+        showOrdersMessage('Предложение отправлено. Ожидайте выбора клиента.', true);
+    } catch (error) {
+        showOrdersMessage(error.code === 'permission-denied' ? 'Предложение не отправлено: заказ уже изменился, вы заняты или аукцион ещё не включён диспетчером.' : 'Не удалось отправить предложение. Проверьте интернет.');
+    } finally { orderActionInProgress = false; renderOnlineOrders(); }
+}
+async function withdrawAuctionOffer(offer) {
+    if (orderActionInProgress) return;
+    orderActionInProgress = true; renderOnlineOrders();
+    try {
+        await updateDoc(doc(db, 'auctionOffers', offer.id), { status: 'withdrawn', updatedAt: serverTimestamp() });
+        showOrdersMessage('Предложение отозвано. Если клиент уже выбрал вас, заказ останется в текущих поездках.', true);
+    } catch { showOrdersMessage('Не удалось отозвать предложение. Проверьте интернет.'); }
+    finally { orderActionInProgress = false; renderOnlineOrders(); }
 }
 
 function createOrderCard(order, assigned) {
@@ -1523,7 +1607,9 @@ function createOrderCard(order, assigned) {
     navigation.textContent = Array.isArray(order.stops) && order.stops.length ? 'Маршрут с остановками' : 'Маршрут';
     actions.append(navigation);
 
-    if (!assigned) {
+    if (!assigned && order.status === 'bidding') {
+        appendAuctionControls(actions, order);
+    } else if (!assigned) {
         const acceptButton = document.createElement('button');
         acceptButton.type = 'button';
         acceptButton.className = 'rounded-lg bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-xs font-extrabold';
@@ -1605,7 +1691,7 @@ function renderOnlineOrders() {
         .filter((order) => ACTIVE_ORDER_STATUSES.has(order.status))
         .sort((a, b) => createdAtMillis(b) - createdAtMillis(a));
     const available = currentCanTakeOrders
-        ? [...openOrders].sort((a, b) => createdAtMillis(a) - createdAtMillis(b))
+        ? [...openOrders, ...auctionOrders].sort((a, b) => createdAtMillis(a) - createdAtMillis(b))
         : [];
     const allVisible = [
         ...assignedActive.map((order) => [order, true]),
@@ -1652,6 +1738,17 @@ function handleOrdersError(error) {
     );
 }
 
+function startAuctionOrdersWatch() {
+    if (unsubscribeAuctionOrders || !currentCanTakeOrders) return;
+    let loaded = false;
+    unsubscribeAuctionOrders = onSnapshot(query(collection(db, 'orders'), where('status', '==', 'bidding')), snapshot => {
+        auctionOrders = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        renderOnlineOrders();
+        if (loaded) for (const change of snapshot.docChanges()) if (change.type === 'added') signalNewOrder({ id: change.doc.id, ...change.doc.data() });
+        loaded = true;
+    }, () => { auctionOrders = []; renderOnlineOrders(); });
+}
+
 function startOpenOrdersWatch() {
     if (unsubscribeOpenOrders || !currentCanTakeOrders) return;
     openOrders = [];
@@ -1684,6 +1781,7 @@ function startOpenOrdersWatch() {
 }
 
 function stopOpenOrdersWatch() {
+    unsubscribeAuctionOrders?.(); unsubscribeAuctionOrders = null; auctionOrders = [];
     if (unsubscribeOpenOrders) unsubscribeOpenOrders();
     unsubscribeOpenOrders = null;
     openOrders = [];
@@ -1725,7 +1823,9 @@ function syncOrderWatches(user, driverId, driver, canTakeOrders) {
         );
     }
 
-    if (canTakeOrders) startOpenOrdersWatch();
+    startOwnOffersWatch();
+    void withdrawUnavailableOffers();
+    if (canTakeOrders) { startOpenOrdersWatch(); startAuctionOrdersWatch(); }
     else stopOpenOrdersWatch();
     renderOnlineOrders();
 }
@@ -1852,7 +1952,7 @@ async function advanceOrder(orderId, expectedStatus, nextStatus) {
                     previousBalance,
                     newBalance,
                     difference: commissionAmount,
-                    reason: 'Комиссия 20% от максимальной цены онлайн-заказа',
+                    reason: order.auctionRound ? 'Комиссия 20% от согласованной цены аукциона' : 'Комиссия 20% от максимальной цены онлайн-заказа',
                     changedAt: serverTimestamp(),
                     changedBy: currentUser.uid
                 });
@@ -1921,7 +2021,8 @@ async function returnOrderToSearch(orderId, expectedStatus, reason) {
             }
 
             transaction.update(orderRef, {
-                status: 'searching',
+                status: order.auctionRound ? 'bidding' : 'searching',
+                ...(order.auctionRound ? { auctionRound: order.auctionRound + 1, selectedOfferId: '', arrivalMinutes: 0, priceAmount: order.proposedPrice, priceText: `${order.proposedPrice} ₸` } : {}),
                 assignedDriverUid: '',
                 assignedDriverId: '',
                 driverName: '',

@@ -60,9 +60,7 @@ service cloud.firestore {
         && get(driverStateDocument()).data.driverId == linkedDriverId()
         && get(driverStateDocument()).data.status == 'available'
         && get(driverStateDocument()).data.activeOrderId == ''
-        && get(driverStateDocument()).data.lastSeen is timestamp
-        // Занятый водитель может завершить свой назначенный заказ, даже если телефон
-        // приостановил фоновый таймер. Принадлежность заказа проверяется выше.
+        && get(driverStateDocument()).data.lastSeen is timestamp;
     }
 
     function driverIsBusyWithOrder(orderId) {
@@ -570,7 +568,21 @@ service cloud.firestore {
     }
 
     match /balanceHistory/{entryId} {
-      allow read: if isAdmin()
+      // Перед завершением водитель читает документ с ID заказа, чтобы не списать
+      // комиссию дважды. Разрешаем отсутствие только для своего текущего заказа.
+      allow get: if isAdmin()
+        || (hasDriverAccount()
+          && (
+            (exists(onlineCommissionHistoryDocument(entryId))
+              && resource.data.driverId == linkedDriverId())
+            || (!exists(onlineCommissionHistoryDocument(entryId))
+              && driverIsBusyWithOrder(entryId)
+              && exists(orderDocument(entryId))
+              && get(orderDocument(entryId)).data.assignedDriverUid == request.auth.uid
+              && get(orderDocument(entryId)).data.assignedDriverId == linkedDriverId()
+              && get(orderDocument(entryId)).data.status in ['arrived', 'in_trip'])
+          ));
+      allow list: if isAdmin()
         || (hasDriverAccount() && resource.data.driverId == linkedDriverId());
       allow create: if isAdmin() || (signedIn() && validOwnOnlineCommissionHistoryCreate(entryId));
       allow update, delete: if false;

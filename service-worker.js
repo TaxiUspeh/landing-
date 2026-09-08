@@ -1,10 +1,10 @@
-const CACHE_NAME = 'taxi-uspeh-v49-mobile-booking';
+const CACHE_NAME = 'taxi-uspeh-v50-contact-fields';
 const APP_SHELL = [
   './',
   './index.html',
   './styles/tailwind.css',
   './styles/booking-screen.css?v=48',
-  './booking-screen.js?v=48',
+  './booking-screen.js?v=50',
   './booking-core.js',
   './client-orders.js',
   './holiday-calendar.js',

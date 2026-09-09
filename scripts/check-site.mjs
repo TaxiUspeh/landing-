@@ -88,71 +88,10 @@ if (index.includes('findIntercityRate(destination)') || index.includes('findInte
   failures.push('index.html: taxi pricing still infers a city from street text');
 }
 
-const carouselStart = index.indexOf('<!-- MAIN ORDER, SERVICES AND QUICK ACTIONS CAROUSEL -->');
-const carouselEnd = index.indexOf('<!-- BUS SCHEDULE BLOCK -->', carouselStart);
-if (carouselStart === -1 || carouselEnd === -1) {
-  failures.push('index.html: services/actions carousel block is missing');
-} else {
-  const carousel = index.slice(carouselStart, carouselEnd);
-  for (const expected of [
-    'id="servicesActionsCarousel"',
-    'Доставка',
-    'Грузовой',
-    'Трезвый водитель',
-    'Помощь',
-    'Автострахование',
-    'main-order-panel',
-    'Заказать Taxi',
-    'Оставить отзыв',
-    'Перезвонить',
-    'Партнеры',
-    'На экран'
-  ]) {
-    if (!carousel.includes(expected)) failures.push('index.html: carousel missing ' + expected);
-  }
-
-  const panelCount = (carousel.match(/data-carousel-panel role=/g) || []).length;
-  const dotCount = (carousel.match(/data-carousel-dot="/g) || []).length;
-  if (panelCount !== 3) failures.push('index.html: expected 3 carousel panels, found ' + panelCount);
-  if (dotCount !== 3) failures.push('index.html: expected 3 carousel dots, found ' + dotCount);
-
-  const additionalIndex = carousel.indexOf('services-actions-additional-panel');
-  const mainIndex = carousel.indexOf('services-actions-main-panel');
-  const quickIndex = carousel.indexOf('services-actions-quick-panel');
-  if (!(additionalIndex < mainIndex && mainIndex < quickIndex)) {
-    failures.push('index.html: carousel panels must be ordered additional, main order, quick actions');
-  }
+for (const expected of ['id="clientHome"', 'data-home-page="home"', 'data-home-page="services"', 'data-home-page="trips"', 'data-home-page="more"', 'data-home-service="taxi"', 'data-home-current', 'data-home-modal="busScheduleModal"', 'data-home-modal="stroyDomModal"', 'data-home-modal="techInspectionModal"', 'data-home-modal="insuranceModal"', './client-home.js?v=56', './styles/client-home.css?v=56', 'initClientHome();']) {
+  if (!index.includes(expected)) failures.push('index.html: client home missing ' + expected);
 }
-
-for (const expected of [
-  'touch-action: pan-y pinch-zoom',
-  'transform: translate3d(-100%, 0, 0)',
-  'transition: transform 220ms',
-  'will-change: transform',
-  '.services-actions-track.is-dragging',
-  '.services-actions-track.is-instant',
-  'data-carousel-prev',
-  'data-carousel-next',
-  'initServicesActionsCarousel()',
-  "addEventListener('pointerdown'",
-  "addEventListener('pointermove'",
-  "addEventListener('pointerup'",
-  "addEventListener('pointercancel'",
-  "gestureAxis = 'horizontal'",
-  'const threshold = Math.max(42',
-  "const panelNames = ['Дополнительные услуги', 'Заказ такси', 'Быстрые действия']",
-  'const initialIndex = 1',
-  'measureStableHeight()',
-  'setTrackOffset(baseOffset(activeIndex) + dragOffset, false)',
-  '.mobile-compact-main {'
-]) {
-  if (!index.includes(expected)) failures.push('index.html: missing carousel behavior ' + expected);
-}
-if (/transition:\s*height/.test(index)) failures.push('index.html: carousel height must not animate during a swipe');
-if (/scroll-snap-type/.test(index)) failures.push('index.html: native scroll-snap carousel remains');
-if (/html,\s*body\s*\{[^}]*overflow-x:\s*hidden/s.test(index)) failures.push('index.html: root overflow-x hidden can block page scrolling on mobile');
-if (!/body\s*\{[^}]*overflow-x:\s*clip/s.test(index)) failures.push('index.html: safe body horizontal overflow guard is missing');
-if (/addEventListener\(\s*['"]touchmove/.test(index)) failures.push('index.html: carousel must not block vertical touch scrolling');
+if (index.includes('servicesActionsCarousel')) failures.push('index.html: retired home carousel remains');
 
 for (const expected of [
   'id="holidayBanner"',
@@ -194,16 +133,6 @@ if (lineStatusStart === -1 || lineStatusEnd === -1) {
   if (lineStatusScript.includes('ПРАЗДНИЧНЫЙ ДЕНЬ')) failures.push('index.html: holiday text still replaces the car status card');
 }
 
-const carouselScriptStart = index.indexOf('function initServicesActionsCarousel()');
-const carouselScriptEnd = index.indexOf('initServicesActionsCarousel();', carouselScriptStart);
-if (carouselScriptStart === -1 || carouselScriptEnd === -1) {
-  failures.push('index.html: carousel script is missing');
-} else {
-  const carouselScript = index.slice(carouselScriptStart, carouselScriptEnd);
-  for (const forbidden of ['scrollLeft', 'viewport.scrollTo', "addEventListener('scroll'"]) {
-    if (carouselScript.includes(forbidden)) failures.push('index.html: native horizontal scrolling remains: ' + forbidden);
-  }
-}
 const mapStart = index.indexOf('window.simMap = null;');
 const mapEnd = index.indexOf('window.togglePreorder = function()', mapStart);
 if (mapStart === -1 || mapEnd === -1) {
@@ -399,7 +328,7 @@ const tailwindConfig = await readFile('tailwind.config.cjs', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
 const dispatcherQuickSearchHtml = await readFile('dispatcher.html', 'utf8');
 const dispatcherQuickSearchScript = await readFile('dispatcher.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v55-compact-driver'")) failures.push('service-worker.js: map booking cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v56-client-home'")) failures.push('service-worker.js: map booking cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("'./styles/tailwind.css'")) failures.push('service-worker.js: local Tailwind stylesheet is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
@@ -440,6 +369,8 @@ for (const expected of [
   "'./dispatcher.js?v=53'",
   "'./firebase-config.js'",
   "'./client-orders.js?v=53'",
+  "'./client-home.js?v=56'",
+  "'./styles/client-home.css?v=56'",
   'const cachedPage = await caches.match(event.request)'
 ]) {
   if (!serviceWorker.includes(expected)) failures.push('service-worker.js: missing ' + expected);
@@ -499,7 +430,7 @@ for (const [name, appManifest, expectedStart] of [
 }
 for (const file of ['service-worker.js', 'holiday-calendar.js', 'drivers.webmanifest', 'firebase-config.js', 'client-orders.js', 'driver-portal.js', 'dispatcher.js', 'firestore.rules', 'firestore.indexes.json', 'functions/index.js', 'functions/package.json', 'firebase.json', '.firebaserc', 'robots.txt', 'sitemap.xml']) await access(file).catch(() => failures.push('missing ' + file));
 
-for (const file of ['client-orders.js', 'driver-portal.js', 'dispatcher.js', 'firebase-config.js', 'functions/index.js']) {
+for (const file of ['client-home.js', 'client-orders.js', 'driver-portal.js', 'dispatcher.js', 'firebase-config.js', 'functions/index.js']) {
   const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
   if (result.status !== 0) failures.push(`${file}: syntax error: ${result.stderr.trim()}`);
 }

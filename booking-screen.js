@@ -1,3 +1,4 @@
+import { createBookingSheet } from './booking-sheet.js?v=54';
 import { categoryForService, categoryCaption } from './vehicle-categories.js?v=52';
 import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=51';
 
@@ -30,14 +31,14 @@ export function initBookingScreen({ preview = false } = {}) {
         <h2>Такси «Успех»</h2>
         <button type="button" class="booking-icon-button" id="bookingHistory" aria-label="История заказов"><i class="fas fa-history" aria-hidden="true"></i></button>
       </header>
-      <div class="booking-body">
+      <div class="booking-body" id="bookingBody">
         <div class="booking-map" id="bookingMapHost">
           <button type="button" class="booking-icon-button booking-location" id="bookingLocate" aria-label="Моё местоположение"><i class="fas fa-location-arrow" aria-hidden="true"></i></button>
           <button type="button" class="booking-pick-confirm" id="bookingPickConfirm" hidden>Передвиньте карту и нажмите здесь</button>
           <a class="booking-map-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap · поиск Photon</a>
         </div>
         <section class="booking-sheet" aria-label="Маршрут и услуга">
-          <button type="button" id="bookingGrip" class="booking-grip" aria-label="Развернуть форму заказа" aria-expanded="false"></button>
+          <button type="button" id="bookingGrip" class="booking-grip" aria-controls="bookingScroll" aria-label="Свернуть поля и увеличить карту" aria-expanded="true"><span>Больше карты · потяните вниз</span></button>
           <div class="booking-scroll" id="bookingScroll">
             <div id="bookingCommon">
               <button type="button" class="booking-city" id="bookingCity"><i class="fas fa-map-marker-alt" aria-hidden="true"></i><span>Белоусовка</span><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
@@ -66,16 +67,15 @@ export function initBookingScreen({ preview = false } = {}) {
             <div id="bookingPanels"></div>
             <p id="bookingStatus" class="booking-status" role="alert"></p>
           </div>
+        </section>
           <footer class="booking-footer" id="bookingFooter">
             <div class="booking-price-row">
               <div><span class="booking-price-caption" id="bookingPriceCaption">Примерная стоимость</span><div class="booking-price" id="bookingPrice">Укажите маршрут</div></div>
             </div>
             <div class="booking-actions" role="group" aria-label="Оформить заказ">
               <button type="button" class="booking-submit" id="bookingSubmit">Заказать онлайн</button>
-              <button type="button" class="booking-submit booking-whatsapp" id="bookingWhatsapp">Заказать через WhatsApp</button>
             </div>
           </footer>
-        </section>
       </div>
       <section class="booking-picker" id="bookingPicker" aria-label="Выбор адреса" hidden>
         <div class="booking-picker-heading"><button type="button" id="bookingPickerBack" class="booking-icon-button" aria-label="Назад к заказу">‹</button><h3 id="bookingPickerTitle">Куда</h3><button type="button" id="bookingOnMap" class="booking-city">На карте</button></div>
@@ -87,6 +87,7 @@ export function initBookingScreen({ preview = false } = {}) {
       </section>
     </div>`;
   $('bookingMapHost').prepend(mapElement, mapMessage);
+  const sheet = createBookingSheet({ overlay, body: $('bookingBody'), map: $('bookingMapHost'), grip: $('bookingGrip'), content: $('bookingScroll'), footer: $('bookingFooter'), onResize: () => window.simMap?.invalidateSize({ pan: false }) });
 
   // Move the existing nodes, retaining Firebase references, validators and submit handlers.
   for (const key of new Set(BOOKING_SERVICES.map(service => service.form))) {
@@ -107,8 +108,10 @@ export function initBookingScreen({ preview = false } = {}) {
     form.noValidate = true; // Visible common fields are validated before invoking the legacy form.
     form.addEventListener('submit', event => {
       if (!opened) return;
-      if (preview) { event.preventDefault(); event.stopImmediatePropagation(); showError('Режим просмотра: заказ не отправляется.'); return; }
-      if (!validate()) { event.preventDefault(); event.stopImmediatePropagation(); }
+      // Enter must use the same online flow as the visible order button.
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      void submit();
     }, true);
     for (const input of form.querySelectorAll('[required]')) {
       if (input.closest('.booking-source-hidden')) input.required = false;
@@ -221,7 +224,7 @@ export function initBookingScreen({ preview = false } = {}) {
 
   function selectService(id) {
     state.service = BOOKING_SERVICES.find(service => service.id === id) || BOOKING_SERVICES[0];
-    if (!state.service.online) state.channel = 'whatsapp';
+    state.channel = 'online';
     for (const [key, panel] of panels) panel.hidden = key !== state.service.form;
     for (const button of $('bookingServices').children) button.setAttribute('aria-pressed', String(button.dataset.bookingService === state.service.id));
     $('bookingPassengerCountField').hidden = id !== 'minivan';
@@ -238,7 +241,7 @@ export function initBookingScreen({ preview = false } = {}) {
       const local = new Date(Date.now() + 60000); local.setMinutes(local.getMinutes() - local.getTimezoneOffset());
       $('taxiDateTime').min = local.toISOString().slice(0, 16);
     }
-    $('bookingServiceHelp').textContent = ['wagon', 'minivan'].includes(id) ? `${categoryCaption(id)} к стоимости обычной поездки. Подбираем подходящий автомобиль.` : state.service.wish ? 'Пожелание увидят водитель и диспетчер. Подходящий автомобиль подтвердят при принятии заказа.' : id === 'intercity' ? 'Укажите населённый пункт назначения в поле «Куда».' : id === 'delivery' ? '«Откуда» — магазин или место получения, «Куда» — адрес доставки. Перечислите товары ниже.' : id === 'auction' ? 'Укажите свою цену. Водители предложат стоимость и время подачи — выберите подходящее предложение.' : !state.service.online ? 'Эта услуга оформляется через WhatsApp.' : '';
+    $('bookingServiceHelp').textContent = ['wagon', 'minivan'].includes(id) ? `${categoryCaption(id)} к стоимости обычной поездки. Подбираем подходящий автомобиль.` : state.service.wish ? 'Пожелание увидят водитель и диспетчер. Подходящий автомобиль подтвердят при принятии заказа.' : id === 'intercity' ? 'Укажите населённый пункт назначения в поле «Куда».' : id === 'delivery' ? '«Откуда» — магазин или место получения, «Куда» — адрес доставки. Перечислите товары ниже.' : id === 'auction' ? 'Укажите свою цену. Водители предложат стоимость и время подачи — выберите подходящее предложение.' : !state.service.online ? 'Онлайн-заказ этой услуги пока недоступен.' : '';
     changed();
   }
   function activeCard() {
@@ -252,16 +255,14 @@ export function initBookingScreen({ preview = false } = {}) {
     $('bookingFooter').hidden = hasCard;
     const contact = panels.get(service.form).querySelector('.booking-contact');
     if (contact) contact.hidden = !service.online;
-    $('bookingSubmit').hidden = !service.online;
-    $('bookingWhatsapp').hidden = service.form === 'auction';
+    $('bookingSubmit').hidden = false;
+    sheet.setEnabled(!hasCard && !overlay.classList.contains('booking-picking'));
     const onlineButton = $(`${service.form}-online-order-button`);
     const busy = submitting || (state.channel === 'online' && onlineButton?.disabled);
     $('bookingCommon').inert = Boolean(busy);
     $('bookingPanels').inert = Boolean(busy && !hasCard);
-    $('bookingSubmit').disabled = busy || !onlineButton || onlineButton.classList.contains('hidden');
-    $('bookingWhatsapp').disabled = busy;
-    $('bookingSubmit').textContent = submitting && state.channel === 'online' ? 'Оформляем…' : service.form === 'auction' ? 'Найти водителя' : 'Заказать онлайн';
-    $('bookingWhatsapp').textContent = submitting && state.channel === 'whatsapp' ? 'Открываем WhatsApp…' : 'Заказать через WhatsApp';
+    $('bookingSubmit').disabled = !service.online || busy || !onlineButton || onlineButton.classList.contains('hidden') || overlay.classList.contains('booking-picking');
+    $('bookingSubmit').textContent = !service.online ? 'Онлайн-заказ пока недоступен' : submitting ? 'Оформляем…' : service.form === 'auction' ? 'Найти водителя' : 'Заказать онлайн';
     const full = state.from.address && (service.form === 'assistance' || state.to.address);
     let price = service.form === 'taxi' ? $('taxiPriceEstimate').textContent : service.form === 'delivery' ? $('deliveryPriceEstimate').textContent : service.form === 'cargo' ? $('cargoTotalPrice').textContent : service.form === 'auction' ? ($('auctionPrice').value ? `${$('auctionPrice').value} ₸` : 'Ваша цена') : service.form === 'assistance' ? 'от 1500 тг' : 'от 3800 тг';
     $('bookingPrice').textContent = full ? price : 'Укажите адрес';
@@ -279,7 +280,7 @@ export function initBookingScreen({ preview = false } = {}) {
     observer.observe($(`${key}-online-order-button`), { attributes: true, attributeFilter: ['disabled', 'class'] });
   }
 
-  function showError(message, focus) { $('bookingStatus').textContent = message; focus?.focus(); return false; }
+  function showError(message, focus) { sheet.expand(); $('bookingStatus').textContent = message; focus?.focus(); return false; }
   function validate() {
     $('bookingStatus').textContent = '';
     if (!state.from.address || !state.from.city) { openPicker('from'); return showError('Укажите адрес и населённый пункт отправления.'); }
@@ -295,33 +296,25 @@ export function initBookingScreen({ preview = false } = {}) {
       if (state.service.form === 'delivery' && $('deliveryItems').value.length > 700) return showError('Сократите список товаров до 700 символов.', $('deliveryItems'));
     }
     const invalid = Array.from(form.elements).find(input => !input.disabled && !input.closest('.booking-source-hidden') && !input.closest('[hidden]') && typeof input.checkValidity === 'function' && !input.checkValidity());
-    if (invalid) { invalid.reportValidity(); return false; }
+    if (invalid) { sheet.expand(); invalid.reportValidity(); return false; }
     return true;
   }
-  async function submit(channel) {
-    if (submitting) return;
-    state.channel = state.service.form === 'auction' ? 'online' : channel;
+  async function submit() {
+    if (submitting || !state.service.online) return;
+    const onlineButton = $(`${state.service.form}-online-order-button`);
+    if (!onlineButton || onlineButton.disabled || onlineButton.classList.contains('hidden')) return;
+    state.channel = 'online';
+    sheet.expand();
     if (!validate()) return;
     if (preview) { showError('Режим просмотра: адреса и услуга выбраны. Заказ не отправляется.'); return; }
     sync();
-    // Add common notes and stops to services whose legacy forms have no wishes field.
-    const extra = [state.note && `Примечание: ${state.note}`, ...state.stops.map((p, i) => `Остановка ${i + 1}: ${addressWithCity(p)}`)].filter(Boolean).join('\n');
-    const key = state.service.form;
-    const temporarilyChanged = [];
-    const append = (id, suffix) => { const input = $(id); temporarilyChanged.push([input, input.value]); input.value = [input.value, suffix].filter(Boolean).join('\n'); };
-    if (key === 'delivery' && extra && state.channel === 'whatsapp') append('deliveryItems', extra);
-    if (key === 'cargo' && extra) append('cargoDescription', extra);
-    if (key === 'assistance' && state.note) append('assistanceTask', state.note);
-    if (key === 'soberDriver' && extra) append('soberDriverTo', extra);
     submitting = true; refresh();
-    if (state.channel === 'online') $(`${key}-online-order-button`).click();
-    else $(`${key}Form`).requestSubmit();
-    // Legacy handlers snapshot fields synchronously before any network awaits.
-    for (const [input, value] of temporarilyChanged) input.value = value;
+    onlineButton.click();
     setTimeout(() => { submitting = false; refresh(); }, 1000);
   }
 
   function openPicker(target) {
+    sheet.expand();
     pickerTarget = target; pickerRevision++; searchRevision++;
     const point = currentPoint(target); if (!point) return;
     $('bookingPickerTitle').textContent = target === 'from' ? 'Откуда' : target === 'to' ? 'Куда' : 'Остановка';
@@ -339,7 +332,7 @@ export function initBookingScreen({ preview = false } = {}) {
     if (pickMarker && window.simMap) window.simMap.removeLayer(pickMarker);
     pickMarker = null; pickedPoint = null;
     const button = pickerTarget === 'to' ? $('bookingTo') : $('bookingFrom');
-    button.focus(); window.simMap?.invalidateSize();
+    sheet.expand(); refresh(); button.focus(); window.simMap?.invalidateSize();
   }
   function applyPoint(point) {
     if (!point.address) return;
@@ -395,7 +388,10 @@ export function initBookingScreen({ preview = false } = {}) {
   }
   function pickOnMap() {
     if (!window.simMap) { $('bookingSearchStatus').textContent = 'Карта загружается. Пока можно ввести адрес вручную.'; return; }
+    document.activeElement?.blur();
+    sheet.collapse();
     $('bookingPicker').hidden = true; overlay.classList.add('booking-picking');
+    refresh();
     $('bookingPickConfirm').hidden = false;
     $('bookingPickConfirm').textContent = 'Выбрать эту точку';
     window.simMap.invalidateSize();
@@ -573,8 +569,7 @@ export function initBookingScreen({ preview = false } = {}) {
   $('bookingNote').oninput = event => { state.note = event.target.value; state.revision++; sync(); };
   $('bookingAddStop').onclick = () => { if (state.stops.length >= 3) return; state.stops.push({ ...emptyPoint(), city: state.from.city }); changed(); openPicker(state.stops.length - 1); };
   $('bookingSwap').onclick = () => { const formerFrom = { ...state.from, address: [state.from.address, state.details].filter(Boolean).join(', ') }; state.from = state.to; state.to = formerFrom; state.details = ''; changed(); };
-  $('bookingWhatsapp').onclick = () => submit('whatsapp');
-  $('bookingSubmit').onclick = () => submit('online');
+  $('bookingSubmit').onclick = () => submit();
   $('auctionPrice').addEventListener('input', refresh);
   $('bookingPickerBack').onclick = closePicker;
   $('bookingSearchButton').onclick = search;
@@ -584,17 +579,12 @@ export function initBookingScreen({ preview = false } = {}) {
   $('bookingOnMap').onclick = pickOnMap;
   $('bookingPickConfirm').onclick = confirmMapPoint;
   for (const [id, direction] of [['bookingServicesPrev', -1], ['bookingServicesNext', 1]]) $(id).onclick = () => $('bookingServices').scrollBy({ left: direction * 220, behavior: 'smooth' });
-  let dragStart = null;
-  function expand(value) { overlay.classList.toggle('booking-expanded', value); $('bookingGrip').setAttribute('aria-expanded', String(value)); window.simMap?.invalidateSize(); }
-  $('bookingGrip').onclick = () => expand(!overlay.classList.contains('booking-expanded'));
-  $('bookingGrip').onpointerdown = event => { dragStart = event.clientY; $('bookingGrip').setPointerCapture(event.pointerId); };
-  $('bookingGrip').onpointerup = event => { if (dragStart !== null && Math.abs(event.clientY - dragStart) > 20) { expand(event.clientY < dragStart); $('bookingGrip').onclick = null; setTimeout(() => { $('bookingGrip').onclick = () => expand(!overlay.classList.contains('booking-expanded')); }, 0); } dragStart = null; };
   document.addEventListener('keydown', event => {
     if (!opened || $('alertModal')) return;
     if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); if (!$('bookingPicker').hidden || overlay.classList.contains('booking-picking')) closePicker(); else close(); }
     if (event.key === 'Tab') {
       const scope = $('bookingPicker').hidden ? overlay : $('bookingPicker');
-      const focusable = Array.from(scope.querySelectorAll('button, input, textarea, select, a[href]')).filter(el => !el.disabled && el.offsetParent !== null);
+      const focusable = Array.from(scope.querySelectorAll('button, input, textarea, select, a[href]')).filter(el => !el.disabled && !el.closest('[inert]') && el.offsetParent !== null);
       const first = focusable[0], last = focusable.at(-1);
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }

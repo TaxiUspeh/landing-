@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v53-driver-finance';
+const CACHE_NAME = 'taxi-uspeh-v54-expandable-map';
 const APP_SHELL = [
   './',
   './driver-finance.js?v=53',
@@ -10,8 +10,9 @@ const APP_SHELL = [
   './auction-core.js?v=53',
   './styles/auction.css?v=51',
   './styles/tailwind.css',
-  './styles/booking-screen.css?v=52',
-  './booking-screen.js?v=52',
+  './styles/booking-screen.css?v=54',
+  './booking-screen.js?v=54',
+  './booking-sheet.js?v=54',
   './booking-core.js?v=51',
   './client-orders.js?v=53',
   './holiday-calendar.js',

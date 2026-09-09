@@ -1,6 +1,8 @@
+import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=53';
+import { createFinanceControls } from './driver-finance-controls.js?v=53';
 import { createVehicleControls } from './vehicle-category-controls.js?v=52';
 import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=52';
-import { currentAuctionOffer } from './auction-core.js?v=51';
+import { currentAuctionOffer } from './auction-core.js?v=53';
 import { auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -321,7 +323,7 @@ function statusLabel(status) {
 }
 
 function canTakeOrders(driver) {
-    return driver.status === 'active';
+    return driver.status === 'active' && hasOrderFunds(driver);
 }
 
 async function login() {
@@ -464,7 +466,7 @@ function driverAvailabilityInfo(driver) {
         return {
             key: 'restricted',
             label: '🔴 Ограничено',
-            detail: `${statusLabel(driver.status)} · работу с заказами ограничил диспетчер`,
+            detail: driver.status === 'active' ? 'Доступные средства на комиссию исчерпаны. Требуется пополнение.' : `${statusLabel(driver.status)} · работу с заказами ограничил диспетчер`,
             className: 'flex-shrink-0 text-xs font-extrabold rounded-full px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
         };
     }
@@ -1044,6 +1046,8 @@ function applyDriverAvailability(card, driver) {
         badge.textContent = info.label;
     }
     if (detail) detail.textContent = info.detail;
+    const financial = card.querySelector('[data-driver-finance-summary]');
+    if (financial) financial.textContent = financeSummary(driver, reservedCommission(orders.filter(order => String(order.assignedDriverId) === String(driver.id))));
 }
 
 function refreshDriverStatusIndicators() {
@@ -1121,6 +1125,8 @@ function renderDriverCard(driver) {
     uid.label.classList.add('sm:col-span-2');
     grid.append(name.label, phone.label, car.label, color.label, balance.label, status.label, uid.label);
 
+    const financeControls = createFinanceControls(driver);
+    grid.append(financeControls.element);
     const vehicleControls = createVehicleControls(driver);
     grid.append(vehicleControls.element);
     subtitle.textContent += ` · ${driverCategorySummary(driver)}`;
@@ -1137,12 +1143,28 @@ function renderDriverCard(driver) {
     saveButton.textContent = 'Сохранить изменения';
     const currentBalance = document.createElement('span');
     currentBalance.className = 'text-xs font-bold text-slate-500 dark:text-slate-400';
-    currentBalance.textContent = `Текущий баланс: ${formatMoney(driver.balance)}`;
+    currentBalance.dataset.driverFinanceSummary = '';
+    currentBalance.textContent = financeSummary(driver, reservedCommission(orders.filter(order => String(order.assignedDriverId) === String(driver.id))));
     const message = document.createElement('p');
     message.className = 'hidden text-xs w-full';
     message.setAttribute('role', 'status');
     footer.append(reportButton, saveButton, currentBalance, message);
-    card.append(header, availabilityDetail, grid, footer);
+    const history = document.createElement('details'); history.className = 'mt-3 text-sm';
+    const historyTitle = document.createElement('summary'); historyTitle.textContent = 'История комиссии и лимита';
+    const historyList = document.createElement('div'); historyList.className = 'space-y-2 mt-2'; history.append(historyTitle, historyList);
+    history.addEventListener('toggle', async () => {
+        if (!history.open) return;
+        historyList.textContent = 'Загружаем историю…';
+        try {
+            const result = await getDocs(query(collection(db, 'driverFinanceHistory'), where('driverId', '==', driver.id)));
+            historyList.replaceChildren();
+            const records = result.docs.map(item => item.data()).sort((a, b) => (b.changedAt?.toMillis() || 0) - (a.changedAt?.toMillis() || 0));
+            const label = value => value ? `${value.commissionRate}% / ${value.debtMode === 'unlimited' ? 'без лимита' : value.debtMode === 'none' ? 'долг запрещён' : 'лимит ' + formatMoney(value.debtLimit)}` : 'Новый водитель';
+            for (const entry of records) { const row = document.createElement('p'); row.textContent = `${entry.changedAt?.toDate().toLocaleString('ru-RU') || ''}: ${label(entry.previous)} → ${label(entry.next)}. Изменил: ${entry.changedBy}`; historyList.append(row); }
+            if (!records.length) historyList.textContent = 'Изменений пока нет.';
+        } catch { historyList.textContent = 'История не загрузилась. Проверьте правила Firebase и интернет.'; }
+    });
+    card.append(header, availabilityDetail, grid, footer, history);
     applyDriverAvailability(card, driver);
 
     saveButton.addEventListener('click', () => saveDriver(driver, {
@@ -1155,6 +1177,7 @@ function renderDriverCard(driver) {
         uid: uid.input,
         button: saveButton,
         vehicleControls,
+        financeControls,
         message
     }));
     reportButton.addEventListener('click', () => openDriverOrdersReport(driver.id));
@@ -1425,7 +1448,8 @@ function manualAssignmentCandidates(order = {}) {
     return drivers.filter((driver) => driver.status === 'active'
         && normalizeUid(driver.authUid || '')
         && driverAvailabilityInfo(driver).key !== 'busy'
-        && driverCanServeOrder(driver, order));
+        && driverCanServeOrder(driver, order)
+        && hasOrderFunds(driver) && (order.priceAmount === undefined || fundingFor(driver, Number(order.priceAmount)).allowed));
 }
 
 function findManualAssignmentDriver(value) {
@@ -1920,6 +1944,7 @@ async function createPhoneOrder(event) {
 
                 transaction.set(orderRef, {
                     ...baseOrder,
+                    ...reserveCommission(driver, Number(baseOrder.priceAmount)),
                     status: 'accepted',
                     assignedDriverUid: driverUid,
                     assignedDriverId: selectedDriver.id,
@@ -2320,6 +2345,7 @@ async function assignOrderManually(orderId, driverId) {
             }
 
             transaction.update(orderRef, {
+                ...reserveCommission(driver, Number(orderSnapshot.data().priceAmount)),
                 status: 'accepted',
                 assignedDriverUid: driverUid,
                 assignedDriverId: selectedDriver.id,
@@ -2449,7 +2475,7 @@ async function completeOnlineOrder(order) {
                 if (!Number.isFinite(commissionBaseAmount) || commissionBaseAmount < 0) {
                     throw new Error('В заказе нет корректной цены для комиссии.');
                 }
-                commissionAmount = commissionBaseAmount / 5;
+                commissionAmount = orderCommission(currentOrder).amount;
                 newBalance = previousBalance + commissionAmount;
                 transaction.update(driverRef, {
                     balance: newBalance,
@@ -2462,13 +2488,13 @@ async function completeOnlineOrder(order) {
                     orderId: order.id,
                     orderNumber: currentOrder.orderNumber || '',
                     source: 'online',
-                    commissionRate: 20,
+                    commissionRate: orderCommission(currentOrder).rate,
                     commissionBaseAmount,
                     commissionAmount,
                     previousBalance,
                     newBalance,
                     difference: commissionAmount,
-                    reason: currentOrder.auctionRound ? 'Комиссия 20% от согласованной цены аукциона' : 'Комиссия 20% от максимальной цены онлайн-заказа',
+                    reason: commissionReason(currentOrder),
                     changedAt: serverTimestamp(),
                     changedBy: currentUser.uid
                 });
@@ -2476,7 +2502,7 @@ async function completeOnlineOrder(order) {
 
             transaction.update(orderRef, {
                 status: 'completed',
-                commissionRate: 20,
+                commissionRate: orderCommission(currentOrder).rate,
                 commissionBaseAmount,
                 commissionAmount,
                 commissionBalanceBefore: previousBalance,
@@ -2582,74 +2608,57 @@ async function ensureUidAvailable(uid, driverId) {
 }
 
 async function saveDriver(original, controls) {
-    const name = controls.name.value.trim();
-    const balance = parseBalance(controls.balance.value);
-    const authUid = normalizeUid(controls.uid.value);
-    const status = controls.status.value;
-    const vehicleProfile = controls.vehicleControls.read();
-    if (!validVehicleProfile(vehicleProfile.serviceCategories, vehicleProfile.passengerSeats)) return setMessage(controls.message, 'Укажите реальные пассажирские места: от 1 до 8, для минивэна — от 5 до 8.');
-    if (!name) return setMessage(controls.message, 'Укажите имя водителя.');
-    if (balance === null) return setMessage(controls.message, 'Баланс должен быть числом.');
-    if (!validateUid(authUid)) return setMessage(controls.message, 'UID содержит недопустимые символы. Скопируйте его полностью из Firebase.');
-
     controls.button.disabled = true;
     setMessage(controls.message, '');
     try {
+        const name = controls.name.value.trim();
+        const requestedBalance = parseBalance(controls.balance.value);
+        const authUid = normalizeUid(controls.uid.value), status = controls.status.value;
+        const vehicleProfile = controls.vehicleControls.read(), financial = controls.financeControls.read();
+        if (!name) throw new Error('Укажите имя водителя.');
+        if (requestedBalance === null) throw new Error('Баланс должен быть числом.');
+        if (!validateUid(authUid)) throw new Error('UID содержит недопустимые символы.');
+        if (!validVehicleProfile(vehicleProfile.serviceCategories, vehicleProfile.passengerSeats)) throw new Error('Укажите реальные пассажирские места: от 1 до 8, для минивэна — от 5 до 8.');
         await ensureUidAvailable(authUid, original.id);
-        const batch = writeBatch(db);
         const driverRef = doc(db, 'drivers', original.id);
-        const oldUid = normalizeUid(original.authUid || '');
-        if (oldUid && oldUid !== authUid && driverStates.get(oldUid)?.status === 'busy') {
-            throw new Error('Нельзя менять UID, пока водитель выполняет заказ.');
-        }
-        const updatedDriver = {
-            ...vehicleProfile,
-            name,
-            phone: controls.phone.value.trim(),
-            car: controls.car.value.trim(),
-            color: controls.color.value.trim(),
-            balance,
-            status,
-            authUid,
-            updatedAt: serverTimestamp(),
-            updatedBy: currentUser.uid
-        };
-        batch.update(driverRef, updatedDriver);
-
-        if (oldUid && oldUid !== authUid) {
-            batch.delete(doc(db, 'driverAccounts', oldUid));
-            batch.delete(doc(db, 'driverStates', oldUid));
-        }
-        if (authUid) {
-            batch.set(doc(db, 'driverAccounts', authUid), {
-                driverId: original.id,
-                active: status === 'active',
-                updatedAt: serverTimestamp(),
-                updatedBy: currentUser.uid
+        const financeHistoryRef = doc(collection(db, 'driverFinanceHistory'));
+        const balanceHistoryRef = doc(collection(db, 'balanceHistory'));
+        await runTransaction(db, async transaction => {
+            const snapshot = await transaction.get(driverRef);
+            if (!snapshot.exists()) throw new Error('Карточка водителя не найдена.');
+            const fresh = snapshot.data(), oldUid = normalizeUid(fresh.authUid || '');
+            const stateSnapshot = oldUid ? await transaction.get(doc(db, 'driverStates', oldUid)) : null;
+            if (oldUid !== normalizeUid(original.authUid || '')) throw new Error('Привязка водителя уже изменилась. Обновите карточку.');
+            if (oldUid && oldUid !== authUid && stateSnapshot?.data()?.status === 'busy') throw new Error('Нельзя менять UID, пока водитель выполняет заказ.');
+            const editedBalance = requestedBalance !== Number(original.balance);
+            if (editedBalance && Number(fresh.balance) !== Number(original.balance)) throw new Error('Баланс уже изменился. Обновите карточку и повторите корректировку.');
+            const balance = editedBalance ? requestedBalance : Number(fresh.balance);
+            if (JSON.stringify(financeSettings(fresh)) !== JSON.stringify(financeSettings(original))) throw new Error('Условия комиссии уже изменились. Обновите карточку.');
+            const financeChanged = !Object.hasOwn(fresh, 'commissionRate') || JSON.stringify(financeSettings(fresh)) !== JSON.stringify(financial);
+            transaction.update(driverRef, {
+                ...vehicleProfile, ...financial, name, phone: controls.phone.value.trim(), car: controls.car.value.trim(), color: controls.color.value.trim(),
+                balance, status, authUid, updatedAt: serverTimestamp(), updatedBy: currentUser.uid,
+                ...(financeChanged ? { financeChangeId: financeHistoryRef.id } : {})
             });
-        }
-
-        if (Number(original.balance) !== balance) {
-            batch.set(doc(collection(db, 'balanceHistory')), {
-                driverId: original.id,
-                driverNumber: original.driverNumber,
-                previousBalance: Number(original.balance) || 0,
-                newBalance: balance,
-                difference: balance - (Number(original.balance) || 0),
-                reason: 'Изменение диспетчером',
-                changedAt: serverTimestamp(),
-                changedBy: currentUser.uid
+            if (financeChanged) transaction.set(financeHistoryRef, {
+                driverId: original.id, previous: financeSettings(fresh), next: financial,
+                changedAt: serverTimestamp(), changedBy: currentUser.uid
             });
-        }
-
-        await batch.commit();
+            if (oldUid && oldUid !== authUid) {
+                transaction.delete(doc(db, 'driverAccounts', oldUid));
+                transaction.delete(doc(db, 'driverStates', oldUid));
+            }
+            if (authUid) transaction.set(doc(db, 'driverAccounts', authUid), { driverId: original.id, active: status === 'active', updatedAt: serverTimestamp(), updatedBy: currentUser.uid });
+            if (editedBalance) transaction.set(balanceHistoryRef, {
+                driverId: original.id, driverNumber: fresh.driverNumber, previousBalance: Number(fresh.balance), newBalance: balance,
+                difference: balance - Number(fresh.balance), reason: 'Изменение диспетчером', changedAt: serverTimestamp(), changedBy: currentUser.uid
+            });
+        });
         setMessage(controls.message, 'Изменения сохранены.', true);
     } catch (error) {
         console.error('Не удалось сохранить водителя:', error);
         setMessage(controls.message, error.message || 'Не удалось сохранить изменения.');
-    } finally {
-        controls.button.disabled = false;
-    }
+    } finally { controls.button.disabled = false; }
 }
 
 async function addDriver(event) {
@@ -2679,8 +2688,12 @@ async function addDriver(event) {
         await ensureUidAvailable(authUid, driverId);
 
         const batch = writeBatch(db);
+        const financial = newDriverFinanceControls.read();
+        const financeHistoryRef = doc(collection(db, 'driverFinanceHistory'));
         batch.set(driverRef, {
             ...vehicleProfile,
+            ...financial,
+            financeChangeId: financeHistoryRef.id,
             driverNumber,
             name,
             phone: elements.newDriverPhone.value.trim(),
@@ -2713,9 +2726,11 @@ async function addDriver(event) {
             changedBy: currentUser.uid
         });
 
+        batch.set(financeHistoryRef, { driverId, previous: null, next: financial, changedAt: serverTimestamp(), changedBy: currentUser.uid });
         await batch.commit();
         elements.addDriverForm.reset();
         newDriverVehicleControls.reset();
+        newDriverFinanceControls.reset();
         elements.newDriverBalance.value = '0';
         elements.newDriverStatus.value = 'active';
         setMessage(elements.addDriverMessage, `Водитель ID ${driverNumber} добавлен.`, true);
@@ -2760,6 +2775,8 @@ async function saveOrdersLink(event) {
     }
 }
 
+const newDriverFinanceControls = createFinanceControls(NEW_DRIVER_FINANCE);
+document.getElementById('new-driver-vehicle-controls').append(newDriverFinanceControls.element);
 const newDriverVehicleControls = createVehicleControls();
 document.getElementById('new-driver-vehicle-controls').append(newDriverVehicleControls.element);
 for (const id of ['phone-order-vehicle-category', 'phone-order-passenger-count', 'phone-order-price-from', 'phone-order-price-to']) {

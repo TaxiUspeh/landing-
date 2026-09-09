@@ -1,3 +1,4 @@
+// Такси Успех · v53 · 09.09.2026 · Индивидуальная комиссия и лимиты долга
 rules_version = '2';
 
 service cloud.firestore {
@@ -56,6 +57,7 @@ service cloud.firestore {
 
     function driverIsAvailable() {
       return mayOpenOrders()
+        && hasOrderFunds(get(linkedDriverDocument()).data)
         && exists(driverStateDocument())
         && get(driverStateDocument()).data.driverId == linkedDriverId()
         && get(driverStateDocument()).data.status == 'available'
@@ -128,8 +130,14 @@ service cloud.firestore {
       return getAfter(orderDocument(orderId)).data.priceAmount;
     }
 
+    function commissionRateForOrder(orderId) {
+      let terms = get(orderDocument(orderId)).data.get('commissionTerms', null);
+      return terms == null ? 20 : terms.rate;
+    }
+
     function commissionAmountForOrder(orderId) {
-      return commissionBaseAmountForOrder(orderId) / 5;
+      let terms = get(orderDocument(orderId)).data.get('commissionTerms', null);
+      return terms == null ? commissionBaseAmountForOrder(orderId) / 5 : terms.amount;
     }
 
     // Проверяет поля завершённого онлайн-заказа и связанное изменение баланса.
@@ -139,9 +147,9 @@ service cloud.firestore {
     function validCommissionOrderAndBalance(orderId, driverId) {
       return existsAfter(orderDocument(orderId))
         && getAfter(orderDocument(orderId)).data.status == 'completed'
-        && getAfter(orderDocument(orderId)).data.assignedDriverUid == request.auth.uid
+        && (getAfter(orderDocument(orderId)).data.assignedDriverUid == request.auth.uid || isAdmin())
         && getAfter(orderDocument(orderId)).data.assignedDriverId == driverId
-        && getAfter(orderDocument(orderId)).data.commissionRate == 20
+        && getAfter(orderDocument(orderId)).data.commissionRate == commissionRateForOrder(orderId)
         && getAfter(orderDocument(orderId)).data.commissionBaseAmount is number
         && getAfter(orderDocument(orderId)).data.commissionBaseAmount == commissionBaseAmountForOrder(orderId)
         && getAfter(orderDocument(orderId)).data.commissionAmount is number
@@ -179,14 +187,14 @@ service cloud.firestore {
         && request.resource.data.orderNumber is string
         && request.resource.data.orderNumber.size() <= 32
         && request.resource.data.source == 'online'
-        && request.resource.data.commissionRate == 20
+        && request.resource.data.commissionRate == commissionRateForOrder(request.resource.data.orderId)
         && request.resource.data.commissionBaseAmount is number
         && request.resource.data.commissionAmount is number
         && request.resource.data.previousBalance is number
         && request.resource.data.newBalance is number
         && request.resource.data.difference is number
         && request.resource.data.reason == (getAfter(orderDocument(request.resource.data.orderId)).data.get('auctionRound', 0) > 0
-          ? 'Комиссия 20% от согласованной цены аукциона' : 'Комиссия 20% от максимальной цены онлайн-заказа')
+          ? 'Комиссия ' + string(commissionRateForOrder(request.resource.data.orderId)) + '% от согласованной цены аукциона' : 'Комиссия ' + string(commissionRateForOrder(request.resource.data.orderId)) + '% от максимальной цены онлайн-заказа')
         && request.resource.data.changedAt == request.time
         && request.resource.data.changedBy == request.auth.uid
         && request.resource.data.commissionBaseAmount == commissionBaseAmountForOrder(request.resource.data.orderId)
@@ -279,7 +287,7 @@ service cloud.firestore {
       let data = request.resource.data;
       return driverIsAvailable()
         && data.keys().hasOnly(['orderId', 'driverUid', 'driverId', 'driverName', 'driverPhone',
-          'driverCar', 'driverColor', 'priceAmount', 'arrivalMinutes', 'round', 'status', 'expiresAt', 'updatedAt'])
+          'driverCar', 'driverColor', 'priceAmount', 'arrivalMinutes', 'round', 'status', 'expiresAt', 'updatedAt', 'commissionRate'])
         && data.driverUid == request.auth.uid
         && data.driverId == linkedDriverId()
         && data.orderId is string
@@ -291,6 +299,9 @@ service cloud.firestore {
         && data.driverPhone == get(linkedDriverDocument()).data.get('phone', '')
         && data.driverCar == get(linkedDriverDocument()).data.get('car', '')
         && data.driverColor == get(linkedDriverDocument()).data.get('color', '')
+        && canFundOrder(get(linkedDriverDocument()).data, data.priceAmount)
+        && (!hasFinanceSettings(get(linkedDriverDocument()).data) && !data.keys().hasAny(['commissionRate'])
+          || data.commissionRate == get(linkedDriverDocument()).data.get('commissionRate', 20))
         && validAuctionPrice(data.priceAmount)
         && data.arrivalMinutes is int && data.arrivalMinutes >= 1 && data.arrivalMinutes <= 120
         && data.status == 'active'
@@ -312,6 +323,7 @@ service cloud.firestore {
         && offer.round == before.auctionRound && offer.expiresAt > request.time
         && get(accountPath).data.active == true && get(accountPath).data.driverId == offer.driverId
         && get(driverDocument(offer.driverId)).data.status == 'active'
+        && validReservation(after, get(driverDocument(offer.driverId)).data)
         && get(statePath).data.driverId == offer.driverId
         && get(statePath).data.status == 'available' && get(statePath).data.activeOrderId == ''
         && get(statePath).data.lastSeen > request.time - duration.value(2, 'm')
@@ -323,7 +335,7 @@ service cloud.firestore {
         && after.acceptedAt == request.time && after.updatedAt == request.time
         && after.diff(before).affectedKeys().hasOnly(['status', 'assignedDriverUid', 'assignedDriverId',
           'driverName', 'driverPhone', 'driverCar', 'driverColor', 'priceAmount', 'priceText',
-          'selectedOfferId', 'arrivalMinutes', 'acceptedAt', 'updatedAt'])
+          'selectedOfferId', 'arrivalMinutes', 'acceptedAt', 'updatedAt', 'commissionTerms'])
         && getAfter(statePath).data.status == 'busy' && getAfter(statePath).data.activeOrderId == orderId
         && getAfter(statePath).data.lastSeen == request.time && getAfter(statePath).data.updatedAt == request.time;
     }
@@ -335,6 +347,101 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'activeOrderId', 'lastSeen', 'updatedAt'])
         && getAfter(orderDocument(orderId)).data.assignedDriverUid == accountUid
         && validAuctionSelection(orderId, get(orderDocument(orderId)).data, getAfter(orderDocument(orderId)).data);
+    }
+
+    function financeSettings(data) {
+      return {'commissionRate': data.get('commissionRate', 20), 'debtMode': data.get('debtMode', 'unlimited'), 'debtLimit': data.get('debtLimit', 0)};
+    }
+
+    function hasFinanceSettings(data) {
+      return data.keys().hasAny(['commissionRate', 'debtMode', 'debtLimit']);
+    }
+
+    function validFinanceProfile(data) {
+      return !hasFinanceSettings(data) || (data.commissionRate is int && data.commissionRate >= 0 && data.commissionRate <= 100
+        && data.debtMode in ['none', 'limited', 'unlimited']
+        && data.debtLimit is int && data.debtLimit >= 0 && data.debtLimit <= 10000000
+        && (data.debtMode == 'limited' ? data.debtLimit > 0 : data.debtLimit == 0));
+    }
+
+    function financeAmount(price, rate) { return math.round(price * rate) / 100.0; }
+
+    function hasOrderFunds(driver) {
+      let rate = driver.get('commissionRate', 20);
+      let mode = driver.get('debtMode', 'unlimited');
+      let ceiling = mode == 'none' ? 0 : driver.get('debtLimit', 0);
+      return mode == 'unlimited' || (rate == 0 ? driver.balance <= ceiling : driver.balance < ceiling);
+    }
+
+    function canFundOrder(driver, price) {
+      let mode = driver.get('debtMode', 'unlimited');
+      return driver.balance is number && price is number && price >= 0 && price <= 10000000
+        && (mode == 'unlimited' || math.round((driver.balance + financeAmount(price, driver.get('commissionRate', 20))) * 100)
+          <= (mode == 'none' ? 0 : driver.debtLimit * 100));
+    }
+
+    function validReservation(order, driver) {
+      let terms = order.get('commissionTerms', null);
+      return canFundOrder(driver, order.priceAmount)
+        && ((!hasFinanceSettings(driver) && terms == null)
+          || (terms is map && terms.keys().hasOnly(['rate', 'baseAmount', 'amount'])
+            && terms.rate == driver.get('commissionRate', 20)
+            && terms.baseAmount == order.priceAmount
+            && terms.amount == financeAmount(order.priceAmount, terms.rate)));
+    }
+
+    function financialHistoryDocument(entryId) {
+      return /databases/$(database)/documents/driverFinanceHistory/$(entryId);
+    }
+
+    function validFinanceAudit(driverId, before, after) {
+      let history = getAfter(financialHistoryDocument(after.financeChangeId)).data;
+      return !exists(financialHistoryDocument(after.financeChangeId))
+        && history.keys().hasOnly(['driverId', 'previous', 'next', 'changedAt', 'changedBy'])
+        && history.driverId == driverId && history.previous == before
+        && history.next == financeSettings(after)
+        && history.changedAt == request.time && history.changedBy == request.auth.uid;
+    }
+
+    function adminFinanceProfileCreate(driverId) {
+      return validFinanceProfile(request.resource.data)
+        && (!hasFinanceSettings(request.resource.data) || validFinanceAudit(driverId, null, request.resource.data));
+    }
+
+    function adminFinanceProfileUpdate(driverId) {
+      return validFinanceProfile(request.resource.data)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['commissionRate', 'debtMode', 'debtLimit', 'financeChangeId'])
+          || (hasFinanceSettings(request.resource.data) && validFinanceAudit(driverId, financeSettings(resource.data), request.resource.data)));
+    }
+
+    function adminReservation(orderId, order) {
+      let driver = get(driverDocument(order.assignedDriverId)).data;
+      let statePath = /databases/$(database)/documents/driverStates/$(order.assignedDriverUid);
+      let accountPath = /databases/$(database)/documents/driverAccounts/$(order.assignedDriverUid);
+      return validReservation(order, driver)
+        && (!hasFinanceSettings(driver) && order.get('commissionTerms', null) == null
+          || (driver.status == 'active' && get(accountPath).data.active == true && get(accountPath).data.driverId == order.assignedDriverId
+            && (!exists(statePath) || (get(statePath).data.status != 'busy' && get(statePath).data.activeOrderId == ''))
+            && getAfter(statePath).data.status == 'busy' && getAfter(statePath).data.activeOrderId == orderId
+            && getAfter(statePath).data.driverId == order.assignedDriverId));
+    }
+
+    function adminFinanceOrderCreate(orderId) {
+      let data = request.resource.data;
+      return data.get('assignedDriverUid', '') == '' ? data.get('commissionTerms', null) == null : adminReservation(orderId, data);
+    }
+
+    function adminFinanceOrderUpdate(orderId) {
+      let before = resource.data;
+      let after = request.resource.data;
+      let changed = after.diff(before).affectedKeys();
+      let statePath = /databases/$(database)/documents/driverStates/$(before.get('assignedDriverUid', ''));
+      return after.status == 'accepted' && (!activeOrderStatus(before.status) || changed.hasAny(['assignedDriverId', 'assignedDriverUid']))
+        ? adminReservation(orderId, after)
+        : ((!changed.hasAny(['commissionTerms', 'priceAmount']) || before.get('commissionTerms', null) == null)
+          && (before.get('commissionTerms', null) == null || !activeOrderStatus(before.status) || activeOrderStatus(after.status)
+            || (getAfter(statePath).data.status == 'available' && getAfter(statePath).data.activeOrderId == ''
+              && (after.status != 'completed' || validCommissionSettlement(orderId, before.assignedDriverId)))));
     }
 
     function validVehicleProfile(data) {
@@ -487,6 +594,7 @@ service cloud.firestore {
     function driverAcceptsSearchingOrder(orderId) {
       return driverIsAvailable()
         && vehicleFitsOrder(resource.data, get(linkedDriverDocument()).data)
+        && validReservation(request.resource.data, get(linkedDriverDocument()).data)
         && resource.data.status == 'searching'
         && request.resource.data.status == 'accepted'
         && request.resource.data.assignedDriverUid == request.auth.uid
@@ -500,7 +608,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'status', 'assignedDriverUid', 'assignedDriverId',
           'driverName', 'driverPhone', 'driverCar', 'driverColor',
-          'acceptedAt', 'updatedAt'
+          'acceptedAt', 'updatedAt', 'commissionTerms'
         ])
         && driverBecomesBusyWithOrder(orderId);
     }
@@ -562,6 +670,7 @@ service cloud.firestore {
         && request.resource.data.driverPhone == ''
         && request.resource.data.driverCar == ''
         && request.resource.data.driverColor == ''
+        && request.resource.data.get('commissionTerms', null) == null
         && request.resource.data.requeueReason is string
         && request.resource.data.requeueReason in ['car_issue', 'cannot_continue', 'other']
         && request.resource.data.requeuedBy == 'driver'
@@ -574,7 +683,7 @@ service cloud.firestore {
           'status', 'assignedDriverUid', 'assignedDriverId',
           'driverName', 'driverPhone', 'driverCar', 'driverColor',
           'requeueReason', 'requeuedBy', 'requeuedByDriverId', 'requeuedAt', 'requeueCount', 'updatedAt',
-          'auctionRound', 'selectedOfferId', 'arrivalMinutes', 'priceAmount', 'priceText'
+          'auctionRound', 'selectedOfferId', 'arrivalMinutes', 'priceAmount', 'priceText', 'commissionTerms'
         ])
         && driverBecomesAvailableAfterRequeue(orderId);
     }
@@ -666,9 +775,9 @@ service cloud.firestore {
 
     match /drivers/{driverId} {
       allow read: if isAdmin() || isLinkedDriver(driverId);
-      allow create: if isAdmin() && validVehicleProfile(request.resource.data);
+      allow create: if isAdmin() && validVehicleProfile(request.resource.data) && adminFinanceProfileCreate(driverId);
       allow delete: if isAdmin();
-      allow update: if (isAdmin() && validVehicleProfile(request.resource.data)) || driverAppliesOwnOnlineCommission(driverId);
+      allow update: if (isAdmin() && validVehicleProfile(request.resource.data) && adminFinanceProfileUpdate(driverId)) || driverAppliesOwnOnlineCommission(driverId);
     }
 
     match /driverAccounts/{accountUid} {
@@ -716,6 +825,16 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /driverFinanceHistory/{entryId} {
+      allow read: if isAdmin() || isLinkedDriver(resource.data.driverId);
+      allow create: if isAdmin()
+        && getAfter(driverDocument(request.resource.data.driverId)).data.financeChangeId == entryId
+        && validFinanceAudit(request.resource.data.driverId,
+          exists(driverDocument(request.resource.data.driverId)) ? financeSettings(get(driverDocument(request.resource.data.driverId)).data) : null,
+          getAfter(driverDocument(request.resource.data.driverId)).data);
+      allow update, delete: if false;
+    }
+
     match /balanceHistory/{entryId} {
       // Перед завершением водитель читает документ с ID заказа, чтобы не списать
       // комиссию дважды. Разрешаем отсутствие только для своего текущего заказа.
@@ -753,12 +872,12 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      allow create: if (isAdmin() && validVehicleFare(request.resource.data) && adminAssignsSuitableVehicle(request.resource.data)) || validClientOrderCreate();
+      allow create: if (isAdmin() && validVehicleFare(request.resource.data) && adminAssignsSuitableVehicle(request.resource.data) && adminFinanceOrderCreate(orderId)) || validClientOrderCreate();
       allow read: if isAdmin()
         || (signedIn() && resource.data.clientUid == request.auth.uid)
         || (driverIsAvailable() && resource.data.status in ['searching', 'bidding'])
         || (signedIn() && resource.data.get('assignedDriverUid', '') == request.auth.uid);
-      allow update: if (isAdmin() && validAdminCategoryUpdate())
+      allow update: if (isAdmin() && validAdminCategoryUpdate() && adminFinanceOrderUpdate(orderId))
         || (resource.data.clientUid == request.auth.uid
           && (clientCancelsOwnSearchingOrder() || clientRequestsCancellationAfterAssignment()))
         || (resource.data.status == 'bidding' && request.resource.data.status == 'accepted'

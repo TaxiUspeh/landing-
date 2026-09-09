@@ -1,3 +1,6 @@
+import { createFinanceControls } from '../../driver-finance-controls.js';
+import { NEW_DRIVER_FINANCE } from '../../driver-finance.js';
+import { hasOrderFunds, fundingFor } from '../../driver-finance.js';
 import { JSDOM } from 'jsdom';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
@@ -29,6 +32,15 @@ const seats = controls.element.querySelector('input[type=number]'); assert.equal
 assert.equal(validVehicleProfile(controls.read().serviceCategories, controls.read().passengerSeats), false);
 seats.value = '7'; assert.equal(validVehicleProfile(controls.read().serviceCategories, controls.read().passengerSeats), true);
 controls.reset(); assert.equal(controls.read().passengerSeats, 4); assert.equal(checks[2].checked, false);
+const financial = createFinanceControls(NEW_DRIVER_FINANCE); document.body.append(financial.element);
+assert.deepEqual(financial.read(), { commissionRate:20, debtMode:'none', debtLimit:0 });
+const rate = financial.element.querySelector('input'); const mode = financial.element.querySelector('select'); const limit = financial.element.querySelectorAll('input')[1];
+rate.value='5'; mode.value='limited'; mode.dispatchEvent(new window.Event('change')); limit.value='500';
+assert.deepEqual(financial.read(), { commissionRate:5, debtMode:'limited', debtLimit:500 }); assert.equal(limit.disabled,false);
+rate.value='101'; assert.throws(()=>financial.read()); rate.value='0'; assert.equal(financial.read().commissionRate,0);
+mode.value='unlimited'; mode.dispatchEvent(new window.Event('change')); assert.equal(limit.disabled,true); assert.equal(financial.read().debtLimit,0);
+financial.reset(); assert.equal(financial.read().commissionRate,20); assert.equal(financial.read().debtMode,'none');
+console.log('PASS: editable finance controls, limits and defaults');
 await new Promise(resolve => setTimeout(resolve, 200)); dom.window.close();
 console.log('PASS: category labels, passenger field, channels and dispatcher profile controls');
 const dispatcher = new JSDOM(await readFile('../../dispatcher.html', 'utf8'));
@@ -41,8 +53,8 @@ function extract(name) {
 const keys = ['ServiceType','PriceFrom','PriceTo','PriceFromLabel','PriceToLabel','Driver','From','To','Stops','Wishes','ScheduledFor'];
 const elements = Object.fromEntries(keys.map(key => ['phoneOrder'+key, dispatcher.window.document.getElementById('phone-order-'+key.replace(/[A-Z]/g, (c, i) => (i ? '-' : '')+c.toLowerCase()))]));
 for (const [key, el] of Object.entries(elements)) assert.ok(el, key);
-const context = vm.createContext({ document: dispatcher.window.document, elements, calculateCategoryFare, formatCategoryFare, categoryLabel, driverCanServeOrder,
- drivers: [{ id:'1',authUid:'uid1',status:'active',name:'Sedan' }, { id:'2',authUid:'uid2',status:'active',name:'Minivan',serviceCategories:['sedan','minivan'],passengerSeats:7 }],
+const context = vm.createContext({ document: dispatcher.window.document, elements, hasOrderFunds, fundingFor, calculateCategoryFare, formatCategoryFare, categoryLabel, driverCanServeOrder,
+ drivers: [{ id:'1',authUid:'uid1',status:'active',balance:0,name:'Sedan' }, { id:'2',authUid:'uid2',status:'active',balance:0,name:'Minivan',serviceCategories:['sedan','minivan'],passengerSeats:7 }],
  normalizeUid: x => x, driverAvailabilityInfo: () => ({key:'available'}),
  DISPATCHER_ORDER_SERVICES: {taxi:{label:'Такси',route:true,stops:true,fromLabel:'Откуда *',toLabel:'Куда *'}}
 });

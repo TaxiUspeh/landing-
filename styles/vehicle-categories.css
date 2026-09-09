@@ -10,3 +10,6 @@
 #phone-order-vehicle-options { display: grid; gap: 12px; }
 #mapModal .booking-passenger-count { padding: 12px; background: #eff6ff; color: #172554; border-radius: 12px; }
 .dark .vehicle-profile-controls { border-color: #3b82f6; }
+
+.vehicle-profile-controls select { width: 100%; min-height: 46px; border: 1px solid #64748b; border-radius: 8px; padding: 8px; background: #fff; color: #172554; font-size: 16px; }
+.vehicle-profile-controls [hidden] { display: none !important; }

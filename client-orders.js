@@ -1,5 +1,5 @@
 import { orderCategorySummary } from './vehicle-categories.js?v=52';
-import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=51';
+import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=53';
 import { auth, db } from './firebase-config.js';
 import {
     onAuthStateChanged,

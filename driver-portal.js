@@ -1,5 +1,6 @@
+import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=53';
 import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=52';
-import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=51';
+import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=53';
 import { auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -1058,7 +1059,7 @@ function renderBalanceHistory() {
             item.append(createText(
                 'p',
                 'mt-1 text-[11px] text-gray-500 dark:text-gray-400',
-                `Расчёт: 20% от ${formatMoney(entry.commissionBaseAmount)}`
+                `Расчёт: ${entry.commissionRate ?? 20}% от ${formatMoney(entry.commissionBaseAmount)}`
             ));
         }
         elements.balanceHistoryList.append(item);
@@ -1174,7 +1175,7 @@ function orderStatusLabel(status) {
 function canAccessOrders(driver, account) {
     const status = driver.status || 'paused';
     return account.active !== false
-        && status === 'active';
+        && status === 'active' && hasOrderFunds(driver);
 }
 
 function normalizedDriverState(snapshot, driverId) {
@@ -1212,7 +1213,7 @@ function renderWorkStatus(driver, account, state = currentDriverState) {
         iconClass = 'flex-shrink-0 w-11 h-11 rounded-xl bg-amber-200 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 flex items-center justify-center';
     } else if (!eligible) {
         title = 'Доступ к заказам ограничен';
-        detail = 'Работу с заказами приостановил диспетчер.';
+        detail = driver.status === 'active' && account.active !== false ? 'Доступные средства на комиссию исчерпаны. Пополните баланс: после учёта оплаты заказы появятся автоматически.' : 'Работу с заказами приостановил диспетчер.';
         icon = 'fas fa-ban';
         containerClass = 'rounded-2xl p-4 mb-4 border bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
         iconClass = 'flex-shrink-0 w-11 h-11 rounded-xl bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 flex items-center justify-center';
@@ -1487,8 +1488,11 @@ function startOwnOffersWatch() {
     }, error => { console.warn('Предложения не загрузились:', error.code); showOrdersMessage('Не удалось загрузить ваши предложения аукциона. Проверьте интернет и обновите страницу.'); });
 }
 async function withdrawUnavailableOffers() {
-    if (withdrawingOffers || !currentDriverState.exists || currentDriverState.status === 'available') return;
-    const active = [...ownAuctionOffers.values()].filter(offer => offer.status === 'active');
+    if (withdrawingOffers || !currentDriverState.exists || !currentDriver) return;
+    const active = [...ownAuctionOffers.values()].filter(offer => offer.status === 'active'
+        && (currentDriverState.status !== 'available' || !currentBaseEligible
+            || (offer.commissionRate ?? 20) !== financeSettings(currentDriver).commissionRate
+            || !fundingFor(currentDriver, offer.priceAmount).allowed));
     if (!active.length) return;
     withdrawingOffers = true;
     try {
@@ -1513,13 +1517,22 @@ function appendAuctionControls(actions, order) {
     const same = createText('button', 'auction-secondary', `Поеду за ${formatMoney(order.proposedPrice)}`); same.type = 'button';
     same.addEventListener('click', () => { price.value = order.proposedPrice; draft.price = price.value; form.requestSubmit(); });
     form.addEventListener('submit', event => { event.preventDefault(); void sendAuctionOffer(order, Number(price.value), Number(minutes.value)); });
-    form.append(status, priceLabel, minutesLabel, send, same);
+    const commissionHint = createText('p', 'text-xs font-bold', '');
+    const updateFunding = () => {
+        if (!validAuctionPrice(Number(price.value))) { commissionHint.textContent = 'Введите корректную цену для расчёта комиссии.'; return; }
+        const funding = fundingFor(currentDriver, Number(price.value));
+        commissionHint.textContent = funding.allowed ? `Ваша комиссия: ${funding.rate}% · ${formatMoney(funding.amount)}` : funding.reason;
+        send.disabled = orderActionInProgress || !currentCanTakeOrders || !funding.allowed;
+    };
+    price.addEventListener('input', updateFunding);
+    form.append(status, priceLabel, minutesLabel, commissionHint, send, same);
     if (active) {
         const withdraw = createText('button', 'auction-secondary', 'Отозвать предложение'); withdraw.type = 'button';
         withdraw.addEventListener('click', () => withdrawAuctionOffer(own)); form.append(withdraw);
     }
     form.append(createText('p', 'text-xs', 'Предложение действует 2 минуты. После истечения отправьте его заново.'));
     for (const button of form.querySelectorAll('button')) button.disabled = orderActionInProgress || !currentCanTakeOrders;
+    updateFunding();
     actions.append(form);
 }
 async function sendAuctionOffer(order, priceAmount, arrivalMinutes) {
@@ -1527,7 +1540,12 @@ async function sendAuctionOffer(order, priceAmount, arrivalMinutes) {
     if (!validAuctionPrice(priceAmount) || !validArrivalMinutes(arrivalMinutes)) { showOrdersMessage('Укажите целую цену от 500 до 1 000 000 ₸ и подачу от 1 до 120 минут.'); return; }
     orderActionInProgress = true; renderOnlineOrders();
     try {
+        const freshDriver = (await getDoc(doc(db, 'drivers', currentDriverId))).data();
+        if (!freshDriver) throw new Error('Карточка водителя не найдена.');
+        const funding = fundingFor(freshDriver, priceAmount);
+        if (!funding.allowed) throw new Error(funding.reason);
         await setDoc(doc(db, 'auctionOffers', auctionOfferId(order.id, currentUser.uid)), {
+            ...(hasFinanceSettings(freshDriver) ? { commissionRate: funding.rate } : {}),
             orderId: order.id, driverUid: currentUser.uid, driverId: currentDriverId,
             driverName: currentDriver.name || 'Водитель', driverPhone: currentDriver.phone || '',
             driverCar: currentDriver.car || '', driverColor: currentDriver.color || '',
@@ -1536,7 +1554,7 @@ async function sendAuctionOffer(order, priceAmount, arrivalMinutes) {
         });
         showOrdersMessage('Предложение отправлено. Ожидайте выбора клиента.', true);
     } catch (error) {
-        showOrdersMessage(error.code === 'permission-denied' ? 'Предложение не отправлено: заказ уже изменился, вы заняты или аукцион ещё не включён диспетчером.' : 'Не удалось отправить предложение. Проверьте интернет.');
+        showOrdersMessage(error.code === 'permission-denied' ? 'Предложение не отправлено: заказ уже изменился, вы заняты или аукцион ещё не включён диспетчером.' : error.message || 'Не удалось отправить предложение. Проверьте интернет.');
     } finally { orderActionInProgress = false; renderOnlineOrders(); }
 }
 async function withdrawAuctionOffer(offer) {
@@ -1615,10 +1633,14 @@ function createOrderCard(order, assigned) {
         acceptButton.type = 'button';
         acceptButton.className = 'rounded-lg bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-xs font-extrabold';
         acceptButton.textContent = 'Принять';
-        acceptButton.disabled = orderActionInProgress || !currentCanTakeOrders;
+        const funding = fundingFor(currentDriver, Number(order.priceAmount));
+        actions.append(createText('p', 'w-full text-xs font-bold', funding.allowed ? `Ваша комиссия: ${funding.rate}% · ${formatMoney(funding.amount)}` : funding.reason));
+        acceptButton.disabled = orderActionInProgress || !currentCanTakeOrders || !funding.allowed;
         acceptButton.addEventListener('click', () => acceptOrder(order.id));
         actions.append(acceptButton);
     } else {
+        const terms = orderCommission(order);
+        actions.append(createText('p', 'w-full text-xs font-bold', `Комиссия этой поездки: ${terms.rate}% · Зарезервировано ${formatMoney(terms.amount)}`));
         const contact = createText('p', 'w-full text-xs text-gray-600 dark:text-gray-300', 'Загружаем телефон клиента…');
         actions.append(contact);
         void loadOrderContact(order.id, contact, actions);
@@ -1680,6 +1702,8 @@ async function loadOrderContact(orderId, contactElement, actionsElement) {
 
 function renderOnlineOrders() {
     if (!elements.ordersList) return;
+    const financeInfo = document.getElementById('driver-finance-summary');
+    if (financeInfo && currentDriver) financeInfo.textContent = financeSummary(currentDriver, reservedCommission(assignedOrders));
     const ready = assignedOrdersLoaded && (!currentCanTakeOrders || openOrdersLoaded);
     if (!ready) {
         setHidden(elements.ordersLoading, false);
@@ -1724,7 +1748,7 @@ function renderOnlineOrders() {
             detail.textContent = 'Кабинет автоматически подключается. Подождите несколько секунд.';
         } else {
             title.textContent = 'Новые заказы сейчас недоступны';
-            detail.textContent = 'Работу с заказами приостановил диспетчер. Уже принятый заказ останется виден.';
+            detail.textContent = currentDriver?.status === 'active' ? 'Недостаточно средств на комиссию. После учёта пополнения доступ восстановится автоматически.' : 'Работу с заказами приостановил диспетчер. Уже принятый заказ останется виден.';
         }
     }
 }
@@ -1852,6 +1876,7 @@ async function acceptOrder(orderId) {
                 throw new Error('Вы уже заняты или кабинет ещё подключается к заказам.');
             }
             transaction.update(orderRef, {
+                ...reserveCommission(driverSnapshot.data(), Number(orderSnapshot.data().priceAmount)),
                 status: 'accepted',
                 assignedDriverUid: currentUser.uid,
                 assignedDriverId: currentDriverId,
@@ -1934,7 +1959,7 @@ async function advanceOrder(orderId, expectedStatus, nextStatus) {
                 if (!Number.isFinite(previousBalance)) {
                     throw new Error('В карточке водителя указан некорректный баланс.');
                 }
-                commissionAmount = commissionBaseAmount / 5;
+                commissionAmount = orderCommission(order).amount;
                 newBalance = previousBalance + commissionAmount;
                 completedCommissionAmount = commissionAmount;
 
@@ -1949,13 +1974,13 @@ async function advanceOrder(orderId, expectedStatus, nextStatus) {
                     orderId,
                     orderNumber: order.orderNumber || '',
                     source: 'online',
-                    commissionRate: 20,
+                    commissionRate: orderCommission(order).rate,
                     commissionBaseAmount,
                     commissionAmount,
                     previousBalance,
                     newBalance,
                     difference: commissionAmount,
-                    reason: order.auctionRound ? 'Комиссия 20% от согласованной цены аукциона' : 'Комиссия 20% от максимальной цены онлайн-заказа',
+                    reason: commissionReason(order),
                     changedAt: serverTimestamp(),
                     changedBy: currentUser.uid
                 });
@@ -1966,7 +1991,7 @@ async function advanceOrder(orderId, expectedStatus, nextStatus) {
             };
             if (nextStatus === 'completed') {
                 Object.assign(orderUpdate, {
-                    commissionRate: 20,
+                    commissionRate: orderCommission(order).rate,
                     commissionBaseAmount,
                     commissionAmount,
                     commissionBalanceBefore: previousBalance,
@@ -2024,6 +2049,7 @@ async function returnOrderToSearch(orderId, expectedStatus, reason) {
             }
 
             transaction.update(orderRef, {
+                ...(order.commissionTerms ? { commissionTerms: null } : {}),
                 status: order.auctionRound ? 'bidding' : 'searching',
                 ...(order.auctionRound ? { auctionRound: order.auctionRound + 1, selectedOfferId: '', arrivalMinutes: 0, priceAmount: order.proposedPrice, priceText: `${order.proposedPrice} ₸` } : {}),
                 assignedDriverUid: '',
@@ -2156,7 +2182,7 @@ function watchDriverProfile(user) {
             const driver = driverSnapshot.data();
             elements.profileName.textContent = `ID ${driver.driverNumber ?? account.driverId} · ${driver.name || 'Водитель'}`;
             elements.profileCar.textContent = `${carDescription(driver)} · ${driverCategorySummary(driver)}`;
-            elements.profileBalance.textContent = formatMoney(driver.balance);
+            elements.profileBalance.textContent = `${Number(driver.balance) > 0 ? 'Долг' : 'На счёте'}: ${formatMoney(Math.abs(Number(driver.balance)))}`;
             setHidden(elements.pending, true);
             setHidden(elements.profile, false);
             showMessage('');

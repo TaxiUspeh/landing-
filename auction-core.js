@@ -1,3 +1,4 @@
+import { commissionFor } from './driver-finance.js?v=53';
 // Kept free of browser imports so the real transaction can run against the emulator.
 export const AUCTION_MIN_PRICE = 500;
 export const AUCTION_MAX_PRICE = 1000000;
@@ -20,6 +21,7 @@ export async function selectAuctionOffer(db, sdk, orderId, displayedOffer, clien
         if (order.clientUid !== clientUid || !currentAuctionOffer(offer, order)) throw new Error('Предложение истекло или заказ уже изменился.');
         if (!offer.updatedAt?.isEqual(displayedOffer.updatedAt)) throw new Error('Водитель изменил предложение. Проверьте новую цену и время подачи.');
         transaction.update(orderRef, {
+            ...(offer.commissionRate !== undefined ? { commissionTerms: { rate: offer.commissionRate, baseAmount: offer.priceAmount, amount: commissionFor(offer.priceAmount, offer.commissionRate) } } : {}),
             status: 'accepted', assignedDriverUid: offer.driverUid, assignedDriverId: offer.driverId,
             driverName: offer.driverName, driverPhone: offer.driverPhone,
             driverCar: offer.driverCar, driverColor: offer.driverColor,

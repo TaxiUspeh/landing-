@@ -98,3 +98,46 @@ body.booking-open { overflow: hidden; }
   .booking-submit { min-height: 44px; padding: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .booking-screen * { scroll-behavior: auto !important; transition: none !important; } }
+
+/* Compact booking: services and car categories are separate controls. */
+#mapModal .booking-scroll { padding:0 12px 12px; }
+#mapModal .booking-city { min-height:32px; font-size:13px; }
+#mapModal .booking-address { min-height:50px; }
+#mapModal .booking-address-button { padding:6px 0; gap:10px; }
+#mapModal .booking-address-copy strong { white-space:normal; overflow-wrap:anywhere; line-height:1.3; font-size:15px; }
+#mapModal .booking-detail-label { display:block; margin:6px 0 2px; color:#475569; font-size:12px; font-weight:600; }
+#mapModal .booking-detail { padding:6px 10px; min-height:38px; border:1px solid #cbd5e1; border-radius:10px; margin-bottom:4px; }
+#mapModal .booking-service-groups { margin:10px 0 6px; }
+#mapModal .booking-types { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; }
+#mapModal .booking-categories { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:7px; }
+#mapModal .booking-service { min-width:0; width:100%; min-height:44px; padding:7px 3px; gap:5px; border-radius:11px; font-size:13px; line-height:1.3; overflow-wrap:normal; word-break:normal; }
+#mapModal .booking-types .booking-service { flex-direction:row; font-size:12px; }
+#mapModal .booking-types .booking-service i { display:none; }
+#mapModal .booking-categories .booking-service { flex-direction:row; min-height:46px; font-size:12px; }
+#mapModal .booking-service i { font-size:17px; }
+#mapModal .booking-more-services { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; padding:8px 0; }
+#mapModal .booking-more-services .booking-service { flex-direction:row; min-height:48px; }
+#mapModal .booking-mode { margin:8px 0 0; font-size:12px; color:#1d4ed8; }
+#mapModal .booking-help { font-size:12px; margin:5px 0; line-height:1.35; }
+#mapModal .booking-help:empty { display:none; }
+#mapModal .booking-status { font-size:12px; margin:6px 0; }
+#mapModal .booking-panel .booking-contact { padding:0; background:#fff; border:0 !important; }
+#mapModal .booking-panel .booking-contact > div { display:block; }
+#mapModal .booking-phone, #mapModal .booking-name, #mapModal .booking-extras { border:1px solid #dbe3ef; border-radius:12px; padding:0 10px; margin-top:8px; background:#fff; color:#172554; }
+#mapModal .booking-phone summary { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 8px; list-style:none; padding:8px 0; min-height:52px; cursor:pointer; }
+#mapModal .booking-phone summary > span:first-child { color:#64748b; font-size:11px; }
+#mapModal .booking-phone summary strong { grid-column:1; font-size:14px; line-height:1.4; font-weight:650; overflow-wrap:anywhere; }
+#mapModal .booking-contact-edit { grid-column:2; grid-row:1 / 3; align-self:center; color:#1d4ed8; font-size:12px; font-weight:700; }
+#mapModal .booking-name summary, #mapModal .booking-extras > summary { min-height:44px; padding:12px 0; cursor:pointer; font-size:13px; font-weight:600; }
+#mapModal .booking-panel .booking-contact label { font-size:12px; }
+#mapModal .booking-panel .booking-contact input { margin:4px 0 8px; padding:10px; min-height:44px; font-size:16px; }
+#mapModal .booking-phone:not([open]) > label, #mapModal .booking-name:not([open]) > label { display:none; }
+#mapModal .booking-note { min-height:60px; margin-bottom:8px; }
+#mapModal .booking-extras #phoneInputContainer { padding-bottom:10px; }
+#mapModal .booking-extras label { color:#172554 !important; }
+#mapModal .booking-extras input { color:#172554; background:#fff; }
+#mapModal .booking-extras .booking-passenger-toggle { font-size:13px; margin:4px 0 10px; }
+#mapModal summary:focus-visible { outline:3px solid #60a5fa; outline-offset:2px; }
+#mapModal #mapOverlayText { font-size:12px; padding:7px 10px; font-weight:600; }
+#mapModal .booking-map-credit { font-size:10px; }
+@media (max-width:359px) { #mapModal .booking-categories .booking-service { flex-direction:column; } }

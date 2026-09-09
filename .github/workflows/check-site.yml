@@ -15,4 +15,4 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/check-site.mjs
-      - run: node --test scripts/booking-core.test.mjs scripts/vehicle-categories.test.mjs
+      - run: node --test scripts/booking-core.test.mjs scripts/vehicle-categories.test.mjs scripts/driver-finance.test.mjs

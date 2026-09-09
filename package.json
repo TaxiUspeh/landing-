@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build:styles": "npx tailwindcss@3.4.17 -c tailwind.config.cjs -i styles/tailwind.input.css -o styles/tailwind.css --minify",
-    "check": "node scripts/check-site.mjs && node --test scripts/booking-core.test.mjs scripts/vehicle-categories.test.mjs"
+    "check": "node scripts/check-site.mjs && node --test scripts/booking-core.test.mjs scripts/vehicle-categories.test.mjs scripts/driver-finance.test.mjs"
   },
   "devDependencies": {
     "tailwindcss": "3.4.17"

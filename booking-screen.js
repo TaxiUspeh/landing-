@@ -314,7 +314,8 @@ export function initBookingScreen({ preview = false } = {}) {
   }
   function renderMapStatus() {
     // Public driver availability is not exposed by Firestore. Animation is not availability.
-    const message = 'Подбор водителя после заказа';
+    const status = $(`${state.service.form}-online-order-status`)?.textContent.trim();
+    const message = activeCard() ? status || 'Ваш заказ' : 'Подбор водителя после заказа';
     if (mapMessage.textContent !== message) mapMessage.textContent = message;
   }
   function activeCard() {
@@ -327,7 +328,6 @@ export function initBookingScreen({ preview = false } = {}) {
     $('bookingCommon').hidden = hasCard;
     $('bookingFooter').hidden = hasCard;
     $('bookingExtras').hidden = hasCard;
-    $('bookingExtras').inert = Boolean(submitting);
     contacts.get(service.form)?.update();
     const contact = panels.get(service.form).querySelector('.booking-contact');
     if (contact) contact.hidden = !service.online;
@@ -335,6 +335,8 @@ export function initBookingScreen({ preview = false } = {}) {
     sheet.setEnabled(!hasCard && !overlay.classList.contains('booking-picking'));
     const onlineButton = $(`${service.form}-online-order-button`);
     const busy = submitting || (state.channel === 'online' && onlineButton?.disabled);
+    $('bookingExtras').inert = Boolean(busy && !hasCard);
+    renderMapStatus();
     $('bookingCommon').inert = Boolean(busy);
     $('bookingPanels').inert = Boolean(busy && !hasCard);
     $('bookingSubmit').disabled = !service.online || busy || !onlineButton || onlineButton.classList.contains('hidden') || overlay.classList.contains('booking-picking');
@@ -353,6 +355,7 @@ export function initBookingScreen({ preview = false } = {}) {
   for (const id of ['taxiPriceEstimate', 'deliveryPriceEstimate', 'cargoTotalPrice']) observer.observe($(id), { childList: true, subtree: true, characterData: true });
   for (const key of ['taxi', 'delivery', 'auction']) {
     observer.observe($(`${key}-online-order-panel`), { attributes: true, attributeFilter: ['class'] });
+    observer.observe($(`${key}-online-order-status`), { childList: true, subtree: true, characterData: true });
     observer.observe($(`${key}-online-order-button`), { attributes: true, attributeFilter: ['disabled', 'class'] });
   }
 

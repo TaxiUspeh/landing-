@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v54-expandable-map';
+const CACHE_NAME = 'taxi-uspeh-v55-compact-driver';
 const APP_SHELL = [
   './',
   './driver-finance.js?v=53',
@@ -18,7 +18,9 @@ const APP_SHELL = [
   './holiday-calendar.js',
   './drivers.html',
   './drivers.webmanifest',
-  './driver-portal.js?v=53',
+  './driver-portal.js?v=55',
+  './driver-cabinet.js?v=55',
+  './styles/driver-cabinet.css?v=55',
   './dispatcher.html',
   './dispatcher.js?v=53',
   './firebase-config.js',

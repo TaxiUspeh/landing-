@@ -94,4 +94,6 @@ assert.equal(get('bookingWhatsapp'),null);
 const ids=[...document.querySelectorAll('[id]')].map(node=>node.id);
 assert.equal(ids.length,new Set(ids).size);
 console.log('PASS: compact contact, categories with preorder, location races, first missing field, retained wishes and online handler');
+await new Promise(resolve => setTimeout(resolve,1100));
+assert.equal(get('bookingSubmit').disabled,false,'Online button is released after submission');
 dom.window.close();

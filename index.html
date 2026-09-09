@@ -31,7 +31,7 @@
     <link rel="stylesheet" href="./styles/tailwind.css">
     <link rel="stylesheet" href="./styles/vehicle-categories.css?v=53">
     <link rel="stylesheet" href="./styles/auction.css?v=51">
-    <link rel="stylesheet" href="./styles/booking-screen.css?v=54">
+    <link rel="stylesheet" href="./styles/booking-screen.css?v=57">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <!-- Leaflet Map (Для карты с машинками) -->
@@ -2059,7 +2059,7 @@
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
         import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=52";
-        import { initBookingScreen } from "./booking-screen.js?v=54";
+        import { initBookingScreen } from "./booking-screen.js?v=57";
         import { initClientHome } from "./client-home.js?v=56";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -3609,6 +3609,7 @@
 
             function renderMapOverlay() {
                 if (!overlay) return;
+                if (window.bookingScreen?.renderMapStatus) { window.bookingScreen.renderMapStatus(); return; }
                 let iconClass = 'fas fa-map-marker-alt text-blue-500';
                 let primary = 'Готовим карту машин...';
                 let secondary = '';
@@ -3778,7 +3779,6 @@
                 const userPoint = [userLat, userLng];
                 const accuracy = Math.max(10, Math.min(2000, Number(position.coords.accuracy) || 50));
                 window.latestSimUserLocation = { point: userPoint, accuracy };
-                void window.bookingScreen?.onLocation(position);
 
                 if (window.userMarker) {
                     window.userMarker.setLatLng(userPoint);
@@ -3820,7 +3820,6 @@
             }
 
             function handleSimulationLocationError(error) {
-                window.bookingScreen?.locationError();
                 console.warn('Не удалось получить геопозицию пользователя:', error);
                 mapState.geolocation = error && error.code === 1 ? 'denied' : 'unavailable';
                 renderMapOverlay();

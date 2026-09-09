@@ -16,3 +16,13 @@ jobs:
           node-version: 22
       - run: node scripts/check-site.mjs
       - run: node --test scripts/booking-core.test.mjs scripts/vehicle-categories.test.mjs scripts/driver-finance.test.mjs
+      - name: Install DOM test dependency
+        run: |
+          npm install --prefix "$RUNNER_TEMP/booking-ui" --no-save --ignore-scripts jsdom@26.1.0
+          ln -s "$RUNNER_TEMP/booking-ui/node_modules" tests/firestore/node_modules
+      - name: Check booking and client navigation
+        working-directory: tests/firestore
+        run: |
+          node vehicle-ui.test.mjs
+          node client-home-ui.test.mjs
+          node compact-booking-ui.test.mjs

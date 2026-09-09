@@ -12,13 +12,15 @@ export function initBookingScreen({ preview = false } = {}) {
   const mapMessage = $('mapOverlayText');
   const geocoder = createGeocoder();
   const emptyPoint = () => ({ address: '', city: 'Белоусовка', lat: null, lon: null });
-  const state = { from: emptyPoint(), to: emptyPoint(), stops: [], details: '', note: '', passengerCount: 5, service: BOOKING_SERVICES[0], channel: 'online', revision: 0 };
+  const state = { mode: 'taxi', category: 'taxi', from: emptyPoint(), to: emptyPoint(), stops: [], details: '', note: '', passengerCount: 5, service: BOOKING_SERVICES[0], channel: 'online', revision: 0 };
   let opened = false, returnFocus = null, pickerTarget = null, pickerRevision = 0;
   let locating = false, initialLocationRequested = false, locationRevision = 0, searchRevision = 0;
+  let originRevision = 0, locationRequest = 0;
   let routeRevision = 0, routeLayer = null, routeMarkers = [], pickedPoint = null, pickMarker = null;
   let refreshQueued = false, submitting = false;
   const pointCache = new Map(), routeCache = new Map();
   const panels = new Map();
+  const contacts = new Map();
   const sourcePointFields = ['taxiFrom', 'taxiTo', 'auctionFrom', 'auctionTo', 'cargoFrom', 'cargoTo', 'soberDriverFrom', 'soberDriverTo', 'assistanceAddress', 'deliveryAddress'];
 
   overlay.classList.add('booking-screen');
@@ -46,25 +48,31 @@ export function initBookingScreen({ preview = false } = {}) {
                 <button type="button" class="booking-address-button" id="bookingFrom"><span class="booking-marker">А</span><span class="booking-address-copy"><small id="bookingFromLabel">Откуда</small><strong id="bookingFromValue">Укажите место подачи</strong></span></button>
                 <button type="button" class="booking-icon-button" id="bookingAddStop" aria-label="Добавить остановку">+</button>
               </div>
-              <label for="bookingDetails" class="sr-only">Дом и подъезд</label>
-              <input id="bookingDetails" class="booking-detail" placeholder="Дом, подъезд — например: 8, подъезд 2" maxlength="100" autocomplete="off">
+              <label for="bookingDetails" class="booking-detail-label">Дом и подъезд</label>
+              <input id="bookingDetails" class="booking-detail" placeholder="Например: 8, подъезд 2" maxlength="100" autocomplete="off">
               <div id="bookingStops"></div>
               <div class="booking-address" id="bookingToRow">
                 <button type="button" class="booking-address-button" id="bookingTo"><span class="booking-marker booking-marker-destination">Б</span><span class="booking-address-copy"><small>Куда</small><strong id="bookingToValue">Укажите адрес назначения</strong></span></button>
                 <button type="button" class="booking-icon-button" id="bookingSwap" aria-label="Поменять адреса местами"><i class="fas fa-exchange-alt" aria-hidden="true"></i></button>
               </div>
-              <label for="bookingNote" class="sr-only">Примечание</label>
-              <textarea id="bookingNote" rows="1" class="booking-detail booking-note" maxlength="400" placeholder="Примечание к заказу"></textarea>
               <p id="bookingLocationStatus" class="booking-status" role="status"></p>
-              <div class="booking-service-nav">
-                <button type="button" class="booking-icon-button booking-service-arrow" id="bookingServicesPrev" aria-label="Предыдущие услуги">‹</button>
-                <div id="bookingServices" class="booking-services" role="group" aria-label="Выберите услугу"></div>
-                <button type="button" class="booking-icon-button booking-service-arrow" id="bookingServicesNext" aria-label="Следующие услуги">›</button>
+              <div id="bookingServices" class="booking-service-groups">
+                <div id="bookingServiceTypes" class="booking-types" role="group" aria-label="Услуга">
+                  <button type="button" class="booking-service" id="bookingTaxiType" aria-pressed="true">Такси</button>
+                  <button type="button" class="booking-service" id="bookingMoreToggle" aria-expanded="false" aria-controls="bookingMoreServices">Ещё</button>
+                </div>
+                <div id="bookingCarCategories" class="booking-categories" role="group" aria-label="Категория автомобиля"></div>
+                <p id="bookingModeLabel" class="booking-mode" hidden></p>
+                <div id="bookingMoreServices" class="booking-more-services" role="group" aria-label="Другие услуги" hidden></div>
               </div>
               <p id="bookingServiceHelp" class="booking-help"></p>
               <label id="bookingPassengerCountField" class="booking-passenger-count" hidden>Количество пассажиров<input id="bookingPassengerCount" type="number" inputmode="numeric" min="1" max="8" step="1" value="5" required><small>Стоимость указана за автомобиль целиком.</small></label>
             </div>
             <div id="bookingPanels"></div>
+            <details id="bookingExtras" class="booking-extras"><summary>Пожелания</summary>
+              <label for="bookingNote" class="booking-detail-label">Примечание к заказу</label>
+              <textarea id="bookingNote" rows="2" class="booking-detail booking-note" maxlength="400" placeholder="Например: встречайте у второго подъезда"></textarea>
+            </details>
             <p id="bookingStatus" class="booking-status" role="alert"></p>
           </div>
         </section>
@@ -125,6 +133,30 @@ export function initBookingScreen({ preview = false } = {}) {
       const name = $(`${key}CustomerName`);
       if (name) name.closest('label').firstChild.textContent = 'Ваше имя (необязательно)';
       contact.firstElementChild.remove();
+      const phoneLabel = phone.closest('label');
+      const phoneDetails = document.createElement('details'); phoneDetails.className = 'booking-phone';
+      const summary = document.createElement('summary');
+      const caption = document.createElement('span'); caption.textContent = 'Телефон для связи';
+      const number = document.createElement('strong'); const edit = document.createElement('span'); edit.textContent = 'Изменить'; edit.className = 'booking-contact-edit';
+      summary.append(caption, number, edit); phoneDetails.append(summary, phoneLabel); fields.prepend(phoneDetails);
+      let previousValue;
+      const update = () => {
+        const value = phone.value.trim();
+        number.textContent = validPhone(value) ? value : 'Укажите номер';
+        edit.textContent = validPhone(value) ? 'Изменить' : 'Заполнить';
+        if (value !== previousValue && !phoneDetails.contains(document.activeElement)) phoneDetails.open = !validPhone(value);
+        if (!validPhone(value)) phoneDetails.open = true;
+        previousValue = value;
+      };
+      phone.addEventListener('input', () => { update(); refresh(); });
+      phoneDetails.addEventListener('toggle', () => { if (!phoneDetails.open && !validPhone(phone.value)) phoneDetails.open = true; });
+      contacts.set(key, { update, reveal: () => { phoneDetails.open = true; phone.focus(); } });
+      update();
+      if (name) {
+        const nameDetails = document.createElement('details'); nameDetails.className = 'booking-name';
+        const nameSummary = document.createElement('summary'); nameSummary.textContent = 'Ваше имя (необязательно)';
+        nameDetails.append(nameSummary, name.closest('label')); fields.append(nameDetails);
+      }
     }
   }
   $('taxiWishes').closest('section').classList.add('booking-source-hidden');
@@ -136,6 +168,8 @@ export function initBookingScreen({ preview = false } = {}) {
   // Keep ordering for somebody else as an optional details section.
   passengerSection.querySelector('button').textContent = 'Заказать другому человеку';
   passengerSection.querySelector('button').classList.add('booking-passenger-toggle');
+  $('bookingExtras').append(passengerSection);
+  for (const field of passengerSection.querySelectorAll('input, select, textarea')) field.setAttribute('form', 'taxiForm');
   const initialCityOptions = Array.from($('taxiCitySelect').options).map(option => option.value || 'Белоусовка');
   for (const city of new Set(initialCityOptions)) { const option = document.createElement('option'); option.value = city; $('bookingCityList').append(option); }
 
@@ -145,7 +179,10 @@ export function initBookingScreen({ preview = false } = {}) {
     button.setAttribute('aria-pressed', String(service.id === state.service.id));
     button.innerHTML = `<i class="fas fa-${service.icon}" aria-hidden="true"></i><span>${service.label}</span>`;
     button.addEventListener('click', () => selectService(service.id));
-    $('bookingServices').append(button);
+    const target = ['taxi', 'wagon', 'minivan'].includes(service.id) ? 'bookingCarCategories' : ['delivery', 'auction'].includes(service.id) ? 'bookingServiceTypes' : 'bookingMoreServices';
+    if (service.id === 'preorder') button.querySelector('span').textContent = 'Предзаказ';
+    if (target === 'bookingServiceTypes') $('bookingServiceTypes').insertBefore(button, $('bookingMoreToggle'));
+    else $(target).append(button);
   }
 
   const pointKey = (address, city) => `${normalizeCity(city || 'Белоусовка')}|${address.trim()}`.toLowerCase();
@@ -173,12 +210,12 @@ export function initBookingScreen({ preview = false } = {}) {
     });
   }
   function sync() {
-    if (state.service.id !== 'preorder') $('taxiDateTime').value = '';
+    if (state.mode !== 'preorder' || state.service.form !== 'taxi') $('taxiDateTime').value = '';
     const { house, entrance } = parseHouseDetails(state.details);
     setValue('taxiFrom', state.from.address); setValue('taxiTo', state.to.address);
     setValue('taxiHouse', house); setValue('taxiApt', entrance);
     setCity('taxiFromCitySelect', state.from.city); setCity('taxiCitySelect', state.to.city);
-    setValue('taxiWishes', serviceWishes(state.note, state.service));
+    setValue('taxiWishes', serviceWishes(state.note, state.service.form === 'taxi' ? BOOKING_SERVICES.find(item => item.id === state.category) : state.service));
     remember(state.from); remember(state.to);
     syncStops('additionalStops', true); syncStops('additionalStopsAuction', false);
     for (const key of ['auction', 'cargo', 'soberDriver']) {
@@ -223,13 +260,35 @@ export function initBookingScreen({ preview = false } = {}) {
   function changed() { state.revision++; sync(); void drawRoute(); }
 
   function selectService(id) {
-    state.service = BOOKING_SERVICES.find(service => service.id === id) || BOOKING_SERVICES[0];
+    const selected = BOOKING_SERVICES.find(service => service.id === id) || BOOKING_SERVICES[0];
+    if (['taxi', 'wagon', 'minivan'].includes(selected.id)) {
+      if (state.service.form !== 'taxi') state.mode = 'taxi';
+      state.category = selected.id;
+      state.service = BOOKING_SERVICES.find(service => service.id === state.mode) || BOOKING_SERVICES[0];
+    } else {
+      state.service = selected;
+      if (selected.form === 'taxi') state.mode = selected.id;
+    }
+    const taxi = state.service.form === 'taxi';
     state.channel = 'online';
     for (const [key, panel] of panels) panel.hidden = key !== state.service.form;
-    for (const button of $('bookingServices').children) button.setAttribute('aria-pressed', String(button.dataset.bookingService === state.service.id));
-    $('bookingPassengerCountField').hidden = id !== 'minivan';
-    $('bookingPassengerCount').disabled = id !== 'minivan';
-    const scheduled = id === 'preorder';
+    for (const button of $('bookingServices').querySelectorAll('[data-booking-service]')) {
+      const key = button.dataset.bookingService;
+      const pressed = ['taxi', 'wagon', 'minivan'].includes(key) ? taxi && key === state.category : key === state.service.id;
+      button.setAttribute('aria-pressed', String(pressed));
+    }
+    $('bookingTaxiType').setAttribute('aria-pressed', String(taxi));
+    $('bookingCarCategories').hidden = !taxi;
+    $('bookingMoreServices').hidden = true;
+    $('bookingMoreToggle').setAttribute('aria-expanded', 'false');
+    $('bookingMoreToggle').setAttribute('aria-pressed', String(!['taxi','delivery','auction'].includes(state.service.id)));
+    $('bookingModeLabel').hidden = !taxi || state.mode === 'taxi';
+    $('bookingModeLabel').textContent = state.mode === 'preorder' ? 'Предзаказ · выберите дату и время ниже' : 'Межгород · укажите город назначения';
+    const minivan = taxi && state.category === 'minivan';
+    $('bookingPassengerCountField').hidden = !minivan;
+    $('bookingPassengerCount').disabled = !minivan;
+    passengerSection.hidden = !taxi;
+    const scheduled = taxi && state.mode === 'preorder';
     preorderSection.hidden = !scheduled;
     $('taxiDateTime').required = scheduled;
     $('taxiDateTime').disabled = !scheduled;
@@ -237,12 +296,26 @@ export function initBookingScreen({ preview = false } = {}) {
       if ($('taxiDateTime').value) $('taxiDateTime').dataset.draft = $('taxiDateTime').value;
       $('taxiDateTime').value = '';
     } else {
-      $('taxiDateTime').value = $('taxiDateTime').dataset.draft || '';
+      $('taxiDateTime').value = $('taxiDateTime').value || $('taxiDateTime').dataset.draft || '';
       const local = new Date(Date.now() + 60000); local.setMinutes(local.getMinutes() - local.getTimezoneOffset());
       $('taxiDateTime').min = local.toISOString().slice(0, 16);
     }
-    $('bookingServiceHelp').textContent = ['wagon', 'minivan'].includes(id) ? `${categoryCaption(id)} к стоимости обычной поездки. Подбираем подходящий автомобиль.` : state.service.wish ? 'Пожелание увидят водитель и диспетчер. Подходящий автомобиль подтвердят при принятии заказа.' : id === 'intercity' ? 'Укажите населённый пункт назначения в поле «Куда».' : id === 'delivery' ? '«Откуда» — магазин или место получения, «Куда» — адрес доставки. Перечислите товары ниже.' : id === 'auction' ? 'Укажите свою цену. Водители предложат стоимость и время подачи — выберите подходящее предложение.' : !state.service.online ? 'Онлайн-заказ этой услуги пока недоступен.' : '';
+    const key = state.service.id;
+    $('bookingServiceHelp').textContent = taxi && ['wagon','minivan'].includes(state.category) ? categoryCaption(state.category) + ' к стоимости легкового автомобиля.' : key === 'delivery' ? 'Укажите место получения, адрес доставки и список товаров.' : key === 'auction' ? 'Предложите цену и выберите водителя из ответивших.' : !state.service.online ? 'Онлайн-заказ этой услуги пока недоступен.' : '';
+    contacts.get(state.service.form)?.update();
     changed();
+  }
+  function validPhone(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+    return digits.length >= 10 && digits.length <= 15;
+  }
+  function missingRoute() {
+    return !state.from.address || !state.from.city || (state.service.form !== 'assistance' && (!state.to.address || !state.to.city || state.stops.some(point => !point.address || !point.city)));
+  }
+  function renderMapStatus() {
+    // Public driver availability is not exposed by Firestore. Animation is not availability.
+    const message = 'Подбор водителя после заказа';
+    if (mapMessage.textContent !== message) mapMessage.textContent = message;
   }
   function activeCard() {
     const card = $(`${state.service.form}-online-order-panel`);
@@ -253,6 +326,9 @@ export function initBookingScreen({ preview = false } = {}) {
     const hasCard = activeCard();
     $('bookingCommon').hidden = hasCard;
     $('bookingFooter').hidden = hasCard;
+    $('bookingExtras').hidden = hasCard;
+    $('bookingExtras').inert = Boolean(submitting);
+    contacts.get(service.form)?.update();
     const contact = panels.get(service.form).querySelector('.booking-contact');
     if (contact) contact.hidden = !service.online;
     $('bookingSubmit').hidden = false;
@@ -262,7 +338,7 @@ export function initBookingScreen({ preview = false } = {}) {
     $('bookingCommon').inert = Boolean(busy);
     $('bookingPanels').inert = Boolean(busy && !hasCard);
     $('bookingSubmit').disabled = !service.online || busy || !onlineButton || onlineButton.classList.contains('hidden') || overlay.classList.contains('booking-picking');
-    $('bookingSubmit').textContent = !service.online ? 'Онлайн-заказ пока недоступен' : submitting ? 'Оформляем…' : service.form === 'auction' ? 'Найти водителя' : 'Заказать онлайн';
+    $('bookingSubmit').textContent = !service.online ? 'Онлайн-заказ пока недоступен' : submitting ? 'Оформляем…' : missingRoute() ? 'Указать маршрут' : !validPhone($(`${service.form}CustomerPhone`)?.value) ? 'Указать телефон' : service.form === 'auction' ? 'Найти водителя' : 'Заказать онлайн';
     const full = state.from.address && (service.form === 'assistance' || state.to.address);
     let price = service.form === 'taxi' ? $('taxiPriceEstimate').textContent : service.form === 'delivery' ? $('deliveryPriceEstimate').textContent : service.form === 'cargo' ? $('cargoTotalPrice').textContent : service.form === 'auction' ? ($('auctionPrice').value ? `${$('auctionPrice').value} ₸` : 'Ваша цена') : service.form === 'assistance' ? 'от 1500 тг' : 'от 3800 тг';
     $('bookingPrice').textContent = full ? price : 'Укажите адрес';
@@ -280,23 +356,31 @@ export function initBookingScreen({ preview = false } = {}) {
     observer.observe($(`${key}-online-order-button`), { attributes: true, attributeFilter: ['disabled', 'class'] });
   }
 
-  function showError(message, focus) { sheet.expand(); $('bookingStatus').textContent = message; focus?.focus(); return false; }
+  function revealField(field) {
+    for (let node = field?.parentElement; node && node !== overlay; node = node.parentElement) if (node.tagName === 'DETAILS') node.open = true;
+  }
+  function showError(message, focus) { sheet.expand(); $('bookingStatus').textContent = message; revealField(focus); focus?.focus(); return false; }
   function validate() {
     $('bookingStatus').textContent = '';
     if (!state.from.address || !state.from.city) { openPicker('from'); return showError('Укажите адрес и населённый пункт отправления.'); }
     if (state.service.form !== 'assistance' && (!state.to.address || !state.to.city)) { openPicker('to'); return showError('Укажите адрес и населённый пункт назначения.'); }
     const missing = state.stops.findIndex(point => !point.address || !point.city);
     if (state.service.form !== 'assistance' && missing >= 0) { openPicker(missing); return showError('Заполните остановку или удалите её.'); }
-    if (state.service.id === 'preorder' && (!Number.isFinite(new Date($('taxiDateTime').value).getTime()) || new Date($('taxiDateTime').value) <= new Date())) return showError('Выберите будущую дату и время поездки.', $('taxiDateTime'));
-    if (state.service.id === 'minivan' && (!Number.isInteger(state.passengerCount) || state.passengerCount < 1 || state.passengerCount > 8)) return showError('Укажите от 1 до 8 пассажиров.', $('bookingPassengerCount'));
+    if (state.service.form === 'taxi' && state.mode === 'preorder' && (!Number.isFinite(new Date($('taxiDateTime').value).getTime()) || new Date($('taxiDateTime').value) <= new Date())) return showError('Выберите будущую дату и время поездки.', $('taxiDateTime'));
+    if (state.service.form === 'taxi' && state.category === 'minivan' && (!Number.isInteger(state.passengerCount) || state.passengerCount < 1 || state.passengerCount > 8)) return showError('Укажите от 1 до 8 пассажиров.', $('bookingPassengerCount'));
     const form = $(`${state.service.form}Form`);
     if (state.channel === 'online') {
       if (addressWithCity(state.from, state.details).length > 230 || addressWithCity(state.to).length > 230) return showError('Сократите адрес до 230 символов. Дополнительные указания можно написать в примечании.');
       if (state.service.form === 'delivery' && $('deliveryStore').value.length > 160) return showError('Сократите место получения до 160 символов.');
       if (state.service.form === 'delivery' && $('deliveryItems').value.length > 700) return showError('Сократите список товаров до 700 символов.', $('deliveryItems'));
     }
+    const phone = $(`${state.service.form}CustomerPhone`);
+    if (state.service.online && !validPhone(phone?.value)) {
+      contacts.get(state.service.form)?.reveal();
+      return showError('Укажите корректный номер телефона.', phone);
+    }
     const invalid = Array.from(form.elements).find(input => !input.disabled && !input.closest('.booking-source-hidden') && !input.closest('[hidden]') && typeof input.checkValidity === 'function' && !input.checkValidity());
-    if (invalid) { sheet.expand(); invalid.reportValidity(); return false; }
+    if (invalid) { sheet.expand(); revealField(invalid); invalid.reportValidity(); return false; }
     return true;
   }
   async function submit() {
@@ -337,6 +421,8 @@ export function initBookingScreen({ preview = false } = {}) {
   function applyPoint(point) {
     if (!point.address) return;
     if (pickerTarget === 'from') {
+      originRevision++; locating = false;
+      $('bookingLocationStatus').textContent = 'Место подачи выбрано. Проверьте дом и подъезд.';
       state.from = point;
       // House is kept once, in the shared detail field for the origin.
       state.details = point.house ? point.house : '';
@@ -423,38 +509,52 @@ export function initBookingScreen({ preview = false } = {}) {
     } finally { $('bookingPickConfirm').textContent = 'Выбрать эту точку'; }
   }
 
-  async function onLocation(position) {
-    if (!opened || !locating || state.revision !== locationRevision) return;
-    locating = false;
-    const revision = state.revision;
+  async function onLocation(position, request = locationRequest) {
+    if (!opened || !locating || request !== locationRequest || originRevision !== locationRevision) return;
+    const revision = originRevision;
     const { latitude: lat, longitude: lon, accuracy } = position.coords;
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
-    if (accuracy > 200) { $('bookingLocationStatus').textContent = 'Местоположение определено приблизительно. Уточните точку подачи на карте или введите адрес.'; return; }
-    $('bookingLocationStatus').textContent = 'Определяем населённый пункт и улицу…';
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) { locationError(request); return; }
+    if (accuracy > 200) {
+      locating = false;
+      $('bookingLocationStatus').textContent = 'Местоположение приблизительное. Уточните место подачи.';
+      return;
+    }
+    $('bookingLocationStatus').textContent = 'Определяем улицу и дом…';
     try {
       const results = await geocoder.reverse(lat, lon);
-      if (!opened || revision !== state.revision) return;
+      if (!opened || request !== locationRequest || revision !== originRevision) return;
+      locating = false;
       const point = results[0];
       if (!point?.city) throw new Error('No locality');
       if (point.isSettlement) {
         state.from = { ...emptyPoint(), city: point.city };
         if (!state.to.address) state.to.city = point.city;
-        $('bookingLocationStatus').textContent = `Определён населённый пункт: ${point.city}. Укажите улицу и дом.`;
+        $('bookingLocationStatus').textContent = point.city + ' определена. Укажите улицу и дом.';
         changed(); return;
       }
       state.from = { ...point, lat, lon, address: point.street || point.address };
       state.details = point.house || '';
       if (!state.to.address) state.to.city = point.city;
-      $('bookingLocationStatus').textContent = 'Адрес определён. Проверьте дом и уточните подъезд.';
+      $('bookingLocationStatus').textContent = 'Адрес определён. Проверьте дом и подъезд.';
       changed(); window.simMap?.setView([lat, lon], 16);
-    } catch { if (revision === state.revision) $('bookingLocationStatus').textContent = 'Точка найдена, но адрес определить не удалось. Укажите улицу и населённый пункт вручную.'; }
+    } catch {
+      if (opened && request === locationRequest && revision === originRevision) {
+        locating = false;
+        $('bookingLocationStatus').textContent = 'Точка найдена. Укажите улицу и дом вручную.';
+      }
+    }
   }
-  function locationError() { locating = false; if (opened) $('bookingLocationStatus').textContent = 'Местоположение недоступно. Укажите адрес вручную или выберите точку на карте.'; }
+  function locationError(request = locationRequest) {
+    if (!opened || !locating || request !== locationRequest || originRevision !== locationRevision) return;
+    locating = false;
+    $('bookingLocationStatus').textContent = state.from.address ? 'Сохранён выбранный адрес подачи. Проверьте его.' : 'Геолокация недоступна. Укажите адрес или точку на карте.';
+  }
   function locate() {
-    if (!navigator.geolocation) { locationError(); return; }
-    locating = true; locationRevision = state.revision;
+    locating = true; locationRevision = originRevision;
+    const request = ++locationRequest;
+    if (!navigator.geolocation) { locationError(request); return; }
     $('bookingLocationStatus').textContent = 'Определяем местоположение…';
-    navigator.geolocation.getCurrentPosition(onLocation, locationError, { enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 });
+    navigator.geolocation.getCurrentPosition(position => void onLocation(position, request), () => locationError(request), { enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 });
   }
   async function coordinates(address, city) {
     const key = pointKey(address, city); if (pointCache.has(key)) return pointCache.get(key);
@@ -512,7 +612,9 @@ export function initBookingScreen({ preview = false } = {}) {
       returnFocus = document.activeElement; opened = true;
       overlay.classList.add('active'); overlay.setAttribute('aria-hidden', 'false'); document.body.classList.add('booking-open');
       selectService(id);
-      if (!initialLocationRequested && !state.from.address) { initialLocationRequested = true; locating = true; locationRevision = state.revision; }
+      if (!initialLocationRequested && !state.from.address) { initialLocationRequested = true; locate(); }
+      $('bookingScroll').scrollTop = 0;
+      renderMapStatus();
       setTimeout(() => {
         if (!opened) return;
         void window.initSimulationMap().then(() => {
@@ -526,7 +628,7 @@ export function initBookingScreen({ preview = false } = {}) {
   }
   function close() {
     if (preview) return;
-    opened = false; locating = false; state.revision++; searchRevision++; pickerRevision++; routeRevision++;
+    opened = false; locating = false; locationRequest++; state.revision++; searchRevision++; pickerRevision++; routeRevision++;
     clearRoute(); closePicker();
     originalClose('mapModal'); document.body.classList.remove('booking-open');
     returnFocus?.focus();
@@ -543,10 +645,10 @@ export function initBookingScreen({ preview = false } = {}) {
   };
   window.openMapModal = () => open();
   window.bookingScreen = {
-    onLocation, locationError, coordinates,
+    onLocation, locationError, coordinates, renderMapStatus,
     getRouteDistance: async points => (await getRoute(points))?.distance ?? null,
     isOpen: () => opened, isPreview: () => preview,
-    vehicleRequest: () => ({ vehicleCategory: categoryForService(state.service.id), passengerCount: state.service.id === 'minivan' ? state.passengerCount : 1 }),
+    vehicleRequest: () => ({ vehicleCategory: categoryForService(state.service.form === 'taxi' ? state.category : 'taxi'), passengerCount: state.service.form === 'taxi' && state.category === 'minivan' ? state.passengerCount : 1 }),
     auctionData: () => ({ stops: state.stops.map(p => addressWithCity(p)), wishes: state.note }),
     deliveryData: () => opened && state.service.form === 'delivery' ? { stops: state.stops.map(p => addressWithCity(p)), wishes: state.note } : null
   };
@@ -555,6 +657,7 @@ export function initBookingScreen({ preview = false } = {}) {
       const match = value.match(/\s*\(([^()]+)\)\s*$/u);
       return { ...emptyPoint(), address: match ? value.slice(0, match.index) : value, city: match ? normalizeCity(match[1]) : 'Белоусовка' };
     };
+    originRevision++; locating = false; state.mode = 'taxi';
     state.from = readPoint(from); state.to = readPoint(to); state.details = ''; state.stops = [];
     originalClose('historyModal'); open('taxi'); changed();
   };
@@ -564,11 +667,11 @@ export function initBookingScreen({ preview = false } = {}) {
   $('bookingLocate').onclick = locate;
   $('bookingFrom').onclick = () => openPicker('from'); $('bookingCity').onclick = () => { openPicker('from'); $('bookingSearchCity').focus(); };
   $('bookingTo').onclick = () => openPicker('to');
-  $('bookingDetails').oninput = event => { state.details = event.target.value; state.revision++; sync(); };
+  $('bookingDetails').oninput = event => { state.details = event.target.value; originRevision++; locating = false; state.revision++; sync(); };
   $('bookingPassengerCount').oninput = event => { state.passengerCount = Number(event.target.value); };
   $('bookingNote').oninput = event => { state.note = event.target.value; state.revision++; sync(); };
   $('bookingAddStop').onclick = () => { if (state.stops.length >= 3) return; state.stops.push({ ...emptyPoint(), city: state.from.city }); changed(); openPicker(state.stops.length - 1); };
-  $('bookingSwap').onclick = () => { const formerFrom = { ...state.from, address: [state.from.address, state.details].filter(Boolean).join(', ') }; state.from = state.to; state.to = formerFrom; state.details = ''; changed(); };
+  $('bookingSwap').onclick = () => { originRevision++; locating = false; const formerFrom = { ...state.from, address: [state.from.address, state.details].filter(Boolean).join(', ') }; state.from = state.to; state.to = formerFrom; state.details = ''; changed(); };
   $('bookingSubmit').onclick = () => submit();
   $('auctionPrice').addEventListener('input', refresh);
   $('bookingPickerBack').onclick = closePicker;
@@ -578,7 +681,12 @@ export function initBookingScreen({ preview = false } = {}) {
   $('bookingManualAddress').onclick = manualAddress;
   $('bookingOnMap').onclick = pickOnMap;
   $('bookingPickConfirm').onclick = confirmMapPoint;
-  for (const [id, direction] of [['bookingServicesPrev', -1], ['bookingServicesNext', 1]]) $(id).onclick = () => $('bookingServices').scrollBy({ left: direction * 220, behavior: 'smooth' });
+  $('bookingTaxiType').onclick = () => { state.mode = 'taxi'; selectService(state.category); };
+  $('bookingMoreToggle').onclick = () => {
+    const open = $('bookingMoreServices').hidden;
+    $('bookingMoreServices').hidden = !open;
+    $('bookingMoreToggle').setAttribute('aria-expanded', String(open));
+  };
   document.addEventListener('keydown', event => {
     if (!opened || $('alertModal')) return;
     if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); if (!$('bookingPicker').hidden || overlay.classList.contains('booking-picking')) closePicker(); else close(); }

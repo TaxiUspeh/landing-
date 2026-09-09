@@ -22,9 +22,65 @@ select('minivan'); assert.equal(get('bookingPassengerCountField').hidden, false)
 get('bookingPassengerCount').value = '7'; get('bookingPassengerCount').dispatchEvent(new window.Event('input'));
 assert.equal(window.bookingScreen.vehicleRequest().passengerCount, 7);
 assert.ok(get('taxiCustomerPhone').closest('label').textContent.trim().length);
-assert.equal(get('bookingSubmit').hidden, false); assert.equal(get('bookingWhatsapp').hidden, false);
+assert.equal(get('bookingSubmit').hidden, false); assert.equal(get('bookingWhatsapp'), null);
 select('taxi'); assert.equal(window.bookingScreen.vehicleRequest().passengerCount, 1); assert.equal(get('bookingPassengerCountField').hidden, true);
-select('auction'); assert.equal(get('bookingWhatsapp').hidden, true);
+select('auction'); assert.equal(get('bookingWhatsapp'), null);
+
+// Gesture bounds use the footer's measured height, including wrapped text.
+window.innerWidth = 360; window.innerHeight = 760;
+const overlay = get('mapModal'), grip = get('bookingGrip'), scroll = get('bookingScroll');
+get('bookingBody').getBoundingClientRect = () => ({ height:704 });
+get('bookingFooter').getBoundingClientRect = () => ({ height:130 });
+grip.getBoundingClientRect = () => ({ height:44 });
+get('bookingMapHost').getBoundingClientRect = () => ({ height:overlay.classList.contains('booking-collapsed') ? 530 : 183 });
+window.dispatchEvent(new window.Event('resize'));
+get('bookingDetails').value = '20, подъезд 4'; get('bookingDetails').dispatchEvent(new window.Event('input'));
+get('taxiCustomerPhone').value = '+7 700 000 00 00';
+function pointer(type, y) {
+ const event = new window.Event(type, { bubbles:true, cancelable:true });
+ Object.assign(event, { pointerId:1, clientY:y, isPrimary:true, button:0 }); grip.dispatchEvent(event);
+}
+pointer('pointerdown',200); pointer('pointermove',1100);
+assert.equal(get('bookingBody').style.getPropertyValue('--booking-map-size'), '530px');
+pointer('pointerup',1100);
+assert.equal(grip.getAttribute('aria-expanded'),'false'); assert.equal(scroll.inert,true);
+assert.equal(get('bookingFooter').parentElement,get('bookingBody'));
+assert.equal(get('bookingFooter').hidden,false);
+grip.dispatchEvent(new window.MouseEvent('click',{detail:1}));
+assert.equal(grip.getAttribute('aria-expanded'),'false', 'synthetic click must not undo the drag');
+pointer('pointerdown',590); pointer('pointermove',210); pointer('pointerup',210);
+assert.equal(grip.getAttribute('aria-expanded'),'true'); assert.equal(scroll.inert,false);
+assert.equal(get('bookingDetails').value,'20, подъезд 4');
+assert.equal(get('taxiCustomerPhone').value,'+7 700 000 00 00');
+pointer('pointerdown',200); pointer('pointermove',650); pointer('pointercancel',650);
+assert.equal(grip.getAttribute('aria-expanded'),'true');
+get('taxiCustomerPhone').focus(); grip.click();
+assert.equal(document.activeElement,grip); assert.equal(scroll.inert,true);
+window.innerWidth = 1024; window.dispatchEvent(new window.Event('resize'));
+assert.equal(grip.hidden,true); assert.equal(scroll.inert,false);
+window.innerWidth = 360; window.dispatchEvent(new window.Event('resize'));
+assert.equal(grip.hidden,false); grip.click();
+console.log('PASS: drag bounds, cancelled gestures, keyboard, retained fields and desktop resize');
+
+// A real form submission (including Enter) must never reach the legacy WhatsApp handler.
+select('taxi');
+window.repeatOrder('Жукова, 20 (Белоусовка)', 'Карла Маркса, 76 (Белоусовка)');
+get('taxiCustomerPhone').value = '+7 700 000 00 00';
+let onlineRequests = 0, legacyRequests = 0;
+get('taxi-online-order-button').addEventListener('click', () => onlineRequests++);
+get('taxiForm').addEventListener('submit', () => legacyRequests++);
+const submitEvent = new window.Event('submit', { bubbles:true, cancelable:true });
+get('taxiForm').dispatchEvent(submitEvent);
+assert.equal(submitEvent.defaultPrevented, true);
+assert.equal(onlineRequests, 1); assert.equal(legacyRequests, 0);
+for (const service of ['cargo', 'soberDriver', 'assistance']) {
+ select(service);
+ assert.equal(get('bookingSubmit').disabled, true);
+ assert.equal(get('bookingSubmit').textContent, 'Онлайн-заказ пока недоступен');
+ assert.equal(get('bookingWhatsapp'), null);
+}
+console.log('PASS: online-only booking and Enter; unavailable services are explicit');
+
 const controls = createVehicleControls(); document.body.append(controls.element);
 const checks = controls.element.querySelectorAll('input[type=checkbox]'); assert.equal(checks[0].disabled, true); assert.equal(checks[0].checked, true);
 checks[2].checked = true; checks[2].dispatchEvent(new window.Event('change'));
@@ -41,7 +97,7 @@ rate.value='101'; assert.throws(()=>financial.read()); rate.value='0'; assert.eq
 mode.value='unlimited'; mode.dispatchEvent(new window.Event('change')); assert.equal(limit.disabled,true); assert.equal(financial.read().debtLimit,0);
 financial.reset(); assert.equal(financial.read().commissionRate,20); assert.equal(financial.read().debtMode,'none');
 console.log('PASS: editable finance controls, limits and defaults');
-await new Promise(resolve => setTimeout(resolve, 200)); dom.window.close();
+await new Promise(resolve => setTimeout(resolve, 1100)); dom.window.close();
 console.log('PASS: category labels, passenger field, channels and dispatcher profile controls');
 const dispatcher = new JSDOM(await readFile('../../dispatcher.html', 'utf8'));
 const source = await readFile('../../dispatcher.js', 'utf8');

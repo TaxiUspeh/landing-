@@ -1,4 +1,5 @@
-import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=53';
+import { initDriverCabinet } from './driver-cabinet.js?v=55';
+import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=53';
 import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=52';
 import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=53';
 import { auth, db, googleProvider } from './firebase-config.js';
@@ -136,6 +137,18 @@ const elements = {
     newOrderAlertClose: document.getElementById('driver-new-order-alert-close'),
     message: document.getElementById('driver-auth-message')
 };
+
+const cabinet = initDriverCabinet({
+    onViewChange(view) {
+        dispatcherChatExpanded = view === 'chat';
+        if (dispatcherChatExpanded) dispatcherChatHasNewReply = false;
+        updateDriverChatControls();
+    },
+    onFilterChange(filter) { ordersTab = filter; renderOnlineOrders(); }
+});
+let ordersTab = 'new';
+let previousActiveOrderIds = new Set();
+const orderDisclosureState = new Map();
 
 let authActionInProgress = false;
 let orderActionInProgress = false;
@@ -491,7 +504,14 @@ function showNewOrderAlert({ title, route, price, orderId = '' }) {
 }
 
 function scrollToOrder(orderId = '') {
+    const match = assignedOrders.find(order => order.id === orderId);
+    const nextTab = match ? (ACTIVE_ORDER_STATUSES.has(match.status) ? 'current' : 'history') : 'new';
+    orderDisclosureState.set(orderId, true);
+    cabinet?.open('orders', { scroll:false });
+    if (ordersTab !== nextTab) { ordersTab = nextTab; renderOnlineOrders(); }
     const orderCard = orderId ? document.getElementById(`driver-order-${orderId}`) : null;
+    const disclosure = orderCard?.querySelector('.cabinet-order-disclosure');
+    if (disclosure) disclosure.open = true;
     const target = orderCard || elements.ordersSection;
     if (!target) return;
     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -627,8 +647,8 @@ function scrollRequestedOrderIntoView() {
         requestedOrderHandled = true;
         return;
     }
-    const orderCard = document.getElementById(`driver-order-${requestedOrderId}`);
-    if (!orderCard) return;
+    const knownOrder = [...assignedOrders,...openOrders,...auctionOrders].some(order => order.id === requestedOrderId);
+    if (!knownOrder) return;
     requestedOrderHandled = true;
     requestAnimationFrame(() => scrollToOrder(requestedOrderId));
 }
@@ -707,6 +727,7 @@ function showDispatcherChatMessage(text, success = false) {
 }
 
 function updateDriverChatControls() {
+    cabinet?.updateUnread(dispatcherChatHasNewReply);
     setHidden(elements.dispatcherChatContent, !dispatcherChatExpanded);
     if (elements.dispatcherChatToggle) {
         elements.dispatcherChatToggle.setAttribute('aria-expanded', String(dispatcherChatExpanded));
@@ -730,7 +751,8 @@ function updateMobilePrimaryAction() {
     const action = elements.mobilePrimaryAction;
     if (!action || !elements.mobilePrimaryIcon || !elements.mobilePrimaryLabel) return;
 
-    const hasDriverCabinet = Boolean(currentUser && currentDriver && currentDriverId);
+    const hasDriverCabinet = Boolean(currentUser && currentDriver && currentDriverId && !elements.profile.classList.contains('hidden'));
+    cabinet?.setEnabled(hasDriverCabinet);
     action.dataset.driverMobileAction = hasDriverCabinet ? 'chat' : 'documents';
     action.className = hasDriverCabinet
         ? 'bg-sky-600 hover:bg-sky-700 text-white flex-grow min-w-0 py-3 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-1'
@@ -797,6 +819,7 @@ async function shareTaxiUspehWorkLink() {
 
 function openDispatcherChatFromMobile() {
     if (!currentUser || !currentDriver || !currentDriverId) return;
+    cabinet?.open('chat');
     dispatcherChatExpanded = true;
     dispatcherChatHasNewReply = false;
     updateDriverChatControls();
@@ -1235,6 +1258,7 @@ function renderWorkStatus(driver, account, state = currentDriverState) {
         iconClass = 'flex-shrink-0 w-11 h-11 rounded-xl bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 flex items-center justify-center';
     }
 
+    elements.workStatusCard.dataset.brief = String(eligible && status === 'available' && assignedOrdersLoaded);
     elements.workStatusCard.className = containerClass;
     elements.workStatusIcon.className = iconClass;
     elements.workStatusIcon.querySelector('i').className = icon;
@@ -1406,6 +1430,7 @@ function stopOrderWatches() {
 }
 
 function stopProfileWatches() {
+    ordersTab = 'new'; previousActiveOrderIds.clear(); orderDisclosureState.clear();
     if (unsubscribeAccount) unsubscribeAccount();
     if (unsubscribeDriver) unsubscribeDriver();
     if (unsubscribeDriverState) unsubscribeDriverState();
@@ -1508,10 +1533,10 @@ function appendAuctionControls(actions, order) {
     const form = document.createElement('form'); form.className = 'auction-driver-form';
     const status = createText('p', 'text-sm font-bold', active ? `Ваше предложение: ${formatMoney(own.priceAmount)}, подача ${own.arrivalMinutes} мин. Ожидайте выбора клиента.` : 'Предложите цену и время подачи. Заказ появится в ваших поездках после выбора клиентом.');
     const priceLabel = createText('label', '', 'Ваша цена, ₸');
-    const price = document.createElement('input'); price.type = 'number'; price.inputMode = 'numeric'; price.min = '500'; price.max = '1000000'; price.step = '1'; price.required = true; price.value = draft.price;
+    const price = document.createElement('input'); price.dataset.orderControl = 'offer-price'; price.type = 'number'; price.inputMode = 'numeric'; price.min = '500'; price.max = '1000000'; price.step = '1'; price.required = true; price.value = draft.price;
     price.addEventListener('input', () => { draft.price = price.value; }); priceLabel.append(price);
     const minutesLabel = createText('label', '', 'Через сколько минут подъедете');
-    const minutes = document.createElement('input'); minutes.type = 'number'; minutes.inputMode = 'numeric'; minutes.min = '1'; minutes.max = '120'; minutes.step = '1'; minutes.required = true; minutes.value = draft.minutes;
+    const minutes = document.createElement('input'); minutes.dataset.orderControl = 'offer-minutes'; minutes.type = 'number'; minutes.inputMode = 'numeric'; minutes.min = '1'; minutes.max = '120'; minutes.step = '1'; minutes.required = true; minutes.value = draft.minutes;
     minutes.addEventListener('input', () => { draft.minutes = minutes.value; }); minutesLabel.append(minutes);
     const send = createText('button', 'auction-primary', active ? 'Обновить предложение' : 'Предложить свою цену'); send.type = 'submit';
     const same = createText('button', 'auction-secondary', `Поеду за ${formatMoney(order.proposedPrice)}`); same.type = 'button';
@@ -1567,13 +1592,12 @@ async function withdrawAuctionOffer(offer) {
     finally { orderActionInProgress = false; renderOnlineOrders(); }
 }
 
-function createOrderCard(order, assigned) {
+function createOrderCard(order, assigned, archived = false) {
     const card = document.createElement('article');
     card.id = `driver-order-${order.id}`;
     card.dataset.orderId = order.id;
-    card.className = assigned
-        ? 'rounded-xl border-2 border-blue-300 dark:border-blue-700 bg-blue-50/70 dark:bg-blue-950/30 p-3'
-        : 'rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3';
+    card.className = 'cabinet-order-card';
+    card.dataset.assigned = String(assigned && !archived);
 
     const header = document.createElement('div');
     header.className = 'flex items-start justify-between gap-2';
@@ -1587,19 +1611,26 @@ function createOrderCard(order, assigned) {
     );
     header.append(title, badge);
 
-    const service = createText('p', 'mt-2 text-[11px] font-extrabold uppercase tracking-wide text-blue-700 dark:text-blue-300', orderServiceLabel(order));
-    const route = createText('p', 'mt-2 text-sm font-bold break-words', orderRoute(order));
-    const price = createText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', order.priceText || 'Цена уточняется');
-    card.append(header, service, route, price);
+    const service = createText('p', 'cabinet-service', orderServiceLabel(order));
+    const route = createText('p', 'cabinet-order-route', orderRoute(order));
+    const price = createText('p', 'cabinet-price', order.priceText || 'Цена уточняется');
+    const compactHeading = document.createElement('div'); compactHeading.className = 'cabinet-order-heading';
+    compactHeading.append(service, price); card.append(compactHeading, route);
+    const primaryActions = document.createElement('div'); card.append(primaryActions);
+    const disclosure = document.createElement('details'); disclosure.className = 'cabinet-order-disclosure';
+    disclosure.open = orderDisclosureState.get(order.id) ?? (assigned && !archived);
+    const summary = createText('summary', '', assigned ? orderStatusLabel(order.status) : 'Подробнее и действия');
+    const body = document.createElement('div'); body.append(header);
+    disclosure.append(summary, body); card.append(disclosure);
 
     const serviceDetails = orderServiceDetailsText(order);
     if (serviceDetails) {
-        card.append(createText('p', 'mt-2 rounded-lg bg-slate-100 p-2 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200', serviceDetails));
+        body.append(createText('p', 'mt-2 rounded-lg bg-slate-100 p-2 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200', serviceDetails));
     }
 
     const cancellationPending = assigned && order.cancellationRequestStatus === 'pending';
-    if (cancellationPending) {
-        card.append(createText(
+    if (cancellationPending && !archived) {
+        primaryActions.append(createText(
             'p',
             'mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs font-bold text-amber-900 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-100',
             `Клиент просит отменить заказ: ${CLIENT_CANCELLATION_REASON_LABELS[order.cancellationReason] || 'причина не указана'}. Ожидайте решения диспетчера и не продолжайте маршрут.`
@@ -1607,15 +1638,20 @@ function createOrderCard(order, assigned) {
     }
 
     if (Array.isArray(order.stops) && order.stops.length) {
-        card.append(createText('p', 'mt-2 text-xs font-semibold text-blue-700 dark:text-blue-300', 'Маршрут включает промежуточные остановки.'));
+        body.append(createText('p', 'mt-2 text-xs font-semibold text-blue-700 dark:text-blue-300', 'Маршрут включает промежуточные остановки.'));
     }
     if (order.scheduledFor) {
-        card.append(createText('p', 'mt-1 text-xs text-gray-600 dark:text-gray-300', `Время: ${order.scheduledFor.replace('T', ' ')}`));
+        body.append(createText('p', 'mt-1 text-xs text-gray-600 dark:text-gray-300', `Время: ${order.scheduledFor.replace('T', ' ')}`));
     }
     if (order.wishes) {
-        card.append(createText('p', 'mt-1 text-xs text-gray-600 dark:text-gray-300', `Пожелания: ${order.wishes}`));
+        body.append(createText('p', 'mt-1 text-xs text-gray-600 dark:text-gray-300', `Пожелания: ${order.wishes}`));
     }
 
+    if (archived) {
+        if (Number.isFinite(order.commissionAmount)) body.append(createText('p', 'mt-2 text-sm', `Списанная комиссия: ${formatMoney(order.commissionAmount)}`));
+        if (order.status === 'cancelled') body.append(createText('p', 'mt-2 text-sm', 'Заказ отменён.'));
+        return card;
+    }
     const actions = document.createElement('div');
     actions.className = 'mt-3 flex flex-wrap gap-2';
     const navigation = document.createElement('a');
@@ -1632,7 +1668,8 @@ function createOrderCard(order, assigned) {
         const acceptButton = document.createElement('button');
         acceptButton.type = 'button';
         acceptButton.className = 'rounded-lg bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-xs font-extrabold';
-        acceptButton.textContent = 'Принять';
+        acceptButton.textContent = 'Принять заказ';
+        acceptButton.classList.add('cabinet-order-primary'); acceptButton.dataset.orderControl = 'accept';
         const funding = fundingFor(currentDriver, Number(order.priceAmount));
         actions.append(createText('p', 'w-full text-xs font-bold', funding.allowed ? `Ваша комиссия: ${funding.rate}% · ${formatMoney(funding.amount)}` : funding.reason));
         acceptButton.disabled = orderActionInProgress || !currentCanTakeOrders || !funding.allowed;
@@ -1653,7 +1690,8 @@ function createOrderCard(order, assigned) {
             statusButton.textContent = next[1];
             statusButton.disabled = orderActionInProgress;
             statusButton.addEventListener('click', () => advanceOrder(order.id, order.status, next[0]));
-            actions.append(statusButton);
+            statusButton.classList.add('cabinet-order-primary'); statusButton.dataset.orderControl = 'advance';
+            primaryActions.append(statusButton);
         }
 
         if (!cancellationPending && REQUEUEABLE_ORDER_STATUSES.has(order.status)) {
@@ -1671,11 +1709,16 @@ function createOrderCard(order, assigned) {
             requeueButton.textContent = 'Вернуть в поиск';
             requeueButton.disabled = orderActionInProgress;
             requeueButton.addEventListener('click', () => returnOrderToSearch(order.id, order.status, requeueReason.value));
-            actions.append(requeueReason, requeueButton);
+            requeueReason.setAttribute('aria-label', 'Причина возврата заказа');
+            requeueReason.dataset.orderControl = 'requeue-reason';
+            requeueButton.dataset.orderControl = 'requeue';
+            const cancel = document.createElement('details'); cancel.className = 'cabinet-cancel';
+            const cancelBody = document.createElement('div'); cancelBody.append(requeueReason, requeueButton);
+            cancel.append(createText('summary', '', 'Проблема с поездкой'), cancelBody); actions.append(cancel);
         }
     }
 
-    card.append(actions);
+    body.append(actions);
     return card;
 }
 
@@ -1702,8 +1745,7 @@ async function loadOrderContact(orderId, contactElement, actionsElement) {
 
 function renderOnlineOrders() {
     if (!elements.ordersList) return;
-    const financeInfo = document.getElementById('driver-finance-summary');
-    if (financeInfo && currentDriver) financeInfo.textContent = financeSummary(currentDriver, reservedCommission(assignedOrders));
+    if (currentDriver) cabinet?.updateFinance(currentDriver, reservedCommission(assignedOrders));
     const ready = assignedOrdersLoaded && (!currentCanTakeOrders || openOrdersLoaded);
     if (!ready) {
         setHidden(elements.ordersLoading, false);
@@ -1712,45 +1754,53 @@ function renderOnlineOrders() {
         updateOrdersPageTitle();
         return;
     }
-    const assignedActive = assignedOrders
-        .filter((order) => ACTIVE_ORDER_STATUSES.has(order.status))
-        .sort((a, b) => createdAtMillis(b) - createdAtMillis(a));
-    const available = currentCanTakeOrders
-        ? [...openOrders, ...auctionOrders].filter(order => driverCanServeOrder(currentDriver, order)).sort((a, b) => createdAtMillis(a) - createdAtMillis(b))
-        : [];
-    const allVisible = [
-        ...assignedActive.map((order) => [order, true]),
-        ...available.map((order) => [order, false])
-    ];
-
-    elements.ordersList.replaceChildren();
-    for (const [order, assigned] of allVisible) {
-        elements.ordersList.append(createOrderCard(order, assigned));
+    // Capture open rows, drafts and focus before replacing a realtime snapshot.
+    const focusedCard = document.activeElement?.closest('[data-order-id]');
+    const focusedKey = document.activeElement?.dataset.orderControl;
+    const focusedId = focusedCard?.dataset.orderId;
+    const fieldValues = new Map();
+    for (const card of elements.ordersList.children) {
+        orderDisclosureState.set(card.dataset.orderId, card.querySelector('.cabinet-order-disclosure')?.open ?? false);
+        const cancel = card.querySelector('.cabinet-cancel');
+        if (cancel) fieldValues.set(card.dataset.orderId, { open:cancel.open, reason:cancel.querySelector('select').value });
     }
-
-    updateOrdersPageTitle();
-    scrollRequestedOrderIntoView();
-
-    setHidden(elements.ordersLoading, true);
-    setHidden(elements.ordersList, allVisible.length === 0);
-    setHidden(elements.ordersEmpty, allVisible.length !== 0);
-    if (!allVisible.length && elements.ordersEmpty) {
-        const title = elements.ordersEmpty.querySelector('p');
-        const detail = elements.ordersEmpty.querySelector('p + p');
-        if (currentCanTakeOrders) {
-            title.textContent = 'Свободных заказов пока нет';
-            detail.textContent = 'Список обновляется автоматически.';
-        } else if (currentDriverState.status === 'busy') {
-            title.textContent = 'Вы заняты текущим заказом';
-            detail.textContent = 'После завершения поездки новые заказы появятся автоматически.';
-        } else if (currentBaseEligible) {
-            title.textContent = 'Подключаем новые заказы';
-            detail.textContent = 'Кабинет автоматически подключается. Подождите несколько секунд.';
-        } else {
-            title.textContent = 'Новые заказы сейчас недоступны';
-            detail.textContent = currentDriver?.status === 'active' ? 'Недостаточно средств на комиссию. После учёта пополнения доступ восстановится автоматически.' : 'Работу с заказами приостановил диспетчер. Уже принятый заказ останется виден.';
+    const assignedActive = assignedOrders.filter(order => ACTIVE_ORDER_STATUSES.has(order.status))
+        .sort((a,b) => createdAtMillis(b) - createdAtMillis(a));
+    const available = currentCanTakeOrders
+        ? [...openOrders,...auctionOrders].filter(order => driverCanServeOrder(currentDriver,order)).sort((a,b) => createdAtMillis(a) - createdAtMillis(b)) : [];
+    const history = assignedOrders.filter(order => ['completed','cancelled'].includes(order.status))
+        .sort((a,b) => createdAtMillis(b) - createdAtMillis(a));
+    if (assignedActive.some(order => !previousActiveOrderIds.has(order.id))) {
+        ordersTab = 'current';
+        assignedActive.forEach(order => orderDisclosureState.set(order.id,true));
+        cabinet?.open('orders');
+    } else if (!assignedActive.length && previousActiveOrderIds.size && ordersTab === 'current') ordersTab = 'new';
+    previousActiveOrderIds = new Set(assignedActive.map(order => order.id));
+    cabinet?.updateFilters({ new:available.length, current:assignedActive.length, history:history.length }, ordersTab);
+    const visible = ordersTab === 'current' ? assignedActive : ordersTab === 'history' ? history : available;
+    elements.ordersList.replaceChildren(...visible.map(order => createOrderCard(order, ordersTab !== 'new', ordersTab === 'history')));
+    for (const card of elements.ordersList.children) {
+        const prior = fieldValues.get(card.dataset.orderId), cancel = card.querySelector('.cabinet-cancel');
+        if (prior && cancel) { cancel.open = prior.open; cancel.querySelector('select').value = prior.reason; }
+        if (focusedId === card.dataset.orderId && focusedKey) {
+            const control = [...card.querySelectorAll('[data-order-control]')].find(el => el.dataset.orderControl === focusedKey);
+            if (control && !control.disabled) control.focus({ preventScroll:true });
         }
     }
+    setHidden(elements.ordersLoading,true);
+    setHidden(elements.ordersList,visible.length === 0);
+    setHidden(elements.ordersEmpty,visible.length !== 0);
+    if (!visible.length && elements.ordersEmpty) {
+        const title = elements.ordersEmpty.querySelector('p'), detail = elements.ordersEmpty.querySelector('p + p');
+        if (ordersTab === 'history') { title.textContent = 'История поездок пока пуста'; detail.textContent = 'Здесь появятся завершённые и отменённые заказы, закреплённые за вами.'; }
+        else if (ordersTab === 'current') { title.textContent = 'Принятых заказов пока нет'; detail.textContent = 'Выберите подходящий заказ во вкладке «Новые».'; }
+        else if (currentCanTakeOrders) { title.textContent = 'Свободных заказов пока нет'; detail.textContent = 'Список обновляется автоматически.'; }
+        else if (currentDriverState.status === 'busy') { title.textContent = 'Вы заняты текущим заказом'; detail.textContent = 'После завершения поездки новые заказы появятся автоматически.'; }
+        else if (currentBaseEligible) { title.textContent = 'Подключаем новые заказы'; detail.textContent = 'Кабинет автоматически подключается. Подождите несколько секунд.'; }
+        else { title.textContent = 'Новые заказы сейчас недоступны'; detail.textContent = currentDriver?.status === 'active' ? 'Недостаточно средств на комиссию. После учёта пополнения доступ восстановится автоматически.' : 'Работу с заказами приостановил диспетчер. Уже принятый заказ останется виден.'; }
+    }
+    updateOrdersPageTitle();
+    scrollRequestedOrderIntoView();
 }
 
 function handleOrdersError(error) {

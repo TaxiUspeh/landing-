@@ -491,432 +491,369 @@
             box-sizing: border-box;
         }
 
-        /* Three-panel carousel: desktop keeps the existing stacked layout. */
-        .services-actions-carousel,
-        .services-actions-viewport {
-            width: 100%;
-            min-width: 0;
-            max-width: 100%;
-        }
-
-        .services-actions-track {
-            display: grid;
-            width: 100%;
-            min-width: 0;
-            max-width: 100%;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 1rem;
-            align-items: stretch;
-        }
-
-        .services-actions-panel {
-            min-width: 0;
-            max-width: 100%;
-            box-sizing: border-box;
-        }
-
-        .services-actions-main-panel {
-            grid-column: 1 / -1;
-            grid-row: 1;
-        }
-
-        .services-actions-additional-panel {
-            grid-column: 1;
-            grid-row: 2;
-        }
-
-        .services-actions-quick-panel {
-            grid-column: 2;
-            grid-row: 2;
-        }
-
-        .services-actions-panel .additional-services-grid,
-        .services-actions-panel .quick-actions-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            max-width: none;
-        }
-
-        .services-actions-controls {
-            display: none;
-        }
-
-        @media (max-width: 767px) {
-            .services-actions-viewport {
-                position: relative;
-                overflow: hidden;
-                touch-action: pan-y pinch-zoom;
-                contain: layout paint;
-            }
-
-            .services-actions-track {
-                display: flex;
-                gap: 0;
-                align-items: flex-start;
-                transform: translate3d(-100%, 0, 0);
-                transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
-                will-change: transform;
-            }
-
-            .services-actions-track.is-dragging,
-            .services-actions-track.is-instant {
-                transition: none;
-            }
-
-            .services-actions-panel {
-                display: flow-root;
-                flex: 0 0 100%;
-                width: 100%;
-                grid-column: auto;
-                grid-row: auto;
-            }
-
-            .services-actions-viewport.is-dragging {
-                user-select: none;
-                -webkit-user-select: none;
-            }
-
-            .services-actions-controls {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 0.35rem;
-                margin-top: -0.25rem;
-                margin-bottom: 0.75rem;
-            }
-
-            .services-actions-arrow,
-            .services-actions-dot {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                min-width: 44px;
-                min-height: 44px;
-                color: white;
-            }
-
-            .services-actions-arrow {
-                width: 44px;
-                height: 44px;
-                border-radius: 9999px;
-                background: rgba(15, 23, 42, 0.48);
-                border: 1px solid rgba(255, 255, 255, 0.24);
-                transition: opacity 0.2s ease, background-color 0.2s ease;
-            }
-
-            .services-actions-arrow:disabled {
-                opacity: 0.35;
-            }
-
-            .services-actions-dot::before {
-                content: "";
-                display: block;
-                width: 8px;
-                height: 8px;
-                border-radius: 9999px;
-                background: rgba(255, 255, 255, 0.45);
-                transition: width 0.2s ease, background-color 0.2s ease;
-            }
-
-            .services-actions-dot[aria-current="true"]::before {
-                width: 22px;
-                background: white;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .services-actions-track {
-                transition: none;
-            }
-
-            .services-actions-arrow,
-            .services-actions-dot::before {
-                transition: none;
-            }
-        }
     </style>
+    <link rel="stylesheet" href="./styles/client-home.css?v=56">
 </head>
-<body class="text-gray-900 min-h-screen flex flex-col">
+<body class="client-home text-gray-900 min-h-screen flex flex-col">
 
-    <header class="mobile-compact-header header-bg text-white py-4 rounded-b-lg shadow-lg sticky top-0 z-50">
-        <div class="absolute top-2 left-2">
-            <div id="weatherWidget" class="weather-widget hidden btn-active" onclick="window.fetchRealWeather()">
-                <div class="flex flex-col items-center">
-                    <i id="weatherIcon" class="fas fa-cloud-sun icon"></i>
-                    <span id="weatherTemp" class="temp">--°</span>
-                </div>
-            </div>
-        </div>
-        <div class="absolute top-2 right-14">
-            <button id="pushToggleBtn" onclick="togglePushNotifications()" title="Уведомления" class="text-white p-2 rounded-full bg-black bg-opacity-10 hover:bg-opacity-30 transition-all focus:outline-none z-50 btn-active hidden">
-                <i id="pushIcon" class="fas fa-bell text-lg"></i>
-            </button>
-        </div>
-        <div class="absolute top-2 right-2">
-            <button id="themeToggle" onclick="toggleTheme()" class="text-white p-2 rounded-full bg-black bg-opacity-10 hover:bg-opacity-30 transition-all focus:outline-none z-50 btn-active">
-                <i id="themeIcon" class="fas fa-moon text-lg"></i>
-            </button>
-        </div>
-        <div class="max-w-md mx-auto px-4 text-center">
-            <div class="flex items-center justify-center gap-2 mb-1">
-                <i class="fas fa-taxi text-2xl text-yellow-300"></i>
-                <h1 class="text-2xl font-extrabold tracking-tight">Такси «Успех»</h1>
-            </div>
-            <p class="text-white text-sm opacity-90">Ваш комфорт в посёлке Белоусовка.</p>
-        </div>
-    </header>
-    
-    <main class="mobile-compact-main max-w-3xl mx-auto px-4 py-8 flex-grow">
-        
-        <!-- MAIN ORDER, SERVICES AND QUICK ACTIONS CAROUSEL -->
-        <section id="servicesActionsCarousel" class="services-actions-carousel" aria-label="Заказ такси, дополнительные услуги и быстрые действия" aria-roledescription="карусель">
-            <div class="services-actions-viewport" tabindex="0" aria-label="Листайте вправо или влево для выбора раздела">
-                <div class="services-actions-track">
-                    <article class="services-actions-panel services-actions-additional-panel" data-carousel-panel role="group" aria-roledescription="слайд" aria-label="1 из 3" aria-labelledby="additionalServicesTitle">
-        <h3 id="additionalServicesTitle" class="additional-services-title text-2xl font-bold text-center mb-6 text-white text-shadow-md border-t pt-8 mt-8 border-gray-400 border-opacity-30">Дополнительные Услуги</h3>
-        <div class="additional-services-grid grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
-            <button id="deliveryBtn" data-service="delivery" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-green-500 relative overflow-hidden transition-all duration-300">
-                <div id="deliveryStatusBadge" class="absolute top-2 right-2 w-3 h-3 rounded-full bg-gray-300"></div>
-                <i id="deliveryIcon" class="fas fa-box-open text-2xl mb-1 text-green-600 transition-colors"></i><span class="text-sm">Доставка</span>
-                <span id="deliverySubtext" class="text-[9px] text-gray-500 font-normal mt-1 leading-tight min-h-[1.5em] block"></span>
-            </button>
-            <button data-service="cargo" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-yellow-500">
-                <i class="fas fa-truck-loading text-2xl mb-1 text-yellow-600"></i><span class="text-sm">Грузовой</span>
-            </button>
-            <button data-service="soberDriver" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-red-500">
-                <i class="fas fa-cocktail text-2xl mb-1 text-red-600"></i><span class="text-sm">Трезвый водитель</span>
-            </button>
-            <button data-service="assistance" class="service-btn btn-active service-card bg-white p-3.5 rounded-xl shadow-md flex flex-col items-center justify-center text-blue-900 font-semibold border-b-4 border-indigo-500">
-                <i class="fas fa-life-ring text-2xl mb-1 text-indigo-600"></i><span class="text-sm">Помощь</span>
-            </button>
-        </div>
-        
-        <!-- AUTO INSURANCE QUICK BUTTON -->
-        <div class="max-w-md mx-auto mb-8">
-            <button onclick="openModal('insuranceModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-teal-600 via-cyan-600 to-teal-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-lg flex items-center justify-center space-x-2.5 text-base border border-teal-400/30">
-                <i class="fas fa-shield-alt text-xl text-yellow-300"></i>
-                <span>Автострахование (ОСАГО / Обязательная)</span>
-            </button>
-        </div>
-        
-                    </article>
-
-                    <article class="services-actions-panel services-actions-main-panel" data-carousel-panel role="group" aria-roledescription="слайд" aria-label="2 из 3 — Заказ такси">
-                        <!-- MAIN BLOCK (TRANSPARENT GLASS) -->
-                        <div class="main-order-panel max-w-md mx-auto p-4 mb-6 glass-panel border-t-4 border-green-500 shadow-2xl">
-                            <div id="holidayBanner" class="hidden mb-3 p-3 rounded-xl border border-amber-300 bg-gradient-to-r from-amber-100/95 via-yellow-50/95 to-amber-100/95 text-amber-950 shadow-lg dark:from-amber-900/90 dark:via-yellow-900/90 dark:to-amber-900/90 dark:text-amber-50 dark:border-amber-500" role="status" aria-live="polite">
+<header class="home-header">
+<div class="home-header-inner">
+<span class="home-logo" aria-hidden="true">
+<i class="fas fa-taxi">
+</i>
+</span>
+<h1>Такси «Успех»</h1>
+<a href="tel:+77770649648" class="home-call" aria-label="Позвонить диспетчеру">
+<i class="fas fa-phone-alt" aria-hidden="true">
+</i>
+</a>
+</div>
+</header>
+<main id="clientHome" class="home-main">
+<section data-home-page="home" aria-label="Главная">
+<button type="button" class="home-city" data-home-city>
+<i class="fas fa-map-marker-alt" aria-hidden="true">
+</i>
+<span id="homeCityName">Белоусовка</span>
+<i class="fas fa-chevron-down" aria-hidden="true">
+</i>
+</button>
+<div data-home-current hidden aria-live="polite">
+</div>
+<div class="home-order-card">
+<h2>Куда поедем?</h2>
+<p>Укажите маршрут и узнайте стоимость.</p>
+<button type="button" class="home-primary" data-home-service="taxi">
+<i class="fas fa-taxi" aria-hidden="true">
+</i>Заказать такси<i class="fas fa-arrow-right" aria-hidden="true">
+</i>
+</button>
+<div class="home-payment">
+<span>
+<i class="fas fa-money-bill-wave" aria-hidden="true">
+</i>Наличные</span>
+<span>
+<i class="fas fa-exchange-alt" aria-hidden="true">
+</i>Перевод Kaspi</span>
+</div>
+</div>
+<div class="home-shortcuts">
+<button type="button" class="home-tile" data-home-service="delivery" id="deliveryBtn">
+<i id="deliveryIcon" class="fas fa-box-open" aria-hidden="true">
+</i>
+<span>Доставка</span>
+<span id="deliveryStatusBadge" class="home-delivery-dot" aria-hidden="true">
+</span>
+<small id="deliverySubtext">
+</small>
+</button>
+<button type="button" class="home-tile" data-home-modal="foodModal">
+<i class="fas fa-utensils" aria-hidden="true">
+</i>
+<span>Еда</span>
+</button>
+<button type="button" class="home-tile" data-home-service="auction" >
+<i class="fas fa-gavel" aria-hidden="true">
+</i>
+<span>Аукцион</span>
+</button>
+<button type="button" class="home-tile" data-home-go="services">
+<i class="fas fa-th-large" aria-hidden="true">
+</i>
+<span>Все услуги</span>
+</button>
+</div>
+<h2 class="home-section-title">Полезное рядом</h2>
+<button type="button" class="home-row" data-home-modal="busScheduleModal">
+<i class="fas fa-bus-alt" aria-hidden="true">
+</i>
+<span>
+<strong>Расписание автобусов</strong>
+<small>Белоусовка ⇄ Усть-Каменогорск / Глубокое</small>
+</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</button>
+<div id="partnerServices">
+<h2 class="home-section-title">Наши партнёры</h2>
+<div class="home-partners">
+<button type="button" class="home-row" data-home-modal="stroyDomModal">
+<i class="fas fa-store" aria-hidden="true">
+</i>
+<span>
+<strong>Стройдом</strong>
+<small>Всё для ремонта и уюта</small>
+</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</button>
+<button type="button" class="home-row" data-home-modal="techInspectionModal">
+<i class="fas fa-wrench" aria-hidden="true">
+</i>
+<span>
+<strong>Техосмотр</strong>
+<small>Молодёжная, 37</small>
+</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</button>
+<button type="button" class="home-row" data-home-modal="insuranceModal">
+<i class="fas fa-shield-alt" aria-hidden="true">
+</i>
+<span>
+<strong>Автострахование</strong>
+<small>Информация и контакты</small>
+</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</button>
+</div>
+</div>
+<a class="home-row" href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20свой%20бизнес%20в%20приложении%20Такси%20Успех" target="_blank" rel="noopener noreferrer">
+<i class="fas fa-bullhorn" aria-hidden="true">
+</i>
+<span>Разместить свой бизнес</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</a>
+<details class="home-conditions">
+<summary>Информация о стоимости и подаче</summary>
+<div id="holidayBanner" class="hidden mb-3 p-3 rounded-xl border border-amber-300 bg-gradient-to-r from-amber-100/95 via-yellow-50/95 to-amber-100/95 text-amber-950 shadow-lg dark:from-amber-900/90 dark:via-yellow-900/90 dark:to-amber-900/90 dark:text-amber-50 dark:border-amber-500" role="status" aria-live="polite">
                                 <div class="flex items-center gap-2.5">
                                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400/30 text-amber-700 dark:text-yellow-200" aria-hidden="true">
-                                        <i class="fas fa-gift"></i>
+                                        <i class="fas fa-gift">
+</i>
                                     </span>
                                     <div class="min-w-0 text-left">
-                                        <div id="holidayBannerTitle" class="text-sm font-black leading-tight"></div>
-                                        <div id="holidayBannerText" class="mt-0.5 text-xs font-semibold opacity-90"></div>
+                                        <div id="holidayBannerTitle" class="text-sm font-black leading-tight">
+</div>
+                                        <div id="holidayBannerText" class="mt-0.5 text-xs font-semibold opacity-90">
+</div>
                                     </div>
                                 </div>
                             </div>
-                            <div id="lineStatus" class="mb-3 p-3 rounded-lg text-center text-sm font-bold border hidden shadow-sm transition-all duration-500 bg-white/80"></div>
-
-                            <button data-service="taxi" class="main-taxi-button service-btn btn-hover btn-active bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black py-4 px-4 rounded-xl w-full shadow-lg text-lg flex items-center justify-center space-x-2.5 mb-3.5 blink-btn">
-                                <i class="fas fa-car-side text-2xl"></i>
-                                <span>Заказать Taxi</span>
-                            </button>
-
-                            <div class="main-service-shortcuts grid grid-cols-2 gap-3 mb-3.5">
-                                <button onclick="openServicesMenu('whatsapp')" class="btn-hover btn-active bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-md flex items-center justify-center space-x-2 text-sm">
-                                    <i class="fas fa-bars"></i>
-                                    <span>Меню услуг</span>
-                                </button>
-                                <button onclick="openModal('foodModal')" class="btn-hover btn-active bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold py-3.5 px-4 shadow-md flex items-center justify-center space-x-2 text-sm">
-                                    <i class="fas fa-utensils"></i>
-                                    <span>Заказ Еды</span>
-                                </button>
-                            </div>
-
-                            <div class="main-quick-shortcuts grid grid-cols-3 gap-2.5 mb-4">
-                                <button onclick="shareApp()" class="btn-hover btn-active bg-gradient-to-br from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-share-alt mb-1 text-base"></i><span>Поделиться</span></button>
-                                <button onclick="openServicesMenu('telegram')" class="btn-hover btn-active bg-gradient-to-br from-sky-500 to-sky-700 hover:from-sky-600 hover:to-sky-800 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fab fa-telegram-plane mb-1 text-base"></i><span>Telegram</span></button>
-                                <button data-service="auction" class="service-btn btn-hover btn-active bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl transition-all shadow-md quick-order-btn"><i class="fas fa-gavel mb-1 text-base"></i><span>Аукцион</span></button>
-                            </div>
-
-                            <button type="button" onclick="getCurrentLocation('main')" id="locationBtn" class="w-full glass-mode font-semibold transition flex items-center justify-center space-x-3 shadow-sm btn-active py-3.5 rounded-xl border border-white/40">
-                                <i class="fas fa-location-arrow"></i><span id="locationBtnText">Использовать мое местоположение</span>
-                            </button>
-                            <p id="locationResult" class="text-xs text-center text-white mt-2 hidden" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
-                                <a id="locationAddress" href="#" target="_blank" rel="noopener noreferrer" class="coord-link text-white underline"></a>
-                            </p>
-
-                            <div class="main-payment-options mt-4 pt-3 border-t border-white/30 flex justify-center space-x-6 glass-text">
-                                <div class="flex items-center space-x-1.5"><i class="fas fa-money-bill-wave text-xl text-green-400"></i><span class="font-semibold text-xs">Наличные</span></div>
-                                <div class="flex items-center space-x-1.5"><i class="fas fa-exchange-alt text-xl text-blue-400"></i><span class="font-semibold text-xs">Перевод (Kaspi)</span></div>
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="services-actions-panel services-actions-quick-panel" data-carousel-panel role="group" aria-roledescription="слайд" aria-label="3 из 3" aria-labelledby="quickActionsTitle">
-        <h3 id="quickActionsTitle" class="quick-actions-title text-xl font-bold text-center mb-4 text-white text-shadow-md border-t pt-4 border-gray-400 border-opacity-30">Быстрые Действия</h3>
-        <div class="quick-actions-grid grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-md mx-auto mb-8">
-            <a href="https://yandex.ru/maps/org/160238038805/reviews?reviews%5BpublicId%5D=5x4vc4keeamn0f7hgeucxf0phm&utm_source=my_review&si=ah766vzxe68ndmxjc6krw802vm" target="_blank" rel="noopener noreferrer" class="btn-hover btn-active bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-star text-xl mb-1"></i><span>Оставить отзыв</span></a>
-            <a href="https://wa.me/77770649648?text=Прошу%20перезвонить%20мне%20как%20можно%20скорее!" target="_blank" rel="noopener noreferrer" class="btn-hover btn-active bg-gradient-to-br from-orange-500 to-orange-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-headset text-xl mb-1"></i><span>Перезвонить</span></a>
-            <button type="button" onclick="document.getElementById('partnerServices').scrollIntoView({ behavior: 'smooth', block: 'start' })" aria-label="Перейти к партнёрским сервисам" class="btn-hover btn-active bg-gradient-to-br from-pink-500 to-pink-700 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-handshake text-xl mb-1"></i><span>Партнеры</span></button>
-            <button onclick="installApp()" class="btn-hover btn-active bg-gradient-to-br from-gray-700 to-gray-900 text-white rounded-xl shadow-lg transition-all compact-util-btn"><i class="fas fa-mobile-alt text-xl mb-1"></i><span>На экран</span></button>
-        </div>
-        
-                    </article>
-                </div>
-            </div>
-
-            <div class="services-actions-controls" aria-label="Управление каруселью">
-                <button type="button" class="services-actions-arrow" data-carousel-prev aria-label="Показать предыдущий раздел">
-                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
-                </button>
-                <div class="services-actions-dots" role="group" aria-label="Выбор раздела">
-                    <button type="button" class="services-actions-dot" data-carousel-dot="0" aria-label="Дополнительные услуги" aria-current="false"></button>
-                    <button type="button" class="services-actions-dot" data-carousel-dot="1" aria-label="Заказ такси" aria-current="true"></button>
-                    <button type="button" class="services-actions-dot" data-carousel-dot="2" aria-label="Быстрые действия" aria-current="false"></button>
-                </div>
-                <button type="button" class="services-actions-arrow" data-carousel-next aria-label="Показать следующий раздел">
-                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
-                </button>
-            </div>
-            <p class="sr-only" data-carousel-status aria-live="polite">Показан раздел «Заказ такси», 2 из 3</p>
-        </section>
-
-        <!-- BUS SCHEDULE BLOCK -->
-        <div class="mt-8 border-t pt-6 max-w-md mx-auto border-gray-400 border-opacity-30">
-            <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Полезная информация</h3>
-            <button onclick="openModal('busScheduleModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between border border-blue-400/30">
-                <div class="flex items-center gap-3">
-                    <div class="bg-white/20 p-2.5 rounded-xl shadow-inner">
-                        <i class="fas fa-bus-alt text-2xl text-yellow-300"></i>
-                    </div>
-                    <div class="text-left">
-                        <span class="block text-lg font-black leading-tight text-shadow-md">Расписание автобусов</span>
-                        <span class="block text-xs text-blue-100 mt-0.5">Белоусовка ⇄ У-Ка / Глубокое</span>
-                    </div>
-                </div>
-                <i class="fas fa-chevron-right text-white opacity-80 text-xl"></i>
-            </button>
-        </div>
-
-        <!-- PARTNER INFO (TECH INSPECTION) -->
-        <div id="partnerServices" class="mt-8 border-t pt-6 max-w-md mx-auto border-gray-400 border-opacity-30 scroll-mt-24">
-            <h3 class="text-xl font-bold text-center mb-4 text-white text-shadow-md">Партнёрские сервисы</h3>
-            <button onclick="openModal('techInspectionModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between border border-red-400/30">
-                <div class="flex items-center gap-3">
-                    <div class="bg-white/20 p-2.5 rounded-xl shadow-inner">
-                        <i class="fas fa-wrench text-2xl text-yellow-300"></i>
-                    </div>
-                    <div class="text-left">
-                        <span class="block text-lg font-black leading-tight text-shadow-md uppercase">Пройти Техосмотр</span>
-                        <span class="block text-xs text-red-100 mt-0.5">В Белоусовке (ул. Молодежная, 37)</span>
-                    </div>
-                </div>
-                <i class="fas fa-chevron-right text-white opacity-80 text-xl"></i>
-            </button>
-            
-            <button onclick="openModal('stroyDomModal')" class="w-full mt-4 btn-hover btn-active bg-gradient-to-r from-[#849b5c] via-[#758a51] to-[#6b8254] text-white rounded-2xl p-4 shadow-xl flex items-center justify-between border border-[#849b5c]/50">
-                <div class="flex items-center gap-3">
-                    <div class="bg-white/20 p-2.5 rounded-xl shadow-inner">
-                        <i class="fas fa-home text-2xl text-yellow-300"></i>
-                    </div>
-                    <div class="text-left">
-                        <span class="block text-lg font-black leading-tight text-shadow-md uppercase">СтройДом</span>
-                        <span class="block text-xs text-green-100 mt-0.5">Всё для ремонта и уюта</span>
-                    </div>
-                </div>
-                <i class="fas fa-chevron-right text-white opacity-80 text-xl"></i>
-            </button>
-        </div>
-
-        <!-- ADVERTISING BLOCK -->
-        <div class="mt-10 border-t pt-6 border-gray-400 border-opacity-30">
-            <h3 class="text-xl font-bold text-white text-shadow-md mb-2 text-center">📢 Реклама вашего бизнеса в Такси «Успех»</h3>
-            <p class="text-xs text-center text-gray-200 mb-6 px-4" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Разместите свой бизнес у нас! Вашу рекламу увидят пассажиры такси и жители Белоусовки:</p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button onclick="openModal('stroyDomModal')" class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-2 border-[#849b5c] flex flex-col items-center text-center relative overflow-hidden group">
-                    <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-green-200">
-                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Открыто
-                    </div>
-                    <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-[#f0f4eb] text-[#6b8254] border border-[#d1dec1] text-[10px] font-bold uppercase tracking-wider">Наш партнер</div>
-                    
-                    <div class="relative mt-4 mb-2 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-home text-4xl text-[#849b5c]"></i>
-                        <i class="fas fa-heart text-red-400 absolute text-sm bottom-0 right-[-6px] bg-white rounded-full p-0.5 shadow-sm"></i>
-                    </div>
-                    
-                    <p class="text-lg font-black text-gray-800 uppercase tracking-tight mt-1">СтройДом</p>
-                    <p class="text-[13px] text-gray-600 mt-1 leading-tight font-medium">Всё для ремонта и уюта в вашем доме.</p>
-                    <span class="mt-3 text-xs font-bold text-white bg-[#849b5c] hover:bg-[#72874e] transition-colors px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md w-full justify-center">
-                        <i class="fas fa-store"></i> В магазин
-                    </span>
-                </button>
-                
-                <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20бизнеса%20(СТО)%20в%20приложении%20Такси%20Успех..." target="_blank" rel="noopener noreferrer" class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-amber-500 flex flex-col items-center text-center relative overflow-hidden group">
-                    <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider animate-pulse">Свободно</div>
-                    <i class="fas fa-tools text-4xl text-amber-600 mb-2 mt-2 group-hover:scale-110 transition-transform"></i>
-                    <p class="text-lg font-bold text-gray-800">СТО & Ремонт</p>
-                    <p class="text-sm text-gray-600 mt-1">Рекламируйте автосервис пассажирам и водителям.</p>
-                    <span class="mt-3 text-xs font-semibold text-amber-600 flex items-center gap-1"><i class="fab fa-whatsapp"></i> Занять место (WhatsApp)</span>
-                </a>
-
-                <a href="https://wa.me/77770649648?text=Здравствуйте!%20Хочу%20разместить%20рекламу%20своего%20бизнеса%20в%20приложении%20Такси%20Успех..." target="_blank" rel="noopener noreferrer" class="partner-card service-card bg-white p-4 rounded-xl shadow-lg border-pink-500 flex flex-col items-center text-center relative overflow-hidden group">
-                    <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[10px] font-bold uppercase tracking-wider">Ваш бизнес</div>
-                    <i class="fas fa-bullhorn text-4xl text-pink-500 mb-2 mt-2 group-hover:scale-110 transition-transform"></i>
-                    <p class="text-lg font-bold text-gray-800">Здесь мог быть ваш бизнес</p>
-                    <p class="text-sm text-gray-600 mt-1">Магазин, кафе, услуги — покажите себя всем жителям.</p>
-                    <span class="mt-3 text-xs font-semibold text-pink-600 flex items-center gap-1"><i class="fab fa-whatsapp"></i> Разместить рекламу</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- FAQ SINGLE BUTTON BLOCK -->
-        <div class="mt-10 border-t pt-6 max-w-md mx-auto border-gray-400 border-opacity-30">
-            <button onclick="openModal('faqModal')" class="w-full btn-hover btn-active bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white font-bold py-4 px-6 rounded-2xl shadow-xl flex items-center justify-between text-lg border border-amber-300/40">
-                <div class="flex items-center gap-3">
-                    <i class="fas fa-question-circle text-2xl text-yellow-200"></i>
-                    <span>Вопросы и Цены</span>
-                </div>
-                <i class="fas fa-chevron-right text-white opacity-80"></i>
-            </button>
-        </div>
-        
-        <!-- DRIVERS BLOCK -->
-        <div class="mt-10 border-t pt-6 text-center border-gray-400 border-opacity-30">
-            <h3 class="text-2xl font-bold text-white text-shadow-md mb-4">Приглашаем Водителей!</h3>
-            <button onclick="openModal('driverModal')" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl text-xl font-semibold shadow-lg transition-all btn-hover btn-active cursor-pointer">
-                <i class="fas fa-car-side mr-2"></i> Отправить Заявку
-            </button>
-        </div>
-         <div class="mt-6 border-t pt-6 text-center border-gray-400 border-opacity-30">
-            <h3 class="text-xl font-bold text-white text-shadow-md mb-4">Для действующих водителей</h3>
-            <button onclick="openModal('driverLoginModal')" class="inline-block bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white px-8 py-3.5 rounded-xl text-lg font-semibold shadow-lg transition-all btn-hover btn-active"><i class="fas fa-user-shield mr-2"></i> Вход в режим Водителя</button>
-        </div>
-        
-    </main>
-    
-    <section class="bg-gradient-to-r from-blue-700 to-indigo-800 py-6 text-center mt-10 shadow-inner">
-        <h3 class="text-xl font-bold text-white mb-3">🗺 Откройте Яндекс.Навигатор</h3>
-        <a href="https://yandex.kz/navi" target="_blank" rel="noopener noreferrer" class="inline-block bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-500 hover:to-amber-500 text-blue-950 font-bold px-8 py-3.5 rounded-xl text-lg shadow-lg transition-all btn-active btn-hover"><i class="fas fa-location-arrow mr-2"></i> Открыть Навигатор</a>
-    </section>
-    
-    <div class="mobile-bottom-bar fixed bottom-0 left-0 right-0 bottom-bar-glass shadow-2xl z-40 sm:hidden">
-        <div class="flex justify-around items-center h-16">
-            <a href="https://wa.me/77770649648?text=Заказ..." class="flex flex-col items-center text-green-600 hover:text-green-700 btn-active p-1.5 rounded-xl"><i class="fab fa-whatsapp text-2xl"></i><span class="text-[11px] mt-0.5 font-medium">Заказ</span></a>
-            <a href="tel:+77770649648" class="flex flex-col items-center text-red-600 hover:text-red-700 btn-active p-1.5 rounded-xl"><i class="fas fa-phone-alt text-2xl"></i><span class="text-[11px] mt-0.5 font-medium">Звонок</span></a>
-            <button onclick="installApp()" class="flex flex-col items-center text-yellow-600 hover:text-yellow-700 btn-active p-1.5 rounded-xl"><i class="fas fa-mobile-alt text-2xl"></i><span class="text-[11px] mt-0.5 font-medium">На экран</span></button>
-            <button onclick="openModal('driverLoginModal')" class="flex flex-col items-center text-pink-600 hover:text-pink-700 btn-active p-1.5 rounded-xl"><i class="fas fa-user-shield text-2xl"></i><span class="text-[11px] mt-0.5 font-medium">Водитель</span></button>
-        </div>
-    </div>
-    
-    <footer class="bg-gray-900 text-white text-center py-6 mt-10 shadow-inner">
-        <p class="text-sm px-4">
-            <span class="font-bold">© 2025 «Успех Такси»</span>. — информационный сервис.
-        </p>
-        <p class="text-sm mt-2">
-            Следите за новостями:
-            <a href="https://whatsapp.com/channel/0029VajWGmEI1rcfICmXlJ01" class="text-green-400 hover:text-green-300 underline">WhatsApp-канал</a>
-        </p>
-    </footer>
+                            <div id="lineStatus" class="hidden" role="button" tabindex="0" aria-label="Информация о подаче, открыть карту">
+</div>
+</details>
+</section>
+<section data-home-page="services" aria-labelledby="homeServicesTitle" hidden>
+<div class="home-page-heading">
+<button type="button" data-home-go="home" aria-label="Назад на главную">‹</button>
+<h2 id="homeServicesTitle" tabindex="-1">Все услуги</h2>
+</div>
+<div class="home-service-grid">
+<button type="button" class="home-tile" data-home-service="taxi" >
+<i class="fas fa-taxi" aria-hidden="true">
+</i>
+<span>Легковой</span>
+</button>
+<button type="button" class="home-tile" data-home-service="wagon" >
+<i class="fas fa-car-side" aria-hidden="true">
+</i>
+<span>Универсал</span>
+</button>
+<button type="button" class="home-tile" data-home-service="minivan" >
+<i class="fas fa-shuttle-van" aria-hidden="true">
+</i>
+<span>Минивэн</span>
+</button>
+<button type="button" class="home-tile" data-home-service="intercity" >
+<i class="fas fa-route" aria-hidden="true">
+</i>
+<span>Межгород</span>
+</button>
+<button type="button" class="home-tile" data-home-service="auction" >
+<i class="fas fa-gavel" aria-hidden="true">
+</i>
+<span>Своя цена · Аукцион</span>
+</button>
+<button type="button" class="home-tile" data-home-service="delivery" >
+<i class="fas fa-box-open" aria-hidden="true">
+</i>
+<span>Доставка</span>
+</button>
+<button type="button" class="home-tile" data-home-service="preorder" >
+<i class="fas fa-calendar-alt" aria-hidden="true">
+</i>
+<span>Предзаказ</span>
+</button>
+<button type="button" class="home-tile" data-home-service="cargo" >
+<i class="fas fa-truck" aria-hidden="true">
+</i>
+<span>Грузовой</span>
+</button>
+<button type="button" class="home-tile" data-home-service="soberDriver" >
+<i class="fas fa-key" aria-hidden="true">
+</i>
+<span>Трезвый водитель</span>
+</button>
+<button type="button" class="home-tile" data-home-service="assistance" >
+<i class="fas fa-tools" aria-hidden="true">
+</i>
+<span>Помощь на дороге</span>
+</button>
+</div>
+<p class="home-muted">Грузовой, трезвый водитель и помощь на дороге: онлайн-заказ пока недоступен.</p>
+<button type="button" class="home-row" data-home-modal="foodModal">
+<i class="fas fa-utensils" aria-hidden="true">
+</i>
+<span>
+<strong>Заказ еды</strong>
+</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</button>
+</section>
+<section data-home-page="trips" aria-labelledby="homeTripsTitle" hidden>
+<h2 id="homeTripsTitle" class="home-page-title" tabindex="-1">Мои поездки</h2>
+<div data-home-latest hidden aria-live="polite">
+</div>
+<h3 class="home-section-title">История на этом устройстве</h3>
+<div id="homeHistory">
+</div>
+</section>
+<section data-home-page="more" aria-labelledby="homeMoreTitle" hidden>
+<h2 id="homeMoreTitle" class="home-page-title" tabindex="-1">Ещё</h2>
+<div class="home-menu">
+<a class="home-row" href="tel:+77770649648">
+<i class="fas fa-phone-alt" aria-hidden="true">
+</i>
+<span>Позвонить диспетчеру</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</a>
+<button type="button" class="home-row" data-home-modal="faqModal">
+<i class="fas fa-question-circle" aria-hidden="true">
+</i>
+<span>
+<strong>Вопросы и цены</strong>
+</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</button>
+<button type="button" class="home-row" data-home-go="home" data-home-partners>
+<i class="fas fa-store" aria-hidden="true">
+</i>
+<span>
+<strong>Партнёры и полезное</strong>
+</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</button>
+<button type="button" class="home-row" data-home-action="install">
+<i class="fas fa-mobile-alt" aria-hidden="true">
+</i>
+<span>
+<strong>Установить приложение</strong>
+</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</button>
+<a class="home-row" href="https://yandex.ru/maps/org/160238038805/reviews" target="_blank" rel="noopener noreferrer">
+<i class="fas fa-star" aria-hidden="true">
+</i>
+<span>Оставить отзыв</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</a>
+<button type="button" class="home-row" data-home-action="share">
+<i class="fas fa-share-alt" aria-hidden="true">
+</i>
+<span>
+<strong>Поделиться приложением</strong>
+</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</button>
+<a class="home-row" href="https://t.me/TaxiUspehk" target="_blank" rel="noopener noreferrer">
+<i class="fas fa-paper-plane" aria-hidden="true">
+</i>
+<span>Telegram</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</a>
+<a class="home-row" href="./drivers.html">
+<i class="fas fa-id-card" aria-hidden="true">
+</i>
+<span>Вход водителя</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</a>
+<button type="button" class="home-row" data-home-modal="driverModal">
+<i class="fas fa-car" aria-hidden="true">
+</i>
+<span>
+<strong>Стать водителем</strong>
+</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</button>
+<a class="home-row" href="https://yandex.kz/navi" target="_blank" rel="noopener noreferrer">
+<i class="fas fa-location-arrow" aria-hidden="true">
+</i>
+<span>Открыть навигатор</span>
+<i class="fas fa-chevron-right" aria-hidden="true">
+</i>
+</a>
+</div>
+<h3 class="home-section-title">Настройки</h3>
+<div class="home-menu">
+<button id="themeToggle" type="button" class="home-row" data-home-action="theme">
+<i id="themeIcon" class="fas fa-moon" aria-hidden="true">
+</i>
+<span>Светлая / тёмная тема</span>
+</button>
+<button id="pushToggleBtn" type="button" class="home-row hidden" data-home-action="notifications">
+<i id="pushIcon" class="fas fa-bell" aria-hidden="true">
+</i>
+<span>Уведомления</span>
+</button>
+<button id="locationBtn" type="button" class="home-row" data-home-action="location">
+<i class="fas fa-location-arrow" aria-hidden="true">
+</i>
+<span id="locationBtnText">Определить моё местоположение</span>
+</button>
+<p id="locationResult" class="hidden home-muted">
+<a id="locationAddress" href="#" target="_blank" rel="noopener noreferrer">
+</a>
+</p>
+<button id="weatherWidget" type="button" class="home-row hidden" data-home-action="weather">
+<i id="weatherIcon" class="fas fa-cloud-sun" aria-hidden="true">
+</i>
+<span>Погода в Белоусовке</span>
+<span id="weatherTemp">—°</span>
+</button>
+</div>
+<footer class="home-footer">
+<p>© 2026 Такси «Успех» · Информационный сервис</p>
+<a href="https://whatsapp.com/channel/0029VajWGmEI1rcfICmXlJ01" target="_blank" rel="noopener noreferrer">Наш канал новостей</a>
+</footer>
+</section>
+</main>
+<nav class="home-nav" aria-label="Главное меню">
+<div>
+<button type="button" data-home-go="home" aria-current="page">
+<i class="fas fa-home" aria-hidden="true">
+</i>
+<span>Главная</span>
+</button>
+<button type="button" data-home-service="taxi">
+<i class="fas fa-taxi" aria-hidden="true">
+</i>
+<span>Заказать</span>
+</button>
+<button type="button" data-home-go="trips">
+<i class="fas fa-route" aria-hidden="true">
+</i>
+<span>Мои поездки</span>
+</button>
+<button type="button" data-home-go="more">
+<i class="fas fa-bars" aria-hidden="true">
+</i>
+<span>Ещё</span>
+</button>
+</div>
+</nav>
 
     <!-- MENUS & MODALS -->
     
@@ -2123,6 +2060,7 @@
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
         import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=52";
         import { initBookingScreen } from "./booking-screen.js?v=54";
+        import { initClientHome } from "./client-home.js?v=56";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -5090,256 +5028,8 @@
             });
         });
 
-        function initServicesActionsCarousel() {
-            const carousel = document.getElementById('servicesActionsCarousel');
-            if (!carousel) return;
-
-            const viewport = carousel.querySelector('.services-actions-viewport');
-            const track = carousel.querySelector('.services-actions-track');
-            const panels = Array.from(carousel.querySelectorAll('[data-carousel-panel]'));
-            const dots = Array.from(carousel.querySelectorAll('[data-carousel-dot]'));
-            const previousButton = carousel.querySelector('[data-carousel-prev]');
-            const nextButton = carousel.querySelector('[data-carousel-next]');
-            const status = carousel.querySelector('[data-carousel-status]');
-            const mobileLayout = window.matchMedia('(max-width: 767px)');
-            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-            const panelNames = ['Дополнительные услуги', 'Заказ такси', 'Быстрые действия'];
-            const initialIndex = 1;
-            let activeIndex = initialIndex;
-            let resizeFrame = null;
-            let panelResizeFrame = null;
-            let pointerId = null;
-            let startX = 0;
-            let startY = 0;
-            let currentX = 0;
-            let currentY = 0;
-            let gestureAxis = null;
-            let dragStartedAt = 0;
-            let ignoreClickUntil = 0;
-
-            if (!viewport || !track || panels.length !== 3 || !previousButton || !nextButton) return;
-
-            function clampIndex(index) {
-                return Math.max(0, Math.min(index, panels.length - 1));
-            }
-
-            function panelWidth() {
-                return viewport.clientWidth || 1;
-            }
-
-            function baseOffset(index) {
-                return -index * panelWidth();
-            }
-
-            function setTrackOffset(offset, animate) {
-                track.classList.toggle('is-instant', !animate || reducedMotion.matches);
-                track.style.transform = 'translate3d(' + Math.round(offset) + 'px, 0, 0)';
-            }
-
-            function measureStableHeight() {
-                if (!mobileLayout.matches) {
-                    viewport.style.removeProperty('height');
-                    return;
-                }
-
-                const tallestPanel = Math.max.apply(null, panels.map(function(panel) {
-                    return Math.ceil(Math.max(
-                        panel.scrollHeight,
-                        panel.getBoundingClientRect().height
-                    ));
-                }));
-
-                if (tallestPanel > 0) viewport.style.height = tallestPanel + 'px';
-            }
-
-            function updateControls(index, announce) {
-                activeIndex = clampIndex(index);
-
-                dots.forEach(function(dot, dotIndex) {
-                    dot.setAttribute('aria-current', dotIndex === activeIndex ? 'true' : 'false');
-                });
-
-                previousButton.disabled = activeIndex === 0;
-                nextButton.disabled = activeIndex === panels.length - 1;
-
-                if (announce && status) {
-                    status.textContent = 'Показан раздел «' + panelNames[activeIndex] + '», ' + (activeIndex + 1) + ' из ' + panels.length;
-                }
-            }
-
-            function goToPanel(index, announce, animate) {
-                const nextIndex = clampIndex(index);
-                updateControls(nextIndex, announce);
-                if (!mobileLayout.matches) return;
-                setTrackOffset(baseOffset(nextIndex), animate !== false);
-            }
-
-            previousButton.addEventListener('click', function() {
-                goToPanel(activeIndex - 1, true);
-            });
-
-            nextButton.addEventListener('click', function() {
-                goToPanel(activeIndex + 1, true);
-            });
-
-            dots.forEach(function(dot, index) {
-                dot.addEventListener('click', function() {
-                    goToPanel(index, true);
-                });
-            });
-
-            viewport.addEventListener('keydown', function(event) {
-                if (!mobileLayout.matches || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
-                event.preventDefault();
-                goToPanel(activeIndex + (event.key === 'ArrowRight' ? 1 : -1), true);
-            });
-
-            function resetPointer() {
-                pointerId = null;
-                gestureAxis = null;
-                viewport.classList.remove('is-dragging');
-                track.classList.remove('is-dragging');
-            }
-
-            function finishPointer(event, cancelled) {
-                if (pointerId === null || event.pointerId !== pointerId) return;
-
-                currentX = event.clientX;
-                currentY = event.clientY;
-                const dx = currentX - startX;
-                const elapsed = Math.max(performance.now() - dragStartedAt, 1);
-                const velocity = dx / elapsed;
-                const wasHorizontal = gestureAxis === 'horizontal';
-                let targetIndex = activeIndex;
-
-                if (!cancelled && wasHorizontal) {
-                    const threshold = Math.max(42, Math.min(72, panelWidth() * 0.14));
-                    if (dx > threshold || velocity > 0.45) targetIndex = activeIndex - 1;
-                    if (dx < -threshold || velocity < -0.45) targetIndex = activeIndex + 1;
-                    ignoreClickUntil = performance.now() + 350;
-                }
-
-                if (viewport.hasPointerCapture && viewport.hasPointerCapture(pointerId)) {
-                    viewport.releasePointerCapture(pointerId);
-                }
-
-                resetPointer();
-                goToPanel(targetIndex, wasHorizontal, true);
-            }
-
-            viewport.addEventListener('pointerdown', function(event) {
-                if (!mobileLayout.matches || !event.isPrimary || pointerId !== null) return;
-                if (event.pointerType === 'mouse' && event.button !== 0) return;
-
-                pointerId = event.pointerId;
-                startX = event.clientX;
-                startY = event.clientY;
-                currentX = startX;
-                currentY = startY;
-                gestureAxis = null;
-                dragStartedAt = performance.now();
-            });
-
-            viewport.addEventListener('pointermove', function(event) {
-                if (pointerId === null || event.pointerId !== pointerId) return;
-
-                currentX = event.clientX;
-                currentY = event.clientY;
-                const dx = currentX - startX;
-                const dy = currentY - startY;
-                const absX = Math.abs(dx);
-                const absY = Math.abs(dy);
-
-                if (gestureAxis === null && Math.max(absX, absY) >= 8) {
-                    if (absY > absX * 1.15) {
-                        gestureAxis = 'vertical';
-                        return;
-                    }
-                    if (absX > absY * 1.15) {
-                        gestureAxis = 'horizontal';
-                        viewport.classList.add('is-dragging');
-                        track.classList.add('is-dragging');
-                        if (viewport.setPointerCapture) viewport.setPointerCapture(pointerId);
-                    }
-                }
-
-                if (gestureAxis !== 'horizontal') return;
-                event.preventDefault();
-
-                let dragOffset = dx;
-                const pullingPastFirst = activeIndex === 0 && dx > 0;
-                const pullingPastLast = activeIndex === panels.length - 1 && dx < 0;
-                if (pullingPastFirst || pullingPastLast) dragOffset *= 0.28;
-                setTrackOffset(baseOffset(activeIndex) + dragOffset, false);
-            }, { passive: false });
-
-            viewport.addEventListener('pointerup', function(event) {
-                finishPointer(event, false);
-            });
-
-            viewport.addEventListener('pointercancel', function(event) {
-                finishPointer(event, true);
-            });
-
-            viewport.addEventListener('click', function(event) {
-                if (performance.now() >= ignoreClickUntil) return;
-                event.preventDefault();
-                event.stopPropagation();
-            }, true);
-
-            viewport.addEventListener('dragstart', function(event) {
-                if (mobileLayout.matches) event.preventDefault();
-            });
-
-            function syncLayout() {
-                if (pointerId !== null) resetPointer();
-
-                if (mobileLayout.matches) {
-                    measureStableHeight();
-                    updateControls(activeIndex, false);
-                    setTrackOffset(baseOffset(activeIndex), false);
-                    return;
-                }
-
-                viewport.style.removeProperty('height');
-                viewport.classList.remove('is-dragging');
-                track.classList.remove('is-dragging', 'is-instant');
-                track.style.removeProperty('transform');
-                activeIndex = initialIndex;
-                updateControls(initialIndex, false);
-            }
-
-            window.addEventListener('resize', function() {
-                if (resizeFrame !== null) window.cancelAnimationFrame(resizeFrame);
-                resizeFrame = window.requestAnimationFrame(function() {
-                    resizeFrame = null;
-                    syncLayout();
-                });
-            });
-
-            if ('ResizeObserver' in window) {
-                const panelResizeObserver = new ResizeObserver(function(entries) {
-                    if (!mobileLayout.matches) return;
-                    if (!entries.some(function(entry) { return panels.includes(entry.target); })) return;
-                    if (panelResizeFrame !== null) window.cancelAnimationFrame(panelResizeFrame);
-                    panelResizeFrame = window.requestAnimationFrame(function() {
-                        panelResizeFrame = null;
-                        measureStableHeight();
-                    });
-                });
-                panels.forEach(function(panel) { panelResizeObserver.observe(panel); });
-            }
-
-            if (mobileLayout.addEventListener) {
-                mobileLayout.addEventListener('change', syncLayout);
-            }
-
-            updateControls(initialIndex, false);
-            syncLayout();
-        }
-
-        initServicesActionsCarousel();
         initBookingScreen();
+        initClientHome();
 
     </script>
     <script type="module" src="./client-orders.js?v=53"></script>

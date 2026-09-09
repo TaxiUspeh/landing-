@@ -1,9 +1,11 @@
-const CACHE_NAME = 'taxi-uspeh-v55-compact-driver';
+const CACHE_NAME = 'taxi-uspeh-v56-client-home';
 const APP_SHELL = [
   './',
   './driver-finance.js?v=53',
   './driver-finance-controls.js?v=53',
   './index.html',
+  './client-home.js?v=56',
+  './styles/client-home.css?v=56',
   './vehicle-categories.js?v=52',
   './vehicle-category-controls.js?v=52',
   './styles/vehicle-categories.css?v=53',

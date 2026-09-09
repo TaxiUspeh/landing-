@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "firebase emulators:exec --config ../../firebase.test.json --only firestore --project demo-taxi-rules-check \"node auction.test.mjs && node completion.test.mjs && node vehicle-categories.test.mjs && node driver-finance.test.mjs\" && node vehicle-ui.test.mjs && node driver-cabinet-ui.test.mjs"
+    "test": "firebase emulators:exec --config ../../firebase.test.json --only firestore --project demo-taxi-rules-check \"node auction.test.mjs && node completion.test.mjs && node vehicle-categories.test.mjs && node driver-finance.test.mjs\" && node vehicle-ui.test.mjs && node driver-cabinet-ui.test.mjs && node client-home-ui.test.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "4.0.1",

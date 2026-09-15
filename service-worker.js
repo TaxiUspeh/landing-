@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v57-compact-booking';
+const CACHE_NAME = 'taxi-uspeh-v58-push-reconnect';
 const APP_SHELL = [
   './',
   './driver-finance.js?v=53',
@@ -20,7 +20,7 @@ const APP_SHELL = [
   './holiday-calendar.js',
   './drivers.html',
   './drivers.webmanifest',
-  './driver-portal.js?v=55',
+  './driver-portal.js?v=58',
   './driver-cabinet.js?v=55',
   './styles/driver-cabinet.css?v=55',
   './dispatcher.html',
@@ -78,38 +78,9 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// FCM использует этот уже зарегистрированный PWA service worker. В пуш не кладём
-// адрес или телефон клиента: водитель увидит детали только после входа в кабинет.
-try {
-  importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
-  importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
-  firebase.initializeApp({
-    apiKey: 'AIzaSyDD9akfhmRpCwyWBRx1FJd-2mSjoItLLjE',
-    authDomain: 'taxiuspeh-76d55.firebaseapp.com',
-    projectId: 'taxiuspeh-76d55',
-    storageBucket: 'taxiuspeh-76d55.firebasestorage.app',
-    messagingSenderId: '678422371368',
-    appId: '1:678422371368:web:64c7b4b48c102b3efda91d'
-  });
-  const messaging = firebase.messaging();
-  messaging.onBackgroundMessage(payload => {
-    const data = payload?.data || {};
-    const url = data.url || './drivers.html#driver-online-orders';
-    return self.registration.showNotification(data.title || 'Новый онлайн-заказ', {
-      body: data.body || 'Откройте кабинет, чтобы посмотреть маршрут и цену.',
-      icon: './pwa-icon-512x512.png',
-      badge: './favicon-192x192.png',
-      tag: data.orderId ? `taxi-uspeh-order-${data.orderId}` : 'taxi-uspeh-order',
-      renotify: true,
-      vibrate: [180, 90, 180],
-      data: { url }
-    });
-  });
-} catch (error) {
-  console.warn('Firebase Messaging недоступен в service worker:', error.message);
-}
-
 self.addEventListener('notificationclick', event => {
+  if (!event.notification.data?.url) return;
+  event.stopImmediatePropagation();
   event.notification.close();
   const requestedUrl = event.notification.data && event.notification.data.url
     ? event.notification.data.url
@@ -131,3 +102,36 @@ self.addEventListener('notificationclick', event => {
     })
   );
 });
+
+// FCM использует этот уже зарегистрированный PWA service worker. В пуш не кладём
+// адрес или телефон клиента: водитель увидит детали только после входа в кабинет.
+try {
+  importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
+  importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
+  firebase.initializeApp({
+    apiKey: 'AIzaSyDD9akfhmRpCwyWBRx1FJd-2mSjoItLLjE',
+    authDomain: 'taxiuspeh-76d55.firebaseapp.com',
+    projectId: 'taxiuspeh-76d55',
+    storageBucket: 'taxiuspeh-76d55.firebasestorage.app',
+    messagingSenderId: '678422371368',
+    appId: '1:678422371368:web:64c7b4b48c102b3efda91d'
+  });
+  const messaging = firebase.messaging();
+  messaging.onBackgroundMessage(payload => {
+    // FCM already displays notification payloads (including console test messages).
+    if (payload?.notification) return;
+    const data = payload?.data || {};
+    const url = data.url || './drivers.html#driver-online-orders';
+    return self.registration.showNotification(data.title || 'Новый онлайн-заказ', {
+      body: data.body || 'Откройте кабинет, чтобы посмотреть маршрут и цену.',
+      icon: './pwa-icon-512x512.png',
+      badge: './favicon-192x192.png',
+      tag: data.orderId ? `taxi-uspeh-order-${data.orderId}` : 'taxi-uspeh-order',
+      renotify: true,
+      vibrate: [180, 90, 180],
+      data: { url }
+    });
+  });
+} catch (error) {
+  console.warn('Firebase Messaging недоступен в service worker:', error.message);
+}

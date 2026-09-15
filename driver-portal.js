@@ -2,7 +2,7 @@ import { initDriverCabinet } from './driver-cabinet.js?v=55';
 import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=53';
 import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=52';
 import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=53';
-import { auth, db, googleProvider } from './firebase-config.js';
+import { app, auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
     onAuthStateChanged,
@@ -68,6 +68,8 @@ const BALANCE_HISTORY_RESPONSE_TIMEOUT_MS = 6000;
 const BALANCE_HISTORY_PAGE_SIZE = 20;
 const BALANCE_HISTORY_EXPANDED_PREFERENCE_KEY = 'taxi-uspeh-driver-balance-history-expanded';
 const DRIVER_PUSH_DEVICE_ID_KEY = 'taxi-uspeh-driver-push-device-id-v1';
+const DRIVER_PUSH_BINDING_KEY = 'taxi-uspeh-driver-push-binding-v2';
+const DRIVER_PUSH_TIMEOUT_MS = 15000;
 const OFFLINE_DRIVER_STATE = Object.freeze({ status: 'offline', activeOrderId: '' });
 const AVAILABLE_DRIVER_STATE = Object.freeze({ status: 'available', activeOrderId: '' });
 
@@ -125,6 +127,8 @@ const elements = {
     ordersLink: document.getElementById('driver-orders-link'),
     ordersUnavailable: document.getElementById('driver-orders-unavailable'),
     alertsToggle: document.getElementById('driver-order-alerts-toggle'),
+    alertsRetry: document.getElementById('driver-order-alerts-retry'),
+    alertsDiagnostic: document.getElementById('driver-order-alerts-diagnostic'),
     alertsTest: document.getElementById('driver-order-alerts-test'),
     alertsStatus: document.getElementById('driver-order-alerts-status'),
     alertsIcon: document.getElementById('driver-order-alerts-icon'),
@@ -200,6 +204,12 @@ let mobileShareResetTimer = null;
 let driverPushVapidKey = '';
 let driverPushState = 'not_configured';
 let driverPushSyncInProgress = false;
+let driverPushDisconnectInProgress = false;
+let driverPushGeneration = 0;
+let driverPushObservedIdentity = '';
+let driverPushDiagnostic = '';
+let driverPushMemoryBinding = '';
+let driverPushMemoryDeviceId = '';
 
 function setHidden(element, hidden) {
     if (element) element.classList.toggle('hidden', hidden);
@@ -247,120 +257,217 @@ function canConfigureDriverPush() {
 
 function getDriverPushDeviceId() {
     try {
+        if (driverPushMemoryDeviceId) return driverPushMemoryDeviceId;
         const stored = localStorage.getItem(DRIVER_PUSH_DEVICE_ID_KEY);
-        if (stored) return stored;
+        if (stored) return (driverPushMemoryDeviceId = stored);
         const generated = globalThis.crypto?.randomUUID?.()
             || `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
         localStorage.setItem(DRIVER_PUSH_DEVICE_ID_KEY, generated);
-        return generated;
+        return (driverPushMemoryDeviceId = generated);
     } catch {
-        return `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+        return (driverPushMemoryDeviceId ||= `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`);
     }
 }
 
-function driverPushTokenRef() {
-    if (!currentUser) return null;
-    return doc(db, 'driverPushTokens', `${currentUser.uid}-${getDriverPushDeviceId()}`);
+function driverPushIdentity() {
+    return `${currentUser?.uid || ''}:${currentDriverId}`;
 }
 
-function setDriverPushState(state) {
+function driverPushTokenRef(context = { uid: currentUser?.uid, driverId: currentDriverId }) {
+    if (!context.uid || !context.driverId) return null;
+    // Keep each account/card/device registration separate. Never overwrite a legacy
+    // document whose immutable uid or driverId may belong to a previous binding.
+    return doc(db, 'driverPushTokens', `${context.uid}-${getDriverPushDeviceId()}-v2-${encodeURIComponent(context.driverId)}`);
+}
+
+function readDriverPushBinding() {
+    try { return localStorage.getItem(DRIVER_PUSH_BINDING_KEY) || driverPushMemoryBinding; }
+    catch { return driverPushMemoryBinding; }
+}
+
+function rememberDriverPushBinding(binding) {
+    driverPushMemoryBinding = binding;
+    try { localStorage.setItem(DRIVER_PUSH_BINDING_KEY, binding); } catch { /* Session-only storage. */ }
+}
+
+function pushTimeout(promise) {
+    let timer;
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => {
+            timer = setTimeout(() => reject(Object.assign(new Error('Push operation timed out'), { code: 'push/timeout' })), DRIVER_PUSH_TIMEOUT_MS);
+        })
+    ]).finally(() => clearTimeout(timer));
+}
+
+function safePushErrorCode(error) {
+    const code = typeof error?.code === 'string' ? error.code : String(error?.name || 'unknown');
+    // Firebase messages can contain tokens/endpoints. Only expose bounded codes.
+    return /^[a-zA-Z][a-zA-Z0-9_/-]{0,80}$/.test(code) ? code : 'unknown';
+}
+
+const DRIVER_PUSH_STAGES = {
+    permission: 'разрешение уведомлений', support: 'поддержка браузера',
+    settings: 'загрузка настроек', key: 'ключ Web Push', worker: 'фоновый обработчик',
+    subscription: 'подписка телефона', token: 'регистрация в Firebase', save: 'сохранение подключения',
+    disconnect: 'отключение уведомлений'
+};
+
+function setDriverPushState(state, diagnostic = '') {
     driverPushState = state;
+    driverPushDiagnostic = diagnostic;
     updateOrderAlertsControls();
 }
 
-async function enableDriverPushSubscription({ requestPermission = false } = {}) {
-    if (!canConfigureDriverPush()) return false;
+function showDriverPushError(stage, error) {
+    const code = safePushErrorCode(error);
+    setDriverPushState('error', `Этап: ${DRIVER_PUSH_STAGES[stage] || stage}. Код: ${code}. Версия: 58.`);
+    console.warn('Подключение пушей:', stage, code);
+}
+
+async function enableDriverPushSubscription({ requestPermission = false, refresh = false } = {}) {
+    const identity = driverPushIdentity();
+    if (driverPushObservedIdentity !== identity) {
+        driverPushObservedIdentity = identity;
+        driverPushGeneration += 1;
+    }
+    if (!canConfigureDriverPush()) {
+        setDriverPushState('account_needed');
+        return false;
+    }
     if (!window.isSecureContext || !('serviceWorker' in navigator)) {
         setDriverPushState('unsupported');
         return false;
     }
-    if (!driverPushVapidKey) {
-        setDriverPushState('not_configured');
-        return false;
-    }
-    if (driverPushSyncInProgress) return false;
+    if (!orderAlertsEnabled || driverPushSyncInProgress || driverPushDisconnectInProgress) return false;
     driverPushSyncInProgress = true;
+    const generation = driverPushGeneration;
+    const context = { uid: currentUser.uid, driverId: currentDriverId };
+    const isCurrent = () => generation === driverPushGeneration && identity === driverPushIdentity() && orderAlertsEnabled && canConfigureDriverPush();
+    const assertCurrent = () => {
+        if (!isCurrent()) throw Object.assign(new Error('Account changed'), { code: 'push/context-changed' });
+    };
+    let stage = 'permission';
+    const runStage = async (nextStage, task) => {
+        assertCurrent();
+        stage = nextStage;
+        setDriverPushState('connecting', `Этап: ${DRIVER_PUSH_STAGES[stage]}. Версия: 58.`);
+        const value = await pushTimeout(Promise.resolve().then(task));
+        assertCurrent();
+        return value;
+    };
+    setDriverPushState('connecting');
     try {
-        const supported = await isMessagingSupported();
-        if (!supported) {
-            setDriverPushState('unsupported');
-            return false;
-        }
-
+        // Request permission directly in the click handler's user gesture, before network work.
         let permission = notificationPermission();
         if (permission === 'default' && requestPermission) permission = await Notification.requestPermission();
+        assertCurrent();
         if (permission !== 'granted') {
             setDriverPushState(permission === 'denied' ? 'denied' : 'permission_needed');
             return false;
         }
-
-        const registration = await navigator.serviceWorker.ready;
-        const token = await getToken(getMessaging(), {
-            vapidKey: driverPushVapidKey,
-            serviceWorkerRegistration: registration
-        });
-        if (!token) {
-            setDriverPushState('token_missing');
+        if (!await runStage('support', () => isMessagingSupported())) {
+            setDriverPushState('unsupported');
             return false;
         }
-
-        const tokenRef = driverPushTokenRef();
-        if (!tokenRef) return false;
-        await setDoc(tokenRef, {
-            uid: currentUser.uid,
-            driverId: currentDriverId,
+        const settings = await runStage('settings', () => getDoc(doc(db, 'settings', 'driverPortal')));
+        const key = settings.exists() ? settings.data().webPushVapidKey : '';
+        driverPushVapidKey = typeof key === 'string' ? key.trim() : '';
+        if (!driverPushVapidKey) {
+            setDriverPushState('not_configured');
+            return false;
+        }
+        stage = 'key';
+        // An uncompressed P-256 public key is 65 bytes (87 URL-safe base64 characters).
+        if (!/^[A-Za-z0-9_-]{87}=?$/.test(driverPushVapidKey)
+            || atob(driverPushVapidKey.replace(/-/g, '+').replace(/_/g, '/')).charCodeAt(0) !== 4) {
+            throw Object.assign(new Error('Invalid Web Push public key'), { code: 'push/invalid-vapid-key' });
+        }
+        const registration = await runStage('worker', async () => {
+            await navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' });
+            return navigator.serviceWorker.ready;
+        });
+        const binding = `${identity}:${driverPushVapidKey}`;
+        if (refresh || readDriverPushBinding() !== binding) {
+            await runStage('subscription', async () => {
+                const previous = await registration.pushManager.getSubscription();
+                if (previous && !await previous.unsubscribe()) {
+                    throw Object.assign(new Error('Subscription reset failed'), { code: 'push/reset-failed' });
+                }
+            });
+            // Unsubscribing this browser's endpoint prevents old account/card tokens
+            // delivering here. getToken renews FCM's cached token for the new endpoint.
+        }
+        const token = await runStage('token', () => getToken(getMessaging(app), {
+            vapidKey: driverPushVapidKey,
+            serviceWorkerRegistration: registration
+        }));
+        if (!token) throw Object.assign(new Error('Empty Firebase token'), { code: 'push/token-missing' });
+        await runStage('save', () => setDoc(driverPushTokenRef(context), {
+            uid: context.uid,
+            driverId: context.driverId,
             token,
             enabled: true,
             updatedAt: serverTimestamp()
-        }, { merge: true });
+        }));
+        rememberDriverPushBinding(binding);
         setDriverPushState('enabled');
         return true;
     } catch (error) {
-        console.warn('Не удалось подключить Firebase-пуш:', error.code || error.message);
-        setDriverPushState('error');
+        if (isCurrent()) showDriverPushError(stage, error);
         return false;
     } finally {
         driverPushSyncInProgress = false;
         updateOrderAlertsControls();
+        // A new account/card can arrive while an old registration is awaiting Firebase.
+        if (!driverPushDisconnectInProgress && orderAlertsEnabled && canConfigureDriverPush() && identity !== driverPushIdentity()) {
+            void loadDriverPushSettings();
+        }
     }
 }
 
 async function disableDriverPushSubscription() {
-    const tokenRef = driverPushTokenRef();
-    if (!tokenRef) return;
+    if (driverPushDisconnectInProgress) return;
+    driverPushDisconnectInProgress = true;
+    const identity = driverPushIdentity();
+    updateOrderAlertsControls();
+    driverPushGeneration += 1;
+    const context = { uid: currentUser?.uid, driverId: currentDriverId };
+    const binding = readDriverPushBinding();
     try {
-        await setDoc(tokenRef, {
-            enabled: false,
-            updatedAt: serverTimestamp()
-        }, { merge: true });
-        setDriverPushState('disabled');
+        if ('serviceWorker' in navigator) {
+            const registration = await pushTimeout(navigator.serviceWorker.getRegistration());
+            const subscription = registration && await pushTimeout(registration.pushManager.getSubscription());
+            if (subscription && !await pushTimeout(subscription.unsubscribe())) {
+                throw Object.assign(new Error('Unsubscribe failed'), { code: 'push/reset-failed' });
+            }
+        }
+        rememberDriverPushBinding('');
+        const tokenRef = driverPushTokenRef(context);
+        if (tokenRef && binding.startsWith(`${context.uid}:${context.driverId}:`)) {
+            await pushTimeout(setDoc(tokenRef, { enabled: false, updatedAt: serverTimestamp() }, { merge: true }));
+        }
+        if (identity === driverPushIdentity()) setDriverPushState('disabled');
     } catch (error) {
-        console.warn('Не удалось отключить Firebase-пуш:', error.code || error.message);
-        setDriverPushState('error');
+        if (identity === driverPushIdentity()) showDriverPushError('disconnect', error);
+    } finally {
+        driverPushDisconnectInProgress = false;
+        updateOrderAlertsControls();
+        if (orderAlertsEnabled && canConfigureDriverPush() && identity !== driverPushIdentity()) void loadDriverPushSettings();
     }
 }
 
 async function loadDriverPushSettings() {
-    if (!canConfigureDriverPush()) return;
-    try {
-        const settingsSnapshot = await getDoc(doc(db, 'settings', 'driverPortal'));
-        const vapidKey = settingsSnapshot.exists() ? settingsSnapshot.data().webPushVapidKey : '';
-        driverPushVapidKey = typeof vapidKey === 'string' ? vapidKey.trim() : '';
-        if (!driverPushVapidKey) {
-            setDriverPushState('not_configured');
-            return;
-        }
-        if (orderAlertsEnabled && notificationPermission() === 'granted') {
-            await enableDriverPushSubscription();
-        } else if (notificationPermission() === 'denied') {
-            setDriverPushState('denied');
-        } else {
-            setDriverPushState('permission_needed');
-        }
-    } catch (error) {
-        console.warn('Не удалось загрузить настройки Firebase-пуша:', error.code || error.message);
-        setDriverPushState('error');
+    if (!canConfigureDriverPush()) {
+        setDriverPushState('account_needed');
+        return;
     }
+    if (orderAlertsEnabled) await enableDriverPushSubscription();
+}
+
+async function retryDriverPushSubscription() {
+    if (!orderAlertsEnabled || driverPushSyncInProgress || driverPushDisconnectInProgress) return;
+    await enableDriverPushSubscription({ requestPermission: true, refresh: true });
 }
 
 function updateOrderAlertsControls() {
@@ -369,51 +476,68 @@ function updateOrderAlertsControls() {
     const toggleIcon = elements.alertsToggle.querySelector('i');
     const toggleLabel = elements.alertsToggle.querySelector('span');
     const statusIcon = elements.alertsIcon.querySelector('i');
-
+    const busy = driverPushSyncInProgress || driverPushDisconnectInProgress;
+    elements.alertsToggle.disabled = busy;
+    elements.alertsToggle.setAttribute('aria-busy', String(busy));
+    if (elements.alertsRetry) {
+        setHidden(elements.alertsRetry, !orderAlertsEnabled);
+        elements.alertsRetry.disabled = busy;
+        elements.alertsRetry.textContent = driverPushSyncInProgress ? 'Подключаем…' : 'Повторить подключение';
+    }
+    if (elements.alertsDiagnostic) {
+        elements.alertsDiagnostic.textContent = driverPushDiagnostic;
+        setHidden(elements.alertsDiagnostic, !driverPushDiagnostic);
+    }
     if (!orderAlertsEnabled) {
         elements.alertsToggle.className = 'rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 text-sm font-extrabold shadow-sm';
         toggleIcon.className = 'fas fa-bell mr-2';
         toggleLabel.textContent = 'Включить уведомления';
         statusIcon.className = 'fas fa-bell-slash';
-        elements.alertsStatus.textContent = 'Нажмите кнопку, чтобы включить сигналы новых заказов и сообщений диспетчера.';
-        if (elements.alertsNote) elements.alertsNote.textContent = 'После подключения Firebase пуши новых заказов придут и при закрытом браузере.';
+        elements.alertsStatus.textContent = driverPushState === 'error'
+            ? 'Звук выключен. Отключение фоновых уведомлений завершилось с ошибкой.'
+            : 'Включите звук заказов и чата, а также фоновые уведомления новых заказов.';
+        if (elements.alertsNote) elements.alertsNote.textContent = 'Разрешение уведомлений запрашивается отдельно на каждом телефоне.';
         setHidden(elements.alertsTest, true);
         return;
     }
-
     elements.alertsToggle.className = 'rounded-xl border border-red-200 dark:border-red-800 bg-white dark:bg-gray-800 text-red-700 dark:text-red-300 px-4 py-3 text-sm font-extrabold';
     toggleIcon.className = 'fas fa-bell-slash mr-2';
     toggleLabel.textContent = 'Отключить сигналы';
     statusIcon.className = 'fas fa-bell';
     setHidden(elements.alertsTest, false);
-
-    if (permission === 'granted') {
-        if (driverPushState === 'enabled') {
-            elements.alertsStatus.textContent = 'Включены звук, вибрация и Firebase-пуши. Новые заказы придут даже при закрытом браузере.';
-            if (elements.alertsNote) elements.alertsNote.textContent = 'Пуш подключён для этого телефона. При смене телефона включите его заново.';
-        } else if (driverPushState === 'not_configured') {
-            elements.alertsStatus.textContent = 'Звук и уведомления в открытом кабинете включены. Firebase-пуш пока настраивается диспетчером.';
-            if (elements.alertsNote) elements.alertsNote.textContent = 'После настройки Firebase нажмите «Включить уведомления» ещё раз.';
-        } else if (driverPushState === 'unsupported') {
-            elements.alertsStatus.textContent = 'Звук и уведомления в открытом кабинете включены. Этот браузер не поддерживает Firebase-пуши.';
-            if (elements.alertsNote) elements.alertsNote.textContent = 'Попробуйте открыть кабинет в актуальном Chrome или установить приложение на телефон.';
-        } else if (driverPushState === 'error' || driverPushState === 'token_missing') {
-            elements.alertsStatus.textContent = 'Звук включён, но Firebase-пуш пока не подключился. Нажмите кнопку ещё раз.';
-            if (elements.alertsNote) elements.alertsNote.textContent = 'Проверьте интернет и разрешение уведомлений в настройках браузера.';
-        } else {
-            elements.alertsStatus.textContent = 'Звук и вибрация заказов и чата включены. Нажмите кнопку ещё раз, чтобы подключить Firebase-пуши.';
-            if (elements.alertsNote) elements.alertsNote.textContent = 'На каждом телефоне пуш‑уведомления включаются отдельно.';
-        }
+    let status;
+    let note;
+    if (driverPushState === 'connecting') {
+        status = 'Подключаем телефон к фоновым уведомлениям…';
+        note = 'Дождитесь завершения подключения. Звук заказов остаётся включённым.';
     } else if (permission === 'denied') {
-        elements.alertsStatus.textContent = 'Звук и вибрация заказов и чата включены. Системные уведомления заблокированы в настройках браузера.';
-        if (elements.alertsNote) elements.alertsNote.textContent = 'Разрешите уведомления для сайта Такси «Успех» в настройках браузера, затем включите их снова.';
-    } else if (permission === 'unsupported') {
-        elements.alertsStatus.textContent = 'Звук и вибрация заказов и чата включены. Этот браузер не поддерживает системные уведомления.';
-        if (elements.alertsNote) elements.alertsNote.textContent = 'Используйте актуальный Chrome на Android или установленное приложение.';
+        status = 'Звук включён. Уведомления заблокированы в браузере.';
+        note = 'Разрешите уведомления для сайта в настройках браузера и нажмите «Повторить подключение».';
+    } else if (permission === 'unsupported' || driverPushState === 'unsupported') {
+        status = 'Звук включён. Этот браузер не поддерживает фоновые уведомления.';
+        note = 'Откройте кабинет в актуальном Chrome на Android.';
+    } else if (driverPushState === 'error') {
+        status = 'Звук включён. Не удалось подключить фоновые уведомления.';
+        note = driverPushDiagnostic.includes('permission-denied')
+            ? 'Firebase отклонил доступ. Передайте диспетчеру код ниже для проверки привязки аккаунта и правил.'
+            : driverPushDiagnostic.includes('invalid-vapid-key')
+                ? 'Диспетчеру нужно проверить открытый ключ Web Push в настройках приложения.'
+                : 'Нажмите «Повторить подключение». Если ошибка повторится, передайте диспетчеру код ниже.';
+    } else if (driverPushState === 'account_needed') {
+        status = 'Звук включён. Подключение пушей пока недоступно для этой карточки.';
+        note = 'Проверьте привязку Google-аккаунта и доступ к заказам в карточке водителя.';
+    } else if (driverPushState === 'not_configured') {
+        status = 'Звук включён. В настройках отсутствует ключ Web Push.';
+        note = 'Диспетчеру нужно настроить ключ уведомлений, затем нажмите «Повторить подключение».';
+    } else if (driverPushState === 'enabled' && permission === 'granted') {
+        status = 'Телефон подключён к Firebase-пушам новых заказов. Звук заказов и чата включён.';
+        note = 'Подключение сохранено. Доставку при закрытом кабинете проверяйте отдельным пуш-уведомлением.';
     } else {
-        elements.alertsStatus.textContent = 'Звук и вибрация заказов и чата включены. Разрешите системные уведомления при следующем включении.';
-        if (elements.alertsNote) elements.alertsNote.textContent = 'После разрешения система зарегистрирует этот телефон для Firebase-пушей.';
+        status = 'Звук включён. Разрешите фоновые уведомления для этого телефона.';
+        note = 'Нажмите «Повторить подключение» и разрешите уведомления, если появится запрос.';
     }
+    elements.alertsStatus.textContent = status;
+    if (elements.alertsNote) elements.alertsNote.textContent = note;
 }
 
 function getOrderAudioContext() {
@@ -593,21 +717,22 @@ async function testOrderAlerts() {
     if (!orderAlertsEnabled) return;
     await prepareOrderSound().catch(() => null);
     showNewOrderAlert({
-        title: 'Проверка уведомлений',
-        route: 'Звук, вибрация и сообщения о заказах и чате работают',
-        price: 'Это не настоящий заказ'
+        title: 'Проверка звука',
+        route: 'Местная проверка звука и вибрации',
+        price: 'Доставка пушей с сервера этой кнопкой не проверяется'
     });
     void playOrderSound();
     vibrateForOrder();
     await showSystemNotification({
         title: 'Проверка — Такси «Успех»',
-        body: 'Уведомления о новых заказах и сообщениях включены.',
+        body: 'Местная проверка уведомления. Доставка пушей с сервера не проверялась.',
         tag: 'taxi-uspeh-driver-alert-test',
         url: './drivers.html#driver-online-orders'
     });
 }
 
 async function toggleOrderAlerts() {
+    if (driverPushSyncInProgress || driverPushDisconnectInProgress) return;
     if (orderAlertsEnabled) {
         orderAlertsEnabled = false;
         saveOrderAlertsPreference();
@@ -620,17 +745,9 @@ async function toggleOrderAlerts() {
 
     orderAlertsEnabled = true;
     saveOrderAlertsPreference();
-    await prepareOrderSound().catch(() => null);
-    if (notificationPermission() === 'default') {
-        try {
-            await Notification.requestPermission();
-        } catch (error) {
-            console.warn('Не удалось запросить разрешение уведомлений:', error.message);
-        }
-    }
+    void prepareOrderSound().catch(() => null);
     await enableDriverPushSubscription({ requestPermission: true });
     updateOrderAlertsControls();
-    await testOrderAlerts();
 }
 
 function updateOrdersPageTitle() {
@@ -1372,6 +1489,7 @@ async function repairMissingBusyState() {
 }
 
 async function logoutDriver() {
+    await disableDriverPushSubscription();
     if (currentUser && currentDriverState.status === 'available') {
         try {
             await updateDoc(doc(db, 'driverStates', currentUser.uid), {
@@ -1430,6 +1548,8 @@ function stopOrderWatches() {
 }
 
 function stopProfileWatches() {
+    driverPushGeneration += 1;
+    driverPushDiagnostic = '';
     ordersTab = 'new'; previousActiveOrderIds.clear(); orderDisclosureState.clear();
     if (unsubscribeAccount) unsubscribeAccount();
     if (unsubscribeDriver) unsubscribeDriver();
@@ -2301,6 +2421,7 @@ elements.mobilePrimaryAction?.addEventListener('click', () => {
 });
 elements.alertsToggle?.addEventListener('click', () => void toggleOrderAlerts());
 elements.alertsTest?.addEventListener('click', () => void testOrderAlerts());
+elements.alertsRetry?.addEventListener('click', () => void retryDriverPushSubscription());
 elements.newOrderAlertClose?.addEventListener('click', hideNewOrderAlert);
 elements.newOrderAlertView?.addEventListener('click', () => {
     const orderId = currentAlertOrderId;

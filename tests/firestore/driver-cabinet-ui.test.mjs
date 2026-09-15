@@ -103,6 +103,9 @@ assert.equal(get('driver-work-status-card').dataset.brief,'false');
 assert.match(get('driver-work-status-detail').textContent,/Пополните баланс/);
 
 // Switching identities restores registration controls and public content.
+window.location.hash = '#driver-order-alerts';
+run('cabinet.setEnabled(false); updateMobilePrimaryAction();');
+assert.equal(get('driver-view-profile').hidden, false, 'test push links open the notification settings');
 const publicInfo=document.querySelector('.cabinet-public-info');assert.ok(publicInfo.children.length>1);
 authListener(null);
 assert.equal(document.body.classList.contains('driver-cabinet-ready'),false);

@@ -1,9 +1,11 @@
 const { logger } = require('firebase-functions');
 const { setGlobalOptions } = require('firebase-functions/v2');
-const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { initializeApp } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
+const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 const { getMessaging } = require('firebase-admin/messaging');
+const { createPushActions } = require('./push-actions');
 
 initializeApp();
 setGlobalOptions({ region: 'us-central1', maxInstances: 2 });
@@ -54,6 +56,7 @@ async function eligibleDriverPushSubscriptions(targetDriverUid = '') {
       && account?.active === true
       && String(account.driverId || '') === driverId
       && driver?.status === 'active'
+      && driver.authUid === uid
     );
   });
 }
@@ -113,3 +116,10 @@ exports.notifyDriversOfNewOnlineOrder = onDocumentCreated('orders/{orderId}', as
   }
   if (invalidSubscriptions.length) await Promise.all(invalidSubscriptions.map(ref => ref.delete()));
 });
+
+const pushActions = createPushActions({ db, messaging: getMessaging(), Timestamp, HttpsError, logger,
+  eligibleSubscriptions: eligibleDriverPushSubscriptions });
+exports.sendDriverTestPush = onCall({ timeoutSeconds: 60 }, pushActions.sendTest);
+exports.notifyDriversOfOrderAssignment = onDocumentUpdated(
+  { document: 'orders/{orderId}', retry: true, timeoutSeconds: 60 }, pushActions.notifyAssignment
+);

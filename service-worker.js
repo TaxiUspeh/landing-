@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v58-push-reconnect';
+const CACHE_NAME = 'taxi-uspeh-v59-push-tools';
 const APP_SHELL = [
   './',
   './driver-finance.js?v=53',
@@ -20,7 +20,7 @@ const APP_SHELL = [
   './holiday-calendar.js',
   './drivers.html',
   './drivers.webmanifest',
-  './driver-portal.js?v=58',
+  './driver-portal.js?v=59',
   './driver-cabinet.js?v=55',
   './styles/driver-cabinet.css?v=55',
   './dispatcher.html',
@@ -126,7 +126,7 @@ try {
       body: data.body || 'Откройте кабинет, чтобы посмотреть маршрут и цену.',
       icon: './pwa-icon-512x512.png',
       badge: './favicon-192x192.png',
-      tag: data.orderId ? `taxi-uspeh-order-${data.orderId}` : 'taxi-uspeh-order',
+      tag: data.type === 'push_test' ? 'taxi-uspeh-push-test' : data.orderId ? `taxi-uspeh-order-${data.orderId}` : 'taxi-uspeh-order',
       renotify: true,
       vibrate: [180, 90, 180],
       data: { url }

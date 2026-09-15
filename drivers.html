@@ -457,7 +457,12 @@
                                             class="hidden rounded-xl border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-gray-800 text-indigo-800 dark:text-indigo-200 px-4 py-3 text-sm font-extrabold">
                                         <i class="fas fa-volume-high mr-2" aria-hidden="true"></i>Проверить звук
                                     </button>
+                                    <button id="driver-order-alerts-push-test" type="button" disabled
+                                            class="hidden rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 text-sm font-extrabold shadow-sm">
+                                        Отправить тестовый пуш
+                                    </button>
                                 </div>
+                                <p id="driver-order-alerts-push-test-result" class="hidden mt-3 text-xs break-words text-gray-600 dark:text-gray-300" role="status"></p>
                                 <p id="driver-order-alerts-diagnostic" class="hidden mt-3 text-xs break-words text-gray-600 dark:text-gray-300" role="status"></p>
                                 <p id="driver-order-alerts-note" class="mt-3 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
                                     На каждом телефоне уведомления включаются отдельно. «Проверить звук» выполняет местную проверку и не проверяет доставку пушей с сервера.
@@ -958,6 +963,6 @@
             });
         }
     </script>
-    <script type="module" src="./driver-portal.js?v=58"></script>
+    <script type="module" src="./driver-portal.js?v=59"></script>
 </body>
 </html>

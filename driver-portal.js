@@ -31,8 +31,10 @@ import {
 import {
     getMessaging,
     getToken,
+    onMessage,
     isSupported as isMessagingSupported
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
 
 let unsubscribeOwnOffers = null;
 let unsubscribeAuctionOrders = null;
@@ -130,6 +132,8 @@ const elements = {
     alertsRetry: document.getElementById('driver-order-alerts-retry'),
     alertsDiagnostic: document.getElementById('driver-order-alerts-diagnostic'),
     alertsTest: document.getElementById('driver-order-alerts-test'),
+    alertsPushTest: document.getElementById('driver-order-alerts-push-test'),
+    alertsPushTestResult: document.getElementById('driver-order-alerts-push-test-result'),
     alertsStatus: document.getElementById('driver-order-alerts-status'),
     alertsIcon: document.getElementById('driver-order-alerts-icon'),
     alertsNote: document.getElementById('driver-order-alerts-note'),
@@ -203,6 +207,9 @@ let dispatcherChatHasNewReply = false;
 let mobileShareResetTimer = null;
 let driverPushVapidKey = '';
 let driverPushState = 'not_configured';
+let driverPushTestInProgress = false;
+let driverPushTestReceived = false;
+let unsubscribePushForeground = null;
 let driverPushSyncInProgress = false;
 let driverPushDisconnectInProgress = false;
 let driverPushGeneration = 0;
@@ -274,10 +281,15 @@ function driverPushIdentity() {
 }
 
 function driverPushTokenRef(context = { uid: currentUser?.uid, driverId: currentDriverId }) {
-    if (!context.uid || !context.driverId) return null;
+    const id = driverPushTokenId(context);
+    return id ? doc(db, 'driverPushTokens', id) : null;
+}
+
+function driverPushTokenId(context = { uid: currentUser?.uid, driverId: currentDriverId }) {
+    if (!context.uid || !context.driverId) return '';
     // Keep each account/card/device registration separate. Never overwrite a legacy
     // document whose immutable uid or driverId may belong to a previous binding.
-    return doc(db, 'driverPushTokens', `${context.uid}-${getDriverPushDeviceId()}-v2-${encodeURIComponent(context.driverId)}`);
+    return `${context.uid}-${getDriverPushDeviceId()}-v2-${encodeURIComponent(context.driverId)}`;
 }
 
 function readDriverPushBinding() {
@@ -321,7 +333,7 @@ function setDriverPushState(state, diagnostic = '') {
 
 function showDriverPushError(stage, error) {
     const code = safePushErrorCode(error);
-    setDriverPushState('error', `Этап: ${DRIVER_PUSH_STAGES[stage] || stage}. Код: ${code}. Версия: 58.`);
+    setDriverPushState('error', `Этап: ${DRIVER_PUSH_STAGES[stage] || stage}. Код: ${code}. Версия: 59.`);
     console.warn('Подключение пушей:', stage, code);
 }
 
@@ -351,7 +363,7 @@ async function enableDriverPushSubscription({ requestPermission = false, refresh
     const runStage = async (nextStage, task) => {
         assertCurrent();
         stage = nextStage;
-        setDriverPushState('connecting', `Этап: ${DRIVER_PUSH_STAGES[stage]}. Версия: 58.`);
+        setDriverPushState('connecting', `Этап: ${DRIVER_PUSH_STAGES[stage]}. Версия: 59.`);
         const value = await pushTimeout(Promise.resolve().then(task));
         assertCurrent();
         return value;
@@ -411,6 +423,7 @@ async function enableDriverPushSubscription({ requestPermission = false, refresh
             updatedAt: serverTimestamp()
         }));
         rememberDriverPushBinding(binding);
+        listenForTestPushes();
         setDriverPushState('enabled');
         return true;
     } catch (error) {
@@ -470,6 +483,69 @@ async function retryDriverPushSubscription() {
     await enableDriverPushSubscription({ requestPermission: true, refresh: true });
 }
 
+function showPushTestResult(message) {
+    if (!elements.alertsPushTestResult) return;
+    elements.alertsPushTestResult.textContent = message;
+    setHidden(elements.alertsPushTestResult, !message);
+}
+
+function listenForTestPushes() {
+    if (unsubscribePushForeground) return;
+    unsubscribePushForeground = onMessage(getMessaging(app), async payload => {
+        const data = payload?.data || {};
+        if (data.type !== 'push_test' || !orderAlertsEnabled || !canConfigureDriverPush()) return;
+        driverPushTestReceived = true;
+        showPushTestResult('Тестовый пуш получен на это устройство.');
+        // An open page receives FCM through onMessage, not onBackgroundMessage.
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            await registration.showNotification(data.title || 'Тестовое уведомление «Такси Успех»', {
+                body: data.body || 'Пуш на это устройство получен.',
+                icon: './pwa-icon-512x512.png', badge: './favicon-192x192.png',
+                tag: 'taxi-uspeh-push-test', data: { url: './drivers.html#driver-order-alerts' }
+            });
+        } catch {
+            showPushTestResult('Тестовый пуш получен в открытом кабинете, но браузер не показал системное уведомление.');
+        }
+    });
+}
+
+async function testDriverPush() {
+    if (driverPushTestInProgress || driverPushSyncInProgress || driverPushDisconnectInProgress
+        || driverPushState !== 'enabled' || !orderAlertsEnabled || !canConfigureDriverPush()) return;
+    const identity = driverPushIdentity();
+    const generation = driverPushGeneration;
+    const isCurrent = () => identity === driverPushIdentity() && generation === driverPushGeneration && orderAlertsEnabled;
+    driverPushTestInProgress = true;
+    driverPushTestReceived = false;
+    showPushTestResult('Запрашиваем тестовый пуш. Сверните кабинет и заблокируйте экран: сервер отправит уведомление через 10 секунд после начала проверки.');
+    updateOrderAlertsControls();
+    try {
+        const send = httpsCallable(getFunctions(app, 'us-central1'), 'sendDriverTestPush', { timeout: 60000 });
+        const result = await send({ subscriptionId: driverPushTokenId() });
+        if (!isCurrent() || driverPushTestReceived) return;
+        if (result.data?.accepted !== true) throw Object.assign(new Error('Unexpected response'), { code: 'functions/unknown' });
+        showPushTestResult('Тестовый пуш передан в Firebase. Проверьте уведомления на этом устройстве.');
+    } catch (error) {
+        if (!isCurrent()) return;
+        const code = safePushErrorCode(error);
+        const message = code === 'functions/resource-exhausted'
+            ? 'Повторить тест можно через минуту.'
+            : code === 'functions/failed-precondition'
+                ? 'Подключение устарело. Нажмите «Повторить подключение», затем повторите тест.'
+                : code === 'functions/permission-denied' || code === 'functions/unauthenticated'
+                    ? 'Не удалось подтвердить аккаунт. Проверьте вход и привязку карточки водителя.'
+                    : code === 'functions/not-found'
+                        ? 'Серверная функция теста ещё не опубликована. Передайте это сообщение диспетчеру.'
+                        : 'Не удалось подтвердить отправку теста. Передайте диспетчеру код для проверки сервера уведомлений.';
+        showPushTestResult(`${message} Код: ${code}.`);
+    } finally {
+        driverPushTestInProgress = false;
+        if (!isCurrent()) showPushTestResult('');
+        updateOrderAlertsControls();
+    }
+}
+
 function updateOrderAlertsControls() {
     if (!elements.alertsToggle || !elements.alertsStatus || !elements.alertsIcon) return;
     const permission = notificationPermission();
@@ -488,7 +564,14 @@ function updateOrderAlertsControls() {
         elements.alertsDiagnostic.textContent = driverPushDiagnostic;
         setHidden(elements.alertsDiagnostic, !driverPushDiagnostic);
     }
+    if (elements.alertsPushTest) {
+        setHidden(elements.alertsPushTest, !orderAlertsEnabled);
+        elements.alertsPushTest.disabled = busy || driverPushTestInProgress || driverPushState !== 'enabled';
+        elements.alertsPushTest.textContent = driverPushTestInProgress ? 'Отправляем тест…' : 'Отправить тестовый пуш';
+        elements.alertsPushTest.setAttribute('aria-busy', String(driverPushTestInProgress));
+    }
     if (!orderAlertsEnabled) {
+        showPushTestResult('');
         elements.alertsToggle.className = 'rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 text-sm font-extrabold shadow-sm';
         toggleIcon.className = 'fas fa-bell mr-2';
         toggleLabel.textContent = 'Включить уведомления';
@@ -531,7 +614,7 @@ function updateOrderAlertsControls() {
         note = 'Диспетчеру нужно настроить ключ уведомлений, затем нажмите «Повторить подключение».';
     } else if (driverPushState === 'enabled' && permission === 'granted') {
         status = 'Телефон подключён к Firebase-пушам новых заказов. Звук заказов и чата включён.';
-        note = 'Подключение сохранено. Доставку при закрытом кабинете проверяйте отдельным пуш-уведомлением.';
+        note = 'Уведомления подключены. Тестовый пуш отправляется только на это устройство с задержкой 10 секунд — чтобы вы успели заблокировать экран.';
     } else {
         status = 'Звук включён. Разрешите фоновые уведомления для этого телефона.';
         note = 'Нажмите «Повторить подключение» и разрешите уведомления, если появится запрос.';
@@ -869,7 +952,11 @@ function updateMobilePrimaryAction() {
     if (!action || !elements.mobilePrimaryIcon || !elements.mobilePrimaryLabel) return;
 
     const hasDriverCabinet = Boolean(currentUser && currentDriver && currentDriverId && !elements.profile.classList.contains('hidden'));
+    const wasCabinetEnabled = cabinet?.enabled;
     cabinet?.setEnabled(hasDriverCabinet);
+    if (hasDriverCabinet && !wasCabinetEnabled && window.location.hash === '#driver-order-alerts') {
+        cabinet?.open('profile', { scroll: false });
+    }
     action.dataset.driverMobileAction = hasDriverCabinet ? 'chat' : 'documents';
     action.className = hasDriverCabinet
         ? 'bg-sky-600 hover:bg-sky-700 text-white flex-grow min-w-0 py-3 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-1'
@@ -1550,6 +1637,9 @@ function stopOrderWatches() {
 function stopProfileWatches() {
     driverPushGeneration += 1;
     driverPushDiagnostic = '';
+    unsubscribePushForeground?.();
+    unsubscribePushForeground = null;
+    showPushTestResult('');
     ordersTab = 'new'; previousActiveOrderIds.clear(); orderDisclosureState.clear();
     if (unsubscribeAccount) unsubscribeAccount();
     if (unsubscribeDriver) unsubscribeDriver();
@@ -2422,6 +2512,7 @@ elements.mobilePrimaryAction?.addEventListener('click', () => {
 elements.alertsToggle?.addEventListener('click', () => void toggleOrderAlerts());
 elements.alertsTest?.addEventListener('click', () => void testOrderAlerts());
 elements.alertsRetry?.addEventListener('click', () => void retryDriverPushSubscription());
+elements.alertsPushTest?.addEventListener('click', () => void testDriverPush());
 elements.newOrderAlertClose?.addEventListener('click', hideNewOrderAlert);
 elements.newOrderAlertView?.addEventListener('click', () => {
     const orderId = currentAlertOrderId;

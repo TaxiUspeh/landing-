@@ -21,7 +21,7 @@ function fixture({ timeout = 15000 } = {}) {
     const records = new Map(); const writes = []; const calls = []; const messages = [];
     const settings = { webPushVapidKey: vapid };
     const fail = {};
-    let endpoint = 'legacy-token'; let nextToken = 0; let authListener;
+    let endpoint = 'legacy-token'; let nextToken = 0; let authListener; let foreground;
     const permission = { permission: 'granted', requestPermission: async () => { calls.push('permission'); return (permission.permission = 'granted'); } };
     dom.window.Notification = permission;
     Object.defineProperty(dom.window, 'isSecureContext', { value: true });
@@ -48,6 +48,14 @@ function fixture({ timeout = 15000 } = {}) {
         getDoc: async path => { calls.push('settings'); if (fail.settings) throw fail.settings; return { exists: () => true, data: () => settings }; },
         isMessagingSupported: async () => true,
         getMessaging: () => ({}),
+        onMessage: (_messaging, callback) => { foreground = callback; return () => {}; },
+        getFunctions: (_app, region) => { assert.equal(region, 'us-central1'); return {}; },
+        httpsCallable: (_functions, name, options) => async data => {
+            assert.equal(name, 'sendDriverTestPush'); assert.equal(options.timeout, 60000);
+            calls.push(['push-test', data.subscriptionId]);
+            if (fail.pushTest) return typeof fail.pushTest === 'function' ? fail.pushTest() : Promise.reject(fail.pushTest);
+            return { data: { accepted: true, testId: 'test-1' } };
+        },
         getToken: async (_messaging, options) => {
             calls.push('token'); assert.equal(options.serviceWorkerRegistration, registration);
             if (fail.token) return typeof fail.token === 'function' ? fail.token() : Promise.reject(fail.token);
@@ -73,7 +81,41 @@ function fixture({ timeout = 15000 } = {}) {
     const select = (uid = 'me', driverId = '32') => run(`currentUser={uid:${JSON.stringify(uid)}};currentDriverId=${JSON.stringify(driverId)};currentDriver={status:'active'};currentBaseEligible=true;orderAlertsEnabled=true;`);
     select();
     return { dom, run, select, records, writes, calls, messages, settings, fail, permission, serviceWorker, registration,
+        receive: payload => foreground(payload),
         get: id => dom.window.document.getElementById(id), close: () => dom.window.close() };
+}
+
+// The server test is separate from local sound and addresses this device only.
+{
+    const f = fixture();
+    await f.run('enableDriverPushSubscription()');
+    assert.equal(f.get('driver-order-alerts-push-test').disabled, false);
+    f.get('driver-order-alerts-push-test').click();
+    await until(() => !f.run('driverPushTestInProgress'));
+    assert.deepEqual(f.calls.find(call => Array.isArray(call) && call[0] === 'push-test'), ['push-test', 'me-phone-1-v2-32']);
+    assert.match(f.get('driver-order-alerts-push-test-result').textContent, /передан в Firebase/);
+    await f.receive({ data: { type: 'push_test', title: 'Тестовый пуш', body: 'Проверка' } });
+    assert.match(f.get('driver-order-alerts-push-test-result').textContent, /получен/);
+    assert.equal(f.messages.at(-1)[1].tag, 'taxi-uspeh-push-test');
+    const count = f.messages.length;
+    await f.receive({ data: { type: 'new_order' } });
+    assert.equal(f.messages.length, count, 'order sound remains handled by the existing watcher');
+    f.close();
+}
+{
+    const f = fixture(); await f.run('enableDriverPushSubscription()');
+    f.fail.pushTest = { code: 'functions/resource-exhausted', message: 'private-token' };
+    await f.run('testDriverPush()');
+    assert.match(f.get('driver-order-alerts-push-test-result').textContent, /через минуту/);
+    assert.doesNotMatch(f.get('driver-order-alerts-push-test-result').textContent, /private-token/);
+    f.fail.pushTest = { code: 'functions/not-found' }; await f.run('testDriverPush()');
+    assert.match(f.get('driver-order-alerts-push-test-result').textContent, /ещё не опубликована/);
+    let finish; f.fail.pushTest = () => new Promise(resolve => { finish = resolve; });
+    const pending = f.run('testDriverPush()'); await until(() => finish);
+    assert.equal(f.get('driver-order-alerts-push-test').disabled, true);
+    f.select('replacement-user', '53'); finish({ data: { accepted: true } }); await pending;
+    assert.equal(f.get('driver-order-alerts-push-test-result').textContent, '');
+    f.close();
 }
 
 // A legacy document with a mismatched owner is never overwritten; the same browser

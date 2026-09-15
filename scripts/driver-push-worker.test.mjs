@@ -36,3 +36,9 @@ test('FCM notification payloads are not displayed twice and keep the SDK click h
     f.handlers.notificationclick({ notification:{data:{FCM_MSG:{notification:{title:'test'}}}},
         stopImmediatePropagation:()=>assert.fail('Do not swallow the Firebase click'), waitUntil:()=>assert.fail('Firebase owns this click') });
 });
+test('test push uses a separate tag and opens notification settings', async () => {
+    const f = fixture();
+    await f.receive({ data: { type:'push_test', title:'Тестовый пуш', url:'./drivers.html#driver-order-alerts' } });
+    assert.equal(f.notifications[0][1].tag, 'taxi-uspeh-push-test');
+    assert.match(f.notifications[0][1].data.url, /driver-order-alerts/);
+});

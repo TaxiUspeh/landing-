@@ -129,7 +129,7 @@ function fixture({ timeout = 15000 } = {}) {
     assert.equal(f.writes[0].path, 'driverPushTokens/me-phone-1-v2-32');
     assert.equal(f.writes[0].data.uid, 'me'); assert.equal(f.writes[0].data.driverId, '32');
     assert.notEqual(f.writes[0].data.token, 'legacy-token');
-    assert.match(f.get('driver-order-alerts-status').textContent, /Телефон подключён/);
+    assert.match(f.get('driver-order-alerts-status').textContent, /Уведомления подключены/);
     const token1 = f.writes[0].data.token;
     await f.run('enableDriverPushSubscription()');
     assert.equal(f.writes.at(-1).data.token, token1, 'ordinary reload reuses this binding');

@@ -1,4 +1,4 @@
-import { initDriverCabinet } from './driver-cabinet.js?v=60';
+import { initDriverCabinet } from './driver-cabinet.js?v=61';
 import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=60';
 import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=52';
 import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=60';
@@ -152,7 +152,8 @@ const cabinet = initDriverCabinet({
         if (dispatcherChatExpanded) dispatcherChatHasNewReply = false;
         updateDriverChatControls();
     },
-    onFilterChange(filter) { ordersTab = filter; renderOnlineOrders(); }
+    onFilterChange(filter) { ordersTab = filter; renderOnlineOrders(); },
+    onHistoryPeriodChange(period) { changeBalanceHistoryPeriod(period); }
 });
 let ordersTab = 'new';
 let previousActiveOrderIds = new Set();
@@ -192,6 +193,9 @@ let newOrderAlertTimer = null;
 let requestedOrderHandled = false;
 let watchedHistoryDriverId = '';
 let balanceHistory = [];
+let balanceHistoryPeriod = 'all';
+let balanceHistoryPeriodStart = null;
+let balanceHistoryGeneration = 0;
 let balanceHistoryLoadTimer = null;
 let balanceHistoryCursor = null;
 let balanceHistoryHasMore = false;
@@ -549,6 +553,14 @@ async function testDriverPush() {
 function updateOrderAlertsControls() {
     if (!elements.alertsToggle || !elements.alertsStatus || !elements.alertsIcon) return;
     const permission = notificationPermission();
+    const invitation = document.getElementById('driver-notification-invite');
+    if (invitation) {
+        invitation.hidden = orderAlertsEnabled && driverPushState === 'enabled' && permission === 'granted';
+        invitation.textContent = orderAlertsEnabled ? 'Проверить подключение уведомлений' : 'Включить уведомления о заказах';
+    }
+    const disableSlot = document.getElementById('driver-alert-disable-slot');
+    const mainActions = elements.alertsPushTest?.parentElement;
+    if (disableSlot && mainActions) (orderAlertsEnabled ? disableSlot : mainActions).prepend(elements.alertsToggle);
     const toggleIcon = elements.alertsToggle.querySelector('i');
     const toggleLabel = elements.alertsToggle.querySelector('span');
     const statusIcon = elements.alertsIcon.querySelector('i');
@@ -613,7 +625,7 @@ function updateOrderAlertsControls() {
         status = 'Звук включён. В настройках отсутствует ключ Web Push.';
         note = 'Диспетчеру нужно настроить ключ уведомлений, затем нажмите «Повторить подключение».';
     } else if (driverPushState === 'enabled' && permission === 'granted') {
-        status = 'Телефон подключён к Firebase-пушам новых заказов. Звук заказов и чата включён.';
+        status = 'Уведомления подключены. Звук заказов и чата включён.';
         note = 'Уведомления подключены. Тестовый пуш отправляется только на это устройство с задержкой 10 секунд — чтобы вы успели заблокировать экран.';
     } else {
         status = 'Звук включён. Разрешите фоновые уведомления для этого телефона.';
@@ -1213,12 +1225,24 @@ function showBalanceHistoryUnavailable(message) {
     setHidden(elements.balanceHistoryMore, true);
 }
 
+function changeBalanceHistoryPeriod(period) {
+    if (!['today', 'week', 'month', 'all'].includes(period) || period === balanceHistoryPeriod) return;
+    balanceHistoryPeriod = period;
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+    if (period === 'week') start.setDate(start.getDate() - 6);
+    if (period === 'month') start.setDate(start.getDate() - 29);
+    balanceHistoryPeriodStart = period === 'all' ? null : start;
+    stopBalanceHistoryWatch(true);
+    watchBalanceHistory(currentDriverId);
+}
+
 function balanceHistoryQuery(driverId, cursor = null) {
     const constraints = [
         where('driverId', '==', driverId),
         orderBy('changedAt', 'desc'),
         limit(BALANCE_HISTORY_PAGE_SIZE)
     ];
+    if (balanceHistoryPeriodStart) constraints.push(where('changedAt', '>=', balanceHistoryPeriodStart));
     if (cursor) constraints.push(startAfter(cursor));
     return query(collection(db, 'balanceHistory'), ...constraints);
 }
@@ -1247,7 +1271,7 @@ function renderBalanceHistory() {
     clearBalanceHistoryLoadTimer();
     updateBalanceHistoryControls();
     if (!balanceHistoryExpanded) return;
-    setBalanceHistoryEmptyMessage('Изменений баланса пока нет');
+    setBalanceHistoryEmptyMessage(balanceHistoryPeriod === 'all' ? 'Изменений баланса пока нет' : 'За выбранный период операций нет');
     const entries = [...balanceHistory]
         .sort((a, b) => balanceHistoryMillis(b) - balanceHistoryMillis(a));
 
@@ -1301,11 +1325,12 @@ function renderBalanceHistory() {
 async function loadMoreBalanceHistory() {
     if (!balanceHistoryExpanded || balanceHistoryLoadingMore || !balanceHistoryHasMore || !balanceHistoryCursor || !watchedHistoryDriverId) return;
     const requestedDriverId = watchedHistoryDriverId;
+    const generation = balanceHistoryGeneration;
     balanceHistoryLoadingMore = true;
     renderBalanceHistory();
     try {
         const snapshot = await getDocs(balanceHistoryQuery(requestedDriverId, balanceHistoryCursor));
-        if (requestedDriverId !== watchedHistoryDriverId) return;
+        if (requestedDriverId !== watchedHistoryDriverId || generation !== balanceHistoryGeneration) return;
         const entries = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
         mergeBalanceHistoryEntries(entries);
         balanceHistoryCursor = snapshot.docs.at(-1) || balanceHistoryCursor;
@@ -1313,7 +1338,7 @@ async function loadMoreBalanceHistory() {
     } catch (error) {
         console.warn('Следующая страница истории не загрузилась:', error.code || error.message);
     } finally {
-        if (requestedDriverId === watchedHistoryDriverId) {
+        if (requestedDriverId === watchedHistoryDriverId && generation === balanceHistoryGeneration) {
             balanceHistoryLoadingMore = false;
             renderBalanceHistory();
         }
@@ -1321,6 +1346,7 @@ async function loadMoreBalanceHistory() {
 }
 
 function stopBalanceHistoryWatch(clearData = false) {
+    balanceHistoryGeneration += 1;
     if (unsubscribeBalanceHistory) unsubscribeBalanceHistory();
     unsubscribeBalanceHistory = null;
     clearBalanceHistoryLoadTimer();
@@ -1355,7 +1381,8 @@ function watchBalanceHistory(driverId) {
     if (!normalizedId || watchedHistoryDriverId === normalizedId) return;
     stopBalanceHistoryWatch(true);
     watchedHistoryDriverId = normalizedId;
-    setBalanceHistoryEmptyMessage('Изменений баланса пока нет');
+    const generation = balanceHistoryGeneration;
+    setBalanceHistoryEmptyMessage(balanceHistoryPeriod === 'all' ? 'Изменений баланса пока нет' : 'За выбранный период операций нет');
     setHidden(elements.balanceHistoryLoading, false);
     setHidden(elements.balanceHistoryEmpty, true);
     setHidden(elements.balanceHistoryList, true);
@@ -1363,6 +1390,7 @@ function watchBalanceHistory(driverId) {
     unsubscribeBalanceHistory = onSnapshot(
         balanceHistoryQuery(normalizedId),
         (snapshot) => {
+            if (generation !== balanceHistoryGeneration) return;
             const entries = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
             mergeBalanceHistoryEntries(entries);
             if (!balanceHistoryCursor) balanceHistoryCursor = snapshot.docs.at(-1) || null;
@@ -1371,6 +1399,7 @@ function watchBalanceHistory(driverId) {
             renderBalanceHistory();
         },
         (error) => {
+            if (generation !== balanceHistoryGeneration) return;
             console.warn('История баланса не загрузилась:', error.code || error.message);
             balanceHistory = [];
             showBalanceHistoryUnavailable('История пока недоступна. Проверьте интернет и обновите страницу.');
@@ -1826,7 +1855,8 @@ function createOrderCard(order, assigned, archived = false) {
     const price = createText('p', 'cabinet-price', order.priceText || 'Цена уточняется');
     const compactHeading = document.createElement('div'); compactHeading.className = 'cabinet-order-heading';
     compactHeading.append(service, price); card.append(compactHeading, route);
-    const primaryActions = document.createElement('div'); card.append(primaryActions);
+    const primaryActions = document.createElement('div'); primaryActions.className = 'cabinet-primary-actions'; card.append(primaryActions);
+    const quickActions = document.createElement('div'); quickActions.className = 'cabinet-quick-actions'; card.append(quickActions);
     const disclosure = document.createElement('details'); disclosure.className = 'cabinet-order-disclosure';
     disclosure.open = orderDisclosureState.get(order.id) ?? (assigned && !archived);
     const summary = createText('summary', '', assigned ? orderStatusLabel(order.status) : 'Подробнее и действия');
@@ -1870,7 +1900,7 @@ function createOrderCard(order, assigned, archived = false) {
     navigation.rel = 'noopener noreferrer';
     navigation.className = 'rounded-lg bg-gray-200 dark:bg-gray-700 px-3 py-2 text-xs font-extrabold';
     navigation.textContent = Array.isArray(order.stops) && order.stops.length ? 'Маршрут с остановками' : 'Маршрут';
-    actions.append(navigation);
+    (assigned ? quickActions : actions).append(navigation);
 
     if (!assigned && order.status === 'bidding') {
         appendAuctionControls(actions, order);
@@ -1881,16 +1911,16 @@ function createOrderCard(order, assigned, archived = false) {
         acceptButton.textContent = 'Принять заказ';
         acceptButton.classList.add('cabinet-order-primary'); acceptButton.dataset.orderControl = 'accept';
         const funding = fundingFor(currentDriver, Number(order.priceAmount));
-        actions.append(createText('p', 'w-full text-xs font-bold', funding.allowed ? `Ваша комиссия: ${funding.rate}% · ${formatMoney(funding.amount)}` : funding.reason));
+        primaryActions.append(createText('p', 'cabinet-order-commission', funding.allowed ? `Ваша комиссия: ${funding.rate}% · ${formatMoney(funding.amount)}` : funding.reason));
         acceptButton.disabled = orderActionInProgress || !currentCanTakeOrders || !funding.allowed;
         acceptButton.addEventListener('click', () => acceptOrder(order.id));
-        actions.append(acceptButton);
+        primaryActions.append(acceptButton);
     } else {
         const terms = orderCommission(order);
-        actions.append(createText('p', 'w-full text-xs font-bold', `Комиссия этой поездки: ${terms.rate}% · Зарезервировано ${formatMoney(terms.amount)}`));
+        primaryActions.append(createText('p', 'cabinet-order-commission', `Комиссия этой поездки: ${terms.rate}% · Зарезервировано ${formatMoney(terms.amount)}`));
         const contact = createText('p', 'w-full text-xs text-gray-600 dark:text-gray-300', 'Загружаем телефон клиента…');
         actions.append(contact);
-        void loadOrderContact(order.id, contact, actions);
+        void loadOrderContact(order.id, contact, quickActions);
 
         const next = cancellationPending ? null : NEXT_ORDER_STATUS[order.status];
         if (next) {
@@ -2551,6 +2581,8 @@ onAuthStateChanged(auth, (user) => {
     elements.userName.textContent = user.displayName || 'Водитель';
     elements.userEmail.textContent = user.email || '';
     elements.userUid.textContent = user.uid;
+    const sendUid = document.getElementById('driver-send-uid');
+    if (sendUid) sendUid.href = `https://wa.me/77770649648?text=${encodeURIComponent(`Здравствуйте! Подключите мою карточку водителя. Код: ${user.uid}`)}`;
 
     if (user.photoURL) {
         elements.userPhoto.src = user.photoURL;

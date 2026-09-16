@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     
     <!-- PWA Settings start -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="./styles/tailwind.css">
     <link rel="stylesheet" href="./styles/vehicle-categories.css?v=53">
     <link rel="stylesheet" href="./styles/auction.css?v=51">
-    <link rel="stylesheet" href="./styles/driver-cabinet.css?v=55">
+    <link rel="stylesheet" href="./styles/driver-cabinet.css?v=61">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -252,7 +252,7 @@
     <!-- HEADER (Измененный компактный дизайн с фото) -->
     <header id="driver-app-header" class="driver-sticky-header header-bg text-white py-5 rounded-b-2xl shadow-xl fade-in-section is-visible">
         <!-- Кнопка переключения темы -->
-        <button onclick="toggleTheme()" class="absolute top-3 right-3 bg-white/20 hover:bg-white/30 p-2 rounded-full backdrop-blur-sm transition">
+        <button aria-label="Переключить светлую и тёмную тему" onclick="toggleTheme()" class="absolute top-3 right-3 bg-white/20 hover:bg-white/30 p-2 rounded-full backdrop-blur-sm transition">
             <i id="theme-icon" class="fas fa-moon text-yellow-300 text-lg"></i>
         </button>
 
@@ -265,13 +265,7 @@
             
             <p class="driver-header-subtitle text-indigo-100 text-sm font-medium drop-shadow-sm">Работа для водителей</p>
             <p class="driver-header-geography text-indigo-200 text-xs mt-1 opacity-90 drop-shadow-sm">Белоусовка • Глубокое • Усть-Каменогорск</p>
-            <button id="driver-install-app-button" type="button"
-                    class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm backdrop-blur-sm hover:bg-white/25 btn-active"
-                    aria-describedby="driver-install-app-message">
-                <i class="fas fa-mobile-screen-button text-sm" aria-hidden="true"></i>
-                <span>Установить приложение</span>
-            </button>
-            <p id="driver-install-app-message" class="hidden mx-auto mt-2 max-w-xs rounded-lg bg-white/15 px-3 py-2 text-xs text-indigo-50" role="status"></p>
+
         </div>
     </header>
 
@@ -287,8 +281,8 @@
                             <i class="fas fa-id-card text-xl"></i>
                         </span>
                         <div>
-                            <h2 id="driver-account-title" class="text-lg font-extrabold">Личный кабинет водителя</h2>
-                            <p class="text-xs text-blue-100">Вход только для подключённых водителей</p>
+                            <h2 id="driver-account-title" class="text-lg font-extrabold">Кабинет водителя</h2>
+                            <p class="text-xs text-blue-100">Заказы, баланс и связь с диспетчером</p>
                         </div>
                     </div>
                 </div>
@@ -301,7 +295,7 @@
 
                     <div id="driver-signed-out" class="hidden">
                         <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                            Войдите через Google. После подключения аккаунта диспетчером здесь появятся ваш баланс и доступ к рабочим действиям.
+                            Войдите в свой Google-аккаунт, подключённый диспетчером.
                         </p>
                         <button id="driver-login-button" type="button"
                                 class="btn-hover w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white py-3.5 px-4 rounded-xl font-bold shadow-sm flex items-center justify-center gap-3">
@@ -324,14 +318,15 @@
                         </div>
 
                         <div id="driver-account-pending" class="hidden rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4">
-                            <p class="font-bold text-amber-900 dark:text-amber-200 mb-1">Аккаунт ещё не подключён</p>
-                            <p class="text-xs text-amber-800 dark:text-amber-300 mb-3">Передайте диспетчеру этот UID. Он нужен один раз, чтобы связать Google-аккаунт с вашей карточкой водителя.</p>
+                            <p class="font-bold text-amber-900 dark:text-amber-200 mb-1">Ожидаем подключения</p>
+                            <p class="text-xs text-amber-800 dark:text-amber-300 mb-3">Отправьте код диспетчеру, чтобы он подключил вашу карточку водителя.</p>
                             <div class="flex gap-2">
                                 <code id="driver-user-uid" class="min-w-0 flex-grow bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 text-xs break-all select-all"></code>
-                                <button id="driver-copy-uid" type="button" class="flex-shrink-0 bg-amber-600 hover:bg-amber-700 text-white rounded-lg px-3" aria-label="Скопировать UID">
-                                    <i class="fas fa-copy" aria-hidden="true"></i>
+                                <button id="driver-copy-uid" type="button" class="flex-shrink-0 bg-amber-600 hover:bg-amber-700 text-white rounded-lg px-3" aria-label="Скопировать код">
+                                    <i class="fas fa-copy" aria-hidden="true"></i><span> Скопировать код</span>
                                 </button>
                             </div>
+                            <a id="driver-send-uid" class="cabinet-button" target="_blank" rel="noopener noreferrer">Отправить диспетчеру</a>
                         </div>
 
                         <div id="driver-profile" class="hidden">
@@ -507,6 +502,20 @@
             </div>
         </section>
 
+        <aside id="driver-install-offer" class="driver-install-offer" aria-labelledby="driver-install-title" hidden>
+            <div class="driver-install-copy"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i><div>
+                <h2 id="driver-install-title">Установить «Такси Успех»</h2>
+                <p>Открывайте кабинет с иконки на телефоне.</p>
+            </div></div>
+            <div class="driver-install-actions">
+                <button id="driver-install-app-button" type="button" class="cabinet-button" aria-describedby="driver-install-app-message">Установить приложение</button>
+                <button id="driver-install-later" type="button" class="driver-text-button">Позже</button>
+            </div>
+            <p id="driver-install-app-message" class="hidden" role="status"></p>
+        </aside>
+        <details id="driver-conditions" class="driver-conditions">
+            <summary><span>Стать водителем<small>Условия работы, документы и доход</small></span><i class="fas fa-chevron-down" aria-hidden="true"></i></summary>
+            <div class="driver-conditions-content">
         <!-- Основные действия -->
         <div class="flex flex-col gap-4 mb-10 fade-in-section">
             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-md border-l-4 border-green-500">
@@ -519,24 +528,6 @@
                 </button>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <a href="https://taxiuspeh.github.io/landing-/" target="_blank" rel="noopener noreferrer"
-                   class="btn-hover bg-blue-500 hover:bg-blue-600 text-white py-3.5 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
-                    <i class="fas fa-street-view"></i>
-                    <span>Режим Пассажира</span>
-                </a>
-
-                <a href="#driver-account"
-                   class="btn-hover bg-yellow-400 hover:bg-yellow-500 text-blue-900 py-3.5 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
-                    <i class="fas fa-right-to-bracket"></i>
-                    <span>Вход водителя</span>
-                </a>
-                <a href="https://yandex.ru/navi" target="_blank" rel="noopener noreferrer"
-                   class="btn-hover bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white py-3.5 rounded-xl text-lg font-bold shadow-md flex items-center justify-center gap-2">
-                    <i class="fas fa-location-arrow text-blue-600"></i>
-                    <span>Навигатор</span>
-                </a>
-            </div>
         </div>
 
         <!-- Калькулятор заработка -->
@@ -686,7 +677,7 @@
                 </button>
                 <div class="faq-content bg-gray-50 dark:bg-gray-700/30">
                     <div class="px-5 py-3 text-gray-600 dark:text-gray-300 text-xs">
-                        Все заказы публикуются в нашей закрытой группе WhatsApp. Вы видите маршрут и цену, и если заказ вам подходит — берете его.
+                        Заказы появляются в кабинете водителя. Вы видите маршрут, цену и свою комиссию, затем принимаете подходящий заказ. Для связи с коллегами есть рабочий чат WhatsApp.
                     </div>
                 </div>
             </div>
@@ -707,6 +698,8 @@
             Остались вопросы? <br>
             <a href="tel:+77770649648" class="text-blue-600 dark:text-blue-400 hover:underline font-bold text-lg">+7 777 064 96 48</a>
         </p>
+            </div>
+        </details>
     </main>
 
     <!-- Документы для подключения водителя -->
@@ -754,6 +747,11 @@
         </div>
     </footer>
 
+    <nav class="driver-guest-nav" aria-label="Навигация для водителя">
+        <a href="#driver-account"><i class="fas fa-right-to-bracket" aria-hidden="true"></i>Вход</a>
+        <a href="#driver-conditions" id="driver-conditions-link"><i class="fas fa-id-card" aria-hidden="true"></i>Условия</a>
+        <a href="tel:+77770649648"><i class="fas fa-phone" aria-hidden="true"></i>Связь</a>
+    </nav>
     <!-- Sticky CTA Button -->
     <div class="fixed bottom-0 left-0 w-full p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-[0_-5px_15px_rgba(0,0,0,0.1)] md:hidden z-50">
         <div class="flex gap-2">
@@ -777,6 +775,7 @@
         </div>
     </div>
 
+    <script src="./driver-install.js?v=61"></script>
     <script>
         // Логика переключения темы
         const html = document.documentElement;
@@ -850,56 +849,6 @@
             if (event.key === 'Escape' && driverDocumentsModal?.classList.contains('active')) closeDriverDocumentsModal();
         });
 
-        let driverDeferredInstallPrompt = null;
-        const driverInstallButton = document.getElementById('driver-install-app-button');
-        const driverInstallMessage = document.getElementById('driver-install-app-message');
-
-        function isDriverAppInstalled() {
-            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-        }
-
-        function showDriverInstallMessage(message) {
-            if (!driverInstallMessage) return;
-            driverInstallMessage.textContent = message;
-            driverInstallMessage.classList.remove('hidden');
-        }
-
-        function updateDriverInstallButton() {
-            if (!driverInstallButton) return;
-            driverInstallButton.classList.toggle('hidden', isDriverAppInstalled());
-        }
-
-        window.addEventListener('beforeinstallprompt', (event) => {
-            event.preventDefault();
-            driverDeferredInstallPrompt = event;
-            updateDriverInstallButton();
-        });
-
-        driverInstallButton?.addEventListener('click', async () => {
-            if (driverDeferredInstallPrompt) {
-                driverDeferredInstallPrompt.prompt();
-                const { outcome } = await driverDeferredInstallPrompt.userChoice;
-                driverDeferredInstallPrompt = null;
-                if (outcome === 'accepted') {
-                    showDriverInstallMessage('Приложение устанавливается. После установки оно появится на главном экране телефона.');
-                }
-                return;
-            }
-
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            showDriverInstallMessage(isIOS
-                ? 'В Safari нажмите «Поделиться», затем выберите «На экран Домой». '
-                : 'Откройте меню браузера ⋮ и выберите «Установить приложение» или «Добавить на главный экран».');
-        });
-
-        window.addEventListener('appinstalled', () => {
-            driverDeferredInstallPrompt = null;
-            updateDriverInstallButton();
-            showDriverInstallMessage('Приложение установлено и доступно на главном экране телефона.');
-        });
-
-        updateDriverInstallButton();
-
         const driverStickyHeader = document.getElementById('driver-app-header');
         const updateDriverStickyHeader = () => {
             driverStickyHeader?.classList.toggle('is-compact', window.scrollY > 28);
@@ -963,6 +912,6 @@
             });
         }
     </script>
-    <script type="module" src="./driver-portal.js?v=60"></script>
+    <script type="module" src="./driver-portal.js?v=61"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 import { orderCategorySummary } from './vehicle-categories.js?v=52';
-import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=53';
+import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=60';
 import { auth, db } from './firebase-config.js';
 import {
     onAuthStateChanged,
@@ -484,10 +484,10 @@ async function createOnlineOrder() {
 
     const vehicleRequest = window.bookingScreen?.vehicleRequest() || { vehicleCategory: 'sedan', passengerCount: 1 };
     const quotedFare = window.getTaxiFareForOrder?.();
-    const priceText = document.getElementById('taxiPriceEstimate')?.textContent.trim() || 'Цена уточняется';
-    if (vehicleRequest.vehicleCategory !== 'sedan' && (!quotedFare || quotedFare.priceMax <= 0)) {
-        setStatus('Дождитесь расчёта стоимости выбранного автомобиля. Если цена не появилась, уточните маршрут.', false, 'taxi'); return;
+    if (!quotedFare || !Number.isFinite(quotedFare.priceMax) || quotedFare.priceMax <= 0) {
+        setStatus('Дождитесь расчёта стоимости. Если цену определить не удалось, позвоните диспетчеру.', false, 'taxi'); return;
     }
+    const priceText = quotedFare.priceText;
     if (!Number.isInteger(vehicleRequest.passengerCount) || vehicleRequest.passengerCount < 1 || vehicleRequest.passengerCount > 8) {
         setStatus('Укажите от 1 до 8 пассажиров.', false, 'taxi'); return;
     }
@@ -525,7 +525,7 @@ async function createOnlineOrder() {
             direction,
             priceText,
             // Для диапазона «800–1000 ₸» расчётной суммой является 1000 ₸.
-            priceAmount: quotedFare?.priceMax ?? parseMaximumPrice(priceText),
+            priceAmount: quotedFare.priceMax,
             status: 'searching',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
@@ -600,6 +600,10 @@ async function createOnlineDeliveryOrder() {
         const orderRef = doc(collection(db, 'orders'));
         const contactRef = doc(db, 'orderContacts', orderRef.id);
         const priceText = document.getElementById('deliveryPriceEstimate')?.textContent.trim() || 'Цена уточняется';
+        const priceAmount = parseMaximumPrice(priceText);
+        if (!Number.isFinite(priceAmount) || priceAmount <= 0) {
+            setStatus('Стоимость доставки нужно уточнить у диспетчера.', false, 'delivery'); return;
+        }
         const batch = writeBatch(db);
 
         batch.set(orderRef, {
@@ -614,7 +618,7 @@ async function createOnlineDeliveryOrder() {
             scheduledFor: '',
             direction: deliveryCity === 'Белоусовка' ? '' : deliveryCity,
             priceText,
-            priceAmount: parseMaximumPrice(priceText),
+            priceAmount,
             serviceDetails: { store, items },
             status: 'searching',
             createdAt: serverTimestamp(),

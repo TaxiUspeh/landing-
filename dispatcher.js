@@ -1,8 +1,8 @@
-import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=53';
-import { createFinanceControls } from './driver-finance-controls.js?v=53';
+import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=60';
+import { createFinanceControls } from './driver-finance-controls.js?v=60';
 import { createVehicleControls } from './vehicle-category-controls.js?v=52';
 import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=52';
-import { currentAuctionOffer } from './auction-core.js?v=53';
+import { currentAuctionOffer } from './auction-core.js?v=60';
 import { auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -2472,7 +2472,7 @@ async function completeOnlineOrder(order) {
                     throw new Error('История комиссии по заказу заполнена некорректно.');
                 }
             } else {
-                if (!Number.isFinite(commissionBaseAmount) || commissionBaseAmount < 0) {
+                if (!Number.isFinite(commissionBaseAmount) || commissionBaseAmount <= 0) {
                     throw new Error('В заказе нет корректной цены для комиссии.');
                 }
                 commissionAmount = orderCommission(currentOrder).amount;

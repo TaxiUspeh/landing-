@@ -31,7 +31,7 @@
     <link rel="stylesheet" href="./styles/tailwind.css">
     <link rel="stylesheet" href="./styles/vehicle-categories.css?v=53">
     <link rel="stylesheet" href="./styles/auction.css?v=51">
-    <link rel="stylesheet" href="./styles/booking-screen.css?v=57">
+    <link rel="stylesheet" href="./styles/booking-screen.css?v=60">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <!-- Leaflet Map (Для карты с машинками) -->
@@ -2059,8 +2059,10 @@
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
         import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=52";
-        import { initBookingScreen } from "./booking-screen.js?v=57";
-        import { initClientHome } from "./client-home.js?v=56";
+        import { initBookingScreen } from "./booking-screen.js?v=60";
+        import { normalizeCity } from "./booking-core.js?v=60";
+        import { publishedRouteFare, distanceFare, formatTaxiFare } from "./taxi-pricing.js?v=60";
+        import { initClientHome } from "./client-home.js?v=60";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -2178,7 +2180,7 @@
         ];
 
         function intercityRateForCity(city) {
-            return city ? INTERCITY_RATES.find(rate => rate.name === city) || null : null;
+            return city ? INTERCITY_RATES.find(rate => normalizeCity(rate.name) === normalizeCity(city)) || null : null;
         }
 
         function selectedIntercityRate(selectId) {
@@ -2186,7 +2188,7 @@
         }
 
         function selectedTaxiCity(selectId) {
-            return document.getElementById(selectId)?.value || 'Белоусовка';
+            return normalizeCity(document.getElementById(selectId)?.value || 'Белоусовка');
         }
 
         function fillTaxiStopCityOptions(select) {
@@ -2200,7 +2202,7 @@
             if (!container) return [];
             return Array.from(container.querySelectorAll('.additional-stop-item')).map((stop) => {
                 const address = stop.querySelector('[data-taxi-stop-address], input')?.value.trim() || '';
-                const city = stop.querySelector('[data-taxi-stop-city]')?.value || 'Белоусовка';
+                const city = normalizeCity(stop.querySelector('[data-taxi-stop-city]')?.value || 'Белоусовка');
                 return { address, city };
             }).filter((point) => point.address);
         }
@@ -2220,15 +2222,7 @@
         }
 
         function calculateTaxiDatabaseFallback() {
-            const points = getTaxiRatePoints();
-            const rates = points.map((point) => intercityRateForCity(point.city)).filter(Boolean);
-            if (!rates.length) return null;
-            return {
-                min: rates.reduce((total, rate) => total + rate.min, 0),
-                max: rates.reduce((total, rate) => total + rate.max, 0),
-                routeLabel: points.map((point) => point.city).join(' → '),
-                usesSeveralBaseRates: rates.length > 1
-            };
+            return publishedRouteFare(getTaxiRatePoints(), INTERCITY_RATES);
         }
 
         function ensureTaxiFromCityOptions() {
@@ -2741,69 +2735,78 @@
         }
 
         let taxiFareSnapshot = null;
-        function publishTaxiEstimate(baseMin, baseMax, originalText) {
+        let taxiFareState = 'incomplete';
+        let taxiPriceKey = '';
+        function currentTaxiPriceKey() {
+            return JSON.stringify({ points: getTaxiRatePoints(), house: document.getElementById('taxiHouse')?.value.trim() || '',
+                category: window.bookingScreen?.vehicleRequest().vehicleCategory || 'sedan',
+                multiplier: priceMultiplier, discount: isLuckyDiscount });
+        }
+        function setTaxiPriceState(state, text) {
+            taxiFareState = state;
+            if (state !== 'ready') taxiFareSnapshot = null;
+            const priceEl = document.getElementById('taxiPriceEstimate');
+            if (priceEl) priceEl.textContent = text;
+        }
+        function publishTaxiEstimate(baseMin, baseMax, suffix = '') {
             const category = window.bookingScreen?.vehicleRequest().vehicleCategory || 'sedan';
             const fare = calculateCategoryFare(baseMin, baseMax, category);
-            const priceEl = document.getElementById('taxiPriceEstimate');
-            taxiFareSnapshot = fare ? { ...fare, revision: taxiRouteCalculationId } : null;
-            if (!fare) { priceEl.textContent = 'Стоимость уточняется'; return; }
-            priceEl.textContent = category === 'sedan' ? originalText : formatCategoryFare(fare);
+            if (!fare || fare.priceMax <= 0) { setTaxiPriceState('unavailable', 'Уточните цену у диспетчера'); return; }
+            const priceText = formatTaxiFare(fare) + suffix;
+            taxiFareSnapshot = { ...fare, priceText, revision: taxiRouteCalculationId, key: taxiPriceKey };
+            setTaxiPriceState('ready', priceText);
         }
+        window.getTaxiPriceState = () => taxiPriceKey === currentTaxiPriceKey() ? taxiFareState : 'pending';
         window.getTaxiFareForOrder = () => {
-            const category = window.bookingScreen?.vehicleRequest().vehicleCategory || 'sedan';
-            return taxiFareSnapshot?.revision === taxiRouteCalculationId && taxiFareSnapshot.vehicleCategory === category
-                ? { ...taxiFareSnapshot } : null;
+            return taxiFareState === 'ready' && taxiFareSnapshot?.revision === taxiRouteCalculationId
+                && taxiFareSnapshot.key === currentTaxiPriceKey() ? { ...taxiFareSnapshot } : null;
         };
 
         async function calculateTaxiPriceOSRM() {
-            const priceEl = document.getElementById('taxiPriceEstimate');
             const requestId = taxiRouteCalculationId;
             const routePoints = getTaxiRoutePoints();
-            const databaseFallback = calculateTaxiDatabaseFallback();
             const isIntercity = routePoints.some(point => point.city !== 'Белоусовка');
-
-            if (routePoints.length < 2 || routePoints.some((point) => point.address.length < 3) || !priceEl) return;
+            const multiplier = priceMultiplier;
+            if (taxiFareState !== 'pending' || routePoints.length < 2) return;
             setTaxiRouteHint('Считаем расстояние по маршруту…');
-            const coordinates = await Promise.all(routePoints.map((point) => getCoordinates(point.address, point.city)));
-            if (requestId !== taxiRouteCalculationId) return;
-
-            if (coordinates.every(Boolean)) {
-                const distMeters = await getRouteDistance(coordinates);
+            try {
+                const coordinates = await Promise.all(routePoints.map(point => getCoordinates(point.address, point.city)));
                 if (requestId !== taxiRouteCalculationId) return;
-                if (distMeters !== null) {
-                    const distKm = distMeters / 1000;
-                    const distanceText = distKm.toFixed(1);
-                    let price;
-
-                    if (isIntercity) {
-                        price = Math.ceil((distKm * CONFIG.TAXI.INTERCITY_PRICE_PER_KM * priceMultiplier) / 50) * 50;
-                    } else {
-                        price = CONFIG.TAXI.BASE_PRICE;
-                        if (distKm > CONFIG.TAXI.BASE_DISTANCE_KM) {
-                            price += (distKm - CONFIG.TAXI.BASE_DISTANCE_KM) * CONFIG.TAXI.PRICE_PER_KM;
+                if (coordinates.every(Boolean)) {
+                    const distMeters = await getRouteDistance(coordinates);
+                    if (requestId !== taxiRouteCalculationId) return;
+                    let price = distanceFare(distMeters, CONFIG.TAXI, multiplier, isIntercity);
+                    if (price !== null) {
+                        if (isLuckyDiscount) {
+                            price -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
+                            if (price < 500) price = 500;
                         }
-                        price = Math.ceil((price * priceMultiplier) / 10) * 10;
+                        publishTaxiEstimate(price, price, multiplier > 1 ? ' (Тариф повышен)' : '');
+                        setTaxiRouteHint(`${(distMeters / 1000).toFixed(1)} км · расчёт по маршруту`);
+                        return;
                     }
-
-                    if (isLuckyDiscount) {
-                        price -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
-                        if (price < 500) price = 500;
-                    }
-
-                    publishTaxiEstimate(price, price, `~ ${price} ₸`);
-                    const routeText = isIntercity
-                        ? `${routePoints.map((point) => point.city).join(' → ')} · ${distanceText} км · расчёт по маршруту`
-                        : `${distanceText} км · расчёт по маршруту`;
-                    setTaxiRouteHint(routeText);
-                    return;
                 }
+            } catch (error) {
+                console.warn('Не удалось рассчитать маршрут:', error.message);
             }
-            const fallbackMessage = databaseFallback
-                ? 'Показываем тариф из базы: маршрут временно не удалось построить.'
-                : 'Маршрут временно не удалось построить.';
-            setTaxiRouteHint(fallbackMessage, 'fallback');
+            if (requestId !== taxiRouteCalculationId) return;
+            if (isIntercity) {
+                setTaxiPriceState('unavailable', 'Уточните цену у диспетчера');
+                setTaxiRouteHint('Не удалось рассчитать маршрут. Согласуйте стоимость с диспетчером.', 'fallback');
+                return;
+            }
+            // A local fallback is shown before ordering, never substituted on submit.
+            const manyStops = countFilledAddresses() >= 3;
+            let baseMin = Math.ceil(((manyStops ? CONFIG.TAXI.MANY_STOPS_MIN : CONFIG.TAXI.BASE_PRICE) * multiplier) / 10) * 10;
+            let baseMax = Math.ceil(((manyStops ? CONFIG.TAXI.MANY_STOPS_MAX : CONFIG.TAXI.BASE_PRICE + CONFIG.TAXI.MIN_PRICE_RANGE_OFFSET) * multiplier) / 10) * 10;
+            if (isLuckyDiscount) {
+                baseMin -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
+                baseMax -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
+            }
+            publishTaxiEstimate(baseMin, baseMax, multiplier > 1 ? ' (Тариф повышен)' : '');
+            setTaxiRouteHint('Показываем тариф из базы: маршрут временно не удалось построить.', 'fallback');
         }
-        
+
         const debouncedOSRM = debounce(calculateTaxiPriceOSRM, 1500);
 
         async function initFirebaseAndAuth() {
@@ -3323,12 +3326,8 @@
 
         window.updateTaxiPrice = function() {
             const priceEl = document.getElementById('taxiPriceEstimate');
-            const waitTimeEl = document.getElementById('taxiWaitTime');
             if (!priceEl) return;
-            taxiRouteCalculationId += 1;
-            taxiFareSnapshot = null;
-            setTaxiRouteHint('');
-            
+            const waitTimeEl = document.getElementById('taxiWaitTime');
             if (waitTimeEl) {
                 if (priceMultiplier > 1) {
                     waitTimeEl.textContent = "Подача: 10-25 мин (Спрос/Погода/Праздник)";
@@ -3339,52 +3338,31 @@
                 }
             }
 
-            // Город определяется только списками, а не словами из улицы.
-            // Резервный тариф складывает все известные участки через Белоусовку.
+            const key = currentTaxiPriceKey();
+            // sync() also runs on submit and while editing non-price fields.
+            // Preserve the displayed quote unless the pricing inputs really changed.
+            if (key === taxiPriceKey) return;
+            taxiPriceKey = key;
+            taxiRouteCalculationId += 1;
+            taxiFareSnapshot = null;
+            const points = getTaxiRatePoints();
+            if (points.length < 2 || points.some(point => point.address.length < 3)) {
+                setTaxiPriceState('incomplete', 'Укажите маршрут');
+                setTaxiRouteHint('');
+                return;
+            }
             const databaseFallback = calculateTaxiDatabaseFallback();
             if (databaseFallback) {
-                const minPrice = Math.ceil((databaseFallback.min * priceMultiplier) / 50) * 50;
-                const maxPrice = Math.ceil((databaseFallback.max * priceMultiplier) / 50) * 50;
-                let priceText = (minPrice === maxPrice) ? `~ ${minPrice} ₸` : `от ${minPrice}–${maxPrice} ₸`;
-
-                if (priceMultiplier > 1) priceText += " (Тариф повышен)";
-                if (isLuckyDiscount) priceText += " (Скидка применена)";
-
-                publishTaxiEstimate(minPrice, maxPrice, priceText);
-                const fallbackNote = databaseFallback.usesSeveralBaseRates
-                    ? `Сумма тарифов из базы: ${databaseFallback.routeLabel} через Белоусовку.`
-                    : `Тариф из базы: ${databaseFallback.routeLabel}.`;
-                setTaxiRouteHint(`${fallbackNote} OSRM уточнит расстояние после заполнения адресов.`, 'fallback');
-                debouncedOSRM();
+                // Published intercity rates take precedence, including reverse routes.
+                publishTaxiEstimate(databaseFallback.min, databaseFallback.max);
+                setTaxiRouteHint(`${databaseFallback.usesSeveralBaseRates ? 'Сумма тарифов из базы' : 'Тариф из базы'}: ${databaseFallback.routeLabel}.`);
                 return;
             }
-
-            if (getTaxiRatePoints().some(point => point.city !== 'Белоусовка')) {
-                priceEl.textContent = 'Стоимость уточняется';
-                setTaxiRouteHint('Уточняем маршрут между населёнными пунктами.', 'fallback');
-                debouncedOSRM();
-                return;
-            }
-
-            const addressCount = countFilledAddresses();
-            let baseMin = (addressCount >= 3) ? CONFIG.TAXI.MANY_STOPS_MIN : CONFIG.TAXI.BASE_PRICE;
-            let baseMax = (addressCount >= 3) ? CONFIG.TAXI.MANY_STOPS_MAX : (CONFIG.TAXI.BASE_PRICE + CONFIG.TAXI.MIN_PRICE_RANGE_OFFSET);
-            baseMin = Math.ceil((baseMin * priceMultiplier) / 10) * 10;
-            baseMax = Math.ceil((baseMax * priceMultiplier) / 10) * 10;
-            
-            if (isLuckyDiscount) {
-                baseMin -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
-                baseMax -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
-            }
-
-            let priceText = `от ${baseMin}–${baseMax} тг`;
-            if (priceMultiplier > 1) priceText += " (Тариф повышен)";
-            if (isLuckyDiscount) priceText += " (Скидка!)";
-            
-            publishTaxiEstimate(baseMin, baseMax, priceText);
+            setTaxiPriceState('pending', 'Рассчитываем стоимость…');
+            setTaxiRouteHint('Считаем расстояние по маршруту…');
             debouncedOSRM();
         }
-        
+
         window.updateDeliveryPrice = function() {
             const priceEl = document.getElementById('deliveryPriceEstimate');
             const waitTimeEl = document.getElementById('deliveryWaitTime');
@@ -5031,6 +5009,6 @@
         initClientHome();
 
     </script>
-    <script type="module" src="./client-orders.js?v=53"></script>
+    <script type="module" src="./client-orders.js?v=60"></script>
 </body>
 </html>

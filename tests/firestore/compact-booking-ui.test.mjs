@@ -96,6 +96,17 @@ assert.equal(ids.length,new Set(ids).size);
 console.log('PASS: compact contact, categories with preorder, location races, first missing field, retained wishes and online handler');
 await new Promise(resolve => setTimeout(resolve,1100));
 assert.equal(get('bookingSubmit').disabled,false,'Online button is released after submission');
+// Price readiness gates the actual visible button; a failed route offers a call.
+let fareState='pending'; window.getTaxiPriceState=()=>fareState;
+get('taxiPriceEstimate').textContent='Рассчитываем стоимость…'; await flush();
+assert.equal(get('bookingSubmit').disabled,true); assert.equal(get('bookingSubmit').textContent,'Рассчитываем стоимость…');
+get('bookingSubmit').click();assert.equal(sent,1);
+fareState='unavailable';get('taxiPriceEstimate').textContent='Уточните цену у диспетчера';await flush();
+assert.equal(get('bookingSubmit').disabled,true);assert.equal(get('bookingPriceHelp').hidden,false);
+assert.equal(get('bookingPriceHelp').href,get('taxi-online-dispatcher-call').href);
+fareState='ready';get('taxiPriceEstimate').textContent='3500 ₸';await flush();
+assert.equal(get('bookingSubmit').disabled,false);assert.equal(get('bookingPriceHelp').hidden,true);
+console.log('PASS: pending/unknown prices block submit, dispatcher call is available, ready price restores submit');
 get('taxi-online-order-panel').classList.remove('hidden');
 get('taxi-online-order-status').textContent='Водитель подъехал'; await flush();
 assert.equal(get('mapOverlayText').textContent,'Водитель подъехал');

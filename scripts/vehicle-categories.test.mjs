@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 import { calculateCategoryFare, driverCanServeOrder, validVehicleProfile, formatCategoryFare } from '../vehicle-categories.js';
+import { distanceFare, formatTaxiFare } from '../taxi-pricing.js';
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const from = (a, b) => html.slice(html.indexOf(a), html.indexOf(b, html.indexOf(a)));
 const pricingSource = from('        let taxiFareSnapshot = null;', '        const debouncedOSRM = debounce(')
@@ -10,7 +11,7 @@ const pricingSource = from('        let taxiFareSnapshot = null;', '        cons
 function harness(category = 'wagon') {
   const state = { category, fallback: { min: 800, max: 1000, routeLabel: 'Test' }, points: [{ address: 'Street A', city: 'Белоусовка' }, { address: 'Street B', city: 'Белоусовка' }], distance: 1000, textContent: '' };
   const window = { bookingScreen: { vehicleRequest: () => ({ vehicleCategory: state.category }) } };
-  const context = vm.createContext({ window, console, calculateCategoryFare, formatCategoryFare,
+  const context = vm.createContext({ window, console, calculateCategoryFare, formatCategoryFare, distanceFare, formatTaxiFare,
     document: { getElementById: id => id === 'taxiPriceEstimate' ? state : null },
     calculateTaxiDatabaseFallback: () => state.fallback, getTaxiRoutePoints: () => state.points, getTaxiRatePoints: () => state.points,
     setTaxiRouteHint: () => {}, debouncedOSRM: () => {}, countFilledAddresses: () => state.points.length,
@@ -31,33 +32,33 @@ test('approved examples and rounding at 100-tenge boundaries', () => {
   assert.equal(calculateCategoryFare(800, 800, 'unknown'), null);
 });
 test('actual database quote uses both bounds and switching never compounds surcharge', () => {
-  const h = harness(); h.update(); assert.equal(h.state.textContent, 'от 1000–1200 ₸');
+  const h = harness(); h.update(); assert.equal(h.state.textContent, '1000–1200 ₸');
   h.update(); assert.equal(h.quote().priceMax, 1200);
-  h.state.category = 'minivan'; h.update(); assert.equal(h.state.textContent, 'от 1200–1500 ₸');
+  h.state.category = 'minivan'; h.update(); assert.equal(h.state.textContent, '1200–1500 ₸');
   h.state.category = 'sedan'; h.update(); assert.equal(h.quote().priceMax, 1000);
   assert.equal(h.quote().basePriceMax, 1000);
 });
 test('actual local route and intercity route apply category after the ordinary tariff', async () => {
-  const h = harness(); h.update(); await h.route(); assert.equal(h.quote().priceMax, 1000); assert.equal(h.quote().basePriceMax, 800);
+  const h = harness(); h.state.fallback = null; h.update(); await h.route(); assert.equal(h.quote().priceMax, 1000); assert.equal(h.quote().basePriceMax, 800);
   h.state.category = 'minivan'; h.state.points[1].city = 'Усть-Каменогорск'; h.state.distance = 20000;
   h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 4600); assert.equal(h.quote().priceMax, 6900);
 });
-test('multi-stop fallback and existing demand multiplier each apply once', () => {
-  const h = harness(); h.state.fallback = null; h.state.points.push({ address: 'Stop', city: 'Белоусовка' });
-  h.update(); assert.equal(h.quote().basePriceMax, 1500); assert.equal(h.quote().priceMax, 1800);
-  h.demand(1.5); h.update(); assert.equal(h.quote().basePriceMax, 2250); assert.equal(h.quote().priceMax, 2700);
+test('multi-stop fallback and existing demand multiplier each apply once', async () => {
+  const h = harness(); h.state.fallback = null; h.state.points.push({ address: 'Stop', city: 'Белоусовка' }); h.state.distance = null;
+  h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 1500); assert.equal(h.quote().priceMax, 1800);
+  h.demand(1.5); h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 2250); assert.equal(h.quote().priceMax, 2700);
 });
 test('late route response cannot restore the price of a previous category', async () => {
-  const h = harness(); h.update(); let resolve;
+  const h = harness(); h.state.fallback = null; h.update(); let resolve;
   h.state.waitCoordinates = new Promise(done => { resolve = done; }); const pending = h.route();
   h.state.category = 'minivan'; h.update(); const expected = h.state.textContent;
   resolve({ lat: 50, lon: 82 }); await pending;
-  assert.equal(h.state.textContent, expected); assert.equal(h.quote().vehicleCategory, 'minivan');
+  assert.equal(h.state.textContent, expected); assert.equal(h.quote(), null); await h.route(); assert.equal(h.quote().vehicleCategory, 'minivan');
 });
 test('unknown intercity fare clears the previous premium quote', () => {
   const h = harness(); h.update(); assert.ok(h.quote());
   h.state.fallback = null; h.state.points[1].city = 'Unknown'; h.update();
-  assert.equal(h.quote(), null); assert.equal(h.state.textContent, 'Стоимость уточняется');
+  assert.equal(h.quote(), null); assert.equal(h.state.textContent, 'Рассчитываем стоимость…');
 });
 test('profiles retain regular service and enforce real minivan capacity', () => {
   assert.ok(driverCanServeOrder({}, { serviceType: 'taxi' }));
@@ -71,7 +72,7 @@ test('profiles retain regular service and enforce real minivan capacity', () => 
 });
 
 test('late routing response cannot overwrite a newer route quote', async () => {
-  const h = harness(); h.update(); let resolveDistance, markStarted;
+  const h = harness(); h.state.fallback = null; h.update(); let resolveDistance, markStarted;
   const started = new Promise(resolve => { markStarted = resolve; });
   h.state.routeStarted = markStarted;
   h.state.waitDistance = new Promise(resolve => { resolveDistance = resolve; });

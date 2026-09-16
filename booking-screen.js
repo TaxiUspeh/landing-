@@ -1,6 +1,6 @@
 import { createBookingSheet } from './booking-sheet.js?v=54';
 import { categoryForService, categoryCaption } from './vehicle-categories.js?v=52';
-import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=51';
+import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=60';
 
 export function initBookingScreen({ preview = false } = {}) {
   const $ = id => document.getElementById(id);
@@ -83,6 +83,7 @@ export function initBookingScreen({ preview = false } = {}) {
             <div class="booking-actions" role="group" aria-label="Оформить заказ">
               <button type="button" class="booking-submit" id="bookingSubmit">Заказать онлайн</button>
             </div>
+            <a id="bookingPriceHelp" class="booking-price-help" hidden>Уточнить цену у диспетчера</a>
           </footer>
       </div>
       <section class="booking-picker" id="bookingPicker" aria-label="Выбор адреса" hidden>
@@ -95,6 +96,7 @@ export function initBookingScreen({ preview = false } = {}) {
       </section>
     </div>`;
   $('bookingMapHost').prepend(mapElement, mapMessage);
+  $('bookingPriceHelp').href = $('taxi-online-dispatcher-call').href;
   const sheet = createBookingSheet({ overlay, body: $('bookingBody'), map: $('bookingMapHost'), grip: $('bookingGrip'), content: $('bookingScroll'), footer: $('bookingFooter'), onResize: () => window.simMap?.invalidateSize({ pan: false }) });
 
   // Move the existing nodes, retaining Firebase references, validators and submit handlers.
@@ -334,17 +336,21 @@ export function initBookingScreen({ preview = false } = {}) {
     $('bookingSubmit').hidden = false;
     sheet.setEnabled(!hasCard && !overlay.classList.contains('booking-picking'));
     const onlineButton = $(`${service.form}-online-order-button`);
+    const fareState = service.form === 'taxi' ? window.getTaxiPriceState?.() : 'ready';
+    const awaitingFare = fareState === 'pending';
+    const unknownFare = fareState === 'unavailable';
     const busy = submitting || (state.channel === 'online' && onlineButton?.disabled);
     $('bookingExtras').inert = Boolean(busy && !hasCard);
     renderMapStatus();
     $('bookingCommon').inert = Boolean(busy);
     $('bookingPanels').inert = Boolean(busy && !hasCard);
-    $('bookingSubmit').disabled = !service.online || busy || !onlineButton || onlineButton.classList.contains('hidden') || overlay.classList.contains('booking-picking');
-    $('bookingSubmit').textContent = !service.online ? 'Онлайн-заказ пока недоступен' : submitting ? 'Оформляем…' : missingRoute() ? 'Указать маршрут' : !validPhone($(`${service.form}CustomerPhone`)?.value) ? 'Указать телефон' : service.form === 'auction' ? 'Найти водителя' : 'Заказать онлайн';
+    $('bookingSubmit').disabled = !service.online || busy || awaitingFare || unknownFare || !onlineButton || onlineButton.classList.contains('hidden') || overlay.classList.contains('booking-picking');
+    $('bookingSubmit').textContent = !service.online ? 'Онлайн-заказ пока недоступен' : submitting ? 'Оформляем…' : missingRoute() ? 'Указать маршрут' : awaitingFare ? 'Рассчитываем стоимость…' : unknownFare ? 'Стоимость не определена' : !validPhone($(`${service.form}CustomerPhone`)?.value) ? 'Указать телефон' : service.form === 'auction' ? 'Найти водителя' : 'Заказать онлайн';
+    $('bookingPriceHelp').hidden = !unknownFare;
     const full = state.from.address && (service.form === 'assistance' || state.to.address);
     let price = service.form === 'taxi' ? $('taxiPriceEstimate').textContent : service.form === 'delivery' ? $('deliveryPriceEstimate').textContent : service.form === 'cargo' ? $('cargoTotalPrice').textContent : service.form === 'auction' ? ($('auctionPrice').value ? `${$('auctionPrice').value} ₸` : 'Ваша цена') : service.form === 'assistance' ? 'от 1500 тг' : 'от 3800 тг';
     $('bookingPrice').textContent = full ? price : 'Укажите адрес';
-    $('bookingPriceCaption').textContent = service.form === 'cargo' ? 'Стоимость за 1 час' : service.form === 'auction' ? 'Предложение водителю' : 'Примерная стоимость';
+    $('bookingPriceCaption').textContent = service.form === 'cargo' ? 'Стоимость за 1 час' : service.form === 'auction' ? 'Предложение водителю' : service.form === 'taxi' ? 'Стоимость поездки' : 'Примерная стоимость';
   }
   function queueRefresh() {
     if (refreshQueued) return;
@@ -395,6 +401,7 @@ export function initBookingScreen({ preview = false } = {}) {
     if (!validate()) return;
     if (preview) { showError('Режим просмотра: адреса и услуга выбраны. Заказ не отправляется.'); return; }
     sync();
+    if (state.service.form === 'taxi' && ['pending', 'unavailable', 'incomplete'].includes(window.getTaxiPriceState?.())) return;
     submitting = true; refresh();
     onlineButton.click();
     setTimeout(() => { submitting = false; refresh(); }, 1000);

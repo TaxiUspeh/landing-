@@ -46,6 +46,19 @@ async function settings(patch) {
 async function arriveComplete() {assert.ok((await run('advanceOrder','driver-a',['order-a','accepted','arrived'])).success);return run('advanceOrder','driver-a',['order-a','arrived','completed']);}
 async function test(name, fn) {await seed();await fn();console.log('PASS: '+name);passed++;}
 try {
+ await test('zero-price orders cannot be created by clients or dispatchers',async()=>{
+  await assertFails(order('zero-price',{priceAmount:0,priceText:'Стоимость уточняется'}));
+  await assertFails(setDoc(doc(db('admin'),'orders','zero-manual'),{...await readOrder(),source:'dispatcher',clientUid:'',priceAmount:0}));
+ });
+ await test('an old zero-price order cannot be accepted even by a driver with 0% commission',async()=>{
+  await settings({commissionRate:0});
+  await env.withSecurityRulesDisabled(ctx=>updateDoc(doc(ctx.firestore(),'orders','order-a'),{priceAmount:0,priceText:'Стоимость уточняется'}));
+  assert.ok(!(await run('acceptOrder','driver-a',['order-a'])).success);
+  const d=db('driver-a'),batch=writeBatch(d);
+  batch.update(doc(d,'orders','order-a'),{status:'accepted',assignedDriverUid:'driver-a',assignedDriverId:'d-a',driverName:'Driver',driverPhone:'',driverCar:'',driverColor:'',acceptedAt:serverTimestamp(),updatedAt:serverTimestamp(),commissionTerms:{rate:0,baseAmount:0,amount:0}});
+  batch.update(doc(d,'driverStates','driver-a'),{status:'busy',activeOrderId:'order-a',lastSeen:serverTimestamp(),updatedAt:serverTimestamp()});
+  await assertFails(batch.commit());
+ });
  await test('5000 fare, 100 credit: limit 1000 allows, commission reserved until completion',async()=>{
   assert.ok((await run('acceptOrder','driver-a',['order-a'])).success);
   assert.deepEqual((await readOrder()).commissionTerms,{rate:20,baseAmount:5000,amount:1000});

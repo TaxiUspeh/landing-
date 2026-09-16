@@ -141,3 +141,5 @@ body.booking-open { overflow: hidden; }
 #mapModal #mapOverlayText { font-size:12px; padding:7px 10px; font-weight:600; }
 #mapModal .booking-map-credit { font-size:10px; }
 @media (max-width:359px) { #mapModal .booking-categories .booking-service { flex-direction:column; } }
+.booking-price-help { display: block; padding: 10px 4px 2px; text-align: center; color: #1d4ed8; font-weight: 700; }
+.booking-price-help[hidden] { display: none; }

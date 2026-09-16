@@ -14,6 +14,14 @@ export const BOOKING_SERVICES = [
 export function normalizeCity(city = '') {
   const value = city.trim();
   const aliases = { 'белоусовка': 'Белоусовка', 'белoусовка': 'Белоусовка', 'belousovka': 'Белоусовка', 'belousovka village': 'Белоусовка', 'өскемен': 'Усть-Каменогорск', 'oskemen': 'Усть-Каменогорск', 'ust-kamenogorsk': 'Усть-Каменогорск', 'устъ-каменогорск': 'Усть-Каменогорск' };
+  Object.assign(aliases, {
+    'belokamenka': 'Белокаменка', 'белокаменка': 'Белокаменка',
+    'glubokoe': 'Глубокое', 'glubokoye': 'Глубокое', 'глубокое': 'Глубокое',
+    'sekisovka': 'Секисовка', 'секисовка': 'Секисовка',
+    'uvarovo': 'Уварово', 'уварово': 'Уварово',
+    'praporshchikovo': 'Прапорщиково', 'прапорщиково': 'Прапорщиково',
+    'ridder': 'Риддер', 'риддер': 'Риддер'
+  });
   return aliases[value.toLowerCase().replace(/^(пос[её]лок|п\.|город|г\.)\s+/u, '')] || value;
 }
 

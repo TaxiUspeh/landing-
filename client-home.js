@@ -1,4 +1,4 @@
-import { BOOKING_SERVICES } from './booking-core.js?v=51';
+import { BOOKING_SERVICES } from './booking-core.js?v=60';
 
 // Presentation only: existing booking forms and Firebase order panels stay in place.
 export function initClientHome() {

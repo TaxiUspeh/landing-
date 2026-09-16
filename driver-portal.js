@@ -1,7 +1,7 @@
-import { initDriverCabinet } from './driver-cabinet.js?v=55';
-import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=53';
+import { initDriverCabinet } from './driver-cabinet.js?v=60';
+import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=60';
 import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=52';
-import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=53';
+import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=60';
 import { app, auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -2213,7 +2213,7 @@ async function advanceOrder(orderId, expectedStatus, nextStatus) {
 
                 commissionBaseAmount = Number(order.priceAmount);
                 previousBalance = Number(driverSnapshot.data().balance);
-                if (!Number.isFinite(commissionBaseAmount) || commissionBaseAmount < 0) {
+                if (!Number.isFinite(commissionBaseAmount) || commissionBaseAmount <= 0) {
                     throw new Error('В заказе нет корректной цены для комиссии.');
                 }
                 if (!Number.isFinite(previousBalance)) {

@@ -18,6 +18,7 @@ export function commissionFor(price, rate) {
 }
 export function fundingFor(driver, price) {
     const settings = financeSettings(driver), balance = Number(driver.balance);
+    if (!Number.isFinite(price) || price <= 0 || price > 10000000) return { allowed: false, reason: 'Стоимость заказа должен уточнить диспетчер.', shortfall: null };
     if (!validFinanceSettings(settings) || !Number.isFinite(balance)) return { allowed: false, reason: 'Попросите диспетчера проверить баланс и условия комиссии.', shortfall: null };
     const amount = commissionFor(price, settings.commissionRate);
     const ceiling = settings.debtMode === 'none' ? 0 : settings.debtLimit;
@@ -28,7 +29,7 @@ export function fundingFor(driver, price) {
 export function hasOrderFunds(driver) {
     const settings = financeSettings(driver), balance = Number(driver.balance);
     if (!validFinanceSettings(settings) || !Number.isFinite(balance)) return false;
-    return settings.debtMode === 'unlimited' || (settings.commissionRate === 0 ? fundingFor(driver, 0).allowed : balance < (settings.debtMode === 'none' ? 0 : settings.debtLimit));
+    return settings.debtMode === 'unlimited' || (settings.commissionRate === 0 ? balance <= (settings.debtMode === 'none' ? 0 : settings.debtLimit) : balance < (settings.debtMode === 'none' ? 0 : settings.debtLimit));
 }
 export function reserveCommission(driver, price) {
     const funding = fundingFor(driver, price);

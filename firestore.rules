@@ -151,6 +151,7 @@ service cloud.firestore {
         && getAfter(orderDocument(orderId)).data.assignedDriverId == driverId
         && getAfter(orderDocument(orderId)).data.commissionRate == commissionRateForOrder(orderId)
         && getAfter(orderDocument(orderId)).data.commissionBaseAmount is number
+        && getAfter(orderDocument(orderId)).data.commissionBaseAmount > 0
         && getAfter(orderDocument(orderId)).data.commissionBaseAmount == commissionBaseAmountForOrder(orderId)
         && getAfter(orderDocument(orderId)).data.commissionAmount is number
         && getAfter(orderDocument(orderId)).data.commissionAmount == commissionAmountForOrder(orderId)
@@ -375,7 +376,7 @@ service cloud.firestore {
 
     function canFundOrder(driver, price) {
       let mode = driver.get('debtMode', 'unlimited');
-      return driver.balance is number && price is number && price >= 0 && price <= 10000000
+      return driver.balance is number && price is number && price > 0 && price <= 10000000
         && (mode == 'unlimited' || math.round((driver.balance + financeAmount(price, driver.get('commissionRate', 20))) * 100)
           <= (mode == 'none' ? 0 : driver.debtLimit * 100));
     }
@@ -428,7 +429,8 @@ service cloud.firestore {
 
     function adminFinanceOrderCreate(orderId) {
       let data = request.resource.data;
-      return data.get('assignedDriverUid', '') == '' ? data.get('commissionTerms', null) == null : adminReservation(orderId, data);
+      return data.priceAmount is number && data.priceAmount > 0 && data.priceAmount <= 10000000
+        && (data.get('assignedDriverUid', '') == '' ? data.get('commissionTerms', null) == null : adminReservation(orderId, data));
     }
 
     function adminFinanceOrderUpdate(orderId) {
@@ -533,7 +535,7 @@ service cloud.firestore {
         && request.resource.data.priceText is string
         && request.resource.data.priceText.size() <= 80
         && request.resource.data.priceAmount is number
-        && request.resource.data.priceAmount >= 0
+        && request.resource.data.priceAmount > 0
         && request.resource.data.priceAmount <= 10000000
         && (
           (request.resource.data.serviceType == 'taxi'

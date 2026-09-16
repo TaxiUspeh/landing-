@@ -102,6 +102,43 @@ assert.equal(get('driver-order-order-0').querySelector('[data-order-control="acc
 assert.equal(get('driver-work-status-card').dataset.brief,'false');
 assert.match(get('driver-work-status-detail').textContent,/Пополните баланс/);
 
+// Presentation keeps finance meaning and exposes the main actions without disclosure.
+assert.equal(document.querySelectorAll('#driver-cabinet-nav button').length, 4);
+assert.equal(get('driver-order-order-0').querySelector('[data-order-control="accept"]').closest('details'), null);
+document.querySelector('[data-cabinet-view="profile"]').click();
+assert.equal(get('driver-view-profile').hidden, false);
+assert.equal(get('driver-wallet-summary').hidden, true);
+assert.equal(get('driver-work-status-card').hidden, true);
+assert.ok(get('driver-profile-car').closest('#driver-view-profile'));
+assert.ok(get('driver-orders-link').closest('#driver-view-chat'));
+assert.equal(get('driver-view-profile').lastElementChild, get('driver-logout-button'));
+run("currentDriver.commissionRate=0; currentDriver.balance=-2400; renderOnlineOrders();");
+assert.match(document.querySelector('.cabinet-balance-value').textContent, /На счёте: 2\s*400/);
+assert.match(get('driver-commission-short').textContent, /0%/);
+run("currentDriver.balance=220; renderOnlineOrders();");
+assert.match(document.querySelector('.cabinet-balance-value').textContent, /Долг: 220/);
+
+// Period filters constrain the server query and discard stale pages / live callbacks.
+run(`var historySubscriptions=[];var historyResolvers=[];
+where=(...args)=>['where',...args];orderBy=(...args)=>['orderBy',...args];limit=(...args)=>['limit',...args];
+startAfter=(...args)=>['startAfter',...args];collection=(_db,path)=>path;query=(...args)=>args;
+onSnapshot=(query,success,error)=>{historySubscriptions.push({query,success,error});return ()=>{};};
+getDocs=()=>new Promise(resolve=>historyResolvers.push(resolve));
+balanceHistoryExpanded=true;changeBalanceHistoryPeriod('today');`);
+assert.equal(run("historySubscriptions.at(-1).query.some(c=>c[0]==='where' && c[1]==='changedAt' && c[2]==='>=')"), true);
+assert.equal(run('balanceHistoryPeriodStart.getHours()'), 0);
+run(`balanceHistoryCursor={id:'cursor'};balanceHistoryHasMore=true;var oldPage=loadMoreBalanceHistory();`);
+document.querySelector('[data-history-period="week"]').click();
+assert.equal(run('balanceHistoryPeriod'), 'week');
+assert.equal(run("historySubscriptions.at(-1).query.some(c=>c[0]==='startAfter')"), false);
+run(`historySubscriptions[0].success({docs:[{id:'stale',data:()=>({reason:'old'})}]});historyResolvers[0]({docs:[{id:'late',data:()=>({reason:'old page'})}]});`);
+await run('oldPage');
+assert.equal(run('balanceHistory.length'),0);
+document.querySelector('[data-history-period="all"]').click();
+assert.equal(run("historySubscriptions.at(-1).query.some(c=>c[0]==='where' && c[1]==='changedAt')"), false);
+run(`historySubscriptions.at(-1).success({docs:[{id:'current',data:()=>({reason:'Пополнение',difference:-500,changedAt:{toMillis:()=>Date.now(),toDate:()=>new Date()}})}]});`);
+assert.match(get('driver-balance-history-list').textContent,/Пополнение/);
+
 // Switching identities restores registration controls and public content.
 window.location.hash = '#driver-order-alerts';
 run('cabinet.setEnabled(false); updateMobilePrimaryAction();');
@@ -112,7 +149,7 @@ assert.equal(document.body.classList.contains('driver-cabinet-ready'),false);
 assert.equal(get('driver-cabinet-nav').hidden,true);
 assert.equal(publicInfo.children.length,1);
 assert.ok(get('driver-mobile-share').closest('.cabinet-legacy-bar'));
-assert.ok(get('driver-install-app-button').closest('header'));
+assert.ok(get('driver-install-app-button').closest('#driver-install-offer'));
 assert.ok(get('driver-user-name').closest('#driver-signed-in'));
 await Promise.resolve();
 dom.window.close();

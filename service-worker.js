@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v60-fare-quotes';
+const CACHE_NAME = 'taxi-uspeh-v61-driver-experience';
 const APP_SHELL = [
   './',
   './driver-finance.js?v=60',
@@ -21,9 +21,10 @@ const APP_SHELL = [
   './holiday-calendar.js',
   './drivers.html',
   './drivers.webmanifest',
-  './driver-portal.js?v=60',
-  './driver-cabinet.js?v=60',
-  './styles/driver-cabinet.css?v=55',
+  './driver-install.js?v=61',
+  './driver-portal.js?v=61',
+  './driver-cabinet.js?v=61',
+  './styles/driver-cabinet.css?v=61',
   './dispatcher.html',
   './dispatcher.js?v=60',
   './firebase-config.js',

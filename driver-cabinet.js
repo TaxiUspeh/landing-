@@ -1,7 +1,7 @@
 import { financeSettings, moneyRound } from './driver-finance.js?v=60';
 
 // Presentation only. Existing forms and their listeners keep their identity.
-export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = () => {} } = {}) {
+export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = () => {}, onHistoryPeriodChange = () => {} } = {}) {
     const $ = id => document.getElementById(id);
     const profile = $('driver-profile');
     if (!profile) return null;
@@ -17,7 +17,8 @@ export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = ()
     const identity = $('driver-profile-name').parentElement;
     identity.className = 'cabinet-driver-copy';
     const identityRow = node('div', 'cabinet-driver-row');
-    identityRow.append(identity, button('Профиль', () => open('profile')));
+    identityRow.append(identity);
+    const car = identity.querySelector('#driver-profile-car');
     const wallet = button('', () => open('balance'));
     wallet.id = 'driver-wallet-summary'; wallet.className = 'cabinet-wallet';
     const walletCopy = node('span', '');
@@ -34,23 +35,36 @@ export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = ()
         if (key !== 'orders') section.append(node('h3', 'cabinet-view-title', label));
         profile.append(section); views[key] = section;
     }
-    views.orders.append($('driver-online-orders'));
-    views.balance.append(finance, $('driver-balance-history'));
+    const alertInvite = button('Включить уведомления о заказах', () => {
+        open('profile'); $('driver-order-alerts').scrollIntoView({ block: 'center' });
+        const control = $('driver-order-alerts-toggle');
+        const settings = control.closest('details'); if (settings) settings.open = true;
+        control.focus();
+    });
+    alertInvite.id = 'driver-notification-invite'; alertInvite.hidden = true;
+    views.orders.append(alertInvite, $('driver-online-orders'));
+    const balanceHero = node('div', 'cabinet-balance-hero');
+    const balanceValue = node('p', 'cabinet-balance-value');
+    balanceHero.append(node('p', 'cabinet-eyebrow', 'Ваш баланс'), balanceValue);
+    views.balance.append(balanceHero, finance, $('driver-balance-history'));
     const call = node('a', 'cabinet-button', 'Позвонить диспетчеру'); call.href = 'tel:+77770649648';
     views.chat.append(call, $('driver-dispatcher-chat'));
     const settings = node('div', 'cabinet-settings');
     const more = node('div', 'cabinet-more');
     const publicInfo = node('details', 'cabinet-public-info');
     publicInfo.append(node('summary', '', 'О работе в «Такси Успех»'));
-    views.profile.append(settings, $('driver-order-alerts'), more, publicInfo);
+    const carCard = node('div', 'cabinet-profile-car');
+    carCard.append(node('p', 'cabinet-eyebrow', 'Автомобиль'), car);
+    const theme = button('Светлая / тёмная тема', () => $('driver-app-header').querySelector('button').click());
+    views.profile.append(settings, carCard, theme, $('driver-order-alerts'), more, publicInfo);
     const ordersLinks = $('driver-orders-link').parentElement;
-    more.append(ordersLinks, $('driver-orders-unavailable'));
+    views.chat.prepend(ordersLinks, $('driver-orders-unavailable'));
     const legacyBar = $('driver-mobile-primary-action').parentElement.parentElement;
     legacyBar.classList.add('cabinet-legacy-bar');
     const googleIdentity = $('driver-user-name').parentElement.parentElement;
-    const publicBlocks = [...$('driver-account').parentElement.children].filter(el => el !== $('driver-account'));
+    const publicBlocks = [...$('driver-account').parentElement.children].filter(el => el !== $('driver-account') && el !== $('driver-install-offer'));
     const movable = [
-        [googleIdentity, settings],
+        [googleIdentity, settings], [$('driver-logout-button'), views.profile],
         [$('driver-install-app-button'), settings], [$('driver-install-app-message'), settings],
         [$('driver-mobile-share'), more], [legacyBar.querySelector('a[href="./index.html"]'), more],
         ...publicBlocks.map(el => [el, publicInfo])
@@ -62,7 +76,7 @@ export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = ()
     const nav = node('nav', 'cabinet-nav'); nav.id = 'driver-cabinet-nav'; nav.hidden = true;
     nav.setAttribute('aria-label', 'Разделы кабинета');
     const navButtons = new Map();
-    for (const [key, label, icon] of [['orders','Заказы','list'],['balance','Баланс','wallet'],['chat','Диспетчер','comments']]) {
+    for (const [key, label, icon] of [['orders','Заказы','list'],['balance','Баланс','wallet'],['chat','Диспетчер','comments'],['profile','Профиль','user']]) {
         const control = button('', () => open(key)); control.dataset.cabinetView = key;
         control.setAttribute('aria-controls', views[key].id);
         const symbol = node('i', `fas fa-${icon}`); symbol.setAttribute('aria-hidden', 'true');
@@ -77,12 +91,36 @@ export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = ()
         filters.append(control); filterButtons.set(key, { control, label });
     }
     $('driver-orders-loading').before(filters);
+    const alerts = $('driver-order-alerts');
+    const alertActions = $('driver-order-alerts-toggle').parentElement;
+    alertActions.className = 'cabinet-alert-primary';
+    const diagnostics = node('details', 'cabinet-alert-settings');
+    diagnostics.append(node('summary', '', 'Проверка и настройка'));
+    const diagnosticActions = node('div', 'cabinet-alert-actions');
+    diagnosticActions.append($('driver-order-alerts-retry'), $('driver-order-alerts-test'));
+    const disableSlot = node('div', 'cabinet-alert-disable'); disableSlot.id = 'driver-alert-disable-slot';
+    diagnostics.append(diagnosticActions, disableSlot, $('driver-order-alerts-diagnostic'));
+    alertActions.append($('driver-order-alerts-push-test'));
+    alerts.append(diagnostics);
+    const historyFilters = node('div', 'cabinet-history-filters');
+    historyFilters.setAttribute('role', 'group'); historyFilters.setAttribute('aria-label', 'Период истории баланса');
+    for (const [key,label] of [['today','Сегодня'],['week','Неделя'],['month','Месяц'],['all','Всё']]) {
+        const control = button(label, () => {
+            for (const child of historyFilters.children) child.setAttribute('aria-pressed', String(child === control));
+            onHistoryPeriodChange(key);
+        });
+        control.title = ({today:'С начала сегодняшнего дня',week:'Последние 7 дней',month:'Последние 30 дней',all:'За всё время'})[key];
+        control.dataset.historyPeriod = key; control.setAttribute('aria-pressed', String(key === 'all'));
+        historyFilters.append(control);
+    }
+    $('driver-balance-history-content').prepend(historyFilters);
     function open(next, { scroll = true } = {}) {
         if (!enabled || !views[next]) return;
         view = next;
         for (const [key, section] of Object.entries(views)) section.hidden = key !== view;
         for (const [key, control] of navButtons) control.setAttribute('aria-pressed', String(key === view));
-        wallet.setAttribute('aria-expanded', String(view === 'balance'));
+        wallet.hidden = view !== 'orders';
+        $('driver-work-status-card').hidden = view !== 'orders';
         onViewChange(view);
         if (scroll) $('driver-account').scrollIntoView({ behavior: 'auto', block: 'start' });
     }
@@ -104,11 +142,18 @@ export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = ()
         const fmt = value => `${value.toLocaleString('ru-RU')} ₸`;
         const limit = settings.debtMode === 'none' ? 'Без долга' : settings.debtMode === 'unlimited' ? 'Без ограничения' : fmt(settings.debtLimit);
         const available = settings.debtMode === 'unlimited' ? 'Без ограничения' : fmt(Math.max(0, moneyRound((settings.debtMode === 'none' ? 0 : settings.debtLimit) - balance - reserved)));
+        balanceValue.textContent = balance > 0 ? `Долг: ${fmt(balance)}` : `На счёте: ${fmt(Math.abs(balance))}`;
+        balanceHero.dataset.debt = String(balance > 0);
         const list = node('dl','');
-        for (const [label,value] of [['Комиссия',`${settings.commissionRate}%`],['Лимит долга',limit],['Зарезервировано',fmt(reserved)],['Доступно для комиссии',available]]) {
-            const row = node('div',''); row.append(node('dt','',label),node('dd','',value)); list.append(row);
+        const debtDetails = node('details', 'cabinet-debt-details');
+        debtDetails.open = finance.querySelector('details')?.open || false;
+        debtDetails.append(node('summary', '', 'Лимит и доступная сумма'));
+        const debtList = node('dl', ''); debtDetails.append(debtList);
+        for (const [label,value] of [['Комиссия',`${settings.commissionRate}%`],['Зарезервировано',fmt(reserved)],['Лимит долга',limit],['Доступно для комиссии',available]]) {
+            const row = node('div',''); row.append(node('dt','',label),node('dd','',value));
+            (['Комиссия','Зарезервировано'].includes(label) ? list : debtList).append(row);
         }
-        finance.replaceChildren(list);
+        finance.replaceChildren(list, debtDetails);
     }
     return {
         open, setEnabled, updateFinance,

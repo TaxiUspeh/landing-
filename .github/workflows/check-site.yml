@@ -28,3 +28,4 @@ jobs:
           node compact-booking-ui.test.mjs
           node driver-cabinet-ui.test.mjs
           node driver-push-ui.test.mjs
+          node driver-install-ui.test.mjs

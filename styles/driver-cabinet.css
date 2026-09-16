@@ -1,4 +1,4 @@
-/* Authenticated cabinet; public registration retains its existing layout. */
+/* Cabinet layout and shared driver controls. */
 body.driver-cabinet-ready { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
 .driver-cabinet-ready { --cabinet-surface: #fff; --cabinet-muted: #475569; --cabinet-border: #dbe3ed; --cabinet-soft: #eff6ff; --cabinet-blue: #1d4ed8; }
 .dark .driver-cabinet-ready { --cabinet-surface: #1e293b; --cabinet-muted: #cbd5e1; --cabinet-border: #334155; --cabinet-soft: #172554; --cabinet-blue: #93c5fd; }
@@ -75,3 +75,125 @@ body.driver-cabinet-ready > footer { display: none; }
 .cabinet-view #driver-dispatcher-chat { margin-top: 12px; }
 .cabinet-view textarea { font-size: 16px; }
 @media (prefers-reduced-motion: reduce) { .driver-cabinet-ready * { scroll-behavior: auto !important; } }
+
+/* Driver experience: the same controls in a simpler, opaque workspace. */
+body:has(#driver-account) {
+  --cabinet-surface: #fff; --cabinet-muted: #526176; --cabinet-border: #dbe3ed;
+  --cabinet-soft: #edf3ff; --cabinet-blue: #2154ce;
+  background: #f3f5f9; color: #17243a;
+  padding-bottom: calc(88px + env(safe-area-inset-bottom));
+}
+html.dark body:has(#driver-account) {
+  --cabinet-surface: #1b2739; --cabinet-muted: #b6c4d8; --cabinet-border: #33425a;
+  --cabinet-soft: #233a61; --cabinet-blue: #b2d0ff;
+  background: #101a29; color: #edf3ff;
+}
+body:has(#driver-account) #driver-app-header { padding: 16px 0; box-shadow: none; }
+body:has(#driver-account) #driver-app-header > button { min-width: 44px; min-height: 44px; top: 10px; }
+body:has(#driver-account) .driver-header-title { font-size: 24px; }
+body:has(#driver-account) .driver-header-subtitle { font-size: 13px; }
+body:has(#driver-account) .driver-header-geography { font-size: 11px; }
+body:has(#driver-account) main { max-width: 700px; padding: 20px 16px; }
+#driver-account { scroll-margin-top: 100px; margin-bottom: 18px; }
+#driver-account > div { box-shadow: 0 8px 30px #14254a0a; }
+#driver-account > div > div:first-child { background: var(--cabinet-surface); color: inherit; padding: 20px 20px 0; }
+#driver-account > div > div:first-child p { color: var(--cabinet-muted); margin-top: 4px; }
+#driver-account > div > div:first-child .fa-id-card { color: var(--cabinet-blue); }
+#driver-account-title { font-size: 22px; }
+#driver-login-button { min-height: 52px; border-radius: 12px; }
+#driver-account-pending > .flex { flex-wrap: wrap; }
+#driver-copy-uid { min-height: 44px; font-size: 13px; }
+#driver-send-uid { margin-top: 12px; width: 100%; }
+.driver-install-offer { border: 1px solid var(--cabinet-border); background: var(--cabinet-surface); border-radius: 16px; padding: 16px; margin: 0 0 18px; }
+.driver-install-copy { display: flex; align-items: center; gap: 12px; }
+.driver-install-copy > i { color: var(--cabinet-blue); font-size: 24px; padding: 12px; border-radius: 12px; background: var(--cabinet-soft); }
+.driver-install-copy h2 { font-size: 15px; font-weight: 800; }
+.driver-install-copy p { color: var(--cabinet-muted); font-size: 13px; margin-top: 4px; }
+.driver-install-actions { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+.driver-install-actions .cabinet-button { flex: 1; }
+.driver-text-button { min-height: 44px; padding: 8px; color: var(--cabinet-muted); font-size: 13px; }
+#driver-install-app-message { font-size: 13px; line-height: 1.6; color: var(--cabinet-muted); margin-top: 10px; }
+.driver-conditions { border: 1px solid var(--cabinet-border); border-radius: 16px; background: var(--cabinet-surface); scroll-margin-top: 80px; }
+.driver-conditions > summary { display: flex; align-items: center; justify-content: space-between; padding: 18px; gap: 12px; cursor: pointer; font-weight: 800; font-size: 17px; }
+.driver-conditions > summary small { display: block; font-weight: 400; color: var(--cabinet-muted); font-size: 12px; margin-top: 4px; }
+.driver-conditions > summary i { font-size: 13px; }
+.driver-conditions[open] > summary i { transform: rotate(180deg); }
+.driver-conditions-content { padding: 0 12px 12px; }
+.driver-conditions-content .fade-in-section { opacity: 1; transform: none; }
+.driver-conditions-content > div { margin-bottom: 16px; box-shadow: none; }
+.driver-guest-nav { position: fixed; inset: auto 0 0; background: var(--cabinet-surface); border-top: 1px solid var(--cabinet-border); display: flex; justify-content: center; z-index: 50; padding: 6px 12px calc(6px + env(safe-area-inset-bottom)); }
+.driver-guest-nav a { flex: 1; max-width: 230px; min-height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 700; color: var(--cabinet-muted); }
+.driver-guest-nav a:first-child { color: var(--cabinet-blue); }
+.driver-guest-nav i { font-size: 18px; }
+/* Keep legacy nodes for their existing share / account handlers. */
+body:has(#driver-account) > .fixed:has(#driver-mobile-primary-action), .cabinet-legacy-bar { display: none; }
+.driver-cabinet-ready .driver-guest-nav, .driver-cabinet-ready #driver-install-offer { display: none; }
+body.driver-cabinet-ready #driver-app-header { padding: 8px 0; background: #1b46b5; }
+body.driver-cabinet-ready .driver-header-title { font-size: 19px; }
+body.driver-cabinet-ready #driver-app-header > button { top: 4px; }
+body.driver-cabinet-ready main { padding-top: 16px; }
+.cabinet-driver-row { padding: 0 2px; margin-bottom: 12px; }
+.cabinet-driver-copy > p:first-child { display: none; }
+#driver-profile-name { font-size: 17px; font-weight: 800; }
+#driver-profile-car { font-size: 14px; color: var(--cabinet-muted); }
+.cabinet-wallet { padding: 12px; margin-bottom: 10px; }
+.cabinet-wallet > span:first-child { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
+.cabinet-wallet #driver-profile-balance { font-size: 15px; white-space: nowrap; }
+.cabinet-wallet .cabinet-rate { font-size: 12px; margin: 0; }
+.cabinet-wallet-link { white-space: nowrap; }
+.cabinet-wallet[hidden], #driver-work-status-card[hidden], .driver-install-offer[hidden] { display: none !important; }
+.cabinet-view-title { margin: 12px 0 16px; font-size: 22px; }
+.cabinet-nav .cabinet-button { max-width: 175px; font-size: 11px; }
+.cabinet-order-filters { gap: 6px; margin: 14px 0; }
+.cabinet-order-filters .cabinet-button { border-radius: 10px; font-size: 12px; }
+.cabinet-order-card { padding: 16px; border-radius: 16px; box-shadow: 0 3px 12px #00000005; }
+.cabinet-order-heading .cabinet-price { color: inherit; font-size: 25px; letter-spacing: -.5px; }
+.cabinet-order-route { font-size: 17px; line-height: 1.55; margin: 8px 0; }
+.cabinet-order-commission { font-size: 12px; color: var(--cabinet-muted); margin: 10px 0; line-height: 1.5; }
+.cabinet-primary-actions > .cabinet-order-primary { margin-top: 6px; border-radius: 12px; background: #ffce19; color: #192742; min-height: 52px; font-weight: 800; }
+.cabinet-primary-actions > .cabinet-order-primary:hover { background: #f5c20c; }
+.cabinet-primary-actions > .cabinet-order-primary:disabled { opacity: .5; cursor: not-allowed; }
+.cabinet-quick-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.cabinet-quick-actions:empty { display: none; }
+.cabinet-quick-actions > a { flex: 1; border: 1px solid var(--cabinet-border); color: var(--cabinet-blue); background: var(--cabinet-soft); border-radius: 10px; }
+.cabinet-order-disclosure > summary { margin-top: 4px; font-size: 13px; }
+.cabinet-balance-hero { background: var(--cabinet-soft); padding: 22px; border-radius: 16px; border: 1px solid var(--cabinet-border); }
+.cabinet-eyebrow { color: var(--cabinet-muted); font-size: 12px; margin-bottom: 4px; }
+.cabinet-balance-value { font-size: clamp(24px, 6vw, 34px); font-weight: 900; color: var(--cabinet-blue); }
+.cabinet-balance-hero[data-debt="true"] .cabinet-balance-value { color: #b45309; }
+.dark .cabinet-balance-hero[data-debt="true"] .cabinet-balance-value { color: #fcd34d; }
+.cabinet-finance { background: var(--cabinet-surface); padding: 6px 16px; border: 1px solid var(--cabinet-border); border-radius: 16px; margin-top: 12px; }
+.cabinet-debt-details > summary, .cabinet-alert-settings > summary { cursor: pointer; min-height: 48px; padding: 14px 0; color: var(--cabinet-blue); font-size: 13px; font-weight: 700; }
+.cabinet-history-filters { display: flex; gap: 4px; padding: 8px; }
+.cabinet-history-filters button { flex: 1; font-size: 12px; min-width: 0; padding: 8px 2px; }
+.cabinet-history-filters [aria-pressed="true"] { background: var(--cabinet-soft); border-color: var(--cabinet-blue); }
+.cabinet-profile-car, .cabinet-settings { background: var(--cabinet-surface); border: 1px solid var(--cabinet-border); padding: 16px; border-radius: 16px; margin-bottom: 12px; }
+.cabinet-settings > div { margin-bottom: 0; }
+.cabinet-settings #driver-user-name { font-size: 15px; white-space: normal; }
+#driver-view-profile > .cabinet-button { width: 100%; margin-bottom: 16px; }
+#driver-view-profile > #driver-logout-button { width: 100%; min-height: 48px; margin: 18px 0 4px; border: 1px solid var(--cabinet-border); border-radius: 12px; }
+.driver-cabinet-ready #driver-order-alerts { background: var(--cabinet-surface); border-color: var(--cabinet-border); margin-top: 4px; }
+#driver-order-alerts-title { font-size: 15px; }
+#driver-order-alerts-status { line-height: 1.6; color: var(--cabinet-muted); }
+#driver-order-alerts-push-test { background: var(--cabinet-soft); color: var(--cabinet-blue); border: 1px solid var(--cabinet-border); width: 100%; }
+#driver-order-alerts-push-test:disabled { opacity: .5; }
+.cabinet-alert-actions { display: grid; gap: 8px; }
+.cabinet-alert-disable > button { width: 100%; margin-top: 8px; }
+#driver-view-chat > div:has(#driver-orders-link) { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+#driver-view-chat > div:has(#driver-orders-link) a { flex: 1; min-width: 140px; font-size: 13px; padding: 12px; background: var(--cabinet-soft); color: var(--cabinet-blue); box-shadow: none; }
+#driver-view-chat > .cabinet-button { width: 100%; }
+.cabinet-more { grid-template-columns: 1fr 1fr; }
+.cabinet-more > button, .cabinet-more > a { background: var(--cabinet-surface); border: 1px solid var(--cabinet-border); border-radius: 12px; color: var(--cabinet-blue); box-shadow: none; }
+.cabinet-public-info { margin-top: 14px; }
+body:has(#driver-account) :focus-visible { outline: 3px solid #3b82f6; outline-offset: 3px; }
+@media (max-width: 360px) {
+  body:has(#driver-account) main { padding-left: 10px; padding-right: 10px; }
+  .driver-install-actions { flex-wrap: wrap; }
+  .cabinet-wallet-link { display: none; }
+  .cabinet-nav { padding-left: 4px; padding-right: 4px; }
+}
+
+#driver-notification-invite { width: 100%; margin-top: 8px; font-size: 13px; }
+#driver-notification-invite[hidden] { display: none; }
+
+.cabinet-alert-primary { display: grid; gap: 8px; margin-top: 14px; }

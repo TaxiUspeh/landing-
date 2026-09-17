@@ -1,4 +1,4 @@
-import { deliveryCityKey } from './delivery-pricing.js?v=63';
+import { deliveryCityKey, deliveryPickupMode } from './delivery-pricing.js?v=65';
 import { createBookingSheet } from './booking-sheet.js?v=54';
 import { categoryForService, categoryCaption } from './vehicle-categories.js?v=52';
 import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=60';
@@ -67,6 +67,7 @@ export function initBookingScreen({ preview = false } = {}) {
                 <div id="bookingMoreServices" class="booking-more-services" role="group" aria-label="Другие услуги" hidden></div>
               </div>
               <p id="bookingServiceHelp" class="booking-help"></p>
+              <button type="button" id="bookingAnyStore" class="booking-any-store" aria-pressed="false" hidden>Купить в любом магазине</button>
               <label id="bookingPassengerCountField" class="booking-passenger-count" hidden>Количество пассажиров<input id="bookingPassengerCount" type="number" inputmode="numeric" min="1" max="8" step="1" value="5" required><small>Стоимость указана за автомобиль целиком.</small></label>
             </div>
             <div id="bookingPanels"></div>
@@ -95,6 +96,7 @@ export function initBookingScreen({ preview = false } = {}) {
         <label for="bookingSearchInput">Улица, дом или название места</label><div class="booking-search-row"><input id="bookingSearchInput" autocomplete="off" maxlength="200" placeholder="Например: Гоголя" enterkeyhint="search"><button type="button" id="bookingSearchButton">Найти</button></div>
         <p id="bookingSearchStatus" class="booking-status" role="status">Введите адрес или выберите точку на карте.</p>
         <div id="bookingSearchResults" aria-label="Найденные адреса"></div>
+        <button type="button" class="booking-picker-done" id="bookingPickerAnyStore" hidden>Купить в любом магазине</button>
         <button type="button" class="booking-picker-done" id="bookingManualAddress">Использовать введённый адрес</button>
       </section>
     </div>`;
@@ -239,8 +241,14 @@ export function initBookingScreen({ preview = false } = {}) {
     setValue('assistanceAddress', addressWithCity(state.from)); setValue('assistanceHouse', house); setValue('assistanceApt', entrance);
     setValue('deliveryAddress', state.to.address); setCity('deliveryCitySelect', state.to.city);
     setValue('deliveryHouse', ''); setValue('deliveryApt', '');
-    if (state.from.address) setValue('deliveryStore', addressWithCity(state.from, state.details));
-    $('bookingFromValue').textContent = state.from.address || 'Укажите место подачи';
+    const anyStore = state.service.form === 'delivery' && deliveryPickupMode(deliveryRoutePoints()[0]) === 'anyStore';
+    setValue('deliveryStore', anyStore ? 'Любой магазин — выбирает водитель' : state.from.address ? addressWithCity(state.from, state.details) : '');
+    $('bookingAnyStore').hidden = state.service.form !== 'delivery';
+    $('bookingAnyStore').setAttribute('aria-pressed', String(anyStore));
+    $('bookingAnyStore').textContent = anyStore ? 'Любой магазин · изменить' : 'Купить в любом магазине';
+    $('bookingDetails').hidden = anyStore;
+    document.querySelector('label[for="bookingDetails"]').hidden = anyStore;
+    $('bookingFromValue').textContent = anyStore ? 'Любой магазин — выбирает водитель' : state.from.address || 'Укажите место подачи';
     $('bookingFromLabel').textContent = state.service.form === 'delivery' ? 'Откуда забрать' : state.service.form === 'assistance' ? 'Где нужна помощь' : 'Откуда';
     $('bookingToValue').textContent = state.to.address ? addressWithCity(state.to) : 'Укажите адрес назначения';
     $('bookingCity').querySelector('span').textContent = state.from.city || 'Выберите населённый пункт';
@@ -248,7 +256,7 @@ export function initBookingScreen({ preview = false } = {}) {
     $('bookingNote').value = state.note;
     const singleAddress = state.service.form === 'assistance';
     $('bookingToRow').hidden = singleAddress;
-    $('bookingSwap').hidden = singleAddress;
+    $('bookingSwap').hidden = singleAddress || anyStore;
     $('bookingAddStop').hidden = singleAddress;
     $('bookingAddStop').disabled = state.stops.length >= 3;
     $('bookingStops').hidden = singleAddress;
@@ -275,6 +283,9 @@ export function initBookingScreen({ preview = false } = {}) {
 
   function selectService(id) {
     const selected = BOOKING_SERVICES.find(service => service.id === id) || BOOKING_SERVICES[0];
+    if (state.service.form === 'delivery' && selected.form !== 'delivery' && deliveryPickupMode(deliveryRoutePoints()[0]) === 'anyStore') {
+      state.from = { ...emptyPoint(), city: state.from.city }; state.details = '';
+    }
     if (['taxi', 'wagon', 'minivan'].includes(selected.id)) {
       if (state.service.form !== 'taxi') state.mode = 'taxi';
       state.category = selected.id;
@@ -315,7 +326,7 @@ export function initBookingScreen({ preview = false } = {}) {
       $('taxiDateTime').min = local.toISOString().slice(0, 16);
     }
     const key = state.service.id;
-    $('bookingServiceHelp').textContent = taxi && ['wagon','minivan'].includes(state.category) ? categoryCaption(state.category) + ' к стоимости легкового автомобиля.' : key === 'delivery' ? 'Укажите место получения, адрес доставки и список товаров.' : key === 'auction' ? 'Предложите цену и выберите водителя из ответивших.' : !state.service.online ? 'Онлайн-заказ этой услуги пока недоступен.' : '';
+    $('bookingServiceHelp').textContent = taxi && ['wagon','minivan'].includes(state.category) ? categoryCaption(state.category) + ' к стоимости легкового автомобиля.' : key === 'delivery' ? 'Укажите адрес доставки и список товаров. Можно выбрать любой магазин; для посылки нужен адрес получения.' : key === 'auction' ? 'Предложите цену и выберите водителя из ответивших.' : !state.service.online ? 'Онлайн-заказ этой услуги пока недоступен.' : '';
     contacts.get(state.service.form)?.update();
     changed();
   }
@@ -368,8 +379,8 @@ export function initBookingScreen({ preview = false } = {}) {
     $('bookingDeliveryCalculation').querySelector('p').textContent = deliveryFare?.calculation || '';
     $('bookingPriceReason').hidden = !full || !deliveryFare;
     $('bookingPriceReason').textContent = deliveryFare
-      ? `${deliveryFare.reason}. ${deliveryFare.preview ? 'От машины на карте (модель). Укажите место получения для окончательной цены.' : 'Один наибольший коэффициент. Товары оплачиваются отдельно.'}` : '';
-    $('bookingPriceCaption').textContent = service.form === 'cargo' ? 'Стоимость за 1 час' : service.form === 'auction' ? 'Предложение водителю' : service.form === 'taxi' ? 'Стоимость поездки' : service.form === 'delivery' ? (!state.from.address ? 'Предварительная стоимость доставки' : 'Стоимость доставки') : 'Примерная стоимость';
+      ? `${deliveryFare.reason}. ${deliveryFare.preview ? 'От случайной машины на карте (модель). Укажите место получения или выберите любой магазин.' : deliveryFare.anyStore ? 'Любой магазин. Расчёт от случайной машины на карте (модель). Товары оплачиваются отдельно.' : 'Один наибольший коэффициент. Товары оплачиваются отдельно.'}` : '';
+    $('bookingPriceCaption').textContent = service.form === 'cargo' ? 'Стоимость за 1 час' : service.form === 'auction' ? 'Предложение водителю' : service.form === 'taxi' ? 'Стоимость поездки' : service.form === 'delivery' ? (!state.from.address || deliveryFare?.preview ? 'Предварительная стоимость доставки' : 'Стоимость доставки') : 'Примерная стоимость';
   }
   function queueRefresh() {
     if (refreshQueued) return;
@@ -435,6 +446,7 @@ export function initBookingScreen({ preview = false } = {}) {
     $('bookingSearchCity').value = point.city || state.from.city;
     $('bookingSearchInput').value = point.address;
     $('bookingSearchResults').replaceChildren();
+    $('bookingPickerAnyStore').hidden = state.service.form !== 'delivery' || target !== 'from';
     $('bookingSearchStatus').textContent = 'Введите адрес и нажмите «Найти» или укажите его вручную.';
     $('bookingPicker').hidden = false;
     $('bookingSearchInput').focus();
@@ -501,6 +513,11 @@ export function initBookingScreen({ preview = false } = {}) {
     const address = $('bookingSearchInput').value.trim(); const city = normalizeCity($('bookingSearchCity').value);
     if (!address || !city) { $('bookingSearchStatus').textContent = 'Укажите населённый пункт и адрес.'; return; }
     applyPoint({ address, city, lat: null, lon: null });
+  }
+  function chooseAnyStore() {
+    pickerTarget = 'from';
+    applyPoint({ address: 'Любой магазин', city: state.from.city || state.to.city || 'Белоусовка', lat: null, lon: null });
+    $('bookingLocationStatus').textContent = 'Магазин выбирает водитель. Стоимость товаров оплачивается отдельно.';
   }
   function pickOnMap() {
     if (!window.simMap) { $('bookingSearchStatus').textContent = 'Карта загружается. Пока можно ввести адрес вручную.'; return; }
@@ -622,7 +639,7 @@ export function initBookingScreen({ preview = false } = {}) {
     if (!opened || !window.simMap || !window.L || state.service.form === 'assistance') return;
     let points = state.service.form === 'delivery' ? deliveryRoutePoints() : [state.from, ...state.stops, state.to];
     const estimate = state.service.form === 'delivery' ? window.getDeliveryEstimate?.() : null;
-    if (estimate?.preview) points = [{...estimate.origin},...points.slice(1)];
+    if (estimate?.origin) points = [{...estimate.origin},...points.slice(1)];
     if (points.length < 2 || points.some(point => !point.address || !point.city)) return;
     const coords = await Promise.all(points.map(point => state.service.form === 'delivery' && Number.isFinite(point.lat) && Number.isFinite(point.lon)
       ? { lat: point.lat, lon: point.lon } : coordinates(point.address, point.city)));
@@ -715,6 +732,8 @@ export function initBookingScreen({ preview = false } = {}) {
   $('bookingSearchInput').addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); void search(); } });
   for (const id of ['bookingSearchInput', 'bookingSearchCity']) $(id).addEventListener('input', () => { searchRevision++; $('bookingSearchResults').replaceChildren(); });
   $('bookingManualAddress').onclick = manualAddress;
+  $('bookingAnyStore').onclick = () => deliveryPickupMode(deliveryRoutePoints()[0]) === 'anyStore' ? openPicker('from') : chooseAnyStore();
+  $('bookingPickerAnyStore').onclick = chooseAnyStore;
   $('bookingOnMap').onclick = pickOnMap;
   $('bookingPickConfirm').onclick = confirmMapPoint;
   $('bookingTaxiType').onclick = () => { state.mode = 'taxi'; selectService(state.category); };

@@ -51,10 +51,10 @@ const rates=slice('        const INTERCITY_RATES =','        function selectedTa
 const pricing=slice('        const deliveryPricing = createDeliveryPricing(','        window.updateCargoPrice = function()');
 const submit=clients.slice(clients.indexOf('function containsRestrictedDeliveryItems'),clients.indexOf('async function cancelOnlineOrder()'));
 function harness() {
-  const state={writes:[],messages:[],distance:13152.2,from:'Магазин',auth:async()=>({uid:'client'})};
+  const state={writes:[],messages:[],distance:13152.2,from:'Магазин Центральный, 2',auth:async()=>({uid:'client'})};
   const nodes={deliveryCitySelect:{value:''},deliveryPriceEstimate:{textContent:''},deliveryWaitTime:{},
     deliveryItems:{value:'Хлеб, молоко, стоимость товаров 9999'},deliveryStore:{value:'Магазин'},deliveryAddress:{value:'Мира, 5'}};
-  const window={bookingScreen:{isPreview:()=>false,deliveryData:()=>({stops:[],wishes:''}),deliveryRoutePoints:()=>[{address:state.from,city:'Белоусовка'},{address:nodes.deliveryAddress.value,city:nodes.deliveryCitySelect.value||'Белоусовка'}]}};
+  const window={carMarkers:[{lat:50.1,lng:82.5}],bookingScreen:{isPreview:()=>false,modeledCarCity:async()=> 'Белоусовка',deliveryData:()=>({stops:[],wishes:''}),deliveryRoutePoints:()=>[{address:state.from,city:'Белоусовка'},{address:nodes.deliveryAddress.value,city:nodes.deliveryCitySelect.value||'Белоусовка'}]}};
   const ctx=vm.createContext({window,console,normalizeCity,deliveryQuote,
     createDeliveryPricing: options => createDeliveryPricing({...options,wait:async()=>{}}),
     getCoordinates: async(address,city)=>city==='Неизвестное село'?null:{lat:50.1,lon:82.5},getRouteDistance:async()=>state.distance,
@@ -96,4 +96,16 @@ test('delivery commission uses saved final fee and individually configured rate 
 test('an order cannot be placed using a car-based preview without a pickup address',async()=>{
   const h=harness();h.state.from='';h.adjust(select());await h.update();await h.submit();
   assert.equal(h.quote(),null);assert.equal(h.state.writes.length,0);
+});
+test('any-store delivery saves the displayed car-based fee before auth and excludes goods from commission',async()=>{
+  const h=harness();h.state.from='магазин';h.nodes.deliveryStore.value='Любой магазин — выбирает водитель';
+  h.nodes.deliveryCitySelect.value='Прогресс';h.state.distance=10000;h.adjust(select({modeledCars:2}));await h.update();
+  const displayed=h.quote();assert.equal(displayed.anyStore,true);assert.equal(displayed.priceAmount,3400);
+  let finishAuth;h.state.auth=()=>new Promise(resolve=>{finishAuth=resolve;});const pending=h.submit();
+  h.window.carMarkers[0].lng=83;h.adjust(select({weather:{temperature:-30}}));await h.update();assert.equal(h.quote().priceAmount,4200);
+  finishAuth({uid:'client'});await pending;
+  const order=h.state.writes[0];assert.equal(order.priceAmount,3400);assert.equal(order.priceText,displayed.priceText);
+  assert.equal(order.serviceDetails.store,'Любой магазин — выбирает водитель');assert.match(order.fromAddress,/Любой магазин/);
+  const accepted={...order,...reserveCommission({commissionRate:15,balance:0,debtMode:'unlimited',debtLimit:0},order.priceAmount)};
+  assert.equal(orderCommission(accepted).amount,510);
 });

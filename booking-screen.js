@@ -271,7 +271,7 @@ export function initBookingScreen({ preview = false } = {}) {
       row.append(button, remove); $('bookingStops').append(row);
     });
   }
-  function changed() { state.revision++; sync(); void drawRoute(); }
+  function changed() { state.revision++; $('bookingStatus').textContent = ''; sync(); void drawRoute(); }
 
   function selectService(id) {
     const selected = BOOKING_SERVICES.find(service => service.id === id) || BOOKING_SERVICES[0];

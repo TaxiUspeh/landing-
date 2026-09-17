@@ -144,5 +144,9 @@ assert.equal(get('bookingSubmit').textContent,'Указать место пол�
 let deliverySent=0;get('delivery-online-order-button').addEventListener('click',()=>deliverySent++);
 get('bookingSubmit').click();assert.equal(deliverySent,0);assert.equal(get('bookingPicker').hidden,false);
 assert.equal(get('bookingPickerTitle').textContent,'Откуда');
+assert.match(get('bookingStatus').textContent,/Укажите адрес/);
+get('bookingSearchCity').value='Белоусовка';get('bookingSearchInput').value='Жукова, 20';get('bookingManualAddress').click();
+assert.equal(get('bookingFromValue').textContent,'Жукова, 20');
+assert.equal(get('bookingStatus').textContent,'','Selecting the missing pickup clears the previous validation message');
 console.log('PASS: route point house, private entrance exclusion, preliminary car estimate and required pickup');
 dom.window.close();

@@ -12,18 +12,20 @@ const hasCoordinates = point => Number.isFinite(point?.lat) && Math.abs(point.la
 const validPoints = points => Array.isArray(points) && points.length >= 2 && points.length <= 5
   && points.every(point => typeof point.address === 'string' && point.address.trim().length >= 3
     && typeof point.city === 'string' && point.city.trim());
-const canPreview = points => points?.[0]?.address === ''
-  && validPoints([{ address: 'Машина на карте', city: 'Модель' }, ...points.slice(1)]);
-export function nearestMapCar(cars, target) {
-  if (!hasCoordinates(target)) return null;
-  const scale = Math.cos(target.lat * Math.PI / 180);
-  let best = null, distance = Infinity;
-  for (const car of cars) {
-    if (!hasCoordinates(car)) continue;
-    const squared = (car.lat - target.lat) ** 2 + ((car.lon - target.lon) * scale) ** 2;
-    if (squared < distance) { best = { lat: car.lat, lon: car.lon }; distance = squared; }
-  }
-  return best;
+export function deliveryPickupMode(point) {
+  const address = point?.address?.trim() || '';
+  if (!address) return 'missing';
+  if (hasCoordinates(point)) return 'address';
+  return /^(?:(?:из|в)\s+)?(?:(?:любой|любого|любом)\s+)?магазин(?:а|е)?$/iu.test(address)
+    ? 'anyStore' : 'address';
+}
+export function randomMapCar(cars, random = Math.random) {
+  const available = (Array.isArray(cars) ? cars : []).filter(hasCoordinates);
+  if (!available.length) return null;
+  const sample = random();
+  if (!Number.isFinite(sample) || sample < 0 || sample >= 1) return null;
+  const car = available[Math.floor(sample * available.length)];
+  return { lat: car.lat, lon: car.lon };
 }
 export const isLocalDelivery = points => validPoints(points) && points.every(point => deliveryCityKey(point.city) === deliveryCityKey(points[0].city));
 
@@ -46,9 +48,10 @@ export function deliveryRouteQuote(points, meters, tariff, adjustment) {
 // Keep route and tariff input snapshots separate from asynchronous geocoding.
 // A late route cannot replace a newer quote or change a submitted order's price.
 export function createDeliveryPricing({ tariff, readInput, locate, routeDistance, onChange,
-  readCars = () => [], locateCarCity = async () => null,
+  readCars = () => [], locateCarCity = async () => null, random = Math.random,
   wait = () => new Promise(resolve => setTimeout(resolve, 350)) }) {
   let state = 'incomplete', quote = null, key = '', revision = 0, pending = null;
+  let selectedCar = null;
   const distances = new Map();
   function input() {
     const data = readInput();
@@ -85,10 +88,16 @@ export function createDeliveryPricing({ tariff, readInput, locate, routeDistance
     key = nextKey;
     const requestId = ++revision;
     pending = null;
-    const preview = canPreview(data.points);
-    if (!validPoints(data.points) && !preview) { publish('incomplete'); return Promise.resolve(); }
+    const pickupMode = deliveryPickupMode(data.points[0]);
+    const fromCar = pickupMode !== 'address';
+    const preview = pickupMode === 'missing';
+    if (!fromCar || !data.points.length) selectedCar = null;
+    const routeReady = fromCar
+      ? validPoints([{ address: 'Машина на карте', city: 'Модель' }, ...data.points.slice(1)])
+      : validPoints(data.points);
+    if (!routeReady) { publish('incomplete'); return Promise.resolve(); }
     if (!data.adjustment) { publish('pending'); return Promise.resolve(); }
-    if (!preview && isLocalDelivery(data.points)) {
+    if (!fromCar && isLocalDelivery(data.points)) {
       const result = deliveryRouteQuote(data.points,null,tariff,data.adjustment);
       publish(result ? 'ready' : 'unavailable',result);
       return Promise.resolve();
@@ -98,15 +107,19 @@ export function createDeliveryPricing({ tariff, readInput, locate, routeDistance
       await wait();
       if (revision !== requestId) return;
       let points = data.points;
-      if (preview) {
+      if (fromCar) {
         try {
-          const next = points[1];
-          const target = hasCoordinates(next) ? next : await locate(next.address,next.city);
-          if (revision !== requestId) return;
-          const car = nearestMapCar(readCars(),target);
-          const city = car && await locateCarCity(car);
+          // Pin one randomly selected position, including across tariff changes and
+          // missing pickup -> any store. Map animation must not silently reprice it.
+          if (!selectedCar) {
+            const car = randomMapCar(readCars(),random);
+            if (car) selectedCar = { ...car, city: null };
+          }
+          const car = selectedCar;
+          const city = car && (car.city || await locateCarCity(car));
           if (revision !== requestId || JSON.stringify(input()) !== nextKey) return;
           if (!car || !city) { publish('unavailable'); return; }
+          car.city = city;
           points = [{...car,city,address:'Онлайн-машина на карте (модель)'},...points.slice(1)];
         } catch {
           if (revision === requestId) publish('unavailable');
@@ -116,10 +129,9 @@ export function createDeliveryPricing({ tariff, readInput, locate, routeDistance
       const meters = await measure(points);
       if (revision !== requestId || JSON.stringify(input()) !== nextKey) return;
       let result = deliveryRouteQuote(points,meters,tariff,data.adjustment);
-      if (preview) {
-        // This is guidance only: an actual pickup is required before placing an order.
-        result = result && meters !== null ? {...result,preview:true,origin:points[0],distanceMeters:meters,
-          calculation: `Предварительно от онлайн-машины на карте (движение смоделировано): ≈ ${(meters/1000).toLocaleString('ru-RU',{maximumFractionDigits:2})} км по дороге. ${result.calculation}` } : null;
+      if (fromCar) {
+        result = result && meters !== null ? {...result,preview,anyStore:!preview,origin:points[0],distanceMeters:meters,
+          calculation: `${preview ? 'Предварительный расчёт' : 'Любой магазин — расчёт'} от случайной онлайн-машины на карте (движение смоделировано): ≈ ${(meters/1000).toLocaleString('ru-RU',{maximumFractionDigits:2})} км по дороге. Точка расчёта закреплена; это не назначение водителя. ${result.calculation}` } : null;
       }
       publish(result ? (preview ? 'preview' : 'ready') : 'unavailable',result);
     })();

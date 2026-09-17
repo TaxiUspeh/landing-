@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createDeliveryPricing, deliveryRouteQuote, nearestMapCar } from '../delivery-pricing.js';
+import { createDeliveryPricing, deliveryRouteQuote, randomMapCar, deliveryPickupMode } from '../delivery-pricing.js';
 
 const tariff={BASE_PRICE:1200,BASE_DISTANCE_KM:3,PRICE_PER_KM:200};
 const standard={code:'standard',label:'Без надбавки',multiplier:1};
@@ -9,8 +9,8 @@ const points=(...cities)=>cities.map((city,index)=>({address:`Улица ${index
 const deferred=()=>{let resolve;const promise=new Promise(r=>{resolve=r;});return {promise,resolve};};
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function harness(cities=['Белоусовка','Прогресс']) {
-  const state={points:points(...cities),adjustment:standard,cars:[{lat:50.1,lon:82.5}],city:'Белоусовка',meters:10000,locates:[],routes:[],changes:[]};
-  const pricing=createDeliveryPricing({tariff,readInput:()=>state,readCars:()=>state.cars,locateCarCity:async()=>state.city,
+  const state={points:points(...cities),adjustment:standard,cars:[{lat:50.1,lon:82.5}],city:'Белоусовка',meters:10000,locates:[],routes:[],changes:[],randomCalls:0};
+  const pricing=createDeliveryPricing({tariff,readInput:()=>state,readCars:()=>state.cars,locateCarCity:async()=>state.city,random:()=>{state.randomCalls++;return 0;},
     locate:async(address,city)=>{state.locates.push({address,city});return {lat:50.14,lon:82.53};},
     routeDistance:async coordinates=>{state.routes.push(coordinates);return typeof state.meters==='function'?state.meters():state.meters;},
     onChange:change=>state.changes.push(change),wait:async()=>{}});
@@ -62,15 +62,29 @@ test('route errors do not use straight-line distance or a local/published fare; 
   h.state.meters=10000;await h.update();assert.equal(h.getQuote().priceAmount,2600);
   const local=harness(['Секисовка','Секисовка']);await local.update();assert.equal(local.getQuote().priceAmount,1200);assert.equal(local.state.routes.length,0);
 });
-test('missing pickup uses nearest displayed car only as a preview with actual road kilometers',async()=>{
+test('missing pickup selects a random displayed car and pins it across movement, coefficients and any-store selection',async()=>{
   const h=harness();h.state.points[0].address='';
   h.state.cars=[{lat:50.4,lon:82.7},{lat:50.14,lon:82.529},{lat:NaN,lon:82.5}];
   await h.update();assert.equal(h.getState(),'preview');assert.equal(h.getQuote(),null);
   const estimate=h.getEstimate();assert.equal(estimate.priceAmount,2600);assert.equal(estimate.distanceMeters,10000);
-  assert.equal(estimate.origin.lon,82.529);assert.match(estimate.calculation,/движение смоделировано/);
-  assert.equal(h.state.routes[0][0].lon,82.529);
-  h.state.cars[1].lon=82.8;await h.update();assert.equal(h.getEstimate().origin.lon,82.529,'Keep preview stable while cars animate');
-  h.state.points[0].address='Магазин';await h.update();assert.equal(h.getState(),'ready');assert.equal(h.getQuote().preview,undefined);
+  assert.equal(estimate.origin.lon,82.7,'Random choice need not be nearest');assert.match(estimate.calculation,/движение смоделировано/);
+  assert.equal(h.state.routes[0][0].lon,82.7);
+  h.state.cars[0].lon=82.8;await h.update();assert.equal(h.getEstimate().origin.lon,82.7,'Keep preview stable while cars animate');
+  h.state.adjustment=scarcity;await h.update();assert.equal(h.getEstimate().priceAmount,3400);assert.equal(h.getEstimate().origin.lon,82.7);
+  h.state.points[0].address='Магазин';await h.update();assert.equal(h.getState(),'ready');assert.equal(h.getQuote().anyStore,true);
+  assert.equal(h.getQuote().priceAmount,3400);assert.equal(h.state.randomCalls,1);assert.equal(h.state.routes.length,1);
+  assert.equal(h.state.locates.some(p=>/магазин/iu.test(p.address)),false,'Generic shop is never geocoded');
+  h.state.points[0].address='Магазин Центральный, 7';await h.update();assert.equal(h.getQuote().anyStore,undefined);
+});
+test('only generic shop names use random origin; a real address or a map point keeps its actual location',()=>{
+  for(const address of ['магазин','  Любой магазин  ','из любого магазина','в любом магазине']) assert.equal(deliveryPickupMode({address}),'anyStore');
+  for(const address of ['Магазин Центральный','магазин, 8','Панфилова, 32']) assert.equal(deliveryPickupMode({address}),'address');
+  assert.equal(deliveryPickupMode({address:'магазин',lat:50,lon:82}),'address');
+  assert.equal(deliveryPickupMode({address:''}),'missing');
+  const cars=[{lat:NaN,lon:82},{lat:50,lon:82},{lat:51,lon:83}];
+  assert.deepEqual(randomMapCar(cars,()=>0),{lat:50,lon:82});
+  assert.deepEqual(randomMapCar(cars,()=>0.999),{lat:51,lon:83});
+  assert.equal(randomMapCar([],()=>0),null);
 });
 test('no displayed car or unknown car settlement cannot produce a made-up delivery estimate',async()=>{
   for (const kind of ['noCars','unknownCity','noRoad']) {
@@ -78,7 +92,7 @@ test('no displayed car or unknown car settlement cannot produce a made-up delive
     if(kind==='noCars')h.state.cars=[];if(kind==='unknownCity')h.state.city=null;if(kind==='noRoad')h.state.meters=null;
     await h.update();assert.equal(h.getState(),'unavailable');assert.equal(h.getEstimate(),null);assert.equal(h.getQuote(),null);
   }
-  assert.equal(nearestMapCar([],{lat:50,lon:82}),null);
+  assert.equal(randomMapCar([]),null);
 });
 test('a late preview origin cannot replace a confirmed pickup',async()=>{
   const slow=deferred();const state={points:points('Белоусовка','Прогресс'),adjustment:standard};state.points[0].address='';

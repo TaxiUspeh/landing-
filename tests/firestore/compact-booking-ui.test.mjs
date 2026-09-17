@@ -149,4 +149,26 @@ get('bookingSearchCity').value='Белоусовка';get('bookingSearchInput').
 assert.equal(get('bookingFromValue').textContent,'Жукова, 20');
 assert.equal(get('bookingStatus').textContent,'','Selecting the missing pickup clears the previous validation message');
 console.log('PASS: route point house, private entrance exclusion, preliminary car estimate and required pickup');
+// Generic shop text and the dedicated choice do not require a fabricated street.
+get('bookingFrom').click();assert.equal(get('bookingPickerAnyStore').hidden,false);
+get('bookingSearchInput').value='магазин';get('bookingManualAddress').click();
+assert.equal(get('bookingAnyStore').getAttribute('aria-pressed'),'true');
+assert.match(get('bookingFromValue').textContent,/Любой магазин/);
+assert.equal(get('deliveryStore').value,'Любой магазин — выбирает водитель');
+assert.equal(get('bookingDetails').hidden,true);assert.equal(get('bookingSwap').hidden,true);
+select('taxi');assert.equal(get('bookingAnyStore').hidden,true);
+assert.equal(get('taxiFrom').value,'','Any store must not become a taxi pickup');
+assert.equal(get('bookingDetails').hidden,false);assert.equal(get('bookingSwap').hidden,false);
+select('delivery');get('bookingAnyStore').click();
+assert.equal(get('bookingPicker').hidden,true);assert.equal(get('bookingStatus').textContent,'');
+assert.equal(window.bookingScreen.deliveryRoutePoints()[0].address,'Любой магазин');
+deliveryState='ready';deliveryQuote={priceAmount:3400,amountText:'3400 ₸',anyStore:true,preview:false,reason:'×1,3 — Мало машин (модель)',calculation:'От случайной машины на карте — 10 км.'};
+window.getDeliveryEstimate=()=>deliveryQuote;window.getDeliveryFareForOrder=()=>deliveryQuote;
+get('deliveryPriceEstimate').textContent='3400 ₸';get('deliveryItems').value='Хлеб, молоко';
+get('deliveryCustomerPhone').value='+7 700 000 00 00';get('deliveryCustomerPhone').dispatchEvent(new window.Event('input'));await flush();
+assert.equal(get('bookingPriceCaption').textContent,'Стоимость доставки');assert.match(get('bookingPriceReason').textContent,/случайной машины/);
+assert.equal(get('bookingSubmit').textContent,'Заказать онлайн');assert.equal(get('bookingSubmit').disabled,false);
+get('bookingSubmit').click();assert.equal(deliverySent,1,'A priced any-store request reaches the order handler without a street pickup');
+console.log('PASS: generic shop, explicit any-store choice, clean service switch and ordering without an exact store');
+await new Promise(resolve => setTimeout(resolve,1100));
 dom.window.close();

@@ -7,7 +7,7 @@ import { distanceFare, formatTaxiFare } from '../taxi-pricing.js';
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const from = (a, b) => html.slice(html.indexOf(a), html.indexOf(b, html.indexOf(a)));
 const pricingSource = from('        let taxiFareSnapshot = null;', '        const debouncedOSRM = debounce(')
-  + from('        window.updateTaxiPrice = function()', '        window.updateDeliveryPrice = function()');
+  + from('        window.updateTaxiPrice = function()', '        const deliveryPricing = createDeliveryPricing(');
 function harness(category = 'wagon') {
   const state = { category, fallback: { min: 800, max: 1000, routeLabel: 'Test' }, points: [{ address: 'Street A', city: 'Белоусовка' }, { address: 'Street B', city: 'Белоусовка' }], distance: 1000, textContent: '' };
   const window = { bookingScreen: { vehicleRequest: () => ({ vehicleCategory: state.category }) } };

@@ -124,7 +124,7 @@ if (lineStatusStart === -1 || lineStatusEnd === -1) {
   const lineStatusScript = index.slice(lineStatusStart, lineStatusEnd);
   for (const expected of [
     "statusEl.setAttribute('onclick', 'window.openMapModal()')",
-    'Моделируемые машины:',
+    'Онлайн-машины:',
     'Модель влияет на тариф.',
     'updateHolidayBanner()'
   ]) {
@@ -160,7 +160,7 @@ if (mapStart === -1 || mapEnd === -1) {
     'stopSimulationLocationTracking',
     'planApproachToUser',
     'approachRemainingMeters',
-    'Моделируемая машина',
+    'Онлайн-машина (модель)',
     'водитель ещё не назначен',
     'L.polyline(approachPoints',
     'routeData.duration',
@@ -327,7 +327,7 @@ const tailwindConfig = await readFile('tailwind.config.cjs', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
 const dispatcherQuickSearchHtml = await readFile('dispatcher.html', 'utf8');
 const dispatcherQuickSearchScript = await readFile('dispatcher.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v62-transparent-surcharges'")) failures.push('service-worker.js: map booking cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v63-delivery-distance'")) failures.push('service-worker.js: map booking cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("'./styles/tailwind.css'")) failures.push('service-worker.js: local Tailwind stylesheet is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');

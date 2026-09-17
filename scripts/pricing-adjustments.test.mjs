@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 import { selectPriceAdjustment, adjustmentText, deliveryQuote } from '../pricing-adjustments.js';
+import { createDeliveryPricing } from '../delivery-pricing.js';
 import { normalizeCity } from '../booking-core.js';
 import { reserveCommission, orderCommission } from '../driver-finance.js';
 
@@ -47,14 +48,16 @@ const clients=await readFile(new URL('../client-orders.js',import.meta.url),'utf
 const slice=(start,end)=>html.slice(html.indexOf(start),html.indexOf(end,html.indexOf(start)));
 const config=html.match(/const CONFIG = ([\s\S]*?);/)[0];
 const rates=slice('        const INTERCITY_RATES =','        function selectedTaxiCity(');
-const pricing=slice('        let deliveryFareSnapshot = null;','        window.updateCargoPrice = function()');
+const pricing=slice('        const deliveryPricing = createDeliveryPricing(','        window.updateCargoPrice = function()');
 const submit=clients.slice(clients.indexOf('function containsRestrictedDeliveryItems'),clients.indexOf('async function cancelOnlineOrder()'));
 function harness() {
-  const state={writes:[],messages:[],auth:async()=>({uid:'client'})};
+  const state={writes:[],messages:[],distance:13152.2,from:'Магазин',auth:async()=>({uid:'client'})};
   const nodes={deliveryCitySelect:{value:''},deliveryPriceEstimate:{textContent:''},deliveryWaitTime:{},
     deliveryItems:{value:'Хлеб, молоко, стоимость товаров 9999'},deliveryStore:{value:'Магазин'},deliveryAddress:{value:'Мира, 5'}};
-  const window={bookingScreen:{isPreview:()=>false,deliveryData:()=>({stops:[],wishes:''})}};
+  const window={bookingScreen:{isPreview:()=>false,deliveryData:()=>({stops:[],wishes:''}),deliveryRoutePoints:()=>[{address:state.from,city:'Белоусовка'},{address:nodes.deliveryAddress.value,city:nodes.deliveryCitySelect.value||'Белоусовка'}]}};
   const ctx=vm.createContext({window,console,normalizeCity,deliveryQuote,
+    createDeliveryPricing: options => createDeliveryPricing({...options,wait:async()=>{}}),
+    getCoordinates: async(address,city)=>city==='Неизвестное село'?null:{lat:50.1,lon:82.5},getRouteDistance:async()=>state.distance,
     document:{getElementById:id=>nodes[id]},ONLINE_ORDERS_ENABLED:true,actionInProgress:false,activeOrderView:'',resumeExistingOrder:()=>false,
     setStatus:message=>state.messages.push(message),combineAddress:()=>nodes.deliveryAddress.value,
     elements:{deliveryCustomerName:{value:'Тест'},deliveryCustomerPhone:{value:'+77000000000'}},normalizePhone:x=>x,validPhone:()=>true,
@@ -68,16 +71,16 @@ test('actual delivery handler blocks pending/unknown tariffs and does not parse 
   const h=harness();h.update();assert.equal(h.status(),'pending');await h.submit();assert.equal(h.state.writes.length,0);
   h.adjust(select());h.update();assert.equal(h.quote().priceAmount,1200);
   h.nodes.deliveryPriceEstimate.textContent='999999 ₸';await h.submit();assert.equal(h.state.writes[0].priceAmount,1200);
-  h.nodes.deliveryCitySelect.value='Неизвестное село';assert.equal(h.quote(),null);h.update();assert.equal(h.status(),'unavailable');await h.submit();assert.equal(h.state.writes.length,2);
+  h.nodes.deliveryCitySelect.value='Неизвестное село';assert.equal(h.quote(),null);await h.update();assert.equal(h.status(),'unavailable');await h.submit();assert.equal(h.state.writes.length,2);
 });
-test('intercity delivery displays one final existing tariff, then freezes it before an authentication delay',async()=>{
-  const h=harness();h.nodes.deliveryCitySelect.value='Прогресс';h.adjust(select());h.update();
-  const displayed=h.quote();assert.equal(displayed.priceAmount,4700);assert.match(displayed.priceText,/4700 ₸/);
+test('intercity delivery stores the route fee before an authentication delay',async()=>{
+  const h=harness();h.nodes.deliveryCitySelect.value='Прогресс';h.adjust(select());await h.update();
+  const displayed=h.quote();assert.equal(displayed.priceAmount,3250);assert.match(displayed.priceText,/3250 ₸/);
   let finishAuth;h.state.auth=()=>new Promise(resolve=>{finishAuth=resolve;});
   const pending=h.submit();assert.equal(h.state.writes.length,0);
-  h.adjust(select({weather:{temperature:-30}}));h.update();assert.equal(h.quote().priceAmount,7550);
+  h.adjust(select({weather:{temperature:-30}}));await h.update();assert.equal(h.quote().priceAmount,5200);
   finishAuth({uid:'client'});await pending;
-  assert.equal(h.state.writes[0].priceAmount,4700);assert.equal(h.state.writes[0].priceText,displayed.priceText);
+  assert.equal(h.state.writes[0].priceAmount,3250);assert.equal(h.state.writes[0].priceText,displayed.priceText);
 });
 test('delivery commission uses saved final fee and individually configured rate including zero, excluding goods',async()=>{
   const h=harness();h.adjust(select({modeledCars:2,holiday:true}));h.update();await h.submit();
@@ -88,4 +91,9 @@ test('delivery commission uses saved final fee and individually configured rate 
     driver.commissionRate=42;
     assert.equal(orderCommission(accepted).rate,rate);assert.equal(orderCommission(accepted).amount,1600*rate/100);
   }
+});
+
+test('an order cannot be placed using a car-based preview without a pickup address',async()=>{
+  const h=harness();h.state.from='';h.adjust(select());await h.update();await h.submit();
+  assert.equal(h.quote(),null);assert.equal(h.state.writes.length,0);
 });

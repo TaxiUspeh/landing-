@@ -31,7 +31,7 @@
     <link rel="stylesheet" href="./styles/tailwind.css">
     <link rel="stylesheet" href="./styles/vehicle-categories.css?v=53">
     <link rel="stylesheet" href="./styles/auction.css?v=51">
-    <link rel="stylesheet" href="./styles/booking-screen.css?v=62">
+    <link rel="stylesheet" href="./styles/booking-screen.css?v=63">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <!-- Leaflet Map (Для карты с машинками) -->
@@ -632,7 +632,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="lineStatus" class="hidden" role="button" tabindex="0" aria-label="Моделируемые машины и тариф, открыть карту">
+                            <div id="lineStatus" class="hidden" role="button" tabindex="0" aria-label="Онлайн-машины (модель) и тариф, открыть карту">
 </div>
 </details>
 </section>
@@ -2059,9 +2059,10 @@
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
         import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=52";
-        import { initBookingScreen } from "./booking-screen.js?v=62";
+        import { initBookingScreen } from "./booking-screen.js?v=63";
         import { normalizeCity } from "./booking-core.js?v=60";
-        import { selectPriceAdjustment, adjustmentText, deliveryQuote } from "./pricing-adjustments.js?v=62";
+        import { selectPriceAdjustment, adjustmentText } from "./pricing-adjustments.js?v=63";
+        import { createDeliveryPricing } from "./delivery-pricing.js?v=63";
         import { publishedRouteFare, distanceFare, formatTaxiFare } from "./taxi-pricing.js?v=60";
         import { initClientHome } from "./client-home.js?v=60";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -2089,7 +2090,9 @@
                 }
             },
             DELIVERY: {
-                BASE_PRICE: 1200
+                BASE_PRICE: 1200,
+                BASE_DISTANCE_KM: 3,
+                PRICE_PER_KM: 200
             },
             CARGO: {
                 HOURLY_RATE: 6000,
@@ -2570,12 +2573,12 @@
             priceMultiplier = pricingAdjustment.multiplier;
             if (statusEl) {
                 const model = document.createElement('strong');
-                model.textContent = `Моделируемые машины: ${cars}`;
+                model.textContent = `Онлайн-машины: ${cars}`;
                 const reason = document.createElement('div');
                 reason.textContent = adjustmentText(pricingAdjustment);
                 const hint = document.createElement('div');
                 hint.className = 'text-xs font-normal mt-1';
-                hint.textContent = 'Модель влияет на тариф. Нажмите, чтобы открыть карту.';
+                hint.textContent = 'Движение смоделировано. Модель влияет на тариф. Нажмите, чтобы открыть карту.';
                 statusEl.replaceChildren(model, reason, hint);
                 statusEl.className = 'mb-3 p-3 rounded-xl border shadow-lg text-center text-sm cursor-pointer bg-blue-100/50 border-blue-400 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100';
                 statusEl.setAttribute('onclick', 'window.openMapModal()');
@@ -3293,44 +3296,28 @@
             debouncedOSRM();
         }
 
-        let deliveryFareSnapshot = null;
-        let deliveryFareState = 'pending';
-        function currentDeliveryPriceKey() {
-            return JSON.stringify({
-                city: document.getElementById('deliveryCitySelect')?.value || 'Белоусовка',
-                adjustment: pricingAdjustment && { code: pricingAdjustment.code, multiplier: pricingAdjustment.multiplier }
-            });
-        }
-        window.getDeliveryPriceState = () => deliveryFareSnapshot && deliveryFareSnapshot.key !== currentDeliveryPriceKey()
-            ? 'pending' : deliveryFareState;
-        window.getDeliveryFareForOrder = () => deliveryFareState === 'ready' && deliveryFareSnapshot?.key === currentDeliveryPriceKey()
-            ? { ...deliveryFareSnapshot } : null;
+        const deliveryPricing = createDeliveryPricing({
+            tariff: CONFIG.DELIVERY,
+            readInput: () => ({ points: window.bookingScreen?.deliveryRoutePoints?.() || [], adjustment: pricingAdjustment }),
+            locate: getCoordinates,
+            readCars: () => (window.carMarkers || []).map(car => ({lat:car.lat,lon:car.lng})),
+            locateCarCity: point => window.bookingScreen?.modeledCarCity?.(point),
+            routeDistance: getRouteDistance,
+            onChange: ({ state, quote }) => {
+                const priceEl = document.getElementById('deliveryPriceEstimate');
+                if (!priceEl) return;
+                priceEl.textContent = quote ? quote.priceText : state === 'incomplete' ? 'Укажите маршрут'
+                    : state === 'pending' ? 'Рассчитываем стоимость…' : 'Уточните цену у диспетчера';
+                if (state !== 'pending') window.bookingScreen?.renderDeliveryRoute?.();
+            }
+        });
+        window.getDeliveryPriceState = () => deliveryPricing.getState();
+        window.getDeliveryFareForOrder = () => deliveryPricing.getQuote();
+        window.getDeliveryEstimate = () => deliveryPricing.getEstimate();
         window.updateDeliveryPrice = function() {
-            const priceEl = document.getElementById('deliveryPriceEstimate');
             const waitTimeEl = document.getElementById('deliveryWaitTime');
             if (waitTimeEl) waitTimeEl.textContent = 'Ожидание: 15–30 мин';
-            if (!priceEl) return;
-            deliveryFareSnapshot = null;
-            if (!pricingAdjustment) {
-                deliveryFareState = 'pending';
-                priceEl.textContent = 'Рассчитываем стоимость…';
-                return;
-            }
-            const city = normalizeCity(document.getElementById('deliveryCitySelect')?.value || 'Белоусовка');
-            const rateTo = selectedIntercityRate('deliveryCitySelect');
-            // Existing tariff: local delivery or the upper published intercity rate + delivery.
-            // Display the same single amount that was previously used as the commission base.
-            const baseAmount = city === 'Белоусовка' ? CONFIG.DELIVERY.BASE_PRICE
-                : rateTo ? rateTo.max + CONFIG.DELIVERY.BASE_PRICE : null;
-            const quote = deliveryQuote(baseAmount, pricingAdjustment);
-            if (!quote) {
-                deliveryFareState = 'unavailable';
-                priceEl.textContent = 'Уточните цену у диспетчера';
-                return;
-            }
-            deliveryFareState = 'ready';
-            deliveryFareSnapshot = { ...quote, key: currentDeliveryPriceKey() };
-            priceEl.textContent = quote.priceText;
+            return deliveryPricing.update();
         };
 
         window.updateCargoPrice = function() {
@@ -3537,11 +3524,11 @@
 
                 if (mapState.cars === 0) {
                     iconClass = 'fas fa-moon text-blue-500';
-                    primary = 'Моделируемые машины: 0';
+                    primary = 'Онлайн-машины: 0';
                     secondary = mapState.geolocation === 'active' ? 'Ваше местоположение определено' : '';
                 } else if (mapState.arrived) {
                     iconClass = 'fas fa-car-side text-green-500';
-                    primary = 'Моделируемая машина рядом';
+                    primary = 'Онлайн-машина (модель) рядом';
                     secondary = 'Модель, водитель ещё не назначен';
                 } else if (Number.isFinite(mapState.etaSeconds)) {
                     const minimumMinutes = Math.max(1, Math.ceil(mapState.etaSeconds / 60));
@@ -3552,34 +3539,34 @@
                 } else if (mapState.routing) {
                     iconClass = 'fas fa-route text-green-500';
                     primary = 'Рассчитываем время подачи...';
-                    secondary = Number.isFinite(mapState.cars) ? `Моделируемые машины: ${mapState.cars}` : '';
+                    secondary = Number.isFinite(mapState.cars) ? `Онлайн-машины: ${mapState.cars}` : '';
                 } else if (mapState.geolocation === 'locating') {
                     iconClass = 'fas fa-location-arrow text-blue-500';
                     primary = 'Определяем ваше местоположение...';
-                    secondary = Number.isFinite(mapState.cars) ? `Моделируемые машины: ${mapState.cars}` : 'Готовим маршруты машин';
+                    secondary = Number.isFinite(mapState.cars) ? `Онлайн-машины: ${mapState.cars}` : 'Готовим маршруты машин';
                 } else if (mapState.geolocation === 'outside') {
                     iconClass = 'fas fa-map-marker-alt text-amber-500';
                     primary = 'Вы находитесь вне зоны карты';
                     secondary = 'Подача рассчитывается для Белоусовки и района';
                 } else if (mapState.geolocation === 'denied') {
                     iconClass = 'fas fa-location-arrow text-amber-500';
-                    primary = Number.isFinite(mapState.cars) ? `Моделируемые машины: ${mapState.cars}` : 'Карта машин открыта';
+                    primary = Number.isFinite(mapState.cars) ? `Онлайн-машины: ${mapState.cars}` : 'Карта машин открыта';
                     secondary = 'Разрешите геолокацию для расчёта подачи';
                 } else if (mapState.geolocation === 'unavailable' || mapState.geolocation === 'unsupported') {
                     iconClass = 'fas fa-location-arrow text-gray-500';
-                    primary = Number.isFinite(mapState.cars) ? `Моделируемые машины: ${mapState.cars}` : 'Карта машин открыта';
+                    primary = Number.isFinite(mapState.cars) ? `Онлайн-машины: ${mapState.cars}` : 'Карта машин открыта';
                     secondary = 'Не удалось определить местоположение';
                 } else if (mapState.routeError) {
                     iconClass = 'fas fa-route text-amber-500';
-                    primary = Number.isFinite(mapState.cars) ? `Моделируемые машины: ${mapState.cars}` : 'Карта машин открыта';
+                    primary = Number.isFinite(mapState.cars) ? `Онлайн-машины: ${mapState.cars}` : 'Карта машин открыта';
                     secondary = 'Время подачи временно недоступно';
                 } else if (!mapState.routesReady) {
                     iconClass = 'fas fa-route text-blue-500';
                     primary = 'Прокладываем маршруты...';
-                    secondary = Number.isFinite(mapState.cars) ? `Моделируемые машины: ${mapState.cars}` : '';
+                    secondary = Number.isFinite(mapState.cars) ? `Онлайн-машины: ${mapState.cars}` : '';
                 } else {
                     iconClass = 'fas fa-car-side text-green-500';
-                    primary = `Моделируемые машины: ${mapState.cars}`;
+                    primary = `Онлайн-машины: ${mapState.cars}`;
                     secondary = 'Движение машин смоделировано';
                 }
 
@@ -4091,11 +4078,11 @@
 
             function carDescription(route, waiting) {
                 if (route.kind === 'approach') {
-                    return '<b>Моделируемая ближайшая машина</b><br>' +
+                    return '<b>Ближайшая онлайн-машина (модель)</b><br>' +
                         (waiting ? 'Может быть рядом с вами' : 'Движется в вашу сторону') +
                         '<br><span style="font-size:11px;">Модель, водитель ещё не назначен</span>';
                 }
-                return '<b>Моделируемая машина</b><br>' +
+                return '<b>Онлайн-машина (модель)</b><br>' +
                     (waiting ? 'Ожидает пассажира' : 'В пути') +
                     '<br><span style="font-size:12px;">' + route.label + '</span>';
             }
@@ -4247,7 +4234,7 @@
                         .setIcon(approachTaxiIcon)
                         .setLatLng(approachPoints[0])
                         .setPopupContent(carDescription(selectedCar.route, false));
-                    selectedCar.marker.unbindTooltip().bindTooltip('Моделируемая машина', {
+                    selectedCar.marker.unbindTooltip().bindTooltip('Онлайн-машина (модель)', {
                         direction: 'top',
                         offset: [0, -16],
                         opacity: 0.95
@@ -4436,6 +4423,7 @@
                 }
             }
             window.persistSimulationMotionState = persistSimulationMotionState;
+            void window.updateDeliveryPrice();
 
             renderMapOverlay();
             if (window.latestSimUserLocation && mapState.geolocation === 'active') {

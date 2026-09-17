@@ -1,4 +1,4 @@
-import { deliveryCityKey, deliveryPickupMode } from './delivery-pricing.js?v=65';
+import { deliveryCityKey, deliveryPickupMode } from './delivery-pricing.js?v=66';
 import { createBookingSheet } from './booking-sheet.js?v=54';
 import { categoryForService, categoryCaption } from './vehicle-categories.js?v=52';
 import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=60';
@@ -639,8 +639,9 @@ export function initBookingScreen({ preview = false } = {}) {
     if (!opened || !window.simMap || !window.L || state.service.form === 'assistance') return;
     let points = state.service.form === 'delivery' ? deliveryRoutePoints() : [state.from, ...state.stops, state.to];
     const estimate = state.service.form === 'delivery' ? window.getDeliveryEstimate?.() : null;
+    if (state.service.form === 'delivery' && deliveryPickupMode(points[0]) !== 'address' && !estimate?.origin) return;
     if (estimate?.origin) points = [{...estimate.origin},...points.slice(1)];
-    if (points.length < 2 || points.some(point => !point.address || !point.city)) return;
+    if (points.length < 2 || points.some((point, index) => !point.address || (!point.city && !(index === 0 && estimate?.origin)))) return;
     const coords = await Promise.all(points.map(point => state.service.form === 'delivery' && Number.isFinite(point.lat) && Number.isFinite(point.lon)
       ? { lat: point.lat, lon: point.lon } : coordinates(point.address, point.city)));
     if (revision !== routeRevision || !opened || coords.some(point => !point)) return;

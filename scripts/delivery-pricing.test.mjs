@@ -86,13 +86,22 @@ test('only generic shop names use random origin; a real address or a map point k
   assert.deepEqual(randomMapCar(cars,()=>0.999),{lat:51,lon:83});
   assert.equal(randomMapCar([],()=>0),null);
 });
-test('no displayed car or unknown car settlement cannot produce a made-up delivery estimate',async()=>{
-  for (const kind of ['noCars','unknownCity','noRoad']) {
+test('no displayed car or road cannot produce a made-up delivery estimate',async()=>{
+  for (const kind of ['noCars','noRoad']) {
     const h=harness();h.state.points[0].address='';
-    if(kind==='noCars')h.state.cars=[];if(kind==='unknownCity')h.state.city=null;if(kind==='noRoad')h.state.meters=null;
+    if(kind==='noCars')h.state.cars=[];if(kind==='noRoad')h.state.meters=null;
     await h.update();assert.equal(h.getState(),'unavailable');assert.equal(h.getEstimate(),null);assert.equal(h.getQuote(),null);
   }
   assert.equal(randomMapCar([]),null);
+});
+test('a random car between settlements uses actual road kilometers without inventing a locality',async()=>{
+  for (const address of ['', 'Любой магазин']) {
+    const h=harness(['Белоусовка','Белоусовка']);h.state.points[0].address=address;h.state.city=null;
+    await h.update();assert.equal(h.getEstimate().priceAmount,2600);assert.equal(h.getEstimate().local,false);
+    assert.equal(h.getEstimate().origin.city,'');assert.equal(h.getEstimate().distanceMeters,10000);
+    assert.equal(h.getState(),address?'ready':'preview');
+    h.state.meters=null;h.state.points[1].address='Другой дом';await h.update();assert.equal(h.getEstimate(),null);
+  }
 });
 test('a late preview origin cannot replace a confirmed pickup',async()=>{
   const slow=deferred();const state={points:points('Белоусовка','Прогресс'),adjustment:standard};state.points[0].address='';

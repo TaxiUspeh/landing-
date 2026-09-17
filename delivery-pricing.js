@@ -9,9 +9,9 @@ export function deliveryCityKey(city) {
 }
 const hasCoordinates = point => Number.isFinite(point?.lat) && Math.abs(point.lat) <= 90
   && Number.isFinite(point?.lon) && Math.abs(point.lon) <= 180;
-const validPoints = points => Array.isArray(points) && points.length >= 2 && points.length <= 5
-  && points.every(point => typeof point.address === 'string' && point.address.trim().length >= 3
-    && typeof point.city === 'string' && point.city.trim());
+const validPoints = (points, allowUnknownOriginCity = false) => Array.isArray(points) && points.length >= 2 && points.length <= 5
+  && points.every((point, index) => typeof point.address === 'string' && point.address.trim().length >= 3
+    && typeof point.city === 'string' && (point.city.trim() || (allowUnknownOriginCity && index === 0 && hasCoordinates(point))));
 export function deliveryPickupMode(point) {
   const address = point?.address?.trim() || '';
   if (!address) return 'missing';
@@ -29,8 +29,8 @@ export function randomMapCar(cars, random = Math.random) {
 }
 export const isLocalDelivery = points => validPoints(points) && points.every(point => deliveryCityKey(point.city) === deliveryCityKey(points[0].city));
 
-export function deliveryRouteQuote(points, meters, tariff, adjustment) {
-  if (!validPoints(points)) return null;
+export function deliveryRouteQuote(points, meters, tariff, adjustment, { allowUnknownOriginCity = false } = {}) {
+  if (!validPoints(points, allowUnknownOriginCity)) return null;
   const local = isLocalDelivery(points);
   if (!local && (!Number.isFinite(meters) || meters <= 0)) return null;
   const extraKm = local ? 0 : Math.max(0, meters / 1000 - tariff.BASE_DISTANCE_KM);
@@ -116,11 +116,13 @@ export function createDeliveryPricing({ tariff, readInput, locate, routeDistance
             if (car) selectedCar = { ...car, city: null };
           }
           const car = selectedCar;
-          const city = car && (car.city || await locateCarCity(car));
+          // A car between settlements still has a routable position. Unknown
+          // locality means distance pricing, never an assumed local flat fee.
+          const city = car && (car.city || await Promise.resolve().then(() => locateCarCity(car)).catch(() => null));
           if (revision !== requestId || JSON.stringify(input()) !== nextKey) return;
-          if (!car || !city) { publish('unavailable'); return; }
-          car.city = city;
-          points = [{...car,city,address:'Онлайн-машина на карте (модель)'},...points.slice(1)];
+          if (!car) { publish('unavailable'); return; }
+          car.city = typeof city === 'string' ? city : '';
+          points = [{...car,address:'Онлайн-машина на карте (модель)'},...points.slice(1)];
         } catch {
           if (revision === requestId) publish('unavailable');
           return;
@@ -128,7 +130,7 @@ export function createDeliveryPricing({ tariff, readInput, locate, routeDistance
       }
       const meters = await measure(points);
       if (revision !== requestId || JSON.stringify(input()) !== nextKey) return;
-      let result = deliveryRouteQuote(points,meters,tariff,data.adjustment);
+      let result = deliveryRouteQuote(points,meters,tariff,data.adjustment,{allowUnknownOriginCity:fromCar});
       if (fromCar) {
         result = result && meters !== null ? {...result,preview,anyStore:!preview,origin:points[0],distanceMeters:meters,
           calculation: `${preview ? 'Предварительный расчёт' : 'Любой магазин — расчёт'} от случайной онлайн-машины на карте (движение смоделировано): ≈ ${(meters/1000).toLocaleString('ru-RU',{maximumFractionDigits:2})} км по дороге. Точка расчёта закреплена; это не назначение водителя. ${result.calculation}` } : null;

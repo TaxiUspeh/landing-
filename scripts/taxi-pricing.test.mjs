@@ -13,7 +13,7 @@ const source = slice('        const CONFIG =', '        window.initLuckyMode')
   .match(/const CONFIG = ([\s\S]*?);/)[0];
 const ratesSource = slice('        const INTERCITY_RATES =', '        function intercityRateForCity');
 const pricingSource = slice('        let taxiFareSnapshot = null;', '        const debouncedOSRM = debounce(')
-  + slice('        window.updateTaxiPrice = function()', '        window.updateDeliveryPrice = function()');
+  + slice('        window.updateTaxiPrice = function()', '        const deliveryPricing = createDeliveryPricing(');
 const clientSource = await readFile(new URL('../client-orders.js', import.meta.url), 'utf8');
 const submitSource = clientSource.slice(clientSource.indexOf('async function createOnlineOrder()'), clientSource.indexOf('function containsRestrictedDeliveryItems'));
 

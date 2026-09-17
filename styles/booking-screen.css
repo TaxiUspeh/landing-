@@ -146,3 +146,8 @@ body.booking-open { overflow: hidden; }
 
 .booking-price-reason { margin: 2px 0 8px; color: #475569; font-size: 12px; line-height: 1.4; }
 .booking-price-reason[hidden] { display: none; }
+
+.booking-price-breakdown { margin: 3px 0 6px; font-size: 12px; line-height: 1.4; color: #475569; }
+.booking-price-breakdown[hidden] { display: none; }
+.booking-price-breakdown summary { cursor: pointer; color: #1d4ed8; padding: 4px 0; }
+.booking-price-breakdown p { margin: 4px 0; }

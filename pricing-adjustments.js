@@ -28,7 +28,8 @@ export function deliveryQuote(baseAmount, adjustment) {
   if (!adjustment || !Number.isFinite(baseAmount) || baseAmount <= 0
       || !Number.isFinite(adjustment.multiplier) || adjustment.multiplier < 1) return null;
   // Preserve the existing rounding increment. Multiply once, then round once.
-  const priceAmount = Math.ceil(baseAmount * adjustment.multiplier / 50) * 50;
+  const adjustedAmount = Math.round(baseAmount * adjustment.multiplier * 100) / 100;
+  const priceAmount = Math.ceil(adjustedAmount / 50) * 50;
   if (!Number.isSafeInteger(priceAmount) || priceAmount <= 0 || priceAmount > 10000000) return null;
   const reason = adjustmentText(adjustment);
   return { priceAmount, amountText: `${priceAmount} ₸`, reason,

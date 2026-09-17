@@ -269,13 +269,6 @@ function collectStops() {
         .slice(0, 5);
 }
 
-function parseMaximumPrice(text) {
-    const amounts = (String(text || '').match(/\d[\d\s\u00A0]*/g) || [])
-        .map((value) => Number(value.replace(/\D/g, '')))
-        .filter((value) => Number.isFinite(value));
-    return amounts.length ? Math.max(...amounts) : 0;
-}
-
 function createOrderNumber() {
     const now = new Date();
     const date = [
@@ -590,6 +583,14 @@ async function createOnlineDeliveryOrder() {
         return;
     }
 
+    // Capture the displayed quote before authentication/network work can refresh the model.
+    const quote = window.getDeliveryFareForOrder?.();
+    if (!quote || !Number.isSafeInteger(quote.priceAmount) || quote.priceAmount <= 0) {
+        setStatus('Дождитесь расчёта стоимости доставки или уточните цену у диспетчера.', false, 'delivery');
+        return;
+    }
+    const { priceText, priceAmount } = quote;
+
     void prepareClientOrderSound();
     setActionBusy(true, 'delivery');
     try {
@@ -599,11 +600,6 @@ async function createOnlineDeliveryOrder() {
         const user = await ensureSignedIn();
         const orderRef = doc(collection(db, 'orders'));
         const contactRef = doc(db, 'orderContacts', orderRef.id);
-        const priceText = document.getElementById('deliveryPriceEstimate')?.textContent.trim() || 'Цена уточняется';
-        const priceAmount = parseMaximumPrice(priceText);
-        if (!Number.isFinite(priceAmount) || priceAmount <= 0) {
-            setStatus('Стоимость доставки нужно уточнить у диспетчера.', false, 'delivery'); return;
-        }
         const batch = writeBatch(db);
 
         batch.set(orderRef, {

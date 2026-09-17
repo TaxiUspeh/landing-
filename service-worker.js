@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v61-driver-experience';
+const CACHE_NAME = 'taxi-uspeh-v62-transparent-surcharges';
 const APP_SHELL = [
   './',
   './driver-finance.js?v=60',
@@ -12,12 +12,13 @@ const APP_SHELL = [
   './auction-core.js?v=60',
   './styles/auction.css?v=51',
   './styles/tailwind.css',
-  './styles/booking-screen.css?v=60',
-  './booking-screen.js?v=60',
+  './styles/booking-screen.css?v=62',
+  './booking-screen.js?v=62',
   './booking-sheet.js?v=54',
   './booking-core.js?v=60',
   './taxi-pricing.js?v=60',
-  './client-orders.js?v=60',
+  './pricing-adjustments.js?v=62',
+  './client-orders.js?v=62',
   './holiday-calendar.js',
   './drivers.html',
   './drivers.webmanifest',

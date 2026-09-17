@@ -44,7 +44,7 @@ assert.match(get('bookingFromValue').textContent,/Жукова/);
 assert.match(get('bookingLocationStatus').textContent,/Адрес определён/);
 requests[0].error(); await flush();
 assert.match(get('bookingLocationStatus').textContent,/Адрес определён/,'Late location error must not erase a good address');
-assert.equal(get('mapOverlayText').textContent,'Подбор водителя после заказа');
+assert.equal(get('mapOverlayText').textContent,'Подбор водителя после заказа · Машины на карте — модель');
 assert.equal(window.bookingScreen.vehicleRequest().vehicleCategory,'minivan');
 
 // Independent mode and category: a scheduled minivan remains both scheduled and minivan.
@@ -109,7 +109,22 @@ assert.equal(get('bookingSubmit').disabled,false);assert.equal(get('bookingPrice
 console.log('PASS: pending/unknown prices block submit, dispatcher call is available, ready price restores submit');
 get('taxi-online-order-panel').classList.remove('hidden');
 get('taxi-online-order-status').textContent='Водитель подъехал'; await flush();
-assert.equal(get('mapOverlayText').textContent,'Водитель подъехал');
+assert.equal(get('mapOverlayText').textContent,'Водитель подъехал · Машины на карте — модель');
 get('taxi-online-order-status').textContent='Поездка завершена'; await flush();
-assert.equal(get('mapOverlayText').textContent,'Поездка завершена');
+assert.equal(get('mapOverlayText').textContent,'Поездка завершена · Машины на карте — модель');
+get('taxi-online-order-panel').classList.add('hidden');
+let deliveryState='pending', deliveryQuote=null;
+window.getDeliveryPriceState=()=>deliveryState;window.getDeliveryFareForOrder=()=>deliveryQuote;
+select('delivery');get('deliveryPriceEstimate').textContent='Рассчитываем стоимость…';await flush();
+assert.equal(get('bookingSubmit').disabled,true);
+assert.equal(get('bookingPriceCaption').textContent,'Стоимость доставки');
+deliveryState='ready';deliveryQuote={amountText:'1600 ₸',reason:'×1,3 — Мало машин (модель)'};
+get('deliveryPriceEstimate').textContent='1600 ₸ · ×1,3 — Мало машин (модель)';await flush();
+assert.equal(get('bookingPrice').textContent,'1600 ₸');
+assert.equal(get('bookingPriceReason').hidden,false);assert.match(get('bookingPriceReason').textContent,/Мало машин \(модель\)/);
+assert.equal(get('bookingSubmit').disabled,false);
+deliveryState='unavailable';deliveryQuote=null;get('deliveryPriceEstimate').textContent='Уточните цену у диспетчера';await flush();
+assert.equal(get('bookingSubmit').disabled,true);assert.equal(get('bookingPriceHelp').hidden,false);
+select('taxi');assert.equal(get('bookingPriceReason').hidden,true);
+console.log('PASS: delivery readiness, single final fee, model reason and independent service states');
 dom.window.close();

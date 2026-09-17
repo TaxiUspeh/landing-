@@ -80,6 +80,7 @@ export function initBookingScreen({ preview = false } = {}) {
             <div class="booking-price-row">
               <div><span class="booking-price-caption" id="bookingPriceCaption">Примерная стоимость</span><div class="booking-price" id="bookingPrice">Укажите маршрут</div></div>
             </div>
+            <p id="bookingPriceReason" class="booking-price-reason" hidden></p>
             <div class="booking-actions" role="group" aria-label="Оформить заказ">
               <button type="button" class="booking-submit" id="bookingSubmit">Заказать онлайн</button>
             </div>
@@ -317,7 +318,7 @@ export function initBookingScreen({ preview = false } = {}) {
   function renderMapStatus() {
     // Public driver availability is not exposed by Firestore. Animation is not availability.
     const status = $(`${state.service.form}-online-order-status`)?.textContent.trim();
-    const message = activeCard() ? status || 'Ваш заказ' : 'Подбор водителя после заказа';
+    const message = `${activeCard() ? status || 'Ваш заказ' : 'Подбор водителя после заказа'} · Машины на карте — модель`;
     if (mapMessage.textContent !== message) mapMessage.textContent = message;
   }
   function activeCard() {
@@ -336,7 +337,7 @@ export function initBookingScreen({ preview = false } = {}) {
     $('bookingSubmit').hidden = false;
     sheet.setEnabled(!hasCard && !overlay.classList.contains('booking-picking'));
     const onlineButton = $(`${service.form}-online-order-button`);
-    const fareState = service.form === 'taxi' ? window.getTaxiPriceState?.() : 'ready';
+    const fareState = service.form === 'taxi' ? window.getTaxiPriceState?.() : service.form === 'delivery' ? window.getDeliveryPriceState?.() : 'ready';
     const awaitingFare = fareState === 'pending';
     const unknownFare = fareState === 'unavailable';
     const busy = submitting || (state.channel === 'online' && onlineButton?.disabled);
@@ -349,8 +350,13 @@ export function initBookingScreen({ preview = false } = {}) {
     $('bookingPriceHelp').hidden = !unknownFare;
     const full = state.from.address && (service.form === 'assistance' || state.to.address);
     let price = service.form === 'taxi' ? $('taxiPriceEstimate').textContent : service.form === 'delivery' ? $('deliveryPriceEstimate').textContent : service.form === 'cargo' ? $('cargoTotalPrice').textContent : service.form === 'auction' ? ($('auctionPrice').value ? `${$('auctionPrice').value} ₸` : 'Ваша цена') : service.form === 'assistance' ? 'от 1500 тг' : 'от 3800 тг';
+    const deliveryFare = service.form === 'delivery' ? window.getDeliveryFareForOrder?.() : null;
+    if (deliveryFare) price = deliveryFare.amountText;
     $('bookingPrice').textContent = full ? price : 'Укажите адрес';
-    $('bookingPriceCaption').textContent = service.form === 'cargo' ? 'Стоимость за 1 час' : service.form === 'auction' ? 'Предложение водителю' : service.form === 'taxi' ? 'Стоимость поездки' : 'Примерная стоимость';
+    $('bookingPriceReason').hidden = !full || !deliveryFare;
+    $('bookingPriceReason').textContent = deliveryFare
+      ? `${deliveryFare.reason}. Один наибольший коэффициент. Товары оплачиваются отдельно.` : '';
+    $('bookingPriceCaption').textContent = service.form === 'cargo' ? 'Стоимость за 1 час' : service.form === 'auction' ? 'Предложение водителю' : service.form === 'taxi' ? 'Стоимость поездки' : service.form === 'delivery' ? 'Стоимость доставки' : 'Примерная стоимость';
   }
   function queueRefresh() {
     if (refreshQueued) return;
@@ -402,6 +408,7 @@ export function initBookingScreen({ preview = false } = {}) {
     if (preview) { showError('Режим просмотра: адреса и услуга выбраны. Заказ не отправляется.'); return; }
     sync();
     if (state.service.form === 'taxi' && ['pending', 'unavailable', 'incomplete'].includes(window.getTaxiPriceState?.())) return;
+    if (state.service.form === 'delivery' && ['pending', 'unavailable'].includes(window.getDeliveryPriceState?.())) return;
     submitting = true; refresh();
     onlineButton.click();
     setTimeout(() => { submitting = false; refresh(); }, 1000);

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v65-any-store';
+const CACHE_NAME = 'taxi-uspeh-v66-road-origin';
 const APP_SHELL = [
   './',
   './driver-finance.js?v=60',
@@ -13,12 +13,12 @@ const APP_SHELL = [
   './styles/auction.css?v=51',
   './styles/tailwind.css',
   './styles/booking-screen.css?v=65',
-  './booking-screen.js?v=65',
+  './booking-screen.js?v=66',
   './booking-sheet.js?v=54',
   './booking-core.js?v=60',
   './taxi-pricing.js?v=60',
   './pricing-adjustments.js?v=63',
-  './delivery-pricing.js?v=65',
+  './delivery-pricing.js?v=66',
   './client-orders.js?v=62',
   './holiday-calendar.js',
   './drivers.html',

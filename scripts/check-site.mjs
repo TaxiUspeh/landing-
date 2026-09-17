@@ -63,7 +63,7 @@ for (const expected of [
   'href="./drivers.html"',
   'Заказать онлайн',
   'Через WhatsApp',
-  'src="./client-orders.js?v=60"'
+  'src="./client-orders.js?v=62"'
 ]) {
   if (!index.includes(expected)) failures.push('index.html: missing hybrid online order behavior ' + expected);
 }
@@ -98,8 +98,8 @@ for (const expected of [
   'id="holidayBannerTitle"',
   'id="holidayBannerText"',
   'updateHolidayBanner()',
-  'const holidayMultiplier = holiday ? CONFIG.TAXI.MULTIPLIERS.HOLIDAY : 1',
-  'priceMultiplier = Math.max(priceMultiplier, holidayMultiplier)',
+  'selectPriceAdjustment({ hour, modeledCars: cars, weather, holiday }, CONFIG.TAXI.MULTIPLIERS)',
+  'priceMultiplier = pricingAdjustment.multiplier',
   "holiday: 'taxi_last_holiday_notification'",
   "weather: 'taxi_last_weather_notification'",
   "night: 'taxi_last_night_notification'",
@@ -124,8 +124,8 @@ if (lineStatusStart === -1 || lineStatusEnd === -1) {
   const lineStatusScript = index.slice(lineStatusStart, lineStatusEnd);
   for (const expected of [
     "statusEl.setAttribute('onclick', 'window.openMapModal()')",
-    'СВОБОДНЫХ МАШИН',
-    'МАЛО МАШИН',
+    'Моделируемые машины:',
+    'Модель влияет на тариф.',
     'updateHolidayBanner()'
   ]) {
     if (!lineStatusScript.includes(expected)) failures.push('index.html: line status behavior changed: ' + expected);
@@ -160,12 +160,12 @@ if (mapStart === -1 || mapEnd === -1) {
     'stopSimulationLocationTracking',
     'planApproachToUser',
     'approachRemainingMeters',
-    'Ориентировочная машина',
+    'Моделируемая машина',
     'водитель ещё не назначен',
     'L.polyline(approachPoints',
     'routeData.duration',
     'approachLastRouteRequestAt',
-    'Расчёт, водитель ещё не назначен',
+    'Модель, водитель ещё не назначен',
     "const motionStateKey = 'taxi_sim_motion_v2'",
     'const desiredLocalCarCount = cars <= 2',
     'Math.round(cars * 0.65)',
@@ -327,7 +327,7 @@ const tailwindConfig = await readFile('tailwind.config.cjs', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
 const dispatcherQuickSearchHtml = await readFile('dispatcher.html', 'utf8');
 const dispatcherQuickSearchScript = await readFile('dispatcher.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v61-driver-experience'")) failures.push('service-worker.js: map booking cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v62-transparent-surcharges'")) failures.push('service-worker.js: map booking cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("'./styles/tailwind.css'")) failures.push('service-worker.js: local Tailwind stylesheet is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
@@ -367,7 +367,7 @@ for (const expected of [
   "'./dispatcher.html'",
   "'./dispatcher.js?v=60'",
   "'./firebase-config.js'",
-  "'./client-orders.js?v=60'",
+  "'./client-orders.js?v=62'",
   "'./client-home.js?v=60'",
   "'./styles/client-home.css?v=56'",
   'const cachedPage = await caches.match(event.request)'
@@ -466,7 +466,7 @@ if (!firestoreIndexes.indexes.some((index) => index.collectionGroup === 'driverM
 }
 for (const expected of [
   'signInAnonymously', "collection(db, 'orders')", "doc(db, 'orderContacts'", "status: 'searching'",
-  'parseMaximumPrice(priceText)', 'Подбираем другого водителя', 'CANCELLATION_REQUEST_STATUSES',
+  'window.getDeliveryFareForOrder?.()', 'Подбираем другого водителя', 'CANCELLATION_REQUEST_STATUSES',
   'prepareClientOrderSound()', 'playClientOrderStatusSound(status)', 'signalClientOrderStatusChange(previousStatus, activeOrder)',
   "['accepted', 'arrived']",
   "cancellationRequestStatus: 'pending'", 'компенсацию 500 ₸'

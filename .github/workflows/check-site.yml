@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/check-site.mjs
-      - run: node --test scripts/booking-core.test.mjs scripts/taxi-pricing.test.mjs scripts/vehicle-categories.test.mjs scripts/driver-finance.test.mjs scripts/driver-push-worker.test.mjs functions/push-actions.test.cjs
+      - run: node --test scripts/booking-core.test.mjs scripts/taxi-pricing.test.mjs scripts/pricing-adjustments.test.mjs scripts/vehicle-categories.test.mjs scripts/driver-finance.test.mjs scripts/driver-push-worker.test.mjs functions/push-actions.test.cjs
       - name: Install DOM test dependency
         run: |
           npm install --prefix "$RUNNER_TEMP/booking-ui" --no-save --ignore-scripts jsdom@26.1.0

@@ -84,18 +84,17 @@ function createPushActions({ db, messaging, Timestamp, HttpsError, logger, eligi
     return { accepted: true, testId };
   }
 
-  async function notifyAssignment(event) {
+  async function notifyAssignment(event, priceIncrease = false) {
     const before = event.data?.before?.data();
     const after = event.data?.after?.data();
-    if (!isDispatcherAssignment(before, after)) return;
+    if (priceIncrease ? !(before?.status === 'searching' && after?.status === 'searching' && after.customerIncreasedPrice === true && after.priceAmount > before.priceAmount && after.priceRevision === (before.priceRevision || 0) + 1) : !isDispatcherAssignment(before, after)) return;
     const eventTime = Date.parse(event.time || '');
     if (Number.isFinite(eventTime) && now() - eventTime > 300000) return;
     const orderId = event.params.orderId;
-    const uid = after.assignedDriverUid;
+    const uid = priceIncrease ? '' : after.assignedDriverUid;
     const current = (await db.doc(`orders/${orderId}`).get()).data();
-    if (current?.status !== 'accepted' || current.assignedDriverUid !== uid
-      || current.assignmentSource !== 'dispatcher'
-      || millis(current.acceptedAt) !== millis(after.acceptedAt)) return;
+    if (priceIncrease ? current?.status !== 'searching' || current.priceRevision !== after.priceRevision || current.priceAmount !== after.priceAmount
+      : current?.status !== 'accepted' || current.assignedDriverUid !== uid || current.assignmentSource !== 'dispatcher' || millis(current.acceptedAt) !== millis(after.acceptedAt)) return;
     const subscriptions = await eligibleSubscriptions(uid);
     if (!subscriptions.length) {
       logger.info('Нет устройств для пуша назначения.', { orderId });
@@ -103,11 +102,17 @@ function createPushActions({ db, messaging, Timestamp, HttpsError, logger, eligi
     }
     // Firestore can redeliver one event. Track successful tokens and lease in a
     // server-only record so a retry only attempts the remaining destinations.
-    const eventRef = db.doc(`driverPushDeliveries/${hash(event.id)}`);
+    const eventRef = db.doc(`driverPushDeliveries/${hash(priceIncrease ? `price:${orderId}:${after.priceRevision}` : event.id)}`);
+    const limitRef = db.doc(`driverPricePushLimits/${orderId}`);
     const delivered = await db.runTransaction(async transaction => {
       const snapshot = await transaction.get(eventRef);
       const record = snapshot.data() || {};
       if (record.complete) return null;
+      if (priceIncrease && !snapshot.exists) {
+        const limit = (await transaction.get(limitRef)).data();
+        if (limit && now() - millis(limit.lastPushAt) < 60000) return null;
+        transaction.set(limitRef, { lastPushAt: Timestamp.fromMillis(now()), revision: after.priceRevision });
+      }
       if (millis(record.leaseUntil) > now()) throw new Error('Push delivery is already running');
       transaction.set(eventRef, { ...record, orderId,
         leaseUntil: Timestamp.fromMillis(now() + 90000),
@@ -120,11 +125,12 @@ function createPushActions({ db, messaging, Timestamp, HttpsError, logger, eligi
     const pending = [...unique.values()].filter(snapshot => !done.has(hash(snapshot.data().token)));
     try {
       for (let index = 0; index < pending.length; index += 500) {
+        if (priceIncrease) { const latest = (await db.doc(`orders/${orderId}`).get()).data(); if (latest?.status !== 'searching' || latest.priceRevision !== after.priceRevision) break; }
         const group = pending.slice(index, index + 500);
         const response = await messaging.sendEachForMulticast({
           tokens: group.map(snapshot => snapshot.data().token),
-          data: { type: 'order_assigned', orderId, title: 'Диспетчер назначил заказ',
-            body: 'Откройте кабинет, чтобы посмотреть маршрут и цену.',
+          data: { type: priceIncrease ? 'order_price_increased' : 'order_assigned', orderId, title: priceIncrease ? 'Клиент повысил цену заказа' : 'Диспетчер назначил заказ',
+            body: priceIncrease ? `Новая цена: ${after.priceAmount} ₸. Откройте кабинет, чтобы посмотреть заказ.` : 'Откройте кабинет, чтобы посмотреть маршрут и цену.',
             url: `${PORTAL_URL}?order=${encodeURIComponent(orderId)}#driver-online-orders` },
           webpush: { headers: { TTL: '300', Urgency: 'high' } }
         });
@@ -145,7 +151,7 @@ function createPushActions({ db, messaging, Timestamp, HttpsError, logger, eligi
       await eventRef.set({ leaseUntil: Timestamp.fromMillis(0) }, { merge: true });
     }
   }
-  return { sendTest, notifyAssignment };
+  return { sendTest, notifyAssignment, notifyPriceIncrease: event => notifyAssignment(event, true) };
 }
 
 module.exports = { createPushActions, isDispatcherAssignment, TEST_DELAY_MS, TEST_COOLDOWN_MS };

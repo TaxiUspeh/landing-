@@ -45,7 +45,7 @@ function fixture({ timeout = 15000 } = {}) {
         getRedirectResult: async () => null, onAuthStateChanged: (_auth, fn) => { authListener = fn; },
         signOut: async () => { authListener(null); }, onSnapshot: () => () => {},
         doc: (_db, ...path) => path.join('/'), serverTimestamp: () => 'server-time',
-        getDoc: async path => { calls.push('settings'); if (fail.settings) throw fail.settings; return { exists: () => true, data: () => settings }; },
+        getDoc: async path => { if (path === 'settings/customerPricing') return { exists: () => false }; calls.push('settings'); if (fail.settings) throw fail.settings; return { exists: () => true, data: () => settings }; },
         isMessagingSupported: async () => true,
         getMessaging: () => ({}),
         onMessage: (_messaging, callback) => { foreground = callback; return () => {}; },

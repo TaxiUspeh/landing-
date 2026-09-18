@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/check-site.mjs
-      - run: node --test scripts/booking-core.test.mjs scripts/taxi-pricing.test.mjs scripts/pricing-adjustments.test.mjs scripts/delivery-pricing.test.mjs scripts/vehicle-categories.test.mjs scripts/driver-finance.test.mjs scripts/driver-push-worker.test.mjs functions/push-actions.test.cjs
+      - run: node --test scripts/customer-pricing.test.mjs scripts/booking-core.test.mjs scripts/taxi-pricing.test.mjs scripts/pricing-adjustments.test.mjs scripts/delivery-pricing.test.mjs scripts/vehicle-categories.test.mjs scripts/driver-finance.test.mjs scripts/driver-push-worker.test.mjs functions/push-actions.test.cjs
       - name: Install DOM test dependency
         run: |
           npm install --prefix "$RUNNER_TEMP/booking-ui" --no-save --ignore-scripts jsdom@26.1.0
@@ -29,3 +29,18 @@ jobs:
           node driver-cabinet-ui.test.mjs
           node driver-push-ui.test.mjs
           node driver-install-ui.test.mjs
+
+  customer-price-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --prefix tests/firestore --ignore-scripts
+      - name: Check customer price and commission transactions
+        run: tests/firestore/node_modules/.bin/firebase emulators:exec --config firebase.test.json --only firestore --project demo-taxi-rules-check 'cd tests/firestore && node customer-pricing.test.mjs && node driver-finance.test.mjs'

@@ -102,11 +102,11 @@ get('taxiPriceEstimate').textContent='Рассчитываем стоимост�
 assert.equal(get('bookingSubmit').disabled,true); assert.equal(get('bookingSubmit').textContent,'Рассчитываем стоимость…');
 get('bookingSubmit').click();assert.equal(sent,1);
 fareState='unavailable';get('taxiPriceEstimate').textContent='Уточните цену у диспетчера';await flush();
-assert.equal(get('bookingSubmit').disabled,true);assert.equal(get('bookingPriceHelp').hidden,false);
+assert.equal(get('bookingSubmit').disabled,true);assert.equal(get('bookingRetryPrice').hidden,false);
 assert.equal(get('bookingPriceHelp').href,get('taxi-online-dispatcher-call').href);
 fareState='ready';get('taxiPriceEstimate').textContent='3500 ₸';await flush();
 assert.equal(get('bookingSubmit').disabled,false);assert.equal(get('bookingPriceHelp').hidden,true);
-console.log('PASS: pending/unknown prices block submit, dispatcher call is available, ready price restores submit');
+console.log('PASS: pending/unknown prices block submit, retry is available, ready price restores submit');
 get('taxi-online-order-panel').classList.remove('hidden');
 get('taxi-online-order-status').textContent='Водитель подъехал'; await flush();
 assert.equal(get('mapOverlayText').textContent,'Водитель подъехал · Онлайн-машины · движение смоделировано');
@@ -125,7 +125,7 @@ assert.equal(get('bookingDeliveryCalculation').hidden,false);assert.match(get('b
 assert.equal(get('bookingPriceReason').hidden,false);assert.match(get('bookingPriceReason').textContent,/Мало машин \(модель\)/);
 assert.equal(get('bookingSubmit').disabled,false);
 deliveryState='unavailable';deliveryQuote=null;get('deliveryPriceEstimate').textContent='Уточните цену у диспетчера';await flush();
-assert.equal(get('bookingSubmit').disabled,true);assert.equal(get('bookingPriceHelp').hidden,false);
+assert.equal(get('bookingSubmit').disabled,true);assert.equal(get('bookingRetryPrice').hidden,false);
 select('taxi');assert.equal(get('bookingPriceReason').hidden,true);
 console.log('PASS: delivery readiness, single final fee, model reason and independent service states');
 // The road route uses pickup house and every stop, excluding entrance and private notes.
@@ -167,8 +167,21 @@ window.getDeliveryEstimate=()=>deliveryQuote;window.getDeliveryFareForOrder=()=>
 get('deliveryPriceEstimate').textContent='3400 ₸';get('deliveryItems').value='Хлеб, молоко';
 get('deliveryCustomerPhone').value='+7 700 000 00 00';get('deliveryCustomerPhone').dispatchEvent(new window.Event('input'));await flush();
 assert.equal(get('bookingPriceCaption').textContent,'Стоимость доставки');assert.match(get('bookingPriceReason').textContent,/случайной машины/);
-assert.equal(get('bookingSubmit').textContent,'Заказать онлайн');assert.equal(get('bookingSubmit').disabled,false);
+assert.match(get('bookingSubmit').textContent,/Заказать за/);assert.equal(get('bookingSubmit').disabled,false);
 get('bookingSubmit').click();assert.equal(deliverySent,1,'A priced any-store request reaches the order handler without a street pickup');
 console.log('PASS: generic shop, explicit any-store choice, clean service switch and ordering without an exact store');
 await new Promise(resolve => setTimeout(resolve,1100));
+window.customerPricingReady=true;window.customerPriceSettings={enabled:true,quickPercentages:[10,20,30],minimumIncrease:1,maximumPrice:1000000,taxiMinimum:800,deliveryMinimum:1200};
+window.dispatchEvent(new window.Event('customer-pricing-ready'));await flush();
+const offerHost=get('bookingCustomerPrice');assert.equal(offerHost.hidden,false);
+offerHost.querySelector('.customer-price-toggle').click();
+offerHost.querySelectorAll('.customer-price-quick button')[1].click();
+assert.equal(window.getCustomerPriceOffer('delivery'),4080);assert.match(get('bookingSubmit').textContent,/4\s080/);
+get('bookingNote').value='Тест';get('bookingNote').dispatchEvent(new window.Event('input'));await flush();assert.equal(window.getCustomerPriceOffer('delivery'),4080,'Note editing does not erase the offer');
+offerHost.querySelector('input').value='3000';offerHost.querySelector('input').dispatchEvent(new window.Event('input'));assert.equal(get('bookingSubmit').disabled,true);
+offerHost.querySelector('.customer-price-reset').click();assert.equal(window.getCustomerPriceOffer('delivery'),null);
+deliveryState='unavailable';deliveryQuote=null;get('deliveryPriceEstimate').textContent='Не удалось рассчитать стоимость';await flush();
+assert.equal(offerHost.hidden,false);offerHost.querySelector('.customer-price-toggle').click();
+offerHost.querySelector('input').value='1500';offerHost.querySelector('input').dispatchEvent(new window.Event('input'));assert.equal(get('bookingSubmit').disabled,false);assert.match(get('bookingSubmit').textContent,/1\s500/);
+console.log('PASS: optional increases, lower price rejection, reset, preserved notes and unavailable calculation fallback');
 dom.window.close();

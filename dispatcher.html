@@ -40,6 +40,7 @@
             #online-orders-list[data-mobile-order-view="history"] article[data-order-history="false"] { display: none; }
         }
     </style>
+<link rel="stylesheet" href="./styles/customer-pricing.css?v=67">
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
     <header class="bg-slate-950 text-white border-b border-slate-800 sticky top-0 z-20">
@@ -553,6 +554,19 @@
                 </form>
             </section>
 
+            <section data-dispatcher-mobile-section="settings" class="panel-card bg-white dark:bg-slate-900 rounded-2xl p-5">
+                <h2 class="font-extrabold">Предложение цены клиентом</h2>
+                <form id="customer-pricing-settings" class="customer-price-editor">
+                    <label><input type="checkbox" name="enabled"> Разрешить предложение и повышение цены</label>
+                    <label>Быстрые кнопки, % через запятую (пусто — скрыть)<input name="quickPercentages" value="10, 20, 30"></label>
+                    <label>Минимальная прибавка к созданному заказу, ₸<input name="minimumIncrease" type="number" min="1" max="10000000" step="1" required value="1"></label>
+                    <label>Максимальное предложение, ₸<input name="maximumPrice" type="number" min="1" max="10000000" step="1" required value="1000000"></label>
+                    <label>Минимум такси при недоступном расчёте, ₸<input name="taxiMinimum" type="number" min="1" max="10000000" step="1" required value="800"></label>
+                    <label>Минимум доставки при недоступном расчёте, ₸<input name="deliveryMinimum" type="number" min="1" max="10000000" step="1" required value="1200"></label>
+                    <button type="submit" class="customer-price-confirm">Сохранить настройки цены</button><p role="status"></p>
+                </form>
+            </section>
+
             <section data-dispatcher-mobile-section="settings" class="panel-card bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" aria-labelledby="orders-link-title">
                 <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800">
                     <h2 id="orders-link-title" class="font-extrabold">Ссылка на рабочий чат заказов</h2>
@@ -588,6 +602,6 @@
         </div>
     </main>
 
-    <script type="module" src="./dispatcher.js?v=60"></script>
+    <script type="module" src="./dispatcher.js?v=67"></script>
 </body>
 </html>

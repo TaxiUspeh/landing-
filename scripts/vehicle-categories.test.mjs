@@ -43,10 +43,10 @@ test('actual local route and intercity route apply category after the ordinary t
   h.state.category = 'minivan'; h.state.points[1].city = 'Усть-Каменогорск'; h.state.distance = 20000;
   h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 4600); assert.equal(h.quote().priceMax, 6900);
 });
-test('multi-stop fallback and existing demand multiplier each apply once', async () => {
-  const h = harness(); h.state.fallback = null; h.state.points.push({ address: 'Stop', city: 'Белоусовка' }); h.state.distance = null;
-  h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 1500); assert.equal(h.quote().priceMax, 1800);
-  h.demand(1.5); h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 2250); assert.equal(h.quote().priceMax, 2700);
+test('multi-stop road distance and existing demand multiplier each apply once', async () => {
+  const h = harness(); h.state.fallback = null; h.state.points.push({ address: 'Stop', city: 'Белоусовка' }); h.state.distance = 10000;
+  h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 2300); assert.equal(h.quote().priceMax, 2800);
+  h.demand(1.5); h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 3450); assert.equal(h.quote().priceMax, 4200);
 });
 test('late route response cannot restore the price of a previous category', async () => {
   const h = harness(); h.state.fallback = null; h.update(); let resolve;

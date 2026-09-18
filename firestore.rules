@@ -45,7 +45,8 @@ service cloud.firestore {
       return hasDriverAccount()
         && get(driverAccountDocument()).data.active == true
         && exists(linkedDriverDocument())
-        && get(linkedDriverDocument()).data.status == 'active';
+        && get(linkedDriverDocument()).data.status == 'active'
+        && get(linkedDriverDocument()).data.authUid == request.auth.uid;
     }
 
     function activeOrderStatus(status) {
@@ -468,8 +469,73 @@ service cloud.firestore {
           && (category != 'minivan' || seats >= 5));
     }
 
+    function customerPricingConfig() {
+      let path = /databases/$(database)/documents/settings/customerPricing;
+      return exists(path) ? get(path).data : {};
+    }
+    function validQuickPercentage(values, index) {
+      return values.size() <= index || (values[index] is int && values[index] >= 1 && values[index] <= 100);
+    }
+    function validCustomerPricingConfig(data) {
+      return data.keys().hasOnly(['enabled', 'quickPercentages', 'minimumIncrease', 'maximumPrice', 'taxiMinimum', 'deliveryMinimum', 'updatedAt', 'updatedBy'])
+        && data.enabled is bool && data.quickPercentages is list && data.quickPercentages.size() <= 5
+        && validQuickPercentage(data.quickPercentages, 0) && validQuickPercentage(data.quickPercentages, 1)
+        && validQuickPercentage(data.quickPercentages, 2) && validQuickPercentage(data.quickPercentages, 3) && validQuickPercentage(data.quickPercentages, 4)
+        && data.minimumIncrease is int && data.minimumIncrease >= 1 && data.minimumIncrease <= 10000000
+        && data.maximumPrice is int && data.maximumPrice >= 1 && data.maximumPrice <= 10000000
+        && data.taxiMinimum is int && data.taxiMinimum >= 1 && data.taxiMinimum <= data.maximumPrice
+        && data.deliveryMinimum is int && data.deliveryMinimum >= 1 && data.deliveryMinimum <= data.maximumPrice;
+    }
+    function validCustomerPrice(data) {
+      let cfg = customerPricingConfig();
+      let calculated = data.get('calculatedPrice', null);
+      let offer = data.get('customerOfferPrice', null);
+      let amount = data.priceAmount;
+      let minimum = data.serviceType == 'delivery' ? cfg.get('deliveryMinimum', 1200) : cfg.get('taxiMinimum', 800);
+      return !data.keys().hasAny(['pricingType', 'calculatedPrice', 'customerOfferPrice', 'finalDisplayedPrice', 'customerIncreasedPrice', 'priceRevision', 'priceUpdatedAt', 'calculationType', 'routeDistanceMeters'])
+        || (data.serviceType in ['taxi', 'delivery']
+          && data.keys().hasAll(['pricingType', 'calculatedPrice', 'customerOfferPrice', 'finalDisplayedPrice', 'customerIncreasedPrice', 'priceRevision', 'priceUpdatedAt', 'calculationType'])
+          && amount is int && amount > 0 && amount <= 10000000
+          && data.finalDisplayedPrice == amount && data.priceText == string(amount) + ' ₸'
+          && data.priceRevision is int && data.priceRevision >= 0 && data.priceUpdatedAt is timestamp
+          && data.customerIncreasedPrice is bool
+          && (data.get('routeDistanceMeters', null) == null || (data.routeDistanceMeters is number && data.routeDistanceMeters >= 0 && data.routeDistanceMeters < 100000000))
+          && ((calculated == null && offer == amount && data.pricingType == 'customer_offer_unavailable' && data.calculationType == 'unavailable' && amount >= minimum)
+            || (calculated is int && calculated > 0 && calculated <= 10000000 && amount >= calculated
+              && data.calculationType in ['fixed', 'distance', 'tariff', 'delivery_local', 'delivery_distance']
+              && ((offer == null && amount == calculated && data.pricingType == 'calculated')
+                || (offer == amount && data.pricingType == (amount > calculated ? 'customer_offer' : 'calculated')))))
+          && (offer == null || (cfg.get('enabled', true) == true && offer <= cfg.get('maximumPrice', 1000000)))
+          && data.customerIncreasedPrice == (data.priceRevision > 0 || (calculated != null && amount > calculated)));
+    }
+    function clientRaisesOwnPrice(orderId) {
+      let before = resource.data;
+      let after = request.resource.data;
+      let cfg = customerPricingConfig();
+      let operation = after.get('lastPriceOperationId', '');
+      let changePath = /databases/$(database)/documents/orders/$(orderId)/priceChanges/$(operation);
+      let change = getAfter(changePath).data;
+      return signedIn() && before.clientUid == request.auth.uid && before.serviceType in ['taxi', 'delivery']
+        && before.status == 'searching' && before.get('assignedDriverUid', '') == ''
+        && cfg.get('enabled', true) == true
+        && after.diff(before).affectedKeys().hasOnly(['priceAmount', 'priceText', 'calculatedPrice', 'customerOfferPrice', 'finalDisplayedPrice', 'pricingType', 'calculationType', 'customerIncreasedPrice', 'priceRevision', 'previousPrice', 'lastPriceOperationId', 'priceUpdatedAt', 'updatedAt'])
+        && after.calculatedPrice == before.get('calculatedPrice', before.priceAmount)
+        && after.calculationType == before.get('calculationType', 'tariff')
+        && after.priceAmount >= before.priceAmount + cfg.get('minimumIncrease', 1)
+        && after.priceAmount <= cfg.get('maximumPrice', 1000000)
+        && after.customerOfferPrice == after.priceAmount && after.previousPrice == before.priceAmount
+        && after.priceRevision == before.get('priceRevision', 0) + 1
+        && after.priceUpdatedAt == request.time && after.updatedAt == request.time
+        && operation is string && operation.size() > 0 && operation.size() <= 80
+        && !exists(changePath) && existsAfter(changePath)
+        && change.clientUid == request.auth.uid && change.oldPrice == before.priceAmount
+        && change.newPrice == after.priceAmount && change.revision == after.priceRevision && change.changedAt == request.time
+        && validCustomerPrice(after);
+    }
+
     function validVehicleFare(data) {
       let category = data.get('vehicleCategory', 'sedan');
+      let fare = data.get('calculatedPrice', data.priceAmount);
       let factor = category == 'wagon' ? 120 : 150;
       return !data.keys().hasAny(['vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax'])
         || (data.serviceType == 'taxi'
@@ -478,12 +544,12 @@ service cloud.firestore {
           && data.passengerCount is int && data.passengerCount >= 1 && data.passengerCount <= 8
           && data.basePriceMin is int && data.basePriceMin >= 0
           && data.basePriceMax is int && data.basePriceMax >= data.basePriceMin && data.basePriceMax <= 10000000
-          && data.priceAmount is int && data.priceAmount <= 10000000
-          && ((category == 'sedan' && data.priceAmount == data.basePriceMax)
+          && (fare == null || (fare is int && fare <= 10000000))
+          && (fare == null || ((category == 'sedan' && fare == data.basePriceMax)
             || (category != 'sedan' && data.basePriceMin > 0
-              && data.priceAmount % 100 == 0
-              && data.priceAmount * 100 >= data.basePriceMax * factor
-              && (data.priceAmount - 100) * 100 < data.basePriceMax * factor)));
+              && fare % 100 == 0
+              && fare * 100 >= data.basePriceMax * factor
+              && (fare - 100) * 100 < data.basePriceMax * factor))));
     }
 
     function adminAssignsSuitableVehicle(data) {
@@ -506,11 +572,15 @@ service cloud.firestore {
           'fromAddress', 'toAddress', 'stops', 'wishes', 'scheduledFor',
           'direction', 'priceText', 'priceAmount', 'serviceDetails', 'status',
           'createdAt', 'updatedAt', 'proposedPrice', 'auctionRound',
-          'vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax'
+          'vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax',
+          'calculatedPrice', 'customerOfferPrice', 'finalDisplayedPrice', 'pricingType', 'calculationType',
+          'priceUpdatedAt', 'customerIncreasedPrice', 'priceRevision', 'routeDistanceMeters'
         ])
         && request.resource.data.clientUid == request.auth.uid
         && request.resource.data.serviceType in ['taxi', 'delivery', 'auction']
         && validVehicleFare(request.resource.data)
+        && validCustomerPrice(request.resource.data)
+        && (!request.resource.data.keys().hasAny(['pricingType']) || (request.resource.data.priceRevision == 0 && request.resource.data.priceUpdatedAt == request.time))
         && request.resource.data.source == 'online'
         && ((request.resource.data.serviceType == 'auction' && request.resource.data.status == 'bidding')
           || (request.resource.data.serviceType != 'auction' && request.resource.data.status == 'searching'
@@ -869,19 +939,21 @@ service cloud.firestore {
     }
 
     match /settings/{settingId} {
-      allow read: if isAdmin() || (settingId == 'driverPortal' && mayOpenOrders());
-      allow create, update, delete: if isAdmin();
+      allow read: if settingId == 'customerPricing' || isAdmin() || (settingId == 'driverPortal' && mayOpenOrders());
+      allow create, update: if isAdmin() && (settingId != 'customerPricing' || validCustomerPricingConfig(request.resource.data));
+      allow delete: if isAdmin();
     }
 
     match /orders/{orderId} {
       allow create: if (isAdmin() && validVehicleFare(request.resource.data) && adminAssignsSuitableVehicle(request.resource.data) && adminFinanceOrderCreate(orderId)) || validClientOrderCreate();
       allow read: if isAdmin()
         || (signedIn() && resource.data.clientUid == request.auth.uid)
-        || (driverIsAvailable() && resource.data.status in ['searching', 'bidding'])
+        || (mayOpenOrders() && resource.data.status in ['searching', 'bidding'])
         || (signedIn() && resource.data.get('assignedDriverUid', '') == request.auth.uid);
+      allow get: if signedIn() && orderId.matches(request.auth.uid + '_[a-zA-Z0-9-]+') && !exists(orderDocument(orderId));
       allow update: if (isAdmin() && validAdminCategoryUpdate() && adminFinanceOrderUpdate(orderId))
         || (resource.data.clientUid == request.auth.uid
-          && (clientCancelsOwnSearchingOrder() || clientRequestsCancellationAfterAssignment()))
+          && (clientCancelsOwnSearchingOrder() || clientRequestsCancellationAfterAssignment() || clientRaisesOwnPrice(orderId)))
         || (resource.data.status == 'bidding' && request.resource.data.status == 'accepted'
           && validAuctionSelection(orderId, resource.data, request.resource.data))
         || (resource.data.status == 'searching' && request.resource.data.status == 'accepted'
@@ -890,6 +962,21 @@ service cloud.firestore {
           && ((request.resource.data.status in ['searching', 'bidding'] && assignedDriverReturnsOrderToSearch(orderId))
             || (!(request.resource.data.status in ['searching', 'bidding']) && assignedDriverAdvancesOrder(orderId))));
       allow delete: if isAdmin();
+    }
+
+    match /orders/{orderId}/priceChanges/{operationId} {
+      allow read: if isAdmin() || (signedIn() && get(orderDocument(orderId)).data.clientUid == request.auth.uid);
+      allow create: if signedIn()
+        && get(orderDocument(orderId)).data.clientUid == request.auth.uid
+        && get(orderDocument(orderId)).data.status == 'searching'
+        && getAfter(orderDocument(orderId)).data.lastPriceOperationId == operationId
+        && getAfter(orderDocument(orderId)).data.priceRevision == get(orderDocument(orderId)).data.get('priceRevision', 0) + 1
+        && request.resource.data.keys().hasOnly(['clientUid', 'oldPrice', 'newPrice', 'revision', 'changedAt'])
+        && request.resource.data.clientUid == request.auth.uid
+        && request.resource.data.oldPrice == get(orderDocument(orderId)).data.priceAmount
+        && request.resource.data.newPrice == getAfter(orderDocument(orderId)).data.priceAmount
+        && request.resource.data.revision == getAfter(orderDocument(orderId)).data.priceRevision
+        && request.resource.data.changedAt == request.time;
     }
 
     match /auctionOffers/{offerId} {

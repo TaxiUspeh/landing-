@@ -493,6 +493,7 @@
 
     </style>
     <link rel="stylesheet" href="./styles/client-home.css?v=56">
+<link rel="stylesheet" href="./styles/customer-pricing.css?v=67">
 </head>
 <body class="client-home text-gray-900 min-h-screen flex flex-col">
 
@@ -2059,11 +2060,11 @@
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
         import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=52";
-        import { initBookingScreen } from "./booking-screen.js?v=66";
+        import { initBookingScreen } from "./booking-screen.js?v=67";
         import { normalizeCity } from "./booking-core.js?v=60";
         import { selectPriceAdjustment, adjustmentText } from "./pricing-adjustments.js?v=63";
         import { createDeliveryPricing } from "./delivery-pricing.js?v=66";
-        import { publishedRouteFare, distanceFare, formatTaxiFare } from "./taxi-pricing.js?v=60";
+        import { publishedRouteFare, distanceFare, formatTaxiFare } from "./taxi-pricing.js?v=67";
         import { initClientHome } from "./client-home.js?v=60";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -2681,12 +2682,12 @@
             const priceEl = document.getElementById('taxiPriceEstimate');
             if (priceEl) priceEl.textContent = text;
         }
-        function publishTaxiEstimate(baseMin, baseMax, suffix = '') {
+        function publishTaxiEstimate(baseMin, baseMax, suffix = '', distanceMeters = null, calculationType = 'fixed') {
             const category = window.bookingScreen?.vehicleRequest().vehicleCategory || 'sedan';
             const fare = calculateCategoryFare(baseMin, baseMax, category);
-            if (!fare || fare.priceMax <= 0) { setTaxiPriceState('unavailable', 'Уточните цену у диспетчера'); return; }
+            if (!fare || fare.priceMax <= 0) { setTaxiPriceState('unavailable', 'Не удалось рассчитать стоимость'); return; }
             const priceText = formatTaxiFare(fare) + suffix;
-            taxiFareSnapshot = { ...fare, priceText, revision: taxiRouteCalculationId, key: taxiPriceKey };
+            taxiFareSnapshot = { ...fare, priceText, distanceMeters, calculationType, revision: taxiRouteCalculationId, key: taxiPriceKey };
             setTaxiPriceState('ready', priceText);
         }
         window.getTaxiPriceState = () => taxiPriceKey === currentTaxiPriceKey() ? taxiFareState : 'pending';
@@ -2714,7 +2715,7 @@
                             price -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
                             if (price < 500) price = 500;
                         }
-                        publishTaxiEstimate(price, price, multiplier > 1 ? ' (Тариф повышен)' : '');
+                        publishTaxiEstimate(price, price, multiplier > 1 ? ' (Тариф повышен)' : '', distMeters, 'distance');
                         setTaxiRouteHint(`${(distMeters / 1000).toFixed(1)} км · расчёт по маршруту`);
                         return;
                     }
@@ -2723,21 +2724,8 @@
                 console.warn('Не удалось рассчитать маршрут:', error.message);
             }
             if (requestId !== taxiRouteCalculationId) return;
-            if (isIntercity) {
-                setTaxiPriceState('unavailable', 'Уточните цену у диспетчера');
-                setTaxiRouteHint('Не удалось рассчитать маршрут. Согласуйте стоимость с диспетчером.', 'fallback');
-                return;
-            }
-            // A local fallback is shown before ordering, never substituted on submit.
-            const manyStops = countFilledAddresses() >= 3;
-            let baseMin = Math.ceil(((manyStops ? CONFIG.TAXI.MANY_STOPS_MIN : CONFIG.TAXI.BASE_PRICE) * multiplier) / 10) * 10;
-            let baseMax = Math.ceil(((manyStops ? CONFIG.TAXI.MANY_STOPS_MAX : CONFIG.TAXI.BASE_PRICE + CONFIG.TAXI.MIN_PRICE_RANGE_OFFSET) * multiplier) / 10) * 10;
-            if (isLuckyDiscount) {
-                baseMin -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
-                baseMax -= CONFIG.LUCKY_DISCOUNT.AMOUNT;
-            }
-            publishTaxiEstimate(baseMin, baseMax, multiplier > 1 ? ' (Тариф повышен)' : '');
-            setTaxiRouteHint('Показываем тариф из базы: маршрут временно не удалось построить.', 'fallback');
+            setTaxiPriceState('unavailable', 'Не удалось рассчитать стоимость');
+            setTaxiRouteHint('Повторите расчёт или предложите свою цену.', 'fallback');
         }
 
         const debouncedOSRM = debounce(calculateTaxiPriceOSRM, 1500);
@@ -3274,7 +3262,7 @@
             const key = currentTaxiPriceKey();
             // sync() also runs on submit and while editing non-price fields.
             // Preserve the displayed quote unless the pricing inputs really changed.
-            if (key === taxiPriceKey) return;
+            if (key === taxiPriceKey && taxiFareState !== 'unavailable') return;
             taxiPriceKey = key;
             taxiRouteCalculationId += 1;
             taxiFareSnapshot = null;
@@ -3307,7 +3295,7 @@
                 const priceEl = document.getElementById('deliveryPriceEstimate');
                 if (!priceEl) return;
                 priceEl.textContent = quote ? quote.priceText : state === 'incomplete' ? 'Укажите маршрут'
-                    : state === 'pending' ? 'Рассчитываем стоимость…' : 'Уточните цену у диспетчера';
+                    : state === 'pending' ? 'Рассчитываем стоимость…' : 'Не удалось рассчитать стоимость';
                 if (state !== 'pending') window.bookingScreen?.renderDeliveryRoute?.();
             }
         });
@@ -4942,6 +4930,6 @@
         initClientHome();
 
     </script>
-    <script type="module" src="./client-orders.js?v=62"></script>
+    <script type="module" src="./client-orders.js?v=67"></script>
 </body>
 </html>

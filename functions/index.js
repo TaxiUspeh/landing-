@@ -123,3 +123,7 @@ exports.sendDriverTestPush = onCall({ timeoutSeconds: 60 }, pushActions.sendTest
 exports.notifyDriversOfOrderAssignment = onDocumentUpdated(
   { document: 'orders/{orderId}', retry: true, timeoutSeconds: 60 }, pushActions.notifyAssignment
 );
+
+exports.notifyDriversOfPriceIncrease = onDocumentUpdated(
+  { document: 'orders/{orderId}', retry: true, timeoutSeconds: 60 }, pushActions.notifyPriceIncrease
+);

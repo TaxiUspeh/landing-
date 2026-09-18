@@ -40,7 +40,7 @@ function fixture() {
     },
     eligibleSubscriptions: async uid => {
       targets.push(uid);
-      return [...records].filter(([path, data]) => path.startsWith('driverPushTokens/') && data.uid === uid && data.enabled)
+      return [...records].filter(([path, data]) => path.startsWith('driverPushTokens/') && (!uid || data.uid === uid) && data.enabled)
         .map(([path, data]) => snapshot(db.doc(path), data));
     }
   });
@@ -122,4 +122,16 @@ test('partial retries skip already sent tokens and deduplicate device records', 
   assert.deepEqual(f.messages[0].tokens, ['token-a', 'tablet-token']);
   f.setResults([{ success: true }]); await f.notifyAssignment(f.event);
   assert.deepEqual(f.messages[1].tokens, ['tablet-token']);
+});
+
+function priceEvent(f, revision = 1, oldPrice = 4000, newPrice = 4500) {
+  const after = {status:'searching',customerIncreasedPrice:true,priceRevision:revision,priceAmount:newPrice};
+  f.records.set('orders/order-1', after);
+  return {id:`price-${revision}`,params:{orderId:'order-1'},data:{before:{data:()=>({status:'searching',priceRevision:revision-1,priceAmount:oldPrice})},after:{data:()=>after}}};
+}
+test('price increase notifications target all drivers, deduplicate and suppress stale or accepted events',async()=>{
+  const f=fixture(),e=priceEvent(f);await f.notifyPriceIncrease(e);await f.notifyPriceIncrease(e);assert.equal(f.messages.length,1);assert.equal(f.messages[0].data.type,'order_price_increased');assert.deepEqual(f.targets,['','']);
+  f.records.get('orders/order-1').status='accepted';await f.notifyPriceIncrease(e);assert.equal(f.messages.length,1);
+  const newer=priceEvent(f,2,4500,5000);await f.notifyPriceIncrease(newer);assert.equal(f.messages.length,1,'cooldown suppresses rapid repeats');
+  f.advance(60001);const latest=priceEvent(f,3,5000,5500);await f.notifyPriceIncrease(e);assert.equal(f.messages.length,1);await f.notifyPriceIncrease(latest);assert.equal(f.messages.length,2);
 });

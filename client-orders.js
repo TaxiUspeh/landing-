@@ -1,3 +1,5 @@
+import { priceSettings, offerFields, priceDescription, increaseOrderPrice } from './customer-pricing.js?v=67';
+import { createPriceControl } from './customer-price-control.js?v=67';
 import { orderCategorySummary } from './vehicle-categories.js?v=52';
 import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=60';
 import { auth, db } from './firebase-config.js';
@@ -6,6 +8,7 @@ import {
     signInAnonymously
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
+    getDocFromServer,
     collection,
     doc,
     onSnapshot,
@@ -361,6 +364,7 @@ function showOrderPanel(order) {
         ].filter(Boolean).join(' · ');
     }
     if (view.orderPrice) view.orderPrice.textContent = order.priceText || 'Цена уточняется';
+    updatePriceControls(order, view);
     if (view.orderStatus) {
         view.orderStatus.className = `rounded-xl border p-3 text-sm font-extrabold ${statusClasses}`;
         view.orderStatus.textContent = statusText;
@@ -477,15 +481,19 @@ async function createOnlineOrder() {
 
     const vehicleRequest = window.bookingScreen?.vehicleRequest() || { vehicleCategory: 'sedan', passengerCount: 1 };
     const quotedFare = window.getTaxiFareForOrder?.();
-    if (!quotedFare || !Number.isFinite(quotedFare.priceMax) || quotedFare.priceMax <= 0) {
-        setStatus('Дождитесь расчёта стоимости. Если цену определить не удалось, позвоните диспетчеру.', false, 'taxi'); return;
+    const offered = window.getCustomerPriceOffer?.('taxi') ?? null;
+    let pricing;
+    try { pricing = customerOrderPricing('taxi', quotedFare?.priceMax ?? null, offered, quotedFare?.calculationType || 'tariff'); }
+    catch (e) { setStatus(e.message, false, 'taxi'); return; }
+    if (!pricing && (!quotedFare || !Number.isFinite(quotedFare.priceMax) || quotedFare.priceMax <= 0)) {
+        setStatus('Дождитесь расчёта стоимости или предложите свою цену.', false, 'taxi'); return;
     }
-    const priceText = quotedFare.priceText;
+    const priceText = pricing?.priceText || quotedFare.priceText;
     if (!Number.isInteger(vehicleRequest.passengerCount) || vehicleRequest.passengerCount < 1 || vehicleRequest.passengerCount > 8) {
         setStatus('Укажите от 1 до 8 пассажиров.', false, 'taxi'); return;
     }
     const categoryFields = vehicleRequest.vehicleCategory === 'sedan' ? {}
-        : { ...vehicleRequest, basePriceMin: quotedFare.basePriceMin, basePriceMax: quotedFare.basePriceMax };
+        : { ...vehicleRequest, basePriceMin: quotedFare?.basePriceMin ?? 0, basePriceMax: quotedFare?.basePriceMax ?? 0 };
 
     // Вызывается прямо из нажатия «Заказать онлайн»: браузер разрешает звук
     // для последующих смен статуса без дополнительной кнопки для клиента.
@@ -497,12 +505,12 @@ async function createOnlineOrder() {
         const fromAddress = `${rawFromAddress} (${fromCity})`;
         const toAddress = `${rawToAddress} (${toCity})`;
         const user = await ensureSignedIn();
-        const orderRef = doc(collection(db, 'orders'));
+        const orderRef = customerOrderReference(user);
         const contactRef = doc(db, 'orderContacts', orderRef.id);
         const direction = toCity === 'Белоусовка' ? '' : toCity;
         const scheduledFor = document.getElementById('taxiDateTime')?.value || '';
         const wishes = document.getElementById('taxiWishes')?.value.trim() || '';
-        const batch = writeBatch(db);
+        const batch = customerOrderBatch(orderRef, user);
 
         batch.set(orderRef, {
             orderNumber: createOrderNumber(),
@@ -518,7 +526,9 @@ async function createOnlineOrder() {
             direction,
             priceText,
             // Для диапазона «800–1000 ₸» расчётной суммой является 1000 ₸.
-            priceAmount: quotedFare.priceMax,
+            priceAmount: pricing?.priceAmount ?? quotedFare.priceMax,
+            ...(pricing || {}),
+            ...(pricing ? { priceUpdatedAt: serverTimestamp(), routeDistanceMeters: quotedFare?.distanceMeters ?? null } : {}),
             status: 'searching',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
@@ -545,10 +555,100 @@ async function createOnlineOrder() {
             ? 'Онлайн-заказы ещё не включены в правилах Firebase. Пока используйте WhatsApp.'
             : 'Не удалось отправить онлайн-заказ. Проверьте интернет или используйте WhatsApp.';
         setStatus(message, false, 'taxi');
+        const pending = pendingSubmission(); if (pending?.writes) showPendingSubmission(pending);
     } finally {
         setActionBusy(false, 'taxi');
     }
 }
+
+function customerOrderPricing(service, calculated, offered, type) {
+    if (!window.customerPricingReady) return null;
+    if (calculated === null && offered === null) return null;
+    if (calculated === null && (service === 'taxi' ? window.getTaxiPriceState?.() : window.getDeliveryPriceState?.()) !== 'unavailable') throw new Error('Дождитесь окончания расчёта.');
+    return offerFields(calculated, offered, service, window.customerPriceSettings, type);
+}
+const PENDING_SUBMISSION_KEY = 'taxi_uspeh_pending_submission_v67';
+function pendingSubmission() { try { return JSON.parse(readStoredValue(PENDING_SUBMISSION_KEY) || 'null'); } catch { return null; } }
+function customerOrderReference(user) {
+    if (!window.customerPricingReady) return doc(collection(db, 'orders'));
+    const pending = pendingSubmission();
+    const id = pending?.uid === user.uid ? pending.id : `${user.uid}_${crypto.randomUUID()}`;
+    storeValue(PENDING_SUBMISSION_KEY, JSON.stringify(pending?.uid === user.uid ? pending : { id, uid: user.uid }));
+    return doc(db, 'orders', id);
+}
+function customerOrderBatch(orderRef, user) {
+    if (!window.customerPricingReady) return writeBatch(db);
+    const writes = [];
+    return { set(ref, data) { const { createdAt, updatedAt, priceUpdatedAt, ...body } = data; writes.push({ contact: ref.path?.startsWith('orderContacts/'), body }); },
+      async commit() {
+        const previous = pendingSubmission();
+        const record = previous?.id === orderRef.id && previous.writes ? previous : { id: orderRef.id, uid: user.uid, writes };
+        storeValue(PENDING_SUBMISSION_KEY, JSON.stringify(record));
+        await commitPendingSubmission(record);
+      } };
+}
+function showPendingSubmission(record) {
+    const data = record.writes?.find(entry => !entry.contact)?.body;
+    if (!data) return;
+    activeOrderView = data.serviceType;
+    const view = orderView(activeOrderView);
+    setHidden(view.form, true); setHidden(view.panel, false); setHidden(view.driverBlock, true);
+    view.orderNumber.textContent = data.orderNumber;
+    view.orderStatus.textContent = 'Отправка не подтверждена';
+    view.orderRoute.textContent = `${data.fromAddress} → ${data.toAddress}`;
+    view.orderPrice.textContent = data.priceText;
+    setHidden(view.cancelButton, true); setHidden(view.newOrderButton, true);
+    let button = view.panel.querySelector('[data-retry-submission]');
+    if (!button) { button = document.createElement('button'); button.type = 'button'; button.dataset.retrySubmission = 'true'; button.className = 'customer-price-confirm'; button.textContent = 'Проверить отправку'; view.panel.append(button); }
+    button.hidden = false;
+    button.onclick = async () => { button.disabled = true; try { await ensureSignedIn(); await commitPendingSubmission(record); startOrderWatch(record.id); button.hidden = true; } catch(e) { setStatus('Связь с сервером не подтверждена. Номер заказа сохранён. Повторите проверку.'); } finally { button.disabled = false; } };
+}
+async function commitPendingSubmission(record) {
+    if (auth.currentUser?.uid !== record.uid) throw new Error('Войдите в аккаунт, с которого отправляли заказ.');
+    await runTransaction(db, async transaction => {
+        const orderRef = doc(db, 'orders', record.id);
+        const existing = await transaction.get(orderRef);
+        if (existing.exists()) {
+            if (existing.data().clientUid !== record.uid) throw new Error('Заказ принадлежит другому клиенту.');
+            return;
+        }
+        for (const entry of record.writes) transaction.set(entry.contact ? doc(db, 'orderContacts', record.id) : orderRef,
+          { ...entry.body, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), ...(entry.body.pricingType ? { priceUpdatedAt: serverTimestamp() } : {}) });
+    });
+    storeValue(ACTIVE_ORDER_STORAGE_KEY, record.id);
+    storeValue(PENDING_SUBMISSION_KEY, '');
+}
+const priceControls = new Map();
+function updatePriceControls(order, view) {
+    if (!['taxi', 'delivery'].includes(order.serviceType) || !view.orderPrice) return;
+    let entry = priceControls.get(order.serviceType);
+    if (!entry) {
+        const summary = document.createElement('p'); summary.className = 'customer-price-summary';
+        const host = document.createElement('div'); view.orderPrice.after(summary, host);
+        let operation = null;
+        const control = createPriceControl({ host, id: `${order.serviceType}-raise`, onConfirm: async amount => {
+            if (!operation || operation.amount !== amount || operation.orderId !== activeOrderId) operation = { amount, orderId: activeOrderId, operationId: crypto.randomUUID() };
+            await increaseOrderPrice(db, { doc, runTransaction, serverTimestamp }, { ...operation, uid: auth.currentUser.uid });
+            operation = null;
+        } });
+        entry = { summary, control }; priceControls.set(order.serviceType, entry);
+    }
+    entry.summary.textContent = priceDescription(order);
+    entry.control.update({ visible: window.customerPricingReady && window.customerPriceSettings.enabled && order.status === 'searching' && !order.assignedDriverUid,
+      service: order.serviceType, current: order.priceAmount, calculated: order.calculatedPrice ?? null,
+      config: window.customerPriceSettings || priceSettings(), key: activeOrderId });
+}
+async function loadCustomerPricing() {
+    try {
+        const snapshot = await getDocFromServer(doc(db, 'settings', 'customerPricing'));
+        window.customerPriceSettings = priceSettings(snapshot.exists() ? snapshot.data() : {});
+        window.customerPricingReady = true;
+        window.dispatchEvent(new Event('customer-pricing-ready'));
+        if (activeOrder) showOrderPanel(activeOrder);
+    } catch (e) { console.warn('Настройки предложения цены недоступны:', e.code || e.message); }
+}
+void loadCustomerPricing();
+window.addEventListener('online', () => { void loadCustomerPricing(); });
 
 function containsRestrictedDeliveryItems(value) {
     return /(алкогол|пиво|вино|водк|сигар|табак|никотин|вейп)/i.test(String(value || ''));
@@ -585,11 +685,15 @@ async function createOnlineDeliveryOrder() {
 
     // Capture the displayed quote before authentication/network work can refresh the model.
     const quote = window.getDeliveryFareForOrder?.();
-    if (!quote || !Number.isSafeInteger(quote.priceAmount) || quote.priceAmount <= 0) {
-        setStatus('Дождитесь расчёта стоимости доставки или уточните цену у диспетчера.', false, 'delivery');
+    const offered = window.getCustomerPriceOffer?.('delivery') ?? null;
+    let pricing;
+    try { pricing = customerOrderPricing('delivery', quote?.priceAmount ?? null, offered, quote?.local ? 'delivery_local' : 'delivery_distance'); }
+    catch (e) { setStatus(e.message, false, 'delivery'); return; }
+    if (!pricing && (!quote || !Number.isSafeInteger(quote.priceAmount) || quote.priceAmount <= 0)) {
+        setStatus('Дождитесь расчёта стоимости доставки или предложите свою цену.', false, 'delivery');
         return;
     }
-    const { priceText, priceAmount } = quote;
+    const { priceText, priceAmount } = pricing || quote;
 
     void prepareClientOrderSound();
     setActionBusy(true, 'delivery');
@@ -598,9 +702,9 @@ async function createOnlineDeliveryOrder() {
         const toAddress = `${rawDeliveryAddress} (${deliveryCity})`;
         const fromAddress = store ? `Магазин: ${store}` : 'Доставка';
         const user = await ensureSignedIn();
-        const orderRef = doc(collection(db, 'orders'));
+        const orderRef = customerOrderReference(user);
         const contactRef = doc(db, 'orderContacts', orderRef.id);
-        const batch = writeBatch(db);
+        const batch = customerOrderBatch(orderRef, user);
 
         batch.set(orderRef, {
             orderNumber: createOrderNumber(),
@@ -615,6 +719,8 @@ async function createOnlineDeliveryOrder() {
             direction: deliveryCity === 'Белоусовка' ? '' : deliveryCity,
             priceText,
             priceAmount,
+            ...(pricing || {}),
+            ...(pricing ? { priceUpdatedAt: serverTimestamp(), routeDistanceMeters: quote?.distanceMeters ?? null } : {}),
             serviceDetails: { store, items },
             status: 'searching',
             createdAt: serverTimestamp(),
@@ -642,6 +748,7 @@ async function createOnlineDeliveryOrder() {
             ? 'Онлайн-доставка ещё не включена в правилах Firebase. Пока используйте WhatsApp.'
             : 'Не удалось отправить онлайн-доставку. Проверьте интернет или используйте WhatsApp.';
         setStatus(message, false, 'delivery');
+        const pending = pendingSubmission(); if (pending?.writes) showPendingSubmission(pending);
     } finally {
         setActionBusy(false, 'delivery');
     }
@@ -709,6 +816,11 @@ function restoreSavedContact() {
 }
 
 async function restoreActiveOrder() {
+    const pending = pendingSubmission();
+    if (pending?.writes) {
+        try { await ensureSignedIn(); await commitPendingSubmission(pending); startOrderWatch(pending.id); return; }
+        catch (e) { showPendingSubmission(pending); setStatus('Отправка не подтверждена. Проверьте интернет и повторите отправку: номер заказа сохранён.'); return; }
+    }
     const savedOrderId = readStoredValue(ACTIVE_ORDER_STORAGE_KEY);
     if (!savedOrderId) return;
     try {

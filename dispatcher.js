@@ -1,3 +1,5 @@
+import { initCustomerPricingSettings } from './customer-pricing-settings.js?v=67';
+import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=67';
 import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=60';
 import { createFinanceControls } from './driver-finance-controls.js?v=60';
 import { createVehicleControls } from './vehicle-category-controls.js?v=52';
@@ -1377,7 +1379,7 @@ function createDriverOrderReportCard(order) {
         createOrderText('p', 'mt-1 text-xs text-slate-500 dark:text-slate-400', orderTime(order) || 'Дата не указана')
     );
     header.append(details, createOrderText('span', `flex-shrink-0 rounded-full px-3 py-1 text-xs font-extrabold ${statusClasses}`, statusText));
-    card.append(header, createOrderText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', order.priceText || 'Цена уточняется'));
+    card.append(header, createOrderText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', [order.priceText || 'Цена уточняется', priceDescription(order)].filter(Boolean).join(' · ')));
     const audit = orderAuditText(order);
     if (audit) card.append(createOrderText('p', 'mt-2 rounded-lg bg-white p-2 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200', audit));
     return card;
@@ -2044,7 +2046,7 @@ function createOnlineOrderCard(order) {
 
     const service = createOrderText('p', 'mt-2 text-[11px] font-extrabold uppercase tracking-wide text-blue-700 dark:text-blue-300', dispatcherOrderServiceLabel(order));
     const route = createOrderText('p', 'mt-3 font-bold break-words', `${order.fromAddress || '—'} → ${order.toAddress || '—'}`);
-    const price = createOrderText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', order.priceText || 'Цена уточняется');
+    const price = createOrderText('p', 'mt-2 text-sm font-black text-green-700 dark:text-green-300', [order.priceText || 'Цена уточняется', priceDescription(order)].filter(Boolean).join(' · '));
     const toggle = document.createElement('button');
     toggle.type = 'button';
     toggle.className = 'mt-3 flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs font-extrabold text-blue-700 dark:border-slate-800 dark:bg-slate-900 dark:text-blue-300';
@@ -2321,7 +2323,7 @@ async function assignOrderManually(orderId, driverId) {
     manualOrderAssignmentInProgress = true;
     setMessage(elements.onlineOrdersMessage, '');
     try {
-        await runTransaction(db, async (transaction) => {
+        await retryPriceConflict(() => runTransaction(db, async (transaction) => {
             const orderRef = doc(db, 'orders', orderId);
             const driverRef = doc(db, 'drivers', selectedDriver.id);
             const orderSnapshot = await transaction.get(orderRef);
@@ -2364,7 +2366,7 @@ async function assignOrderManually(orderId, driverId) {
                 lastSeen: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
-        });
+        }));
         setMessage(
             elements.onlineOrdersMessage,
             cabinetIsOpen
@@ -2743,6 +2745,7 @@ async function addDriver(event) {
 }
 
 async function loadOrdersLink() {
+    initCustomerPricingSettings({ db, doc, getDoc, setDoc, serverTimestamp, uid: currentUser.uid });
     try {
         const snapshot = await getDoc(doc(db, 'settings', 'driverPortal'));
         elements.ordersChatUrl.value = snapshot.exists() ? snapshot.data().ordersChatUrl || '' : '';

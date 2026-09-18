@@ -62,6 +62,7 @@ function harness() {
     setStatus:message=>state.messages.push(message),combineAddress:()=>nodes.deliveryAddress.value,
     elements:{deliveryCustomerName:{value:'Тест'},deliveryCustomerPhone:{value:'+77000000000'}},normalizePhone:x=>x,validPhone:()=>true,
     prepareClientOrderSound:()=>{},setActionBusy:()=>{},ensureSignedIn:()=>state.auth(),db:{},doc:(...a)=>({id:a.at(-1)}),collection:()=> 'orders',createOrderNumber:()=> 'TU-TEST',
+    customerOrderPricing:()=>null,customerOrderReference:()=>({id:'order-1'}),customerOrderBatch:()=>({set:(ref,data)=>state.writes.push(data),commit:async()=>{}}),
     writeBatch:()=>({set:(ref,data)=>state.writes.push(data),commit:async()=>{}}),serverTimestamp:()=> 'now',storeValue:()=>{},startOrderWatch:()=>{},CUSTOMER_NAME_STORAGE_KEY:'name',CUSTOMER_PHONE_STORAGE_KEY:'phone'});
   vm.runInContext(config+rates+'let pricingAdjustment = null;'+pricing+submit,ctx);
   return {state,nodes,window,update:()=>window.updateDeliveryPrice(),quote:()=>window.getDeliveryFareForOrder(),status:()=>window.getDeliveryPriceState(),

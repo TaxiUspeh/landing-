@@ -15,7 +15,7 @@ const ratesSource = slice('        const INTERCITY_RATES =', '        function i
 const pricingSource = slice('        let taxiFareSnapshot = null;', '        const debouncedOSRM = debounce(')
   + slice('        window.updateTaxiPrice = function()', '        const deliveryPricing = createDeliveryPricing(');
 const clientSource = await readFile(new URL('../client-orders.js', import.meta.url), 'utf8');
-const submitSource = clientSource.slice(clientSource.indexOf('async function createOnlineOrder()'), clientSource.indexOf('function containsRestrictedDeliveryItems'));
+const submitSource = clientSource.slice(clientSource.indexOf('async function createOnlineOrder()'), clientSource.indexOf('function customerOrderPricing'));
 
 function harness(from = 'Белоусовка', to = 'Белоусовка') {
   const state = { points: [{address:'Кутузова',city:from},{address:'Панфилова, 8',city:to}], distance:1000, category:'sedan', textContent:'', writes:[], messages:[], routes:0 };
@@ -31,6 +31,7 @@ function harness(from = 'Белоусовка', to = 'Белоусовка') {
     elements:{customerName:{value:''},customerPhone:{value:'+77000000000'}}, normalizePhone:x=>x||'',validPhone:()=>true,
     prepareClientOrderSound:()=>{},setActionBusy:()=>{},ensureSignedIn:async()=>({uid:'customer'}),db:{},
     doc:(...args)=>({id:args.at(-1)}),collection:()=> 'orders',createOrderNumber:()=> 'TU-TEST',collectStops:()=>[],
+    customerOrderPricing:()=>null,customerOrderReference:()=>({id:'order-1'}),customerOrderBatch:()=>({set:(ref,data)=>state.writes.push(data),commit:async()=>{}}),
     writeBatch:()=>({set:(ref,data)=>state.writes.push(data),commit:async()=>{}}),serverTimestamp:()=> 'now',
     storeValue:()=>{},startOrderWatch:()=>{},CUSTOMER_NAME_STORAGE_KEY:'name',CUSTOMER_PHONE_STORAGE_KEY:'phone'
   });
@@ -57,14 +58,13 @@ test('published Belokamenka fare wins in both directions even when OSRM would re
 test('pending and unavailable routes cannot create zero-price orders',async()=>{
   const h=harness('Неизвестный посёлок');h.state.distance=null;h.update();await h.submit();
   assert.equal(h.state.writes.length,0);await h.route();assert.equal(h.status(),'unavailable');await h.submit();
-  assert.equal(h.state.writes.length,0);assert.match(h.state.messages.at(-1),/диспетчеру/);
+  assert.equal(h.state.writes.length,0);assert.match(h.state.messages.at(-1),/свою цену/);
 });
-test('unknown intercity route uses 230 per km and city fallback is displayed before submit',async()=>{
+test('230 per road km has an 800 minimum; route failure never invents a local price',async()=>{
   const h=harness('Неизвестный посёлок');h.state.distance=10000;h.update();await h.route();
-  assert.equal(h.quote().priceMax,3000);
+  assert.equal(h.quote().priceMax,2990);
   const local=harness();local.state.distance=null;local.update();await local.route();
-  assert.equal(local.quote().priceMin,1040);assert.equal(local.quote().priceMax,1300);
-  const text=local.state.textContent;local.update();await local.submit();assert.equal(local.state.writes[0].priceText,text);
+  assert.equal(local.quote(),null); assert.equal(local.status(),'unavailable'); await local.submit(); assert.equal(local.state.writes.length,0);
 });
 test('changing a house invalidates the old quote; non-price sync does not',async()=>{
   const h=harness();h.update();await h.route();h.nodes.taxiHouse.value='18';assert.equal(h.quote(),null);

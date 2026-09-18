@@ -1,3 +1,4 @@
+import { retryPriceConflict } from '../../customer-pricing.js';
 import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { initializeTestEnvironment, assertFails } from '@firebase/rules-unit-testing';
@@ -26,7 +27,7 @@ async function order(id, overrides={}) { return setDoc(doc(db('client'),'orders'
 async function run(name, uid, args=[]) {
  const database=db(uid),profile=(await getDoc(doc(db('admin'),'drivers','d-a'))).data();
  const messages=[];
- const context={...sdk,...finance,...auction,driverCanServeOrder,validVehicleProfile,ensureUidAvailable:async()=>{},parseBalance:value=>Number(value),validateUid:()=>true,db:database,currentUser:{uid},currentDriver:profile,currentDriverId:'d-a',currentCanTakeOrders:finance.hasOrderFunds(profile),currentBaseEligible:finance.hasOrderFunds(profile),orderActionInProgress:false,dispatcherCompletionInProgress:false,manualOrderAssignmentInProgress:false,
+ const context={retryPriceConflict,...sdk,...finance,...auction,driverCanServeOrder,validVehicleProfile,ensureUidAvailable:async()=>{},parseBalance:value=>Number(value),validateUid:()=>true,db:database,currentUser:{uid},currentDriver:profile,currentDriverId:'d-a',currentCanTakeOrders:finance.hasOrderFunds(profile),currentBaseEligible:finance.hasOrderFunds(profile),orderActionInProgress:false,dispatcherCompletionInProgress:false,manualOrderAssignmentInProgress:false,
  ACTIVE_ORDER_STATUSES:active,CANCELLABLE_ORDER_STATUSES:new Set([...active,'searching','bidding']),REQUEUEABLE_ORDER_STATUSES:new Set(['accepted','en_route','arrived']),REQUEUE_REASONS:[['car_issue','Неисправность автомобиля']],AVAILABLE_DRIVER_STATE:{status:'available',activeOrderId:''},
  window:{confirm:()=>true},console:{warn:()=>{},error:()=>{}},elements:{onlineOrdersMessage:{}},
  renderOnlineOrders:()=>{},showOrdersMessage:(message,success)=>messages.push({message,success}),setMessage:(el,message,success)=>messages.push({message,success}),formatMoney:value=>String(value)+' ₸',normalizeUid:value=>value,
@@ -87,10 +88,10 @@ try {
   assert.ok((await arriveComplete()).success);assert.equal((await readDriver()).balance,650);assert.equal((await readOrder()).commissionRate,15);
   await order('order-b');assert.ok(!(await run('acceptOrder','driver-a',['order-b']))?.success);
  });
- await test('exact limit hides open orders; recorded top-up restores access',async()=>{
+ await test('exact limit still shows open orders; recorded top-up restores acceptance',async()=>{
   await updateDoc(doc(db('admin'),'drivers','d-a'),{balance:0});await run('acceptOrder','driver-a',['order-a']);await arriveComplete();
   await order('order-b');assert.equal((await readDriver()).balance,1000);
-  await assertFails(sdk.getDocs(sdk.query(sdk.collection(db('driver-a'),'orders'),sdk.where('status','==','searching'))));
+  assert.ok((await sdk.getDocs(sdk.query(sdk.collection(db('driver-a'),'orders'),sdk.where('status','==','searching')))).size > 0);
   await updateDoc(doc(db('admin'),'drivers','d-a'),{balance:0});
   assert.ok((await run('acceptOrder','driver-a',['order-b'])).success);
  });

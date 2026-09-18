@@ -1,3 +1,4 @@
+import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=67';
 import { initDriverCabinet } from './driver-cabinet.js?v=61';
 import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=60';
 import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=52';
@@ -1786,7 +1787,7 @@ function appendAuctionControls(actions, order) {
         if (!validAuctionPrice(Number(price.value))) { commissionHint.textContent = 'Введите корректную цену для расчёта комиссии.'; return; }
         const funding = fundingFor(currentDriver, Number(price.value));
         commissionHint.textContent = funding.allowed ? `Ваша комиссия: ${funding.rate}% · ${formatMoney(funding.amount)}` : funding.reason;
-        send.disabled = orderActionInProgress || !currentCanTakeOrders || !funding.allowed;
+        send.disabled = orderActionInProgress || !currentCanTakeOrders || !funding.allowed || !driverCanServeOrder(currentDriver, order);
     };
     price.addEventListener('input', updateFunding);
     form.append(status, priceLabel, minutesLabel, commissionHint, send, same);
@@ -1855,6 +1856,7 @@ function createOrderCard(order, assigned, archived = false) {
     const price = createText('p', 'cabinet-price', order.priceText || 'Цена уточняется');
     const compactHeading = document.createElement('div'); compactHeading.className = 'cabinet-order-heading';
     compactHeading.append(service, price); card.append(compactHeading, route);
+    if (order.pricingType) card.append(createText('p', 'customer-price-summary', priceDescription(order)));
     const primaryActions = document.createElement('div'); primaryActions.className = 'cabinet-primary-actions'; card.append(primaryActions);
     const quickActions = document.createElement('div'); quickActions.className = 'cabinet-quick-actions'; card.append(quickActions);
     const disclosure = document.createElement('details'); disclosure.className = 'cabinet-order-disclosure';
@@ -1912,7 +1914,7 @@ function createOrderCard(order, assigned, archived = false) {
         acceptButton.classList.add('cabinet-order-primary'); acceptButton.dataset.orderControl = 'accept';
         const funding = fundingFor(currentDriver, Number(order.priceAmount));
         primaryActions.append(createText('p', 'cabinet-order-commission', funding.allowed ? `Ваша комиссия: ${funding.rate}% · ${formatMoney(funding.amount)}` : funding.reason));
-        acceptButton.disabled = orderActionInProgress || !currentCanTakeOrders || !funding.allowed;
+        acceptButton.disabled = orderActionInProgress || !currentCanTakeOrders || !funding.allowed || !driverCanServeOrder(currentDriver, order);
         acceptButton.addEventListener('click', () => acceptOrder(order.id));
         primaryActions.append(acceptButton);
     } else {
@@ -2006,8 +2008,8 @@ function renderOnlineOrders() {
     }
     const assignedActive = assignedOrders.filter(order => ACTIVE_ORDER_STATUSES.has(order.status))
         .sort((a,b) => createdAtMillis(b) - createdAtMillis(a));
-    const available = currentCanTakeOrders
-        ? [...openOrders,...auctionOrders].filter(order => driverCanServeOrder(currentDriver,order)).sort((a,b) => createdAtMillis(a) - createdAtMillis(b)) : [];
+    const available = canViewOpenOrders()
+        ? [...openOrders,...auctionOrders].sort((a,b) => createdAtMillis(a) - createdAtMillis(b)) : [];
     const history = assignedOrders.filter(order => ['completed','cancelled'].includes(order.status))
         .sort((a,b) => createdAtMillis(b) - createdAtMillis(a));
     if (assignedActive.some(order => !previousActiveOrderIds.has(order.id))) {
@@ -2054,7 +2056,7 @@ function handleOrdersError(error) {
 }
 
 function startAuctionOrdersWatch() {
-    if (unsubscribeAuctionOrders || !currentCanTakeOrders) return;
+    if (unsubscribeAuctionOrders || !canViewOpenOrders()) return;
     let loaded = false;
     unsubscribeAuctionOrders = onSnapshot(query(collection(db, 'orders'), where('status', '==', 'bidding')), snapshot => {
         auctionOrders = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
@@ -2064,8 +2066,12 @@ function startAuctionOrdersWatch() {
     }, () => { auctionOrders = []; renderOnlineOrders(); });
 }
 
+let customerPriceRulesReady = false;
+getDoc(doc(db, 'settings', 'customerPricing')).then(() => { customerPriceRulesReady = true; if (currentUser && currentDriver) { startOpenOrdersWatch(); startAuctionOrdersWatch(); renderOnlineOrders(); } }).catch(() => {});
+function canViewOpenOrders() { return customerPriceRulesReady ? currentDriver?.status === 'active' && currentAccount?.active === true : currentCanTakeOrders; }
+
 function startOpenOrdersWatch() {
-    if (unsubscribeOpenOrders || !currentCanTakeOrders) return;
+    if (unsubscribeOpenOrders || !canViewOpenOrders()) return;
     openOrders = [];
     openOrdersLoaded = false;
     initialOpenOrdersLoaded = false;
@@ -2081,12 +2087,14 @@ function startOpenOrdersWatch() {
                     .map((change) => ({ id: change.doc.id, ...change.doc.data() }))
                 : [];
 
+            const previousPrices = new Map(openOrders.map(order => [order.id, order.priceAmount]));
+            const raisedOrders = initialOpenOrdersLoaded ? nextOpenOrders.filter(order => previousPrices.has(order.id) && order.priceAmount > previousPrices.get(order.id)) : [];
             for (const order of nextOpenOrders) seenOpenOrderIds.add(order.id);
             initialOpenOrdersLoaded = true;
             openOrders = nextOpenOrders;
             openOrdersLoaded = true;
             renderOnlineOrders();
-            for (const order of newlyAddedOrders) if (driverCanServeOrder(currentDriver, order)) signalNewOrder(order);
+            for (const order of [...newlyAddedOrders, ...raisedOrders]) if (driverCanServeOrder(currentDriver, order)) signalNewOrder(order);
         },
         (error) => {
             unsubscribeOpenOrders = null;
@@ -2140,7 +2148,7 @@ function syncOrderWatches(user, driverId, driver, canTakeOrders) {
 
     startOwnOffersWatch();
     void withdrawUnavailableOffers();
-    if (canTakeOrders) { startOpenOrdersWatch(); startAuctionOrdersWatch(); }
+    if (canViewOpenOrders()) { startOpenOrdersWatch(); startAuctionOrdersWatch(); }
     else stopOpenOrdersWatch();
     renderOnlineOrders();
 }
@@ -2151,7 +2159,7 @@ async function acceptOrder(orderId) {
     showOrdersMessage('');
     renderOnlineOrders();
     try {
-        await runTransaction(db, async (transaction) => {
+        await retryPriceConflict(() => runTransaction(db, async (transaction) => {
             const orderRef = doc(db, 'orders', orderId);
             const stateRef = doc(db, 'driverStates', currentUser.uid);
             const orderSnapshot = await transaction.get(orderRef);
@@ -2183,7 +2191,7 @@ async function acceptOrder(orderId) {
                 lastSeen: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
-        });
+        }));
         const balance = Number(currentDriver.balance);
         showOrdersMessage(
             Number.isFinite(balance) && balance >= 0

@@ -11,7 +11,7 @@ body.booking-open { overflow: hidden; }
 .booking-body { min-height: 0; display: grid; grid-template-columns: minmax(0,1fr); grid-template-areas: 'map' 'sheet' 'footer'; grid-template-rows: minmax(0,var(--booking-map-size,26%)) minmax(44px,1fr) auto; }
 .booking-map { grid-area: map; min-height: 0; position: relative; overflow: hidden; background: #e2e8f0; }
 #mapModal #simulationMap { height: 100% !important; width: 100%; }
-#mapModal #mapOverlayText { top: 10px; left: 12px; right: 64px; width: fit-content; max-width: calc(100% - 76px); padding: 8px 12px; border-radius: 12px; text-align: left; font-size: 13px; box-shadow: 0 2px 10px #0f172a12; }
+#mapModal #mapOverlayText { display: none; }
 .booking-location { position: absolute; right: 12px; top: 10px; z-index: 1000; box-shadow: 0 2px 10px #0f172a20; }
 .booking-map-credit { position: absolute; bottom: 0; left: 0; z-index: 1000; padding: 2px 6px; font-size: 12px; background: #fffffff0; color: #334155; }
 .booking-sheet { grid-area: sheet; overflow: hidden; display: flex; flex-direction: column; min-height: 0; background: #fff; border-radius: 22px 22px 0 0; position: relative; margin-top: 0; z-index: 1001; box-shadow: 0 -4px 22px #17255412; }
@@ -140,7 +140,6 @@ body.booking-open { overflow: hidden; }
 #mapModal .booking-extras input { color:#172554; background:#fff; }
 #mapModal .booking-extras .booking-passenger-toggle { font-size:13px; margin:4px 0 10px; }
 #mapModal summary:focus-visible { outline:3px solid #60a5fa; outline-offset:2px; }
-#mapModal #mapOverlayText { font-size:12px; padding:7px 10px; font-weight:600; }
 #mapModal .booking-map-credit { font-size:10px; }
 @media (max-width:359px) { #mapModal .booking-categories .booking-service { flex-direction:column; } }
 .booking-price-help { display: block; padding: 10px 4px 2px; text-align: center; color: #1d4ed8; font-weight: 700; }

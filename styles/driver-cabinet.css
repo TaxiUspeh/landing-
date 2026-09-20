@@ -209,3 +209,10 @@ body:has(#driver-account) :focus-visible { outline: 3px solid #3b82f6; outline-o
 #driver-notification-invite[hidden] { display: none; }
 
 .cabinet-alert-primary { display: grid; gap: 8px; margin-top: 14px; }
+
+.cabinet-order-timing { margin: 0 0 10px; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.cabinet-order-created { display: block; color: var(--cabinet-muted, #526176); }
+.cabinet-order-created.is-waiting { color: #b45309; font-weight: 700; }
+.dark .cabinet-order-created.is-waiting { color: #fbbf24; }
+.cabinet-order-scheduled { margin-top: 4px; font-size: 14px; font-weight: 700; color: var(--cabinet-blue, #2154ce); }
+.cabinet-order-scheduled[hidden] { display: none; }

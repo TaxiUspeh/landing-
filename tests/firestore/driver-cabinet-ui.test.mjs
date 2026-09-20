@@ -1,3 +1,4 @@
+import { orderTimeInfo } from '../../order-time.js';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
@@ -17,7 +18,7 @@ const original = Object.fromEntries(['driver-logout-button','driver-dispatcher-c
 const events = [];
 let authListener;
 const context = vm.createContext({
-    ...finance, ...categories, ...auction, initDriverCabinet,
+    ...finance, ...categories, ...auction, initDriverCabinet, orderTimeInfo,
     document, window, navigator:window.navigator, localStorage:window.localStorage,
     URLSearchParams, console, setTimeout:()=>1, clearTimeout:()=>{}, setInterval:()=>1, clearInterval:()=>{},
     requestAnimationFrame:callback=>callback(), auth:{}, db:{}, googleProvider:{},
@@ -40,6 +41,23 @@ assert.match(document.querySelector('[data-order-filter="new"]').textContent,/10
 assert.ok([...document.querySelectorAll('.cabinet-order-disclosure')].every(el=>!el.open));
 assert.equal(get('driver-view-orders').hidden,false);
 for(const [id,node] of Object.entries(original)) assert.equal(get(id),node,`${id} keeps listeners`);
+// Minute refresh preserves card order, action controls, focus and open details.
+run(`const creation = Date.parse('2026-09-20T05:42:00Z');
+openOrders.forEach((order,i)=>{order.createdAt={toMillis:()=>creation+i*60000};});
+openOrders[0].scheduledFor='2026-09-20T15:00';renderOnlineOrders();`);
+const timedCard=get('driver-online-orders-list').firstElementChild;
+const createdLine=timedCard.querySelector('[data-order-created-time]');
+const scheduledLine=timedCard.querySelector('[data-order-scheduled-time]');
+assert.equal(createdLine.closest('details'),null);assert.equal(scheduledLine.closest('details'),null);
+const disclosure=timedCard.querySelector('details');disclosure.open=true;
+const accept=timedCard.querySelector('[data-order-control="accept"]');accept.focus();
+const orderedCards=[...get('driver-online-orders-list').children];
+run("updateVisibleOrderTimes(Date.parse('2026-09-20T05:47:00Z'))");
+assert.match(createdLine.textContent,/10:42 · 5 мин назад/);assert.equal(scheduledLine.textContent,'Подача сегодня в 15:00');
+run("updateVisibleOrderTimes(Date.parse('2026-09-20T05:48:00Z'))");
+assert.match(createdLine.textContent,/6 мин назад/);assert.equal(disclosure.open,true);assert.equal(document.activeElement,accept);
+assert.deepEqual([...get('driver-online-orders-list').children],orderedCards);
+assert.equal(orderedCards[0].dataset.orderId,'order-0');assert.equal(orderedCards.at(-1).dataset.orderId,'order-9');
 get('driver-wallet-summary').click();
 assert.equal(get('driver-view-balance').hidden,false);
 assert.equal(get('driver-view-orders').hidden,true);

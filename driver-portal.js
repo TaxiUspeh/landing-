@@ -1,3 +1,4 @@
+import { orderTimeInfo } from './order-time.js?v=71';
 import { serviceEnabled, allowedOrderServices, profileForOrder, assignmentVehicle, serviceDirection } from './functions/driver-services.mjs?v=69';
 import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=67';
 import { initDriverCabinet } from './driver-cabinet.js?v=69';
@@ -170,6 +171,7 @@ elements.ordersList?.before(directionFilter);
 directionFilter.addEventListener('change', () => { ordersDirection = directionFilter.value; renderOnlineOrders(); });
 let previousActiveOrderIds = new Set();
 const orderDisclosureState = new Map();
+const orderTimeModels = new WeakMap();
 
 let authActionInProgress = false;
 let orderActionInProgress = false;
@@ -1844,6 +1846,27 @@ async function withdrawAuctionOffer(offer) {
     finally { orderActionInProgress = false; renderOnlineOrders(); }
 }
 
+function updateOrderTime(card, order, now = Date.now()) {
+    const info = orderTimeInfo(order, now);
+    const created = card.querySelector('[data-order-created-time]');
+    created.textContent = info.createdText;
+    created.title = info.title;
+    if (info.dateTime) created.dateTime = info.dateTime;
+    else created.removeAttribute('datetime');
+    created.classList.toggle('is-waiting', info.waiting);
+    const scheduled = card.querySelector('[data-order-scheduled-time]');
+    scheduled.textContent = info.scheduledText;
+    scheduled.hidden = !info.scheduledText;
+}
+
+function updateVisibleOrderTimes(now = Date.now()) {
+    if (document.hidden || !currentUser) return;
+    for (const card of elements.ordersList?.children || []) {
+        const order = orderTimeModels.get(card);
+        if (order) updateOrderTime(card, order, now);
+    }
+}
+
 function createOrderCard(order, assigned, archived = false) {
     const card = document.createElement('article');
     card.id = `driver-order-${order.id}`;
@@ -1867,7 +1890,12 @@ function createOrderCard(order, assigned, archived = false) {
     const route = createText('p', 'cabinet-order-route', orderRoute(order));
     const price = createText('p', 'cabinet-price', order.priceText || 'Цена уточняется');
     const compactHeading = document.createElement('div'); compactHeading.className = 'cabinet-order-heading';
-    compactHeading.append(service, price); card.append(compactHeading, route);
+    compactHeading.append(service, price);
+    const timing = document.createElement('div'); timing.className = 'cabinet-order-timing';
+    const createdTime = document.createElement('time'); createdTime.className = 'cabinet-order-created'; createdTime.dataset.orderCreatedTime = '';
+    const scheduledTime = createText('p', 'cabinet-order-scheduled', ''); scheduledTime.dataset.orderScheduledTime = '';
+    timing.append(createdTime, scheduledTime); card.append(compactHeading, timing, route);
+    orderTimeModels.set(card, order); updateOrderTime(card, order);
     if (order.pricingType) card.append(createText('p', 'customer-price-summary', priceDescription(order)));
     const primaryActions = document.createElement('div'); primaryActions.className = 'cabinet-primary-actions'; card.append(primaryActions);
     const quickActions = document.createElement('div'); quickActions.className = 'cabinet-quick-actions'; card.append(quickActions);
@@ -1893,9 +1921,6 @@ function createOrderCard(order, assigned, archived = false) {
 
     if (Array.isArray(order.stops) && order.stops.length) {
         body.append(createText('p', 'mt-2 text-xs font-semibold text-blue-700 dark:text-blue-300', 'Маршрут включает промежуточные остановки.'));
-    }
-    if (order.scheduledFor) {
-        body.append(createText('p', 'mt-1 text-xs text-gray-600 dark:text-gray-300', `Время: ${order.scheduledFor.replace('T', ' ')}`));
     }
     if (order.wishes) {
         body.append(createText('p', 'mt-1 text-xs text-gray-600 dark:text-gray-300', `Пожелания: ${order.wishes}`));
@@ -2574,9 +2599,12 @@ elements.newOrderAlertView?.addEventListener('click', () => {
     scrollToOrder(orderId);
 });
 
-window.addEventListener('focus', updateOrderAlertsControls);
+window.addEventListener('focus', () => { updateOrderAlertsControls(); updateVisibleOrderTimes(); });
+// Refresh text only: no database reads, list rebuilds or changes to order timestamps.
+setInterval(() => updateVisibleOrderTimes(), 60000);
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
+        updateVisibleOrderTimes();
         updateOrderAlertsControls();
         void touchDriverHeartbeat();
     }

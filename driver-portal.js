@@ -1,8 +1,9 @@
+import { serviceEnabled, allowedOrderServices, profileForOrder, assignmentVehicle, serviceDirection } from './functions/driver-services.mjs?v=69';
 import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=67';
-import { initDriverCabinet } from './driver-cabinet.js?v=61';
-import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=60';
-import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=52';
-import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=60';
+import { initDriverCabinet } from './driver-cabinet.js?v=69';
+import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=69';
+import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=69';
+import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=69';
 import { app, auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -157,6 +158,16 @@ const cabinet = initDriverCabinet({
     onHistoryPeriodChange(period) { changeBalanceHistoryPeriod(period); }
 });
 let ordersTab = 'new';
+let ordersDirection = 'all';
+let openServicesKey = '';
+const directionFilter = document.createElement('select');
+directionFilter.id = 'driver-service-filter'; directionFilter.className = 'form-control mt-2';
+directionFilter.setAttribute('aria-label', 'Направление заказов');
+for (const [value, label] of [['all', 'Все заказы'], ['passenger', 'Легковые'], ['cargo', 'Грузовые']]) {
+    const option = document.createElement('option'); option.value = value; option.textContent = label; directionFilter.append(option);
+}
+elements.ordersList?.before(directionFilter);
+directionFilter.addEventListener('change', () => { ordersDirection = directionFilter.value; renderOnlineOrders(); });
 let previousActiveOrderIds = new Set();
 const orderDisclosureState = new Map();
 
@@ -1807,6 +1818,7 @@ async function sendAuctionOffer(order, priceAmount, arrivalMinutes) {
     try {
         const freshDriver = (await getDoc(doc(db, 'drivers', currentDriverId))).data();
         if (!freshDriver) throw new Error('Карточка водителя не найдена.');
+        if (!driverCanServeOrder(freshDriver, order)) throw new Error('Для этого заказа нужно активное легковое направление.');
         const funding = fundingFor(freshDriver, priceAmount);
         if (!funding.allowed) throw new Error(funding.reason);
         await setDoc(doc(db, 'auctionOffers', auctionOfferId(order.id, currentUser.uid)), {
@@ -1912,7 +1924,7 @@ function createOrderCard(order, assigned, archived = false) {
         acceptButton.className = 'rounded-lg bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-xs font-extrabold';
         acceptButton.textContent = 'Принять заказ';
         acceptButton.classList.add('cabinet-order-primary'); acceptButton.dataset.orderControl = 'accept';
-        const funding = fundingFor(currentDriver, Number(order.priceAmount));
+        const funding = fundingFor(currentDriver, Number(order.priceAmount), order);
         primaryActions.append(createText('p', 'cabinet-order-commission', funding.allowed ? `Ваша комиссия: ${funding.rate}% · ${formatMoney(funding.amount)}` : funding.reason));
         acceptButton.disabled = orderActionInProgress || !currentCanTakeOrders || !funding.allowed || !driverCanServeOrder(currentDriver, order);
         acceptButton.addEventListener('click', () => acceptOrder(order.id));
@@ -2009,17 +2021,18 @@ function renderOnlineOrders() {
     const assignedActive = assignedOrders.filter(order => ACTIVE_ORDER_STATUSES.has(order.status))
         .sort((a,b) => createdAtMillis(b) - createdAtMillis(a));
     const available = canViewOpenOrders()
-        ? [...openOrders,...auctionOrders].sort((a,b) => createdAtMillis(a) - createdAtMillis(b)) : [];
+        ? [...openOrders,...auctionOrders].filter(order => driverCanServeOrder(currentDriver, order)).sort((a,b) => createdAtMillis(a) - createdAtMillis(b)) : [];
     const history = assignedOrders.filter(order => ['completed','cancelled'].includes(order.status))
         .sort((a,b) => createdAtMillis(b) - createdAtMillis(a));
     if (assignedActive.some(order => !previousActiveOrderIds.has(order.id))) {
-        ordersTab = 'current';
+        ordersTab = 'current'; ordersDirection = 'all'; directionFilter.value = 'all';
         assignedActive.forEach(order => orderDisclosureState.set(order.id,true));
         cabinet?.open('orders');
     } else if (!assignedActive.length && previousActiveOrderIds.size && ordersTab === 'current') ordersTab = 'new';
     previousActiveOrderIds = new Set(assignedActive.map(order => order.id));
     cabinet?.updateFilters({ new:available.length, current:assignedActive.length, history:history.length }, ordersTab);
-    const visible = ordersTab === 'current' ? assignedActive : ordersTab === 'history' ? history : available;
+    const candidates = ordersTab === 'current' ? assignedActive : ordersTab === 'history' ? history : available;
+    const visible = candidates.filter(order => ordersDirection === 'all' || serviceDirection(order) === ordersDirection);
     elements.ordersList.replaceChildren(...visible.map(order => createOrderCard(order, ordersTab !== 'new', ordersTab === 'history')));
     for (const card of elements.ordersList.children) {
         const prior = fieldValues.get(card.dataset.orderId), cancel = card.querySelector('.cabinet-cancel');
@@ -2056,9 +2069,9 @@ function handleOrdersError(error) {
 }
 
 function startAuctionOrdersWatch() {
-    if (unsubscribeAuctionOrders || !canViewOpenOrders()) return;
+    if (unsubscribeAuctionOrders || !canViewOpenOrders() || !serviceEnabled(currentDriver)) return;
     let loaded = false;
-    unsubscribeAuctionOrders = onSnapshot(query(collection(db, 'orders'), where('status', '==', 'bidding')), snapshot => {
+    unsubscribeAuctionOrders = onSnapshot(query(collection(db, 'orders'), where('status', '==', 'bidding'), where('serviceType', '==', 'auction')), snapshot => {
         auctionOrders = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
         renderOnlineOrders();
         if (loaded) for (const change of snapshot.docChanges()) if (change.type === 'added') signalNewOrder({ id: change.doc.id, ...change.doc.data() });
@@ -2072,12 +2085,14 @@ function canViewOpenOrders() { return customerPriceRulesReady ? currentDriver?.s
 
 function startOpenOrdersWatch() {
     if (unsubscribeOpenOrders || !canViewOpenOrders()) return;
+    const services = allowedOrderServices(currentDriver);
+    if (!services.length) { openOrdersLoaded = true; return; }
     openOrders = [];
     openOrdersLoaded = false;
     initialOpenOrdersLoaded = false;
     seenOpenOrderIds = new Set();
     unsubscribeOpenOrders = onSnapshot(
-        query(collection(db, 'orders'), where('status', '==', 'searching')),
+        query(collection(db, 'orders'), where('status', '==', 'searching'), where('serviceType', 'in', services)),
         (snapshot) => {
             showOrdersMessage('');
             const nextOpenOrders = snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }));
@@ -2146,6 +2161,8 @@ function syncOrderWatches(user, driverId, driver, canTakeOrders) {
         );
     }
 
+    const nextServicesKey = allowedOrderServices(driver).join(',');
+    if (openServicesKey !== nextServicesKey) { stopOpenOrdersWatch(); openServicesKey = nextServicesKey; }
     startOwnOffersWatch();
     void withdrawUnavailableOffers();
     if (canViewOpenOrders()) { startOpenOrdersWatch(); startAuctionOrdersWatch(); }
@@ -2174,14 +2191,13 @@ async function acceptOrder(orderId) {
                 throw new Error('Вы уже заняты или кабинет ещё подключается к заказам.');
             }
             transaction.update(orderRef, {
-                ...reserveCommission(driverSnapshot.data(), Number(orderSnapshot.data().priceAmount)),
+                ...reserveCommission(driverSnapshot.data(), Number(orderSnapshot.data().priceAmount), orderSnapshot.data()),
                 status: 'accepted',
                 assignedDriverUid: currentUser.uid,
                 assignedDriverId: currentDriverId,
-                driverName: currentDriver.name || 'Водитель',
-                driverPhone: currentDriver.phone || '',
-                driverCar: currentDriver.car || '',
-                driverColor: currentDriver.color || '',
+                driverName: driverSnapshot.data().name || 'Водитель',
+                driverPhone: driverSnapshot.data().phone || '',
+                ...assignmentVehicle(driverSnapshot.data(), orderSnapshot.data()),
                 acceptedAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
@@ -2479,7 +2495,7 @@ function watchDriverProfile(user) {
 
             const driver = driverSnapshot.data();
             elements.profileName.textContent = `ID ${driver.driverNumber ?? account.driverId} · ${driver.name || 'Водитель'}`;
-            elements.profileCar.textContent = `${carDescription(driver)} · ${driverCategorySummary(driver)}`;
+            elements.profileCar.textContent = [driver.passengerEnabled !== false ? `${carDescription(driver)} · ${driverCategorySummary(driver)}` : '', driver.cargoProfile ? `Грузоперевозки: ${driver.cargoProfile.car || 'заполнит диспетчер'} · ${driver.cargoProfile.plate || ''} · ${driver.cargoProfile.status === 'active' ? 'доступны' : 'приостановлены'}` : ''].filter(Boolean).join(' / ');
             elements.profileBalance.textContent = `${Number(driver.balance) > 0 ? 'Долг' : 'На счёте'}: ${formatMoney(Math.abs(Number(driver.balance)))}`;
             setHidden(elements.pending, true);
             setHidden(elements.profile, false);

@@ -58,7 +58,6 @@ service cloud.firestore {
 
     function driverIsAvailable() {
       return mayOpenOrders()
-        && hasOrderFunds(get(linkedDriverDocument()).data)
         && exists(driverStateDocument())
         && get(driverStateDocument()).data.driverId == linkedDriverId()
         && get(driverStateDocument()).data.status == 'available'
@@ -297,6 +296,7 @@ service cloud.firestore {
         && get(orderDocument(data.orderId)).data.status == 'bidding'
         && get(orderDocument(data.orderId)).data.serviceType == 'auction'
         && data.round == get(orderDocument(data.orderId)).data.auctionRound
+        && passengerEnabled(get(linkedDriverDocument()).data)
         && data.driverName == get(linkedDriverDocument()).data.get('name', 'Водитель')
         && data.driverPhone == get(linkedDriverDocument()).data.get('phone', '')
         && data.driverCar == get(linkedDriverDocument()).data.get('car', '')
@@ -325,6 +325,7 @@ service cloud.firestore {
         && offer.round == before.auctionRound && offer.expiresAt > request.time
         && get(accountPath).data.active == true && get(accountPath).data.driverId == offer.driverId
         && get(driverDocument(offer.driverId)).data.status == 'active'
+        && passengerEnabled(get(driverDocument(offer.driverId)).data)
         && validReservation(after, get(driverDocument(offer.driverId)).data)
         && get(statePath).data.driverId == offer.driverId
         && get(statePath).data.status == 'available' && get(statePath).data.activeOrderId == ''
@@ -369,10 +370,12 @@ service cloud.firestore {
     function financeAmount(price, rate) { return math.round(price * rate) / 100.0; }
 
     function hasOrderFunds(driver) {
-      let rate = driver.get('commissionRate', 20);
+      let passengerRate = passengerEnabled(driver) ? driver.get('commissionRate', 20) : 101;
+      let cargoRate = driver.get('cargoProfile', {}).get('status', '') == 'active' ? driver.cargoProfile.commissionRate : 101;
+      let rate = math.min(passengerRate, cargoRate);
       let mode = driver.get('debtMode', 'unlimited');
       let ceiling = mode == 'none' ? 0 : driver.get('debtLimit', 0);
-      return mode == 'unlimited' || (rate == 0 ? driver.balance <= ceiling : driver.balance < ceiling);
+      return rate <= 100 && (mode == 'unlimited' || (rate == 0 ? driver.balance <= ceiling : driver.balance < ceiling));
     }
 
     function canFundOrder(driver, price) {
@@ -384,10 +387,11 @@ service cloud.firestore {
 
     function validReservation(order, driver) {
       let terms = order.get('commissionTerms', null);
-      return canFundOrder(driver, order.priceAmount)
-        && ((!hasFinanceSettings(driver) && terms == null)
+      let financial = financeForOrder(order, driver);
+      return canFundOrder(financial, order.priceAmount)
+        && ((!hasFinanceSettings(driver) && order.get('serviceType', 'taxi') != 'cargo' && terms == null)
           || (terms is map && terms.keys().hasOnly(['rate', 'baseAmount', 'amount'])
-            && terms.rate == driver.get('commissionRate', 20)
+            && terms.rate == financial.commissionRate
             && terms.baseAmount == order.priceAmount
             && terms.amount == financeAmount(order.priceAmount, terms.rate)));
     }
@@ -421,7 +425,7 @@ service cloud.firestore {
       let statePath = /databases/$(database)/documents/driverStates/$(order.assignedDriverUid);
       let accountPath = /databases/$(database)/documents/driverAccounts/$(order.assignedDriverUid);
       return validReservation(order, driver)
-        && (!hasFinanceSettings(driver) && order.get('commissionTerms', null) == null
+        && (!hasFinanceSettings(driver) && driver.get('cargoProfile', null) == null && order.get('serviceType', 'taxi') != 'cargo' && order.get('commissionTerms', null) == null
           || (driver.status == 'active' && get(accountPath).data.active == true && get(accountPath).data.driverId == order.assignedDriverId
             && (!exists(statePath) || (get(statePath).data.status != 'busy' && get(statePath).data.activeOrderId == ''))
             && getAfter(statePath).data.status == 'busy' && getAfter(statePath).data.activeOrderId == orderId
@@ -458,15 +462,49 @@ service cloud.firestore {
           && (!data.serviceCategories.hasAny(['minivan']) || data.passengerSeats >= 5));
     }
 
+    function passengerEnabled(driver) {
+      return driver.get('passengerEnabled', true) == true && driver.get('passengerStatus', 'active') == 'active';
+    }
+    function directionAllowed(order, driver) {
+      return (order.serviceType == 'cargo' && driver.get('cargoProfile', {}).get('status', '') == 'active')
+        || (order.serviceType in ['taxi', 'delivery', 'auction', 'soberDriver', 'assistance'] && passengerEnabled(driver));
+    }
+    function vehicleForOrder(order, driver) {
+      return order.get('serviceType', 'taxi') == 'cargo' ? driver.get('cargoProfile', {}) : driver;
+    }
+    function vehicleName(order, driver) {
+      let vehicle = vehicleForOrder(order, driver);
+      return vehicle.get('car', '') + (vehicle.get('plate', '') == '' ? '' : ' · ' + vehicle.plate);
+    }
+    function financeForOrder(order, driver) {
+      return {'balance': driver.balance, 'debtMode': driver.get('debtMode', 'unlimited'), 'debtLimit': driver.get('debtLimit', 0),
+        'commissionRate': vehicleForOrder(order, driver).get('commissionRate', driver.get('commissionRate', 20))};
+    }
+    function validServiceProfiles(driver) {
+      let cargo = driver.get('cargoProfile', null);
+      return driver.get('passengerEnabled', true) is bool
+        && driver.get('passengerStatus', 'active') in ['active', 'paused', 'blocked']
+        && (cargo == null || (cargo is map && cargo.keys().hasOnly(['status', 'car', 'color', 'plate', 'bodyType', 'dimensions', 'payloadKg', 'commissionRate'])
+          && cargo.status in ['active', 'paused', 'blocked']
+          && cargo.car is string && cargo.car.size() <= 120
+          && cargo.color is string && cargo.color.size() <= 120
+          && cargo.plate is string && cargo.plate.size() <= 120
+          && cargo.bodyType is string && cargo.bodyType.size() <= 120
+          && cargo.dimensions is string && cargo.dimensions.size() <= 120
+          && cargo.payloadKg is number && cargo.payloadKg >= 0 && cargo.payloadKg <= 100000
+          && (cargo.status != 'active' || (cargo.car.size() > 0 && cargo.payloadKg > 0))
+          && cargo.commissionRate is int && cargo.commissionRate >= 0 && cargo.commissionRate <= 100));
+    }
+
     function vehicleFitsOrder(order, driver) {
       let category = order.get('vehicleCategory', 'sedan');
       let passengers = order.get('passengerCount', 1);
       let seats = driver.get('passengerSeats', 4);
-      return order.get('serviceType', 'taxi') != 'taxi'
+      return directionAllowed(order, driver) && (order.get('serviceType', 'taxi') != 'taxi'
         || (category in ['sedan', 'wagon', 'minivan']
           && (category == 'sedan' || driver.get('serviceCategories', ['sedan']).hasAny([category]))
           && passengers is int && passengers >= 1 && passengers <= seats
-          && (category != 'minivan' || seats >= 5));
+          && (category != 'minivan' || seats >= 5)));
     }
 
     function customerPricingConfig() {
@@ -559,7 +597,9 @@ service cloud.firestore {
 
     function validAdminCategoryUpdate() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
-      return (!changed.hasAny(['vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax', 'priceAmount'])
+      return request.resource.data.serviceType == resource.data.serviceType
+        && (!activeOrderStatus(resource.data.status) || !activeOrderStatus(request.resource.data.status) || !changed.hasAny(['driverCar', 'driverColor']))
+        && (!changed.hasAny(['vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax', 'priceAmount'])
           || validVehicleFare(request.resource.data))
         && (!changed.hasAny(['assignedDriverUid', 'assignedDriverId', 'vehicleCategory', 'passengerCount'])
           || adminAssignsSuitableVehicle(request.resource.data));
@@ -673,8 +713,8 @@ service cloud.firestore {
         && request.resource.data.assignedDriverId == linkedDriverId()
         && request.resource.data.driverName == get(linkedDriverDocument()).data.get('name', 'Водитель')
         && request.resource.data.driverPhone == get(linkedDriverDocument()).data.get('phone', '')
-        && request.resource.data.driverCar == get(linkedDriverDocument()).data.get('car', '')
-        && request.resource.data.driverColor == get(linkedDriverDocument()).data.get('color', '')
+        && request.resource.data.driverCar == vehicleName(resource.data, get(linkedDriverDocument()).data)
+        && request.resource.data.driverColor == vehicleForOrder(resource.data, get(linkedDriverDocument()).data).get('color', '')
         && request.resource.data.acceptedAt == request.time
         && request.resource.data.updatedAt == request.time
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -813,7 +853,7 @@ service cloud.firestore {
         && request.resource.data.driverUid == request.auth.uid
         && request.resource.data.driverId == linkedDriverId()
         && request.resource.data.driverName == get(linkedDriverDocument()).data.get('name', 'Водитель')
-        && request.resource.data.driverCar == get(linkedDriverDocument()).data.get('car', '')
+        && request.resource.data.driverCar == vehicleName(resource.data, get(linkedDriverDocument()).data)
         && request.resource.data.sender == 'driver'
         && request.resource.data.readByDispatcher == false
         && request.resource.data.dispatcherReadAt == null;
@@ -847,9 +887,15 @@ service cloud.firestore {
 
     match /drivers/{driverId} {
       allow read: if isAdmin() || isLinkedDriver(driverId);
-      allow create: if isAdmin() && validVehicleProfile(request.resource.data) && adminFinanceProfileCreate(driverId);
+      allow create: if isAdmin() && validServiceProfiles(request.resource.data) && validVehicleProfile(request.resource.data) && adminFinanceProfileCreate(driverId);
       allow delete: if isAdmin();
-      allow update: if (isAdmin() && validVehicleProfile(request.resource.data) && adminFinanceProfileUpdate(driverId)) || driverAppliesOwnOnlineCommission(driverId);
+      allow update: if (isAdmin() && validServiceProfiles(request.resource.data) && validVehicleProfile(request.resource.data) && adminFinanceProfileUpdate(driverId)) || driverAppliesOwnOnlineCommission(driverId);
+    }
+
+    match /driverServiceHistory/{entryId} {
+      allow read: if isAdmin() || isLinkedDriver(resource.data.driverId);
+      allow create: if isAdmin() && request.resource.data.changedAt == request.time && request.resource.data.changedBy == request.auth.uid;
+      allow update, delete: if false;
     }
 
     match /driverAccounts/{accountUid} {
@@ -939,7 +985,7 @@ service cloud.firestore {
     }
 
     match /settings/{settingId} {
-      allow read: if settingId == 'customerPricing' || isAdmin() || (settingId == 'driverPortal' && mayOpenOrders());
+      allow read: if settingId in ['customerPricing', 'driverServices'] || isAdmin() || (settingId == 'driverPortal' && mayOpenOrders());
       allow create, update: if isAdmin() && (settingId != 'customerPricing' || validCustomerPricingConfig(request.resource.data));
       allow delete: if isAdmin();
     }
@@ -948,7 +994,7 @@ service cloud.firestore {
       allow create: if (isAdmin() && validVehicleFare(request.resource.data) && adminAssignsSuitableVehicle(request.resource.data) && adminFinanceOrderCreate(orderId)) || validClientOrderCreate();
       allow read: if isAdmin()
         || (signedIn() && resource.data.clientUid == request.auth.uid)
-        || (mayOpenOrders() && resource.data.status in ['searching', 'bidding'])
+        || (mayOpenOrders() && resource.data.status in ['searching', 'bidding'] && directionAllowed(resource.data, get(linkedDriverDocument()).data))
         || (signedIn() && resource.data.get('assignedDriverUid', '') == request.auth.uid);
       allow get: if signedIn() && orderId.matches(request.auth.uid + '_[a-zA-Z0-9-]+') && !exists(orderDocument(orderId));
       allow update: if (isAdmin() && validAdminCategoryUpdate() && adminFinanceOrderUpdate(orderId))

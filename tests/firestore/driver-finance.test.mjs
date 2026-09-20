@@ -1,3 +1,4 @@
+import { assignmentVehicle } from '../../functions/driver-services.mjs';
 import { retryPriceConflict } from '../../customer-pricing.js';
 import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
@@ -24,14 +25,14 @@ async function seed(financial={commissionRate:20,debtMode:'limited',debtLimit:10
  await order('order-a');
 }
 async function order(id, overrides={}) { return setDoc(doc(db('client'),'orders',id),{orderNumber:'TU-FINANCE',serviceType:'taxi',source:'online',clientUid:'client',fromAddress:'A',toAddress:'B',stops:[],wishes:'',scheduledFor:'',direction:'',priceText:'5000 ₸',priceAmount:5000,status:'searching',createdAt:serverTimestamp(),updatedAt:serverTimestamp(),...overrides}); }
-async function run(name, uid, args=[]) {
+async function run(name, uid, args=[], overrides={}) {
  const database=db(uid),profile=(await getDoc(doc(db('admin'),'drivers','d-a'))).data();
  const messages=[];
- const context={retryPriceConflict,...sdk,...finance,...auction,driverCanServeOrder,validVehicleProfile,ensureUidAvailable:async()=>{},parseBalance:value=>Number(value),validateUid:()=>true,db:database,currentUser:{uid},currentDriver:profile,currentDriverId:'d-a',currentCanTakeOrders:finance.hasOrderFunds(profile),currentBaseEligible:finance.hasOrderFunds(profile),orderActionInProgress:false,dispatcherCompletionInProgress:false,manualOrderAssignmentInProgress:false,
+ const context={document:{getElementById:id=>id==='existing-driver-number'?{value:'1'}:{}},drivers:[{id:'d-a',...profile}],driverDirectory:'cargo',assignmentVehicle,cargoServicesReady:true,retryPriceConflict,...sdk,...finance,...auction,driverCanServeOrder,validVehicleProfile,ensureUidAvailable:async()=>{},parseBalance:value=>Number(value),validateUid:()=>true,db:database,currentUser:{uid},currentDriver:profile,currentDriverId:'d-a',currentCanTakeOrders:finance.hasOrderFunds(profile),currentBaseEligible:finance.hasOrderFunds(profile),orderActionInProgress:false,dispatcherCompletionInProgress:false,manualOrderAssignmentInProgress:false,
  ACTIVE_ORDER_STATUSES:active,CANCELLABLE_ORDER_STATUSES:new Set([...active,'searching','bidding']),REQUEUEABLE_ORDER_STATUSES:new Set(['accepted','en_route','arrived']),REQUEUE_REASONS:[['car_issue','Неисправность автомобиля']],AVAILABLE_DRIVER_STATE:{status:'available',activeOrderId:''},
  window:{confirm:()=>true},console:{warn:()=>{},error:()=>{}},elements:{onlineOrdersMessage:{}},
  renderOnlineOrders:()=>{},showOrdersMessage:(message,success)=>messages.push({message,success}),setMessage:(el,message,success)=>messages.push({message,success}),formatMoney:value=>String(value)+' ₸',normalizeUid:value=>value,
- normalizedDriverState:snapshot=>({...snapshot.data(),exists:snapshot.exists()}),findManualAssignmentDriver:()=>({...profile,id:'d-a'}),driverAvailabilityInfo:()=>({key:'available'}),args};
+ normalizedDriverState:snapshot=>({...snapshot.data(),exists:snapshot.exists()}),findManualAssignmentDriver:()=>({...profile,id:'d-a'}),driverAvailabilityInfo:()=>({key:'available'}),args,...overrides};
  const source=['acceptOrder','advanceOrder','returnOrderToSearch','sendAuctionOffer'].includes(name)?driverSource:dispatcherSource;
  await Function(...Object.keys(context), extract(source,name)+'; return '+name+'(...args);')(...Object.values(context));
  const result = messages.at(-1); if (result && !result.success && result.message) console.log('ACTION RESULT:', name, result.message); return result;
@@ -91,7 +92,7 @@ try {
  await test('exact limit still shows open orders; recorded top-up restores acceptance',async()=>{
   await updateDoc(doc(db('admin'),'drivers','d-a'),{balance:0});await run('acceptOrder','driver-a',['order-a']);await arriveComplete();
   await order('order-b');assert.equal((await readDriver()).balance,1000);
-  assert.ok((await sdk.getDocs(sdk.query(sdk.collection(db('driver-a'),'orders'),sdk.where('status','==','searching')))).size > 0);
+  assert.ok((await sdk.getDocs(sdk.query(sdk.collection(db('driver-a'),'orders'),sdk.where('status','==','searching'),sdk.where('serviceType','==','taxi')))).size > 0);
   await updateDoc(doc(db('admin'),'drivers','d-a'),{balance:0});
   assert.ok((await run('acceptOrder','driver-a',['order-b'])).success);
  });
@@ -159,6 +160,80 @@ try {
   const refreshed={id:'d-a',...await readDriver()}; controls.balance.value='0'; controls.financeControls.read=()=>finance.financeSettings(refreshed);
   await updateDoc(doc(db('admin'),'drivers','d-a'),{balance:200});
   assert.ok(!(await run('saveDriver','admin',[refreshed,controls])).success);assert.equal((await readDriver()).balance,200);
+ });
+ await test('adding an existing person creates only a paused cargo card and retains identity and balance',async()=>{
+  const before=await readDriver();assert.ok((await run('addExistingDriver','admin')).success);
+  const after=await readDriver();assert.equal(after.authUid,before.authUid);assert.equal(after.balance,before.balance);assert.equal(after.car,before.car);assert.equal(after.cargoProfile.status,'paused');assert.equal(after.cargoProfile.payloadKg,0);
+  assert.ok(!(await run('addExistingDriver','admin')).success);
+ });
+ const cargoProfile = {status:'active',car:'Газель',color:'Белый',plate:'TEST-30',bodyType:'Фургон',dimensions:'3 × 2 × 2',payloadKg:1500,commissionRate:5};
+ async function cargoDriver(extra={}) {await updateDoc(doc(db('admin'),'drivers','d-a'),{cargoProfile,...extra});}
+ async function cargoOrder(id='cargo-a') {await setDoc(doc(db('admin'),'orders',id),{...await readOrder(),serviceType:'cargo',source:'dispatcher',clientUid:'client',serviceDetails:{cargoDescription:'Коробки',movers:0}});}
+ await test('passenger and cargo queries are isolated; a shared driver can query both',async()=>{
+  await cargoOrder();const d=db('driver-a');
+  await assertFails(getDoc(doc(d,'orders','cargo-a')));
+  await assertFails(sdk.getDocs(sdk.query(sdk.collection(d,'orders'),sdk.where('status','==','searching'))));
+  const list=services=>sdk.getDocs(sdk.query(sdk.collection(d,'orders'),sdk.where('status','==','searching'),sdk.where('serviceType','in',services)));
+  assert.equal((await list(['taxi'])).size,1);
+  await cargoDriver();assert.equal((await list(['taxi','cargo'])).size,2);
+  await cargoDriver({passengerEnabled:false});assert.equal((await list(['cargo'])).size,1);
+  await assertFails(list(['taxi']));await assertFails(getDoc(doc(d,'orders','order-a')));
+ });
+ await test('cargo-only driver uses truck and its 5% commission; completion settles shared balance',async()=>{
+  await cargoDriver({passengerEnabled:false});await cargoOrder();
+  assert.ok((await run('acceptOrder','driver-a',['cargo-a'])).success);
+  const accepted=await readOrder('cargo-a');assert.equal(accepted.driverCar,'Газель · TEST-30');assert.equal(accepted.driverColor,'Белый');assert.equal(accepted.commissionTerms.rate,5);
+  await updateDoc(doc(db('admin'),'drivers','d-a'),{cargoProfile:{...cargoProfile,status:'paused',commissionRate:90}});
+  assert.ok((await run('advanceOrder','driver-a',['cargo-a','accepted','arrived'])).success);
+  assert.ok((await run('advanceOrder','driver-a',['cargo-a','arrived','completed'])).success);
+  assert.equal((await readDriver()).balance,150);assert.equal((await readOrder('cargo-a')).commissionRate,5);
+ });
+ await test('concurrent passenger and cargo acceptance locks the same driver state',async()=>{
+  await cargoDriver();await cargoOrder();
+  await Promise.all([run('acceptOrder','driver-a',['order-a']),run('acceptOrder','driver-a',['cargo-a'])]);
+  const statuses=[(await readOrder()).status,(await readOrder('cargo-a')).status];assert.equal(statuses.filter(s=>s==='accepted').length,1);assert.equal(statuses.filter(s=>s==='searching').length,1);
+ });
+ await test('cargo vehicle and rate cannot be replaced with passenger values',async()=>{
+  await cargoDriver();await cargoOrder();const d=db('driver-a');
+  for(const bad of [{driverCar:''},{commissionTerms:{rate:20,baseAmount:5000,amount:1000}}]) {
+   const batch=writeBatch(d);batch.update(doc(d,'orders','cargo-a'),{status:'accepted',assignedDriverUid:'driver-a',assignedDriverId:'d-a',driverName:'Driver',driverPhone:'',driverCar:'Газель · TEST-30',driverColor:'Белый',acceptedAt:serverTimestamp(),updatedAt:serverTimestamp(),commissionTerms:{rate:5,baseAmount:5000,amount:250},...bad});
+   batch.update(doc(d,'driverStates','driver-a'),{status:'busy',activeOrderId:'cargo-a',lastSeen:serverTimestamp(),updatedAt:serverTimestamp()});await assertFails(batch.commit());
+  }
+  assert.ok((await run('acceptOrder','driver-a',['cargo-a'])).success);
+  await assertFails(updateDoc(doc(d,'orders','cargo-a'),{driverCar:'Другое авто'}));
+  await assertFails(updateDoc(doc(db('admin'),'orders','cargo-a'),{serviceType:'taxi'}));
+ });
+ await test('dispatcher assigns truck; pausing cargo keeps passenger direction available',async()=>{
+  await cargoDriver();await cargoOrder();assert.ok((await run('assignOrderManually','admin',['cargo-a','d-a'])).success);assert.equal((await readOrder('cargo-a')).driverCar,'Газель · TEST-30');
+  await run('cancelOnlineOrder','admin',[{id:'cargo-a',...await readOrder('cargo-a')}]);
+  await updateDoc(doc(db('admin'),'drivers','d-a'),{cargoProfile:{...cargoProfile,status:'blocked'}});
+  await cargoOrder('cargo-b');await assertFails(getDoc(doc(db('driver-a'),'orders','cargo-b')));assert.ok((await run('acceptOrder','driver-a',['order-a'])).success);
+ });
+ await test('driver cannot self-register another direction or change cargo commission',async()=>{
+  await assertFails(updateDoc(doc(db('driver-a'),'drivers','d-a'),{cargoProfile}));
+  await cargoDriver();await assertFails(updateDoc(doc(db('driver-a'),'drivers','d-a'),{'cargoProfile.commissionRate':0}));
+  await assertFails(updateDoc(doc(db('admin'),'drivers','d-a'),{cargoProfile:{...cargoProfile,payloadKg:0}}));
+  await assertFails(updateDoc(doc(db('admin'),'drivers','d-a'),{cargoProfile:{...cargoProfile,commissionRate:101}}));
+ });
+ await test('saving cargo commission preserves passenger car, rate, shared balance and account',async()=>{
+  await cargoDriver();const original={id:'d-a',...await readDriver()};
+  const controls={direction:'cargo',serviceStatus:{value:'active'},name:{value:'Driver'},phone:{value:''},car:{value:'Газель'},color:{value:'Белый'},balance:{value:'-100'},status:{value:'active'},uid:{value:'driver-a'},button:{},message:{},vehicleControls:{read:base=>({...cargoProfile,...base})},financeControls:{read:()=>({commissionRate:7,debtMode:'limited',debtLimit:1000})}};
+  await updateDoc(doc(db('admin'),'drivers','d-a'),{balance:50});assert.ok((await run('saveDriver','admin',[original,controls])).success);
+  const updated=await readDriver();assert.equal(updated.balance,50);assert.equal(updated.commissionRate,20);assert.equal(updated.car,'');assert.equal(updated.cargoProfile.commissionRate,7);assert.equal(updated.authUid,'driver-a');
+  const history=await sdk.getDocs(sdk.collection(db('admin'),'driverServiceHistory'));assert.equal(history.size,1);assert.equal(history.docs[0].data().next.commissionRate,7);
+ });
+ await test('new cargo registration creates one cargo-only person and cannot overwrite ID or Google link',async()=>{
+  const fields=Object.fromEntries(Object.entries({newDriverNumber:'30',newDriverName:'New cargo',newDriverPhone:'',newDriverCar:'Газель',newDriverColor:'Белый',newDriverBalance:'-100',newDriverUid:'cargo-new',newDriverStatus:'active'}).map(([key,value])=>[key,{value}]));
+  const form={...fields,addDriverButton:{},addDriverMessage:{},addDriverForm:{reset(){}}};
+  const controls={document:{getElementById:()=>({value:'cargo'})},elements:form,renderDrivers(){},updateNewDriverDirection(){},newDriverVehicleControls:{reset(){}},newDriverFinanceControls:{read:()=>({commissionRate:5,debtMode:'none',debtLimit:0}),reset(){}},newDriverCargoControls:{read:base=>({...cargoProfile,...base}),reset(){}}};
+  assert.ok((await run('addDriver','admin',[{preventDefault(){}}],controls)).success);
+  const driver=(await getDoc(doc(db('admin'),'drivers','30'))).data();assert.equal(driver.passengerEnabled,false);assert.equal(driver.car,'');assert.equal(driver.cargoProfile.car,'Газель');assert.equal(driver.authUid,'cargo-new');
+  assert.ok(!(await run('addDriver','admin',[{preventDefault(){}}],controls)).success);
+  fields.newDriverNumber.value='31';assert.ok(!(await run('addDriver','admin',[{preventDefault(){}}],controls)).success);assert.equal((await getDoc(doc(db('admin'),'drivers','31'))).exists(),false);
+ });
+ await test('legacy dual driver cannot bypass shared lock through unreserved dispatcher assignment',async()=>{
+  await seed({},-100);await cargoDriver();await cargoOrder();assert.ok((await run('acceptOrder','driver-a',['cargo-a'])).success);
+  await assertFails(updateDoc(doc(db('admin'),'orders','order-a'),{status:'accepted',assignedDriverUid:'driver-a',assignedDriverId:'d-a',driverName:'Driver',driverPhone:'',driverCar:'',driverColor:''}));
  });
  console.log(`ALL ${passed} DRIVER FINANCE CHECKS PASSED`);
 } finally {await env.cleanup();}

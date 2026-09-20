@@ -1,4 +1,4 @@
-import { VEHICLE_CATEGORIES, driverCategories, driverPassengerSeats } from './vehicle-categories.js?v=52';
+import { VEHICLE_CATEGORIES, driverCategories, driverPassengerSeats } from './vehicle-categories.js?v=69';
 let controlNumber = 0;
 export function createVehicleControls(driver = {}) {
   const id = `vehicle-profile-${++controlNumber}`;

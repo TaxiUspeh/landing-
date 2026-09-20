@@ -1,4 +1,4 @@
-import { financeSettings, validFinanceSettings, DEFAULT_FINANCE } from './driver-finance.js?v=60';
+import { financeSettings, validFinanceSettings, DEFAULT_FINANCE } from './driver-finance.js?v=69';
 export function createFinanceControls(driver = DEFAULT_FINANCE) {
     const element = document.createElement('fieldset'); element.className = 'vehicle-profile-controls';
     const legend = document.createElement('legend'); legend.textContent = 'Комиссия и лимит долга'; element.append(legend);

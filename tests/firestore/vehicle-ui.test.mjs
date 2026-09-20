@@ -1,3 +1,4 @@
+import { profileForOrder } from '../../functions/driver-services.mjs';
 import { createFinanceControls } from '../../driver-finance-controls.js';
 import { NEW_DRIVER_FINANCE } from '../../driver-finance.js';
 import { hasOrderFunds, fundingFor } from '../../driver-finance.js';
@@ -109,7 +110,7 @@ function extract(name) {
 const keys = ['ServiceType','PriceFrom','PriceTo','PriceFromLabel','PriceToLabel','Driver','From','To','Stops','Wishes','ScheduledFor'];
 const elements = Object.fromEntries(keys.map(key => ['phoneOrder'+key, dispatcher.window.document.getElementById('phone-order-'+key.replace(/[A-Z]/g, (c, i) => (i ? '-' : '')+c.toLowerCase()))]));
 for (const [key, el] of Object.entries(elements)) assert.ok(el, key);
-const context = vm.createContext({ document: dispatcher.window.document, elements, hasOrderFunds, fundingFor, calculateCategoryFare, formatCategoryFare, categoryLabel, driverCanServeOrder,
+const context = vm.createContext({ profileForOrder, document: dispatcher.window.document, elements, hasOrderFunds, fundingFor, calculateCategoryFare, formatCategoryFare, categoryLabel, driverCanServeOrder,
  drivers: [{ id:'1',authUid:'uid1',status:'active',balance:0,name:'Sedan' }, { id:'2',authUid:'uid2',status:'active',balance:0,name:'Minivan',serviceCategories:['sedan','minivan'],passengerSeats:7 }],
  normalizeUid: x => x, driverAvailabilityInfo: () => ({key:'available'}),
  DISPATCHER_ORDER_SERVICES: {taxi:{label:'Такси',route:true,stops:true,fromLabel:'Откуда *',toLabel:'Куда *'}}

@@ -1,4 +1,4 @@
-import { financeSettings, moneyRound } from './driver-finance.js?v=60';
+import { financeSettings, moneyRound } from './driver-finance.js?v=69';
 
 // Presentation only. Existing forms and their listeners keep their identity.
 export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = () => {}, onHistoryPeriodChange = () => {} } = {}) {
@@ -138,7 +138,8 @@ export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = ()
     }
     function updateFinance(driver, reserved = 0) {
         const settings = financeSettings(driver), balance = Number(driver.balance);
-        rate.textContent = `Комиссия ${settings.commissionRate}%`;
+        const rates = [driver.passengerEnabled !== false ? `Легковые ${settings.commissionRate}%` : '', driver.cargoProfile ? `Грузовые ${driver.cargoProfile.commissionRate}%` : ''].filter(Boolean).join(' · ');
+        rate.textContent = driver.cargoProfile ? rates : `Комиссия ${settings.commissionRate}%`;
         const fmt = value => `${value.toLocaleString('ru-RU')} ₸`;
         const limit = settings.debtMode === 'none' ? 'Без долга' : settings.debtMode === 'unlimited' ? 'Без ограничения' : fmt(settings.debtLimit);
         const available = settings.debtMode === 'unlimited' ? 'Без ограничения' : fmt(Math.max(0, moneyRound((settings.debtMode === 'none' ? 0 : settings.debtLimit) - balance - reserved)));
@@ -149,7 +150,7 @@ export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = ()
         debtDetails.open = finance.querySelector('details')?.open || false;
         debtDetails.append(node('summary', '', 'Лимит и доступная сумма'));
         const debtList = node('dl', ''); debtDetails.append(debtList);
-        for (const [label,value] of [['Комиссия',`${settings.commissionRate}%`],['Зарезервировано',fmt(reserved)],['Лимит долга',limit],['Доступно для комиссии',available]]) {
+        for (const [label,value] of [['Комиссия',driver.cargoProfile ? rates : `${settings.commissionRate}%`],['Зарезервировано',fmt(reserved)],['Лимит долга',limit],['Доступно для комиссии',available]]) {
             const row = node('div',''); row.append(node('dt','',label),node('dd','',value));
             (['Комиссия','Зарезервировано'].includes(label) ? list : debtList).append(row);
         }

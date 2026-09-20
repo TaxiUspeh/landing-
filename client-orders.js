@@ -1,7 +1,7 @@
 import { priceSettings, offerFields, priceDescription, increaseOrderPrice } from './customer-pricing.js?v=67';
 import { createPriceControl } from './customer-price-control.js?v=67';
-import { orderCategorySummary } from './vehicle-categories.js?v=52';
-import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=60';
+import { orderCategorySummary } from './vehicle-categories.js?v=69';
+import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=69';
 import { auth, db } from './firebase-config.js';
 import {
     onAuthStateChanged,

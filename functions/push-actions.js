@@ -95,7 +95,7 @@ function createPushActions({ db, messaging, Timestamp, HttpsError, logger, eligi
     const current = (await db.doc(`orders/${orderId}`).get()).data();
     if (priceIncrease ? current?.status !== 'searching' || current.priceRevision !== after.priceRevision || current.priceAmount !== after.priceAmount
       : current?.status !== 'accepted' || current.assignedDriverUid !== uid || current.assignmentSource !== 'dispatcher' || millis(current.acceptedAt) !== millis(after.acceptedAt)) return;
-    const subscriptions = await eligibleSubscriptions(uid);
+    const subscriptions = await eligibleSubscriptions(uid, current);
     if (!subscriptions.length) {
       logger.info('Нет устройств для пуша назначения.', { orderId });
       return;

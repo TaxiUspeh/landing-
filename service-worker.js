@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v69-driver-services';
+const CACHE_NAME = 'taxi-uspeh-v70-driver-filter-theme';
 const APP_SHELL = [
   './',
   './driver-finance.js?v=69',
@@ -32,7 +32,7 @@ const APP_SHELL = [
   './driver-install.js?v=61',
   './driver-portal.js?v=69',
   './driver-cabinet.js?v=69',
-  './styles/driver-cabinet.css?v=61',
+  './styles/driver-cabinet.css?v=70',
   './dispatcher.html',
   './dispatcher.js?v=69',
   './firebase-config.js',

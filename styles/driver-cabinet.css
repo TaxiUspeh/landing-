@@ -43,6 +43,18 @@ body.driver-cabinet-ready > footer { display: none; }
 .cabinet-order-filters { display: flex; gap: 4px; margin-bottom: 8px; }
 .cabinet-order-filters .cabinet-button { flex: 1; min-width: 0; padding: 8px 3px; font-size: 12px; color: var(--cabinet-muted); }
 .cabinet-order-filters [aria-pressed="true"] { color: var(--cabinet-blue); background: var(--cabinet-soft); border-color: var(--cabinet-blue); }
+#driver-service-filter {
+  display: block; width: 100%; min-height: 44px; margin: 10px 0 12px; padding: 10px 12px;
+  border: 1px solid var(--cabinet-border, #dbe3ed); border-radius: 10px;
+  font: inherit; font-size: 16px; font-weight: 600; cursor: pointer;
+}
+#driver-service-filter, #driver-service-filter option {
+  color: #17243a; background-color: #fff; color-scheme: light;
+}
+html.dark #driver-service-filter, html.dark #driver-service-filter option {
+  color: #edf3ff; background-color: #1b2739; color-scheme: dark;
+}
+#driver-service-filter:focus-visible { outline: 2px solid var(--cabinet-blue, #2154ce); outline-offset: 2px; }
 .driver-cabinet-ready #driver-online-orders { border: 0; border-radius: 0; margin: 0; }
 .driver-cabinet-ready #driver-online-orders > div:first-child { display: none; }
 .driver-cabinet-ready #driver-online-orders-list { padding: 0; }

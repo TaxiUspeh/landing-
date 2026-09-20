@@ -1,3 +1,4 @@
+import { orderTimeInfo } from '../../order-time.js';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
@@ -36,7 +37,7 @@ function fixture({ timeout = 15000 } = {}) {
     Object.defineProperty(dom.window.navigator, 'serviceWorker', { value: serviceWorker });
     dom.window.localStorage.setItem('taxi-uspeh-driver-push-device-id-v1', 'phone-1');
     const context = vm.createContext({
-        ...finance, ...categories, ...auction, initDriverCabinet,
+        ...finance, ...categories, ...auction, initDriverCabinet, orderTimeInfo,
         window: dom.window, document: dom.window.document, navigator: dom.window.navigator,
         localStorage: dom.window.localStorage, Notification: permission, atob, URLSearchParams,
         console: { warn: (...args) => calls.push(['warn', ...args]), error: (...args) => calls.push(['error', ...args]), log() {} },

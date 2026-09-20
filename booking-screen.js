@@ -2,7 +2,7 @@ import { createPriceControl } from './customer-price-control.js?v=67';
 import { DEFAULT_CUSTOMER_PRICING, priceLabel } from './customer-pricing.js?v=67';
 import { deliveryCityKey, deliveryPickupMode } from './delivery-pricing.js?v=66';
 import { createBookingSheet } from './booking-sheet.js?v=54';
-import { categoryForService, categoryCaption } from './vehicle-categories.js?v=52';
+import { categoryForService, categoryCaption } from './vehicle-categories.js?v=69';
 import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=60';
 
 export function initBookingScreen({ preview = false } = {}) {

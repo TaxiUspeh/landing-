@@ -1,10 +1,12 @@
+import { serviceEnabled, profileForOrder, assignmentVehicle } from './functions/driver-services.mjs?v=69';
+import { createCargoControls } from './cargo-profile-controls.js?v=69';
 import { initCustomerPricingSettings } from './customer-pricing-settings.js?v=67';
 import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=67';
-import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=60';
-import { createFinanceControls } from './driver-finance-controls.js?v=60';
-import { createVehicleControls } from './vehicle-category-controls.js?v=52';
-import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=52';
-import { currentAuctionOffer } from './auction-core.js?v=60';
+import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=69';
+import { createFinanceControls } from './driver-finance-controls.js?v=69';
+import { createVehicleControls } from './vehicle-category-controls.js?v=69';
+import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=69';
+import { currentAuctionOffer } from './auction-core.js?v=69';
 import { auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -1049,7 +1051,7 @@ function applyDriverAvailability(card, driver) {
     }
     if (detail) detail.textContent = info.detail;
     const financial = card.querySelector('[data-driver-finance-summary]');
-    if (financial) financial.textContent = financeSummary(driver, reservedCommission(orders.filter(order => String(order.assignedDriverId) === String(driver.id))));
+    if (financial) financial.textContent = financeSummary(profileForOrder(driver, {serviceType: card.dataset.driverDirection === 'cargo' ? 'cargo' : 'taxi'}), reservedCommission(orders.filter(order => String(order.assignedDriverId) === String(driver.id))));
 }
 
 function refreshDriverStatusIndicators() {
@@ -1088,10 +1090,19 @@ function createInput(labelText, className, value, options = {}) {
     return { label, input };
 }
 
+let driverDirectory = 'passenger';
+let cargoServicesReady = false;
+getDoc(doc(db, 'settings', 'driverServices')).then(snapshot => {
+    cargoServicesReady = snapshot.data()?.schemaVersion === 1;
+    if (!cargoServicesReady) document.getElementById('cargo-services-setup').hidden = false;
+}).catch(() => { document.getElementById('cargo-services-setup').hidden = false; });
 function renderDriverCard(driver) {
+    const cargo = driverDirectory === 'cargo';
+    const vehicle = profileForOrder(driver, { serviceType: cargo ? 'cargo' : 'taxi' });
     const card = document.createElement('article');
     card.className = 'rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 p-4';
     card.dataset.driverId = driver.id;
+    card.dataset.driverDirection = driverDirectory;
 
     const header = document.createElement('div');
     header.className = 'flex items-start gap-3 mb-4';
@@ -1102,7 +1113,7 @@ function renderDriverCard(driver) {
     title.textContent = `ID ${driver.driverNumber} · ${driver.name || 'Без имени'}`;
     const subtitle = document.createElement('p');
     subtitle.className = 'text-xs text-slate-500 dark:text-slate-400 truncate';
-    subtitle.textContent = [driver.car, driver.color].filter(Boolean).join(', ') || 'Автомобиль не указан';
+    subtitle.textContent = [vehicle.car, vehicle.color].filter(Boolean).join(', ') || 'Автомобиль не указан';
     titleWrap.append(title, subtitle);
 
     const badge = document.createElement('span');
@@ -1117,21 +1128,28 @@ function renderDriverCard(driver) {
     grid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3';
     const name = createInput('Имя', 'driver-name', driver.name);
     const phone = createInput('Телефон', 'driver-phone', driver.phone, { type: 'tel' });
-    const car = createInput('Автомобиль', 'driver-car', driver.car);
-    const color = createInput('Цвет', 'driver-color', driver.color);
+    const car = createInput('Автомобиль', 'driver-car', vehicle.car);
+    const color = createInput('Цвет', 'driver-color', vehicle.color);
     const balance = createInput('Баланс, ₸', 'driver-balance', driver.balance ?? 0, { type: 'number', step: '1', inputMode: 'numeric' });
-    const status = createInput('Статус', 'driver-status', driver.status || 'paused', {
+    const status = createInput('Общий доступ водителя', 'driver-status', driver.status || 'paused', {
         select: [['active', 'Активен'], ['paused', 'Приостановлен'], ['blocked', 'Заблокирован']]
     });
     const uid = createInput('Google UID водителя', 'driver-uid font-mono text-xs', driver.authUid, { placeholder: 'Не привязан' });
     uid.label.classList.add('sm:col-span-2');
     grid.append(name.label, phone.label, car.label, color.label, balance.label, status.label, uid.label);
 
-    const financeControls = createFinanceControls(driver);
+    const serviceStatus = createInput('Статус направления', 'driver-service-status', cargo ? driver.cargoProfile.status : driver.passengerStatus || 'active', {
+        select: [['active', 'Принимать заказы'], ['paused', 'Приостановлено'], ['blocked', 'Заблокировано']]
+    });
+    grid.append(serviceStatus.label);
+    const sharedHint = document.createElement('p'); sharedHint.className = 'vehicle-profile-wide text-xs text-slate-500';
+    sharedHint.textContent = 'Имя, телефон, Google UID, баланс и лимит долга общие для двух направлений. Автомобиль, статус направления и комиссия — отдельные.';
+    grid.append(sharedHint);
+    const financeControls = createFinanceControls(vehicle);
     grid.append(financeControls.element);
-    const vehicleControls = createVehicleControls(driver);
+    const vehicleControls = cargo ? createCargoControls(driver.cargoProfile) : createVehicleControls(driver);
     grid.append(vehicleControls.element);
-    subtitle.textContent += ` · ${driverCategorySummary(driver)}`;
+    subtitle.textContent += cargo ? ` · Грузоперевозки · ${driver.cargoProfile.payloadKg} кг` : ` · ${driverCategorySummary(driver)}`;
 
     const footer = document.createElement('div');
     footer.className = 'mt-4 flex flex-wrap items-center gap-3';
@@ -1152,16 +1170,16 @@ function renderDriverCard(driver) {
     message.setAttribute('role', 'status');
     footer.append(reportButton, saveButton, currentBalance, message);
     const history = document.createElement('details'); history.className = 'mt-3 text-sm';
-    const historyTitle = document.createElement('summary'); historyTitle.textContent = 'История комиссии и лимита';
+    const historyTitle = document.createElement('summary'); historyTitle.textContent = cargo ? 'История грузовой карточки и комиссии' : 'История комиссии и лимита';
     const historyList = document.createElement('div'); historyList.className = 'space-y-2 mt-2'; history.append(historyTitle, historyList);
     history.addEventListener('toggle', async () => {
         if (!history.open) return;
         historyList.textContent = 'Загружаем историю…';
         try {
-            const result = await getDocs(query(collection(db, 'driverFinanceHistory'), where('driverId', '==', driver.id)));
+            const result = await getDocs(query(collection(db, cargo ? 'driverServiceHistory' : 'driverFinanceHistory'), where('driverId', '==', driver.id)));
             historyList.replaceChildren();
             const records = result.docs.map(item => item.data()).sort((a, b) => (b.changedAt?.toMillis() || 0) - (a.changedAt?.toMillis() || 0));
-            const label = value => value ? `${value.commissionRate}% / ${value.debtMode === 'unlimited' ? 'без лимита' : value.debtMode === 'none' ? 'долг запрещён' : 'лимит ' + formatMoney(value.debtLimit)}` : 'Новый водитель';
+            const label = value => cargo ? (value ? `${value.car || 'Автомобиль не заполнен'} · ${value.status} · ${value.commissionRate}%` : 'Новая карточка') : value ? `${value.commissionRate}% / ${value.debtMode === 'unlimited' ? 'без лимита' : value.debtMode === 'none' ? 'долг запрещён' : 'лимит ' + formatMoney(value.debtLimit)}` : 'Новый водитель';
             for (const entry of records) { const row = document.createElement('p'); row.textContent = `${entry.changedAt?.toDate().toLocaleString('ru-RU') || ''}: ${label(entry.previous)} → ${label(entry.next)}. Изменил: ${entry.changedBy}`; historyList.append(row); }
             if (!records.length) historyList.textContent = 'Изменений пока нет.';
         } catch { historyList.textContent = 'История не загрузилась. Проверьте правила Firebase и интернет.'; }
@@ -1179,6 +1197,8 @@ function renderDriverCard(driver) {
         uid: uid.input,
         button: saveButton,
         vehicleControls,
+        direction: cargo ? 'cargo' : 'passenger',
+        serviceStatus: serviceStatus.input,
         financeControls,
         message
     }));
@@ -1190,9 +1210,8 @@ function renderDriverCard(driver) {
 function renderDrivers() {
     updateStats();
     const search = elements.driverSearch.value.trim().toLocaleLowerCase('ru');
-    const filtered = search
-        ? drivers.filter((driver) => driverMatchesSearch(driver, search))
-        : drivers;
+    const directoryDrivers = drivers.filter(driver => driverDirectory === 'cargo' ? !!driver.cargoProfile : driver.passengerEnabled !== false);
+    const filtered = directoryDrivers.filter(driver => !search || driverMatchesSearch(driver, search) || String(driver.cargoProfile?.car || '').toLocaleLowerCase('ru').includes(search));
 
     elements.driversList.replaceChildren();
     for (const driver of filtered) elements.driversList.append(renderDriverCard(driver));
@@ -1451,7 +1470,7 @@ function manualAssignmentCandidates(order = {}) {
         && normalizeUid(driver.authUid || '')
         && driverAvailabilityInfo(driver).key !== 'busy'
         && driverCanServeOrder(driver, order)
-        && hasOrderFunds(driver) && (order.priceAmount === undefined || fundingFor(driver, Number(order.priceAmount)).allowed));
+        && hasOrderFunds(driver) && (order.priceAmount === undefined || fundingFor(driver, Number(order.priceAmount), order).allowed));
 }
 
 function findManualAssignmentDriver(value) {
@@ -1461,14 +1480,15 @@ function findManualAssignmentDriver(value) {
         || String(driver.driverNumber ?? '') === normalizedValue) || null;
 }
 
-function manualAssignmentOptionLabel(driver) {
+function manualAssignmentOptionLabel(driver, order = {}) {
+    const vehicle = profileForOrder(driver, order);
     const availability = driverAvailabilityInfo(driver);
     const connectionLabel = availability.key === 'available'
         ? 'кабинет открыт'
         : availability.key === 'busy'
             ? 'занят'
             : 'кабинет закрыт';
-    return `ID ${driver.driverNumber ?? driver.id} · ${driver.name || 'Водитель'}${driver.car ? ` · ${driver.car}` : ''} · ${connectionLabel}`;
+    return `ID ${driver.driverNumber ?? driver.id} · ${driver.name || 'Водитель'}${vehicle.car ? ` · ${vehicle.car}` : ''} · ${connectionLabel}`;
 }
 
 function appendManualAssignmentControls(actions, order) {
@@ -1499,7 +1519,7 @@ function appendManualAssignmentControls(actions, order) {
     for (const driver of candidates) {
         const option = document.createElement('option');
         option.value = driver.id;
-        option.textContent = manualAssignmentOptionLabel(driver);
+        option.textContent = manualAssignmentOptionLabel(driver, order);
         select.append(option);
     }
     select.addEventListener('change', () => {
@@ -1685,7 +1705,7 @@ function populatePhoneOrderDrivers() {
     for (const driver of manualAssignmentCandidates(phoneVehicleRequest())) {
         const option = document.createElement('option');
         option.value = driver.id;
-        option.textContent = manualAssignmentOptionLabel(driver);
+        option.textContent = manualAssignmentOptionLabel(driver, phoneVehicleRequest());
         select.append(option);
     }
     if ([...select.options].some((option) => option.value === selected)) select.value = selected;
@@ -1946,14 +1966,13 @@ async function createPhoneOrder(event) {
 
                 transaction.set(orderRef, {
                     ...baseOrder,
-                    ...reserveCommission(driver, Number(baseOrder.priceAmount)),
+                    ...reserveCommission(driver, Number(baseOrder.priceAmount), baseOrder),
                     status: 'accepted',
                     assignedDriverUid: driverUid,
                     assignedDriverId: selectedDriver.id,
                     driverName: driver.name || 'Водитель',
                     driverPhone: driver.phone || '',
-                    driverCar: driver.car || '',
-                    driverColor: driver.color || '',
+                    ...assignmentVehicle(driver, baseOrder),
                     assignmentSource: 'dispatcher',
                     acceptedAt: serverTimestamp()
                 });
@@ -2347,14 +2366,13 @@ async function assignOrderManually(orderId, driverId) {
             }
 
             transaction.update(orderRef, {
-                ...reserveCommission(driver, Number(orderSnapshot.data().priceAmount)),
+                ...reserveCommission(driver, Number(orderSnapshot.data().priceAmount), orderSnapshot.data()),
                 status: 'accepted',
                 assignedDriverUid: driverUid,
                 assignedDriverId: selectedDriver.id,
                 driverName: driver.name || 'Водитель',
                 driverPhone: driver.phone || '',
-                driverCar: driver.car || '',
-                driverColor: driver.color || '',
+                ...assignmentVehicle(driver, orderSnapshot.data()),
                 assignmentSource: 'dispatcher',
                 acceptedAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
@@ -2616,11 +2634,17 @@ async function saveDriver(original, controls) {
         const name = controls.name.value.trim();
         const requestedBalance = parseBalance(controls.balance.value);
         const authUid = normalizeUid(controls.uid.value), status = controls.status.value;
-        const vehicleProfile = controls.vehicleControls.read(), financial = controls.financeControls.read();
+        const cargo = controls.direction === 'cargo';
+        if (cargo && !cargoServicesReady) throw new Error('Сначала подключите грузовые карточки в Firebase.');
+        const enteredFinance = controls.financeControls.read();
+        const financial = cargo ? { ...enteredFinance, commissionRate: original.commissionRate ?? 20 } : enteredFinance;
+        const vehicleProfile = cargo ? {} : controls.vehicleControls.read();
+        const cargoProfile = cargo ? controls.vehicleControls.read({ car: controls.car.value.trim(), color: controls.color.value.trim(),
+            status: controls.serviceStatus.value, commissionRate: enteredFinance.commissionRate }) : null;
         if (!name) throw new Error('Укажите имя водителя.');
         if (requestedBalance === null) throw new Error('Баланс должен быть числом.');
         if (!validateUid(authUid)) throw new Error('UID содержит недопустимые символы.');
-        if (!validVehicleProfile(vehicleProfile.serviceCategories, vehicleProfile.passengerSeats)) throw new Error('Укажите реальные пассажирские места: от 1 до 8, для минивэна — от 5 до 8.');
+        if (!cargo && !validVehicleProfile(vehicleProfile.serviceCategories, vehicleProfile.passengerSeats)) throw new Error('Укажите реальные пассажирские места: от 1 до 8, для минивэна — от 5 до 8.');
         await ensureUidAvailable(authUid, original.id);
         const driverRef = doc(db, 'drivers', original.id);
         const financeHistoryRef = doc(collection(db, 'driverFinanceHistory'));
@@ -2630,17 +2654,26 @@ async function saveDriver(original, controls) {
             if (!snapshot.exists()) throw new Error('Карточка водителя не найдена.');
             const fresh = snapshot.data(), oldUid = normalizeUid(fresh.authUid || '');
             const stateSnapshot = oldUid ? await transaction.get(doc(db, 'driverStates', oldUid)) : null;
+            const nextAccount = authUid ? await transaction.get(doc(db, 'driverAccounts', authUid)) : null;
+            if (nextAccount?.exists() && String(nextAccount.data().driverId) !== String(original.id)) throw new Error('Этот Google UID уже привязан к другому водителю.');
             if (oldUid !== normalizeUid(original.authUid || '')) throw new Error('Привязка водителя уже изменилась. Обновите карточку.');
             if (oldUid && oldUid !== authUid && stateSnapshot?.data()?.status === 'busy') throw new Error('Нельзя менять UID, пока водитель выполняет заказ.');
             const editedBalance = requestedBalance !== Number(original.balance);
             if (editedBalance && Number(fresh.balance) !== Number(original.balance)) throw new Error('Баланс уже изменился. Обновите карточку и повторите корректировку.');
             const balance = editedBalance ? requestedBalance : Number(fresh.balance);
+            if (cargo && JSON.stringify(fresh.cargoProfile) !== JSON.stringify(original.cargoProfile)) throw new Error('Грузовая карточка уже изменилась. Обновите её.');
+            if (!cargo && fresh.passengerEnabled === false) throw new Error('Легковое направление отключено. Обновите карточку.');
             if (JSON.stringify(financeSettings(fresh)) !== JSON.stringify(financeSettings(original))) throw new Error('Условия комиссии уже изменились. Обновите карточку.');
             const financeChanged = !Object.hasOwn(fresh, 'commissionRate') || JSON.stringify(financeSettings(fresh)) !== JSON.stringify(financial);
             transaction.update(driverRef, {
-                ...vehicleProfile, ...financial, name, phone: controls.phone.value.trim(), car: controls.car.value.trim(), color: controls.color.value.trim(),
+                ...vehicleProfile, ...financial, name, phone: controls.phone.value.trim(),
+                ...(cargo ? { cargoProfile } : { car: controls.car.value.trim(), color: controls.color.value.trim(), passengerStatus: controls.serviceStatus?.value || 'active' }),
                 balance, status, authUid, updatedAt: serverTimestamp(), updatedBy: currentUser.uid,
                 ...(financeChanged ? { financeChangeId: financeHistoryRef.id } : {})
+            });
+            if (cargo && JSON.stringify(fresh.cargoProfile) !== JSON.stringify(cargoProfile)) transaction.set(doc(collection(db, 'driverServiceHistory')), {
+                driverId: original.id, direction: 'cargo', previous: fresh.cargoProfile || null, next: cargoProfile,
+                changedAt: serverTimestamp(), changedBy: currentUser.uid
             });
             if (financeChanged) transaction.set(financeHistoryRef, {
                 driverId: original.id, previous: financeSettings(fresh), next: financial,
@@ -2671,8 +2704,10 @@ async function addDriver(event) {
     const balance = parseBalance(elements.newDriverBalance.value);
     const authUid = normalizeUid(elements.newDriverUid.value);
     const status = elements.newDriverStatus.value;
-    const vehicleProfile = newDriverVehicleControls.read();
-    if (!validVehicleProfile(vehicleProfile.serviceCategories, vehicleProfile.passengerSeats)) return setMessage(elements.addDriverMessage, 'Укажите реальные пассажирские места: от 1 до 8, для минивэна — от 5 до 8.');
+    const cargo = document.getElementById('new-driver-direction').value === 'cargo';
+    if (cargo && !cargoServicesReady) return setMessage(elements.addDriverMessage, 'Сначала подключите грузовые карточки в Firebase.');
+    const vehicleProfile = cargo ? {} : newDriverVehicleControls.read();
+    if (!cargo && !validVehicleProfile(vehicleProfile.serviceCategories, vehicleProfile.passengerSeats)) return setMessage(elements.addDriverMessage, 'Укажите реальные пассажирские места: от 1 до 8, для минивэна — от 5 до 8.');
 
     if (!/^\d+$/.test(rawNumber) || !Number.isInteger(driverNumber) || driverNumber <= 0) {
         return setMessage(elements.addDriverMessage, 'ID водителя должен быть положительным целым числом.');
@@ -2689,18 +2724,26 @@ async function addDriver(event) {
         if ((await getDoc(driverRef)).exists()) throw new Error(`Водитель с ID ${driverNumber} уже существует.`);
         await ensureUidAvailable(authUid, driverId);
 
-        const batch = writeBatch(db);
         const financial = newDriverFinanceControls.read();
+        const cargoProfile = cargo ? newDriverCargoControls.read({ car: elements.newDriverCar.value.trim(), color: elements.newDriverColor.value.trim(), status: 'active', commissionRate: financial.commissionRate }) : null;
         const financeHistoryRef = doc(collection(db, 'driverFinanceHistory'));
+        await runTransaction(db, async batch => {
+        if ((await batch.get(driverRef)).exists()) throw new Error(`ID ${driverNumber} уже занят. Для второй машины используйте «Добавить существующего водителя».`);
+        if (authUid) {
+            const account = await batch.get(doc(db, 'driverAccounts', authUid));
+            if (account.exists()) throw new Error('Этот Google UID уже связан с водителем.');
+        }
         batch.set(driverRef, {
             ...vehicleProfile,
+            passengerEnabled: !cargo,
+            ...(cargo ? { cargoProfile } : {}),
             ...financial,
             financeChangeId: financeHistoryRef.id,
             driverNumber,
             name,
             phone: elements.newDriverPhone.value.trim(),
-            car: elements.newDriverCar.value.trim(),
-            color: elements.newDriverColor.value.trim(),
+            car: cargo ? '' : elements.newDriverCar.value.trim(),
+            color: cargo ? '' : elements.newDriverColor.value.trim(),
             balance,
             status,
             authUid,
@@ -2729,8 +2772,13 @@ async function addDriver(event) {
         });
 
         batch.set(financeHistoryRef, { driverId, previous: null, next: financial, changedAt: serverTimestamp(), changedBy: currentUser.uid });
-        await batch.commit();
+        });
+        driverDirectory = cargo ? 'cargo' : 'passenger';
+        document.getElementById('driver-directory').value = driverDirectory;
+        renderDrivers();
         elements.addDriverForm.reset();
+        newDriverCargoControls.reset();
+        updateNewDriverDirection();
         newDriverVehicleControls.reset();
         newDriverFinanceControls.reset();
         elements.newDriverBalance.value = '0';
@@ -2742,6 +2790,31 @@ async function addDriver(event) {
     } finally {
         elements.addDriverButton.disabled = false;
     }
+}
+
+async function addExistingDriver() {
+    const id = document.getElementById('existing-driver-number').value.trim();
+    const direction = driverDirectory;
+    if (!cargoServicesReady) return setMessage(document.getElementById('existing-driver-message'), 'Сначала подключите грузовые карточки в Firebase.');
+    const driver = drivers.find(item => String(item.driverNumber) === id);
+    const message = document.getElementById('existing-driver-message');
+    if (!driver) return setMessage(message, 'Водитель не найден. Для нового человека используйте форму добавления.');
+    if (direction === 'cargo' ? !!driver.cargoProfile : driver.passengerEnabled !== false) return setMessage(message, 'У водителя уже есть карточка в этом разделе.');
+    if (!window.confirm(`Добавить ${direction === 'cargo' ? 'грузовую' : 'легковую'} карточку водителю ID ${driver.driverNumber} · ${driver.name} · ${driver.phone || 'телефон не указан'}? Вход и баланс останутся общими.`)) return;
+    try {
+        const ref = doc(db, 'drivers', driver.id);
+        await runTransaction(db, async transaction => {
+            const snapshot = await transaction.get(ref);
+            if (!snapshot.exists()) throw new Error('Водитель удалён. Обновите список.');
+            const fresh = snapshot.data();
+            if (fresh.authUid !== driver.authUid || fresh.name !== driver.name) throw new Error('Данные водителя изменились. Проверьте карточку заново.');
+            if (direction === 'cargo' ? !!fresh.cargoProfile : fresh.passengerEnabled !== false) throw new Error('Карточка уже добавлена.');
+            transaction.update(ref, direction === 'cargo'
+                ? { cargoProfile: { status: 'paused', car: '', color: '', plate: '', bodyType: '', dimensions: '', payloadKg: 0, commissionRate: fresh.commissionRate ?? 20 }, updatedAt: serverTimestamp(), updatedBy: currentUser.uid }
+                : { passengerEnabled: true, passengerStatus: 'paused', updatedAt: serverTimestamp(), updatedBy: currentUser.uid });
+        });
+        setMessage(message, 'Карточка добавлена и приостановлена. Заполните автомобиль и включите направление.', true);
+    } catch (error) { setMessage(message, error.message || 'Не удалось добавить карточку.'); }
 }
 
 async function loadOrdersLink() {
@@ -2789,6 +2862,19 @@ for (const id of ['phone-order-vehicle-category', 'phone-order-passenger-count',
 elements.loginButton.addEventListener('click', login);
 elements.logoutButton.addEventListener('click', () => signOut(auth));
 elements.copyUid.addEventListener('click', copyUid);
+const newDriverCargoControls = createCargoControls();
+document.getElementById('new-driver-vehicle-controls').append(newDriverCargoControls.element);
+function updateNewDriverDirection() {
+    const cargo = document.getElementById('new-driver-direction').value === 'cargo';
+    newDriverCargoControls.element.hidden = !cargo;
+    newDriverVehicleControls.element.hidden = cargo;
+    for (const control of newDriverVehicleControls.element.querySelectorAll('input, select')) control.disabled = cargo;
+}
+document.getElementById('new-driver-direction').addEventListener('change', updateNewDriverDirection);
+updateNewDriverDirection();
+document.getElementById('driver-directory').addEventListener('change', event => { driverDirectory = event.target.value; renderDrivers(); });
+document.getElementById('add-existing-driver').addEventListener('click', addExistingDriver);
+
 elements.addDriverForm.addEventListener('submit', addDriver);
 elements.ordersLinkForm.addEventListener('submit', saveOrdersLink);
 elements.dispatcherMessagesForm.addEventListener('submit', (event) => void sendDispatcherMessage(event));

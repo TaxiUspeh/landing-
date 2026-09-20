@@ -39,7 +39,7 @@ try {
  await test('concurrent raises cannot lower the current price',async()=>{await make();await Promise.allSettled([raise(5000,'a'),raise(6000,'b')]);assert.equal((await getDoc(doc(client,'orders','order'))).data().priceAmount,6000);});
  await test('all active registered drivers can read, including busy/no-funds; blocked and anonymous cannot',async()=>{
   await make();await env.withSecurityRulesDisabled(ctx=>updateDoc(doc(ctx.firestore(),'drivers','d'),{balance:100000,debtMode:'none'}));await updateDoc(doc(admin,'driverStates','driver'),{status:'busy',activeOrderId:'another'});
-  const list=d=>getDocs(query(collection(d,'orders'),where('status','==','searching')));await assertSucceeds(list(driver));await assertFails(list(db('blocked')));await assertFails(list(db('stranger')));await assertFails(list(db(null)));
+  const list=d=>getDocs(query(collection(d,'orders'),where('status','==','searching'),where('serviceType','==','taxi')));await assertSucceeds(list(driver));await assertFails(list(db('blocked')));await assertFails(list(db('stranger')));await assertFails(list(db(null)));
  });
  await test('public settings controlled only by dispatcher and enforced on raises',async()=>{
   await assertSucceeds(getDoc(doc(db(null),'settings','customerPricing')));await assertFails(setDoc(doc(client,'settings','customerPricing'),priceSettings()));

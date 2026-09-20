@@ -1,3 +1,4 @@
+import { profileForOrder, serviceEnabled } from './functions/driver-services.mjs?v=69';
 // Positive balance is debt; negative balance is prepaid credit (existing storage convention).
 export const DEFAULT_FINANCE = Object.freeze({ commissionRate: 20, debtMode: 'unlimited', debtLimit: 0 });
 export const NEW_DRIVER_FINANCE = Object.freeze({ commissionRate: 20, debtMode: 'none', debtLimit: 0 });
@@ -16,7 +17,8 @@ export function commissionFor(price, rate) {
     if (!Number.isFinite(price) || price < 0 || price > 10000000 || !Number.isInteger(rate) || rate < 0 || rate > 100) throw new Error('Некорректная цена или процент комиссии.');
     return Math.round(price * rate) / 100;
 }
-export function fundingFor(driver, price) {
+export function fundingFor(driver, price, order = {}) {
+    driver = profileForOrder(driver, order);
     const settings = financeSettings(driver), balance = Number(driver.balance);
     if (!Number.isFinite(price) || price <= 0 || price > 10000000) return { allowed: false, reason: 'Стоимость заказа должен уточнить диспетчер.', shortfall: null };
     if (!validFinanceSettings(settings) || !Number.isFinite(balance)) return { allowed: false, reason: 'Попросите диспетчера проверить баланс и условия комиссии.', shortfall: null };
@@ -27,11 +29,17 @@ export function fundingFor(driver, price) {
         reason: shortfall ? `Недостаточно средств для комиссии. Пополните баланс на ${shortfall.toLocaleString('ru-RU')} ₸.` : '' };
 }
 export function hasOrderFunds(driver) {
-    const settings = financeSettings(driver), balance = Number(driver.balance);
-    if (!validFinanceSettings(settings) || !Number.isFinite(balance)) return false;
-    return settings.debtMode === 'unlimited' || (settings.commissionRate === 0 ? balance <= (settings.debtMode === 'none' ? 0 : settings.debtLimit) : balance < (settings.debtMode === 'none' ? 0 : settings.debtLimit));
+    return ['passenger', 'cargo'].some(direction => {
+        if (!serviceEnabled(driver, direction)) return false;
+        const settings = financeSettings(profileForOrder(driver, { serviceType: direction === 'cargo' ? 'cargo' : 'taxi' }));
+        const balance = Number(driver.balance);
+        if (!validFinanceSettings(settings) || !Number.isFinite(balance)) return false;
+        const ceiling = settings.debtMode === 'none' ? 0 : settings.debtLimit;
+        return settings.debtMode === 'unlimited' || (settings.commissionRate === 0 ? balance <= ceiling : balance < ceiling);
+    });
 }
-export function reserveCommission(driver, price) {
+export function reserveCommission(driver, price, order = {}) {
+    driver = profileForOrder(driver, order);
     const funding = fundingFor(driver, price);
     if (!funding.allowed) throw new Error(funding.reason);
     // Legacy profiles continue to work before the owner publishes the new rules.

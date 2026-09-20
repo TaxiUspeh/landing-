@@ -23,7 +23,8 @@ function chunks(values, size) {
   return result;
 }
 
-async function eligibleDriverPushSubscriptions(targetDriverUid = '') {
+async function eligibleDriverPushSubscriptions(targetDriverUid = '', order = null) {
+  const { eligiblePushDevice } = await import('./driver-services.mjs');
   const tokenSnapshot = await db.collection('driverPushTokens').where('enabled', '==', true).get();
   if (tokenSnapshot.empty) return [];
 
@@ -49,15 +50,7 @@ async function eligibleDriverPushSubscriptions(targetDriverUid = '') {
     const driverId = String(subscription.driverId || '');
     const account = accountsByUid.get(uid);
     const driver = driversById.get(driverId);
-    return Boolean(
-      typeof subscription.token === 'string'
-      && subscription.token.length > 0
-      && (!targetDriverUid || uid === targetDriverUid)
-      && account?.active === true
-      && String(account.driverId || '') === driverId
-      && driver?.status === 'active'
-      && driver.authUid === uid
-    );
+    return eligiblePushDevice(subscription, account, driver, targetDriverUid, order);
   });
 }
 
@@ -74,7 +67,7 @@ exports.notifyDriversOfNewOnlineOrder = onDocumentCreated('orders/{orderId}', as
     && assignedDriverUid;
   if (!sendToAllDrivers && !sendToAssignedDriver) return;
 
-  const subscriptions = await eligibleDriverPushSubscriptions(sendToAssignedDriver ? assignedDriverUid : '');
+  const subscriptions = await eligibleDriverPushSubscriptions(sendToAssignedDriver ? assignedDriverUid : '', order);
   if (!subscriptions.length) {
     logger.info('Нет активных устройств для пуша заказа.', { orderId: event.params.orderId });
     return;
@@ -89,7 +82,7 @@ exports.notifyDriversOfNewOnlineOrder = onDocumentCreated('orders/{orderId}', as
       title: sendToAssignedDriver
         ? 'Диспетчер назначил заказ'
         : order.source === 'dispatcher' ? 'Новый заказ от диспетчера' : 'Новый онлайн-заказ',
-      body: 'Откройте кабинет, чтобы посмотреть маршрут и цену.',
+      body: order.serviceType === 'cargo' ? 'Грузоперевозка: откройте кабинет, чтобы посмотреть маршрут и цену.' : 'Откройте кабинет, чтобы посмотреть маршрут и цену.',
       url
     },
     webpush: {

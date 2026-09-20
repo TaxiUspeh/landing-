@@ -13,3 +13,5 @@
 
 .vehicle-profile-controls select { width: 100%; min-height: 46px; border: 1px solid #64748b; border-radius: 8px; padding: 8px; background: #fff; color: #172554; font-size: 16px; }
 .vehicle-profile-controls [hidden] { display: none !important; }
+
+.vehicle-profile-controls[hidden], .vehicle-profile-wide[hidden] { display: none !important; }

@@ -605,6 +605,25 @@ service cloud.firestore {
           || adminAssignsSuitableVehicle(request.resource.data));
     }
 
+    function validRouteCoordinate(point) {
+      return point == null || (point is map && point.keys().hasOnly(['lat', 'lon'])
+        && point.keys().hasAll(['lat', 'lon'])
+        && point.lat is number && point.lat >= -90 && point.lat <= 90
+        && point.lon is number && point.lon >= -180 && point.lon <= 180);
+    }
+
+    function validRouteCoordinates(data) {
+      let points = data.get('routeCoordinates', []);
+      return !data.keys().hasAny(['routeCoordinates']) || (points is list
+        && points.size() == data.stops.size() + 2 && points.size() >= 2 && points.size() <= 7
+        && validRouteCoordinate(points[0]) && validRouteCoordinate(points[1])
+        && (points.size() < 3 || validRouteCoordinate(points[2]))
+        && (points.size() < 4 || validRouteCoordinate(points[3]))
+        && (points.size() < 5 || validRouteCoordinate(points[4]))
+        && (points.size() < 6 || validRouteCoordinate(points[5]))
+        && (points.size() < 7 || validRouteCoordinate(points[6])));
+    }
+
     function validClientOrderCreate() {
       return signedIn()
         && request.resource.data.keys().hasOnly([
@@ -614,7 +633,7 @@ service cloud.firestore {
           'createdAt', 'updatedAt', 'proposedPrice', 'auctionRound',
           'vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax',
           'calculatedPrice', 'customerOfferPrice', 'finalDisplayedPrice', 'pricingType', 'calculationType',
-          'priceUpdatedAt', 'customerIncreasedPrice', 'priceRevision', 'routeDistanceMeters'
+          'priceUpdatedAt', 'customerIncreasedPrice', 'priceRevision', 'routeDistanceMeters', 'routeCoordinates'
         ])
         && request.resource.data.clientUid == request.auth.uid
         && request.resource.data.serviceType in ['taxi', 'delivery', 'auction']
@@ -636,6 +655,7 @@ service cloud.firestore {
         && request.resource.data.toAddress.size() <= 240
         && request.resource.data.stops is list
         && request.resource.data.stops.size() <= 5
+        && validRouteCoordinates(request.resource.data)
         && request.resource.data.wishes is string
         && request.resource.data.wishes.size() <= 500
         && request.resource.data.scheduledFor is string
@@ -986,6 +1006,8 @@ service cloud.firestore {
 
     match /settings/{settingId} {
       allow read: if settingId in ['customerPricing', 'driverServices'] || isAdmin() || (settingId == 'driverPortal' && mayOpenOrders());
+      // A successful server read, even for an absent document, confirms v73 coordinate support.
+      allow get: if settingId == 'bookingCoordinates';
       allow create, update: if isAdmin() && (settingId != 'customerPricing' || validCustomerPricingConfig(request.resource.data));
       allow delete: if isAdmin();
     }

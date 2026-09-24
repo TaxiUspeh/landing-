@@ -1,5 +1,6 @@
+import { addressWithCity } from './booking-core.js?v=60';
 import { priceSettings, offerFields, priceDescription, increaseOrderPrice } from './customer-pricing.js?v=67';
-import { createPriceControl } from './customer-price-control.js?v=67';
+import { createPriceControl } from './customer-price-control.js?v=73';
 import { orderCategorySummary } from './vehicle-categories.js?v=69';
 import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=69';
 import { auth, db } from './firebase-config.js';
@@ -480,8 +481,13 @@ async function createOnlineOrder() {
     }
 
     const vehicleRequest = window.bookingScreen?.vehicleRequest() || { vehicleCategory: 'sedan', passengerCount: 1 };
-    const quotedFare = window.getTaxiFareForOrder?.();
-    const offered = window.getCustomerPriceOffer?.('taxi') ?? null;
+    const selection = window.getCustomerPriceSelection?.('taxi');
+    const quotedFare = selection?.calculatedPrice === null ? null : window.getTaxiFareForOrder?.();
+    const offered = selection?.amount ?? window.getCustomerPriceOffer?.('taxi') ?? null;
+    const route = window.bookingScreen?.orderRoute?.('taxi');
+    const stops = route ? route.stops.map(point => addressWithCity(point)) : collectStops();
+    const scheduledFor = document.getElementById('taxiDateTime')?.value || '';
+    const wishes = document.getElementById('taxiWishes')?.value.trim() || '';
     let pricing;
     try { pricing = customerOrderPricing('taxi', quotedFare?.priceMax ?? null, offered, quotedFare?.calculationType || 'tariff'); }
     catch (e) { setStatus(e.message, false, 'taxi'); return; }
@@ -500,16 +506,14 @@ async function createOnlineOrder() {
     void prepareClientOrderSound();
     setActionBusy(true, 'taxi');
     try {
-        const fromCity = document.getElementById('taxiFromCitySelect')?.value || 'Белоусовка';
-        const toCity = document.getElementById('taxiCitySelect')?.value || 'Белоусовка';
-        const fromAddress = `${rawFromAddress} (${fromCity})`;
-        const toAddress = `${rawToAddress} (${toCity})`;
+        const fromCity = route ? route.from.city : document.getElementById('taxiFromCitySelect')?.value || 'Белоусовка';
+        const toCity = route ? route.to.city : document.getElementById('taxiCitySelect')?.value || 'Белоусовка';
+        const fromAddress = fromCity ? `${rawFromAddress} (${fromCity})` : rawFromAddress;
+        const toAddress = toCity ? `${rawToAddress} (${toCity})` : rawToAddress;
         const user = await ensureSignedIn();
         const orderRef = customerOrderReference(user);
         const contactRef = doc(db, 'orderContacts', orderRef.id);
         const direction = toCity === 'Белоусовка' ? '' : toCity;
-        const scheduledFor = document.getElementById('taxiDateTime')?.value || '';
-        const wishes = document.getElementById('taxiWishes')?.value.trim() || '';
         const batch = customerOrderBatch(orderRef, user);
 
         batch.set(orderRef, {
@@ -520,7 +524,8 @@ async function createOnlineOrder() {
             clientUid: user.uid,
             fromAddress,
             toAddress,
-            stops: collectStops(),
+            stops,
+            ...coordinateFields(route),
             wishes,
             scheduledFor,
             direction,
@@ -552,8 +557,8 @@ async function createOnlineOrder() {
     } catch (error) {
         console.error('Онлайн-заказ не создан:', error);
         const message = error.code === 'permission-denied'
-            ? 'Онлайн-заказы ещё не включены в правилах Firebase. Пока используйте WhatsApp.'
-            : 'Не удалось отправить онлайн-заказ. Проверьте интернет или используйте WhatsApp.';
+            ? 'Не удалось сохранить заказ. Повторите отправку или свяжитесь с диспетчером.'
+            : 'Не удалось отправить заказ. Проверьте интернет и повторите отправку.';
         setStatus(message, false, 'taxi');
         const pending = pendingSubmission(); if (pending?.writes) showPendingSubmission(pending);
     } finally {
@@ -564,7 +569,6 @@ async function createOnlineOrder() {
 function customerOrderPricing(service, calculated, offered, type) {
     if (!window.customerPricingReady) return null;
     if (calculated === null && offered === null) return null;
-    if (calculated === null && (service === 'taxi' ? window.getTaxiPriceState?.() : window.getDeliveryPriceState?.()) !== 'unavailable') throw new Error('Дождитесь окончания расчёта.');
     return offerFields(calculated, offered, service, window.customerPriceSettings, type);
 }
 const PENDING_SUBMISSION_KEY = 'taxi_uspeh_pending_submission_v67';
@@ -638,6 +642,17 @@ function updatePriceControls(order, view) {
       service: order.serviceType, current: order.priceAmount, calculated: order.calculatedPrice ?? null,
       config: window.customerPriceSettings || priceSettings(), key: activeOrderId });
 }
+function coordinateFields(route) {
+    return window.bookingCoordinatesReady && route?.coordinates.some(Boolean) ? { routeCoordinates: route.coordinates } : {};
+}
+async function loadBookingCoordinates() {
+    try {
+        await getDocFromServer(doc(db, 'settings', 'bookingCoordinates'));
+        window.bookingCoordinatesReady = true;
+    } catch { window.bookingCoordinatesReady = false; }
+}
+void loadBookingCoordinates();
+window.addEventListener('online', () => { void loadBookingCoordinates(); });
 async function loadCustomerPricing() {
     try {
         const snapshot = await getDocFromServer(doc(db, 'settings', 'customerPricing'));
@@ -684,8 +699,10 @@ async function createOnlineDeliveryOrder() {
     }
 
     // Capture the displayed quote before authentication/network work can refresh the model.
-    const quote = window.getDeliveryFareForOrder?.();
-    const offered = window.getCustomerPriceOffer?.('delivery') ?? null;
+    const selection = window.getCustomerPriceSelection?.('delivery');
+    const quote = selection?.calculatedPrice === null ? null : window.getDeliveryFareForOrder?.();
+    const offered = selection?.amount ?? window.getCustomerPriceOffer?.('delivery') ?? null;
+    const route = window.bookingScreen?.orderRoute?.('delivery');
     let pricing;
     try { pricing = customerOrderPricing('delivery', quote?.priceAmount ?? null, offered, quote?.local ? 'delivery_local' : 'delivery_distance'); }
     catch (e) { setStatus(e.message, false, 'delivery'); return; }
@@ -698,8 +715,8 @@ async function createOnlineDeliveryOrder() {
     void prepareClientOrderSound();
     setActionBusy(true, 'delivery');
     try {
-        const deliveryCity = document.getElementById('deliveryCitySelect')?.value || 'Белоусовка';
-        const toAddress = `${rawDeliveryAddress} (${deliveryCity})`;
+        const deliveryCity = route ? route.to.city : document.getElementById('deliveryCitySelect')?.value || 'Белоусовка';
+        const toAddress = deliveryCity ? `${rawDeliveryAddress} (${deliveryCity})` : rawDeliveryAddress;
         const fromAddress = store ? `Магазин: ${store}` : 'Доставка';
         const user = await ensureSignedIn();
         const orderRef = customerOrderReference(user);
@@ -714,6 +731,7 @@ async function createOnlineDeliveryOrder() {
             fromAddress,
             toAddress,
             stops: bookingDelivery?.stops || [],
+            ...coordinateFields(route),
             wishes: bookingDelivery?.wishes || '',
             scheduledFor: '',
             direction: deliveryCity === 'Белоусовка' ? '' : deliveryCity,
@@ -745,8 +763,8 @@ async function createOnlineDeliveryOrder() {
     } catch (error) {
         console.error('Онлайн-доставка не создана:', error);
         const message = error.code === 'permission-denied'
-            ? 'Онлайн-доставка ещё не включена в правилах Firebase. Пока используйте WhatsApp.'
-            : 'Не удалось отправить онлайн-доставку. Проверьте интернет или используйте WhatsApp.';
+            ? 'Не удалось сохранить доставку. Повторите отправку или свяжитесь с диспетчером.'
+            : 'Не удалось отправить доставку. Проверьте интернет и повторите отправку.';
         setStatus(message, false, 'delivery');
         const pending = pendingSubmission(); if (pending?.writes) showPendingSubmission(pending);
     } finally {

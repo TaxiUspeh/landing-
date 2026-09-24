@@ -22,6 +22,18 @@ try {
   await assertFails(make('zero',{priceAmount:0}));await assertFails(make('tamper',{calculatedPrice:9000}));await assertFails(make('negative',{customerOfferPrice:-1}));
   await assertFails(make('bad-category',{vehicleCategory:'minivan',passengerCount:5,basePriceMin:800,basePriceMax:800}));
  });
+ await test('coordinate support is public; selected route positions are bounded, aligned and immutable',async()=>{
+  await assertSucceeds(getDoc(doc(db(null),'settings','bookingCoordinates')));
+  await assertFails(setDoc(doc(client,'settings','bookingCoordinates'),{}));
+  const fields={...offerFields(null,1701,'taxi',priceSettings()),fromAddress:'Чапаева көшесі, у поворота',toAddress:'Точка на карте: 50.12345, 82.54321',stops:['Трасса у поворота'],routeCoordinates:[null,{lat:50.13,lon:82.6},{lat:50.12345,lon:82.54321}],routeDistanceMeters:null};
+  await make('geo',fields);
+  assert.equal((await getDoc(doc(driver,'orders','geo'))).data().routeCoordinates[2].lat,50.12345);
+  await assertFails(updateDoc(doc(client,'orders','geo'),{routeCoordinates:[null,null,null]}));
+  for (const coords of [[null], [null,null,null,null], [null,{lat:91,lon:0},null], [null,{lat:0,lon:181},null], [null,{lat:'50',lon:82},null], [null,{lat:50,lon:82,private:'x'},null]]) {
+    await assertFails(make('bad-geo',{...fields,routeCoordinates:coords}));
+  }
+  await make('geo-minivan',{...fields,vehicleCategory:'minivan',passengerCount:5,basePriceMin:0,basePriceMax:0});
+ });
  await test('raise preserves original, audit is atomic, same operation retry does not raise twice',async()=>{
   await make();await raise();await raise();let o=(await getDoc(doc(client,'orders','order'))).data();assert.equal(o.priceAmount,5000);assert.equal(o.calculatedPrice,4232);assert.equal(o.priceRevision,1);
   assert.equal((await getDocs(collection(client,'orders','order','priceChanges'))).size,1);

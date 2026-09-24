@@ -2060,10 +2060,10 @@
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
         import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=69";
-        import { initBookingScreen } from "./booking-screen.js?v=69";
+        import { initBookingScreen } from "./booking-screen.js?v=73";
         import { normalizeCity } from "./booking-core.js?v=60";
         import { selectPriceAdjustment, adjustmentText } from "./pricing-adjustments.js?v=63";
-        import { createDeliveryPricing } from "./delivery-pricing.js?v=66";
+        import { createDeliveryPricing } from "./delivery-pricing.js?v=73";
         import { publishedRouteFare, distanceFare, formatTaxiFare } from "./taxi-pricing.js?v=67";
         import { initClientHome } from "./client-home.js?v=60";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -2215,6 +2215,8 @@
         }
 
         function getTaxiRatePoints() {
+            const selected = window.bookingScreen?.taxiRoutePoints?.();
+            if (selected) return selected;
             const fromAddress = document.getElementById('taxiFrom')?.value.trim() || '';
             const toAddress = document.getElementById('taxiTo')?.value.trim() || '';
             return [
@@ -4930,6 +4932,6 @@
         initClientHome();
 
     </script>
-    <script type="module" src="./client-orders.js?v=69"></script>
+    <script type="module" src="./client-orders.js?v=73"></script>
 </body>
 </html>

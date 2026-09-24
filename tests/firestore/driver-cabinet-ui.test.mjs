@@ -1,3 +1,4 @@
+import { navigationRoute } from '../../booking-route.js';
 import { normalizeCity } from '../../booking-core.js';
 import { priceDescription } from '../../customer-pricing.js';
 import { orderTimeInfo } from '../../order-time.js';
@@ -20,7 +21,7 @@ const original = Object.fromEntries(['driver-logout-button','driver-dispatcher-c
 const events = [];
 let authListener;
 const context = vm.createContext({
-    ...finance, ...categories, ...auction, initDriverCabinet, orderTimeInfo, normalizeCity, priceDescription,
+    ...finance, ...categories, ...auction, navigationRoute, initDriverCabinet, orderTimeInfo, normalizeCity, priceDescription,
     document, window, navigator:window.navigator, localStorage:window.localStorage,
     URLSearchParams, console, setTimeout:()=>1, clearTimeout:()=>{}, setInterval:()=>1, clearInterval:()=>{},
     requestAnimationFrame:callback=>callback(), auth:{}, db:{}, googleProvider:{},

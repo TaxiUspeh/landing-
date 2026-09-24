@@ -31,7 +31,7 @@ function harness(from = 'Белоусовка', to = 'Белоусовка') {
     elements:{customerName:{value:''},customerPhone:{value:'+77000000000'}}, normalizePhone:x=>x||'',validPhone:()=>true,
     prepareClientOrderSound:()=>{},setActionBusy:()=>{},ensureSignedIn:async()=>({uid:'customer'}),db:{},
     doc:(...args)=>({id:args.at(-1)}),collection:()=> 'orders',createOrderNumber:()=> 'TU-TEST',collectStops:()=>[],
-    customerOrderPricing:()=>null,customerOrderReference:()=>({id:'order-1'}),customerOrderBatch:()=>({set:(ref,data)=>state.writes.push(data),commit:async()=>{}}),
+    coordinateFields:()=>({}),customerOrderPricing:()=>null,customerOrderReference:()=>({id:'order-1'}),customerOrderBatch:()=>({set:(ref,data)=>state.writes.push(data),commit:async()=>{}}),
     writeBatch:()=>({set:(ref,data)=>state.writes.push(data),commit:async()=>{}}),serverTimestamp:()=> 'now',
     storeValue:()=>{},startOrderWatch:()=>{},CUSTOMER_NAME_STORAGE_KEY:'name',CUSTOMER_PHONE_STORAGE_KEY:'phone'
   });

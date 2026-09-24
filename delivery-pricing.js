@@ -9,9 +9,9 @@ export function deliveryCityKey(city) {
 }
 const hasCoordinates = point => Number.isFinite(point?.lat) && Math.abs(point.lat) <= 90
   && Number.isFinite(point?.lon) && Math.abs(point.lon) <= 180;
-const validPoints = (points, allowUnknownOriginCity = false) => Array.isArray(points) && points.length >= 2 && points.length <= 5
-  && points.every((point, index) => typeof point.address === 'string' && point.address.trim().length >= 3
-    && typeof point.city === 'string' && (point.city.trim() || (allowUnknownOriginCity && index === 0 && hasCoordinates(point))));
+const validPoints = points => Array.isArray(points) && points.length >= 2 && points.length <= 5
+  && points.every(point => typeof point.address === 'string' && point.address.trim().length >= 3
+    && typeof point.city === 'string' && (point.city.trim() || hasCoordinates(point)));
 export function deliveryPickupMode(point) {
   const address = point?.address?.trim() || '';
   if (!address) return 'missing';
@@ -27,7 +27,7 @@ export function randomMapCar(cars, random = Math.random) {
   const car = available[Math.floor(sample * available.length)];
   return { lat: car.lat, lon: car.lon };
 }
-export const isLocalDelivery = points => validPoints(points) && points.every(point => deliveryCityKey(point.city) === deliveryCityKey(points[0].city));
+export const isLocalDelivery = points => validPoints(points) && points.every(point => point.city.trim() && deliveryCityKey(point.city) === deliveryCityKey(points[0].city));
 
 export function deliveryRouteQuote(points, meters, tariff, adjustment, { allowUnknownOriginCity = false } = {}) {
   if (!validPoints(points, allowUnknownOriginCity)) return null;

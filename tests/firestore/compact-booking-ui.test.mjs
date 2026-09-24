@@ -71,7 +71,7 @@ const lateResolve = reverseResolve;
 get('bookingFrom').click(); get('bookingSearchCity').value='Глубокое'; get('bookingSearchInput').value='Центральная, 8'; get('bookingManualAddress').click();
 lateResolve(); await flush();
 assert.equal(get('bookingFromValue').textContent,'Центральная, 8');
-assert.match(get('bookingLocationStatus').textContent,/Место подачи выбрано/);
+assert.match(get('bookingLocationStatus').textContent,/Адрес введён вручную/);
 
 // Required phone opens before any online handler is called.
 window.repeatOrder('Жукова, 20 (Белоусовка)','Центральная, 8 (Глубокое)');
@@ -178,10 +178,49 @@ offerHost.querySelector('.customer-price-toggle').click();
 offerHost.querySelectorAll('.customer-price-quick button')[1].click();
 assert.equal(window.getCustomerPriceOffer('delivery'),4080);assert.match(get('bookingSubmit').textContent,/4\s080/);
 get('bookingNote').value='Тест';get('bookingNote').dispatchEvent(new window.Event('input'));await flush();assert.equal(window.getCustomerPriceOffer('delivery'),4080,'Note editing does not erase the offer');
-offerHost.querySelector('input').value='3000';offerHost.querySelector('input').dispatchEvent(new window.Event('input'));assert.equal(get('bookingSubmit').disabled,true);
+offerHost.querySelector('input').value='3000';offerHost.querySelector('input').dispatchEvent(new window.Event('input'));assert.equal(get('bookingSubmit').disabled,false);
+get('bookingSubmit').click();assert.match(get('bookingStatus').textContent,/стоимость/);
 offerHost.querySelector('.customer-price-reset').click();assert.equal(window.getCustomerPriceOffer('delivery'),null);
 deliveryState='unavailable';deliveryQuote=null;get('deliveryPriceEstimate').textContent='Не удалось рассчитать стоимость';await flush();
 assert.equal(offerHost.hidden,false);offerHost.querySelector('.customer-price-toggle').click();
 offerHost.querySelector('input').value='1500';offerHost.querySelector('input').dispatchEvent(new window.Event('input'));assert.equal(get('bookingSubmit').disabled,false);assert.match(get('bookingSubmit').textContent,/1\s500/);
 console.log('PASS: optional increases, lower price rejection, reset, preserved notes and unavailable calculation fallback');
+
+// Offer selection is independent of a pending/failed/retried route, including a late higher quote.
+deliveryState='pending';deliveryQuote=null;get('deliveryPriceEstimate').textContent='Повторный расчёт…';await flush();
+assert.equal(offerHost.querySelector('input').value,'1500');assert.equal(get('bookingSubmit').disabled,false);
+deliveryState='ready';deliveryQuote={priceAmount:7000,amountText:'7000 ₸'};get('deliveryPriceEstimate').textContent='7000 ₸';await flush();
+assert.equal(window.getCustomerPriceSelection('delivery').calculatedPrice,null);
+assert.equal(window.getCustomerPriceOffer('delivery'),1500);assert.match(get('bookingSubmit').textContent,/1\s500/);
+let recalculations=0;window.updateDeliveryPrice=()=>recalculations++;
+get('bookingSubmit').click();assert.equal(deliverySent,2);assert.equal(recalculations,0,'Submitting does not restart pricing');
+await new Promise(resolve=>setTimeout(resolve,1100));
+// Text need not resolve to a directory entry, and an absent locality stays absent.
+select('taxi');fareState='pending';get('taxiPriceEstimate').textContent='Расчёт…';
+get('bookingFrom').click();get('bookingSearchCity').value='';get('bookingSearchInput').value='Чапаева көшесі, у поворота';get('bookingManualAddress').click();
+assert.equal(get('bookingPicker').hidden,true);
+assert.equal(window.bookingScreen.orderRoute('taxi').from.city,'');
+assert.equal(get('taxiFrom').value,'Чапаева көшесі, у поворота');
+assert.equal(get('bookingCustomerPrice').hidden,false);
+const taxiOffer=get('bookingCustomerPrice').querySelector('input');
+get('bookingSubmit').click();assert.equal(sent,1);assert.match(get('bookingStatus').textContent,/Укажите желаемую стоимость/);
+for (const amount of ['', '0', '-100', '799', '800.5', '1000001']) {
+  taxiOffer.value=amount;taxiOffer.dispatchEvent(new window.Event('input'));get('bookingSubmit').click();assert.equal(sent,1,`Invalid ${amount} must not submit`);
+}
+taxiOffer.value='1701';taxiOffer.dispatchEvent(new window.Event('input'));get('bookingSubmit').click();assert.equal(sent,2);
+await new Promise(resolve=>setTimeout(resolve,1100));
+// A map point is accepted after the bounded lookup even when the directory never answers.
+const center={lat:50.876543,lng:82.654321};
+const marker={addTo(){return this;},setLatLng(){return this;}};
+window.L={marker:()=>marker,divIcon:()=>({}),geoJSON:()=>({addTo(){return this;},getBounds:()=>[]})};
+window.simMap={getCenter:()=>center,invalidateSize(){},setView(){},removeLayer(){},fitBounds(){},off(){},on(){}};
+get('bookingTo').click();get('bookingOnMap').click();get('bookingPickConfirm').click();
+assert.equal(get('bookingPickConfirm').disabled,true);
+await new Promise(resolve=>setTimeout(resolve,2600));
+const mapDestination=window.bookingScreen.orderRoute('taxi').to;
+assert.equal(mapDestination.city,'');assert.equal(mapDestination.lat,center.lat);assert.equal(mapDestination.lon,center.lng);
+assert.match(get('bookingToValue').textContent,/Точка на карте: 50.87654, 82.65432/);
+assert.equal(get('bookingPicker').hidden,true);assert.equal(get('bookingPickConfirm').disabled,false);
+assert.equal(window.bookingScreen.orderRoute('taxi').coordinates.at(-1).lat,center.lat);
+console.log('PASS: pending manual offers, late quotes, no submit recalculation, unknown Kazakh address, invalid money and map lookup timeout');
 dom.window.close();

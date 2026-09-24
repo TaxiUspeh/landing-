@@ -1,3 +1,4 @@
+import { navigationRoute } from './booking-route.js?v=73';
 import { orderTimeInfo } from './order-time.js?v=71';
 import { normalizeCity } from './booking-core.js?v=60';
 import { serviceEnabled, allowedOrderServices, profileForOrder, assignmentVehicle, serviceDirection } from './functions/driver-services.mjs?v=69';
@@ -827,7 +828,7 @@ function createOrderRoute(order) {
 }
 
 function orderNavigationUrl(order) {
-    const routeText = orderRoutePoints(order).join('~');
+    const routeText = navigationRoute(order, orderRoutePoints(order));
     return `https://yandex.kz/maps/?mode=routes&rtext=${encodeURIComponent(routeText)}&rtt=auto`;
 }
 

@@ -1,4 +1,5 @@
 import { orderTimeInfo } from './order-time.js?v=71';
+import { normalizeCity } from './booking-core.js?v=60';
 import { serviceEnabled, allowedOrderServices, profileForOrder, assignmentVehicle, serviceDirection } from './functions/driver-services.mjs?v=69';
 import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=67';
 import { initDriverCabinet } from './driver-cabinet.js?v=69';
@@ -800,6 +801,29 @@ function orderRoutePoints(order) {
 
 function orderRoute(order) {
     return orderRoutePoints(order).join(' → ');
+}
+
+// Display cleanup only: stored addresses and navigation retain the original text.
+function compactOrderAddress(address) {
+    const value = String(address || '').trim();
+    const parts = value.match(/^(.*?)\s*\(([^()]+)\)$/u);
+    if (!parts) return normalizeCity(value);
+    const name = normalizeCity(parts[1].trim());
+    const city = normalizeCity(parts[2].trim());
+    return name.toLocaleLowerCase('ru-RU') === city.toLocaleLowerCase('ru-RU')
+        ? name : `${name} (${city})`;
+}
+
+function createOrderRoute(order) {
+    const route = document.createElement('dl'); route.className = 'cabinet-order-route';
+    const points = orderRoutePoints(order);
+    points.forEach((address, index) => {
+        const label = index === 0 ? 'Откуда' : index === points.length - 1 ? 'Куда' : `Через ${index}`;
+        const row = document.createElement('div'); row.className = 'cabinet-route-point';
+        row.append(createText('dt', 'cabinet-route-label', label), createText('dd', 'cabinet-route-address', compactOrderAddress(address)));
+        route.append(row);
+    });
+    return route;
 }
 
 function orderNavigationUrl(order) {
@@ -1887,22 +1911,32 @@ function createOrderCard(order, assigned, archived = false) {
     header.append(title, badge);
 
     const service = createText('p', 'cabinet-service', orderServiceLabel(order));
-    const route = createText('p', 'cabinet-order-route', orderRoute(order));
+    const route = createOrderRoute(order);
     const price = createText('p', 'cabinet-price', order.priceText || 'Цена уточняется');
     const compactHeading = document.createElement('div'); compactHeading.className = 'cabinet-order-heading';
-    compactHeading.append(service, price);
+    const serviceCopy = document.createElement('div'); serviceCopy.append(service);
+    if (order.priceRevision > 0 || order.customerOfferPrice != null) {
+        serviceCopy.append(createText('p', 'cabinet-price-note', order.priceRevision > 0 ? 'Цена повышена' : 'Цена клиента'));
+    }
+    compactHeading.append(serviceCopy, price);
     const timing = document.createElement('div'); timing.className = 'cabinet-order-timing';
     const createdTime = document.createElement('time'); createdTime.className = 'cabinet-order-created'; createdTime.dataset.orderCreatedTime = '';
     const scheduledTime = createText('p', 'cabinet-order-scheduled', ''); scheduledTime.dataset.orderScheduledTime = '';
     timing.append(createdTime, scheduledTime); card.append(compactHeading, timing, route);
     orderTimeModels.set(card, order); updateOrderTime(card, order);
-    if (order.pricingType) card.append(createText('p', 'customer-price-summary', priceDescription(order)));
+    const metadata = document.createElement('div'); metadata.className = 'cabinet-order-meta';
+    if (Number.isFinite(order.routeDistanceMeters) && order.routeDistanceMeters > 0) {
+        const distance = (order.routeDistanceMeters / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 1 });
+        metadata.append(createText('span', 'cabinet-order-distance', `Поездка: ${distance} км`));
+    }
+    card.append(metadata);
     const primaryActions = document.createElement('div'); primaryActions.className = 'cabinet-primary-actions'; card.append(primaryActions);
     const quickActions = document.createElement('div'); quickActions.className = 'cabinet-quick-actions'; card.append(quickActions);
     const disclosure = document.createElement('details'); disclosure.className = 'cabinet-order-disclosure';
     disclosure.open = orderDisclosureState.get(order.id) ?? (assigned && !archived);
     const summary = createText('summary', '', assigned ? orderStatusLabel(order.status) : 'Подробнее и действия');
     const body = document.createElement('div'); body.append(header);
+    if (order.pricingType) body.append(createText('p', 'cabinet-price-details', priceDescription(order)));
     disclosure.append(summary, body); card.append(disclosure);
 
     const serviceDetails = orderServiceDetailsText(order);
@@ -1950,13 +1984,13 @@ function createOrderCard(order, assigned, archived = false) {
         acceptButton.textContent = 'Принять заказ';
         acceptButton.classList.add('cabinet-order-primary'); acceptButton.dataset.orderControl = 'accept';
         const funding = fundingFor(currentDriver, Number(order.priceAmount), order);
-        primaryActions.append(createText('p', 'cabinet-order-commission', funding.allowed ? `Ваша комиссия: ${funding.rate}% · ${formatMoney(funding.amount)}` : funding.reason));
+        metadata.append(createText('span', funding.allowed ? 'cabinet-order-commission' : 'cabinet-order-funding-warning', funding.allowed ? `Комиссия: ${funding.rate}% · ${formatMoney(funding.amount)}` : funding.reason));
         acceptButton.disabled = orderActionInProgress || !currentCanTakeOrders || !funding.allowed || !driverCanServeOrder(currentDriver, order);
         acceptButton.addEventListener('click', () => acceptOrder(order.id));
         primaryActions.append(acceptButton);
     } else {
         const terms = orderCommission(order);
-        primaryActions.append(createText('p', 'cabinet-order-commission', `Комиссия этой поездки: ${terms.rate}% · Зарезервировано ${formatMoney(terms.amount)}`));
+        metadata.append(createText('span', 'cabinet-order-commission', `Комиссия: ${terms.rate}% · В резерве ${formatMoney(terms.amount)}`));
         const contact = createText('p', 'w-full text-xs text-gray-600 dark:text-gray-300', 'Загружаем телефон клиента…');
         actions.append(contact);
         void loadOrderContact(order.id, contact, quickActions);

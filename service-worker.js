@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v71-order-time';
+const CACHE_NAME = 'taxi-uspeh-v72-compact-cards';
 const APP_SHELL = [
   './',
   './driver-finance.js?v=69',
@@ -30,10 +30,10 @@ const APP_SHELL = [
   './drivers.html',
   './drivers.webmanifest',
   './driver-install.js?v=61',
-  './driver-portal.js?v=71',
+  './driver-portal.js?v=72',
   './order-time.js?v=71',
   './driver-cabinet.js?v=69',
-  './styles/driver-cabinet.css?v=71',
+  './styles/driver-cabinet.css?v=72',
   './dispatcher.html',
   './dispatcher.js?v=69',
   './firebase-config.js',

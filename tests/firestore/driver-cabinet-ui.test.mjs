@@ -1,3 +1,5 @@
+import { normalizeCity } from '../../booking-core.js';
+import { priceDescription } from '../../customer-pricing.js';
 import { orderTimeInfo } from '../../order-time.js';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -18,7 +20,7 @@ const original = Object.fromEntries(['driver-logout-button','driver-dispatcher-c
 const events = [];
 let authListener;
 const context = vm.createContext({
-    ...finance, ...categories, ...auction, initDriverCabinet, orderTimeInfo,
+    ...finance, ...categories, ...auction, initDriverCabinet, orderTimeInfo, normalizeCity, priceDescription,
     document, window, navigator:window.navigator, localStorage:window.localStorage,
     URLSearchParams, console, setTimeout:()=>1, clearTimeout:()=>{}, setInterval:()=>1, clearInterval:()=>{},
     requestAnimationFrame:callback=>callback(), auth:{}, db:{}, googleProvider:{},
@@ -41,6 +43,24 @@ assert.match(document.querySelector('[data-order-filter="new"]').textContent,/10
 assert.ok([...document.querySelectorAll('.cabinet-order-disclosure')].every(el=>!el.open));
 assert.equal(get('driver-view-orders').hidden,false);
 for(const [id,node] of Object.entries(original)) assert.equal(get(id),node,`${id} keeps listeners`);
+// Compact display retains stops, original navigation and the full price explanation.
+run(`var compactExample = { ...openOrders[0], fromAddress:'улица Школьная (Kojohovo)',
+toAddress:'Perevalnoe (Perevalnoe)', stops:['Магазин (Belousovka)'],
+pricingType:'calculated', calculatedPrice:2184, customerOfferPrice:null, routeDistanceMeters:9500,
+priceAmount:2184, priceText:'2 184 ₸' };
+var compactCard = createOrderCard(compactExample,false);`);
+const compactCard=run('compactCard');
+assert.deepEqual([...compactCard.querySelectorAll('.cabinet-route-label')].map(el=>el.textContent),['Откуда','Через 1','Куда']);
+assert.deepEqual([...compactCard.querySelectorAll('.cabinet-route-address')].map(el=>el.textContent),['улица Школьная (Kojohovo)','Магазин (Белоусовка)','Perevalnoe']);
+assert.equal(run('compactExample.toAddress'),'Perevalnoe (Perevalnoe)');
+assert.match(decodeURIComponent(compactCard.querySelector('a').href),/Школьная \(Kojohovo\)~Магазин \(Belousovka\)~Perevalnoe \(Perevalnoe\)/);
+assert.equal(compactCard.querySelector('.cabinet-order-distance').textContent,'Поездка: 9,5 км');
+assert.equal(compactCard.querySelector('.cabinet-order-commission').closest('details'),null);
+assert.equal(compactCard.querySelector('.cabinet-price-details').closest('details').open,false);
+assert.match(compactCard.querySelector('.cabinet-price-details').textContent,/Расчётная цена/);
+const increased=run('createOrderCard({...compactExample,customerOfferPrice:2500,priceAmount:2500,priceText:"2 500 ₸",previousPrice:2184,priceRevision:1},false)');
+assert.equal(increased.querySelector('.cabinet-price-note').textContent,'Цена повышена');
+assert.match(increased.querySelector('.cabinet-price-details').textContent,/Цена повышена:/);
 // Minute refresh preserves card order, action controls, focus and open details.
 run(`const creation = Date.parse('2026-09-20T05:42:00Z');
 openOrders.forEach((order,i)=>{order.createdAt={toMillis:()=>creation+i*60000};});

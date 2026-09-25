@@ -1,12 +1,13 @@
-import { serviceEnabled, profileForOrder, assignmentVehicle } from './functions/driver-services.mjs?v=69';
-import { createCargoControls } from './cargo-profile-controls.js?v=69';
-import { initCustomerPricingSettings } from './customer-pricing-settings.js?v=67';
-import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=67';
-import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=69';
-import { createFinanceControls } from './driver-finance-controls.js?v=69';
-import { createVehicleControls } from './vehicle-category-controls.js?v=69';
-import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=69';
-import { currentAuctionOffer } from './auction-core.js?v=69';
+import { confirmSoberExpenses, createSoberExpenseEditor } from './sober-dispatch.js?v=74';
+import { serviceEnabled, profileForOrder, assignmentVehicle } from './functions/driver-services.mjs?v=74';
+import { createCargoControls } from './cargo-profile-controls.js?v=74';
+import { initCustomerPricingSettings } from './customer-pricing-settings.js?v=74';
+import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=74';
+import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=74';
+import { createFinanceControls } from './driver-finance-controls.js?v=74';
+import { createVehicleControls } from './vehicle-category-controls.js?v=74';
+import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=74';
+import { currentAuctionOffer } from './auction-core.js?v=74';
 import { auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -2027,7 +2028,7 @@ function dispatcherOrderServiceDetailsText(order) {
         ].filter(Boolean).join(' · ');
     }
     if (order.serviceType === 'soberDriver') {
-        return details.carModel ? `Автомобиль клиента: ${details.carModel}` : '';
+        return [details.carModel ? `Автомобиль клиента: ${details.carModel}` : '', details.transmission === 'manual' ? 'МКПП' : details.transmission === 'automatic' ? 'АКПП' : ''].filter(Boolean).join(' · ');
     }
     if (order.serviceType === 'assistance') {
         return [
@@ -2103,6 +2104,10 @@ function createOnlineOrderCard(order) {
         ));
     }
 
+    if (order.serviceType === 'soberDriver' && order.soberFare && order.status === 'searching' && !order.assignedDriverUid) {
+        detailsPanel.append(createSoberExpenseEditor(order, values => confirmSoberExpenses(db, { doc, runTransaction, serverTimestamp }, { ...values, orderId: order.id, uid: currentUser.uid })));
+    }
+
     const pendingCancellation = order.cancellationRequestStatus === 'pending';
     if (pendingCancellation) {
         detailsPanel.append(createOrderText(
@@ -2155,7 +2160,7 @@ function createOnlineOrderCard(order) {
             accounting.append(createOrderText(
                 'p',
                 'mt-1 text-emerald-800 dark:text-emerald-300',
-                `Расчёт: ${rate}% от ${order.auctionRound ? 'согласованной' : 'максимальной'} цены ${formatMoney(order.commissionBaseAmount)}`
+                `Расчёт: ${rate}% от ${order.soberFare ? 'оплаты перегона, исключая расходы, по' : order.auctionRound ? 'согласованной' : 'максимальной'} цены ${formatMoney(order.commissionBaseAmount)}`
             ));
         }
         if (Number.isFinite(Number(order.commissionBalanceBefore)) && Number.isFinite(Number(order.commissionBalanceAfter))) {
@@ -2478,7 +2483,7 @@ async function completeOnlineOrder(order) {
 
             let previousBalance = Number(driverSnapshot.data().balance);
             let newBalance = previousBalance;
-            let commissionBaseAmount = Number(currentOrder.priceAmount);
+            let commissionBaseAmount = orderCommission(currentOrder).baseAmount;
             if (!Number.isFinite(previousBalance)) throw new Error('В карточке водителя указан некорректный баланс.');
 
             if (historySnapshot.exists()) {

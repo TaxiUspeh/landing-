@@ -1,4 +1,4 @@
-import { commissionFor } from './driver-finance.js?v=69';
+import { commissionFor } from './driver-finance.js?v=74';
 // Kept free of browser imports so the real transaction can run against the emulator.
 export const AUCTION_MIN_PRICE = 500;
 export const AUCTION_MAX_PRICE = 1000000;

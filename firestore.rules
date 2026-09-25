@@ -127,7 +127,7 @@ service cloud.firestore {
     }
 
     function commissionBaseAmountForOrder(orderId) {
-      return getAfter(orderDocument(orderId)).data.priceAmount;
+      return commissionBaseForData(getAfter(orderDocument(orderId)).data);
     }
 
     function commissionRateForOrder(orderId) {
@@ -145,27 +145,30 @@ service cloud.firestore {
     // использует её же, а сам заказ ниже отдельно требует наличие истории в той же
     // атомарной операции.
     function validCommissionOrderAndBalance(orderId, driverId) {
+      let order = getAfter(orderDocument(orderId)).data;
+      let beforeDriver = get(driverDocument(driverId)).data;
+      let afterDriver = getAfter(driverDocument(driverId)).data;
       return existsAfter(orderDocument(orderId))
-        && getAfter(orderDocument(orderId)).data.status == 'completed'
-        && (getAfter(orderDocument(orderId)).data.assignedDriverUid == request.auth.uid || isAdmin())
-        && getAfter(orderDocument(orderId)).data.assignedDriverId == driverId
-        && getAfter(orderDocument(orderId)).data.commissionRate == commissionRateForOrder(orderId)
-        && getAfter(orderDocument(orderId)).data.commissionBaseAmount is number
-        && getAfter(orderDocument(orderId)).data.commissionBaseAmount > 0
-        && getAfter(orderDocument(orderId)).data.commissionBaseAmount == commissionBaseAmountForOrder(orderId)
-        && getAfter(orderDocument(orderId)).data.commissionAmount is number
-        && getAfter(orderDocument(orderId)).data.commissionAmount == commissionAmountForOrder(orderId)
-        && getAfter(orderDocument(orderId)).data.commissionBalanceBefore is number
-        && getAfter(orderDocument(orderId)).data.commissionBalanceAfter is number
-        && getAfter(orderDocument(orderId)).data.commissionChargedAt == request.time
+        && order.status == 'completed'
+        && (order.assignedDriverUid == request.auth.uid || isAdmin())
+        && order.assignedDriverId == driverId
+        && order.commissionRate == commissionRateForOrder(orderId)
+        && order.commissionBaseAmount is number
+        && order.commissionBaseAmount > 0
+        && order.commissionBaseAmount == commissionBaseAmountForOrder(orderId)
+        && order.commissionAmount is number
+        && order.commissionAmount == commissionAmountForOrder(orderId)
+        && order.commissionBalanceBefore is number
+        && order.commissionBalanceAfter is number
+        && order.commissionChargedAt == request.time
         && exists(driverDocument(driverId))
         && existsAfter(driverDocument(driverId))
-        && get(driverDocument(driverId)).data.balance is number
-        && getAfter(driverDocument(driverId)).data.balance is number
-        && getAfter(orderDocument(orderId)).data.commissionBalanceBefore == get(driverDocument(driverId)).data.balance
-        && getAfter(orderDocument(orderId)).data.commissionBalanceAfter == getAfter(driverDocument(driverId)).data.balance
-        && getAfter(driverDocument(driverId)).data.lastCommissionOrderId == orderId
-        && getAfter(driverDocument(driverId)).data.updatedAt == request.time;
+        && beforeDriver.balance is number
+        && afterDriver.balance is number
+        && order.commissionBalanceBefore == beforeDriver.balance
+        && order.commissionBalanceAfter == afterDriver.balance
+        && afterDriver.lastCommissionOrderId == orderId
+        && afterDriver.updatedAt == request.time;
     }
 
     function validCommissionSettlement(orderId, driverId) {
@@ -174,36 +177,40 @@ service cloud.firestore {
     }
 
     function validOwnOnlineCommissionHistoryCreate(entryId) {
+      let data = request.resource.data;
+      let driverId = linkedDriverId();
+      let order = getAfter(orderDocument(data.orderId)).data;
+      let rate = commissionRateForOrder(data.orderId);
       return hasDriverAccount()
-        && entryId == request.resource.data.orderId
-        && request.resource.data.keys().hasOnly([
+        && entryId == data.orderId
+        && data.keys().hasOnly([
           'driverId', 'driverNumber', 'orderId', 'orderNumber', 'source',
           'commissionRate', 'commissionBaseAmount', 'commissionAmount', 'previousBalance', 'newBalance',
           'difference', 'reason', 'changedAt', 'changedBy'
         ])
-        && request.resource.data.driverId == linkedDriverId()
-        && request.resource.data.driverNumber == getAfter(linkedDriverDocument()).data.driverNumber
-        && request.resource.data.orderId is string
-        && request.resource.data.orderId.size() > 0
-        && request.resource.data.orderNumber is string
-        && request.resource.data.orderNumber.size() <= 32
-        && request.resource.data.source == 'online'
-        && request.resource.data.commissionRate == commissionRateForOrder(request.resource.data.orderId)
-        && request.resource.data.commissionBaseAmount is number
-        && request.resource.data.commissionAmount is number
-        && request.resource.data.previousBalance is number
-        && request.resource.data.newBalance is number
-        && request.resource.data.difference is number
-        && request.resource.data.reason == (getAfter(orderDocument(request.resource.data.orderId)).data.get('auctionRound', 0) > 0
-          ? 'Комиссия ' + string(commissionRateForOrder(request.resource.data.orderId)) + '% от согласованной цены аукциона' : 'Комиссия ' + string(commissionRateForOrder(request.resource.data.orderId)) + '% от максимальной цены онлайн-заказа')
-        && request.resource.data.changedAt == request.time
-        && request.resource.data.changedBy == request.auth.uid
-        && request.resource.data.commissionBaseAmount == commissionBaseAmountForOrder(request.resource.data.orderId)
-        && request.resource.data.commissionAmount == commissionAmountForOrder(request.resource.data.orderId)
-        && request.resource.data.difference == request.resource.data.commissionAmount
-        && request.resource.data.previousBalance == get(driverDocument(linkedDriverId())).data.balance
-        && request.resource.data.newBalance == getAfter(driverDocument(linkedDriverId())).data.balance
-        && validCommissionOrderAndBalance(request.resource.data.orderId, linkedDriverId());
+        && data.driverId == driverId
+        && data.driverNumber == getAfter(linkedDriverDocument()).data.driverNumber
+        && data.orderId is string
+        && data.orderId.size() > 0
+        && data.orderNumber is string
+        && data.orderNumber.size() <= 32
+        && data.source == 'online'
+        && data.commissionRate == rate
+        && data.commissionBaseAmount is number
+        && data.commissionAmount is number
+        && data.previousBalance is number
+        && data.newBalance is number
+        && data.difference is number
+        && data.reason == (hasSoberFare(order) ? 'Комиссия ' + string(rate) + '% от оплаты перегона без подачи и обратного такси' : order.get('auctionRound', 0) > 0
+          ? 'Комиссия ' + string(rate) + '% от согласованной цены аукциона' : 'Комиссия ' + string(rate) + '% от максимальной цены онлайн-заказа')
+        && data.changedAt == request.time
+        && data.changedBy == request.auth.uid
+        && data.commissionBaseAmount == commissionBaseAmountForOrder(data.orderId)
+        && data.commissionAmount == commissionAmountForOrder(data.orderId)
+        && data.difference == data.commissionAmount
+        && data.previousBalance == get(driverDocument(driverId)).data.balance
+        && data.newBalance == getAfter(driverDocument(driverId)).data.balance
+        && validCommissionOrderAndBalance(data.orderId, driverId);
     }
 
     function driverAppliesOwnOnlineCommission(driverId) {
@@ -372,7 +379,7 @@ service cloud.firestore {
     function hasOrderFunds(driver) {
       let passengerRate = passengerEnabled(driver) ? driver.get('commissionRate', 20) : 101;
       let cargoRate = driver.get('cargoProfile', {}).get('status', '') == 'active' ? driver.cargoProfile.commissionRate : 101;
-      let rate = math.min(passengerRate, cargoRate);
+      let rate = (passengerRate < cargoRate ? passengerRate : cargoRate);
       let mode = driver.get('debtMode', 'unlimited');
       let ceiling = mode == 'none' ? 0 : driver.get('debtLimit', 0);
       return rate <= 100 && (mode == 'unlimited' || (rate == 0 ? driver.balance <= ceiling : driver.balance < ceiling));
@@ -385,15 +392,37 @@ service cloud.firestore {
           <= (mode == 'none' ? 0 : driver.debtLimit * 100));
     }
 
+    function hasSoberFare(order) {
+      return order.get('serviceType', 'taxi') == 'soberDriver' && order.get('soberFare', null) != null;
+    }
+    function commissionBaseForData(order) {
+      let fare = order.get('soberFare', null);
+      return fare == null ? order.priceAmount
+        : (fare.pickupAmount == null || fare.returnAmount == null ? 0 : order.priceAmount - fare.pickupAmount - fare.returnAmount);
+    }
+    function validSoberFare(order) {
+      let fare = order.get('soberFare', null);
+      let amount = order.priceAmount;
+      return fare == null || (order.serviceType == 'soberDriver' && fare is map
+        && fare.keys().hasOnly(['schemaVersion', 'base', 'pickupAmount', 'returnAmount'])
+        && fare.schemaVersion == 1 && fare.base == 'Белоусовка'
+        && amount is int && amount >= 3800 && amount <= 10000000
+        && ((fare.pickupAmount == null && fare.returnAmount == null && order.get('calculatedPrice', null) == null)
+          || (fare.pickupAmount is int && fare.pickupAmount >= 0
+            && fare.returnAmount is int && fare.returnAmount >= 0
+            && fare.pickupAmount + fare.returnAmount < amount)));
+    }
+
     function validReservation(order, driver) {
       let terms = order.get('commissionTerms', null);
       let financial = financeForOrder(order, driver);
-      return canFundOrder(financial, order.priceAmount)
-        && ((!hasFinanceSettings(driver) && order.get('serviceType', 'taxi') != 'cargo' && terms == null)
+      let baseAmount = commissionBaseForData(order);
+      return canFundOrder(financial, baseAmount)
+        && ((!hasFinanceSettings(driver) && !hasSoberFare(order) && order.get('serviceType', 'taxi') != 'cargo' && terms == null)
           || (terms is map && terms.keys().hasOnly(['rate', 'baseAmount', 'amount'])
             && terms.rate == financial.commissionRate
-            && terms.baseAmount == order.priceAmount
-            && terms.amount == financeAmount(order.priceAmount, terms.rate)));
+            && terms.baseAmount == baseAmount
+            && terms.amount == financeAmount(baseAmount, terms.rate)));
     }
 
     function financialHistoryDocument(entryId) {
@@ -434,7 +463,7 @@ service cloud.firestore {
 
     function adminFinanceOrderCreate(orderId) {
       let data = request.resource.data;
-      return data.priceAmount is number && data.priceAmount > 0 && data.priceAmount <= 10000000
+      return validSoberFare(data) && data.priceAmount is number && data.priceAmount > 0 && data.priceAmount <= 10000000
         && (data.get('assignedDriverUid', '') == '' ? data.get('commissionTerms', null) == null : adminReservation(orderId, data));
     }
 
@@ -467,7 +496,8 @@ service cloud.firestore {
     }
     function directionAllowed(order, driver) {
       return (order.serviceType == 'cargo' && driver.get('cargoProfile', {}).get('status', '') == 'active')
-        || (order.serviceType in ['taxi', 'delivery', 'auction', 'soberDriver', 'assistance'] && passengerEnabled(driver));
+        || (order.serviceType in ['taxi', 'delivery', 'auction', 'soberDriver', 'assistance'] && passengerEnabled(driver)
+          && (order.serviceType != 'soberDriver' || driver.get('soberDriverEnabled', false) == true));
     }
     function vehicleForOrder(order, driver) {
       return order.get('serviceType', 'taxi') == 'cargo' ? driver.get('cargoProfile', {}) : driver;
@@ -482,7 +512,7 @@ service cloud.firestore {
     }
     function validServiceProfiles(driver) {
       let cargo = driver.get('cargoProfile', null);
-      return driver.get('passengerEnabled', true) is bool
+      return driver.get('soberDriverEnabled', false) is bool && driver.get('passengerEnabled', true) is bool
         && driver.get('passengerStatus', 'active') in ['active', 'paused', 'blocked']
         && (cargo == null || (cargo is map && cargo.keys().hasOnly(['status', 'car', 'color', 'plate', 'bodyType', 'dimensions', 'payloadKg', 'commissionRate'])
           && cargo.status in ['active', 'paused', 'blocked']
@@ -529,10 +559,10 @@ service cloud.firestore {
       let calculated = data.get('calculatedPrice', null);
       let offer = data.get('customerOfferPrice', null);
       let amount = data.priceAmount;
-      let minimum = data.serviceType == 'delivery' ? cfg.get('deliveryMinimum', 1200) : cfg.get('taxiMinimum', 800);
+      let minimum = data.serviceType == 'soberDriver' ? 3800 : data.serviceType == 'delivery' ? cfg.get('deliveryMinimum', 1200) : cfg.get('taxiMinimum', 800);
       return !data.keys().hasAny(['pricingType', 'calculatedPrice', 'customerOfferPrice', 'finalDisplayedPrice', 'customerIncreasedPrice', 'priceRevision', 'priceUpdatedAt', 'calculationType', 'routeDistanceMeters'])
-        || (data.serviceType in ['taxi', 'delivery']
-          && data.keys().hasAll(['pricingType', 'calculatedPrice', 'customerOfferPrice', 'finalDisplayedPrice', 'customerIncreasedPrice', 'priceRevision', 'priceUpdatedAt', 'calculationType'])
+        || (data.serviceType in ['taxi', 'delivery', 'soberDriver']
+          && data.keys().hasAll(['calculatedPrice', 'customerOfferPrice'])
           && amount is int && amount > 0 && amount <= 10000000
           && data.finalDisplayedPrice == amount && data.priceText == string(amount) + ' ₸'
           && data.priceRevision is int && data.priceRevision >= 0 && data.priceUpdatedAt is timestamp
@@ -540,7 +570,7 @@ service cloud.firestore {
           && (data.get('routeDistanceMeters', null) == null || (data.routeDistanceMeters is number && data.routeDistanceMeters >= 0 && data.routeDistanceMeters < 100000000))
           && ((calculated == null && offer == amount && data.pricingType == 'customer_offer_unavailable' && data.calculationType == 'unavailable' && amount >= minimum)
             || (calculated is int && calculated > 0 && calculated <= 10000000 && amount >= calculated
-              && data.calculationType in ['fixed', 'distance', 'tariff', 'delivery_local', 'delivery_distance']
+              && data.calculationType in ['fixed', 'distance', 'tariff', 'delivery_local', 'delivery_distance', 'sober_route']
               && ((offer == null && amount == calculated && data.pricingType == 'calculated')
                 || (offer == amount && data.pricingType == (amount > calculated ? 'customer_offer' : 'calculated')))))
           && (offer == null || (cfg.get('enabled', true) == true && offer <= cfg.get('maximumPrice', 1000000)))
@@ -553,7 +583,7 @@ service cloud.firestore {
       let operation = after.get('lastPriceOperationId', '');
       let changePath = /databases/$(database)/documents/orders/$(orderId)/priceChanges/$(operation);
       let change = getAfter(changePath).data;
-      return signedIn() && before.clientUid == request.auth.uid && before.serviceType in ['taxi', 'delivery']
+      return signedIn() && before.clientUid == request.auth.uid && before.serviceType in ['taxi', 'delivery', 'soberDriver']
         && before.status == 'searching' && before.get('assignedDriverUid', '') == ''
         && cfg.get('enabled', true) == true
         && after.diff(before).affectedKeys().hasOnly(['priceAmount', 'priceText', 'calculatedPrice', 'customerOfferPrice', 'finalDisplayedPrice', 'pricingType', 'calculationType', 'customerIncreasedPrice', 'priceRevision', 'previousPrice', 'lastPriceOperationId', 'priceUpdatedAt', 'updatedAt'])
@@ -572,11 +602,14 @@ service cloud.firestore {
     }
 
     function validVehicleFare(data) {
+      return !data.keys().hasAny(['vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax']) || validCategorizedFare(data);
+    }
+
+    function validCategorizedFare(data) {
       let category = data.get('vehicleCategory', 'sedan');
       let fare = data.get('calculatedPrice', data.priceAmount);
       let factor = category == 'wagon' ? 120 : 150;
-      return !data.keys().hasAny(['vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax'])
-        || (data.serviceType == 'taxi'
+      return (data.serviceType == 'taxi'
           && data.keys().hasAll(['vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax'])
           && category in ['sedan', 'wagon', 'minivan']
           && data.passengerCount is int && data.passengerCount >= 1 && data.passengerCount <= 8
@@ -597,7 +630,10 @@ service cloud.firestore {
 
     function validAdminCategoryUpdate() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
-      return request.resource.data.serviceType == resource.data.serviceType
+      return validSoberFare(request.resource.data)
+        && (!changed.hasAny(['soberFare']) || (resource.data.status == 'searching' && resource.data.get('assignedDriverUid', '') == ''
+          && request.resource.data.status == 'searching' && request.resource.data.get('assignedDriverUid', '') == ''))
+        && request.resource.data.serviceType == resource.data.serviceType
         && (!activeOrderStatus(resource.data.status) || !activeOrderStatus(request.resource.data.status) || !changed.hasAny(['driverCar', 'driverColor']))
         && (!changed.hasAny(['vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax', 'priceAmount'])
           || validVehicleFare(request.resource.data))
@@ -606,87 +642,89 @@ service cloud.firestore {
     }
 
     function validRouteCoordinate(point) {
-      return point == null || (point is map && point.keys().hasOnly(['lat', 'lon'])
-        && point.keys().hasAll(['lat', 'lon'])
-        && point.lat is number && point.lat >= -90 && point.lat <= 90
-        && point.lon is number && point.lon >= -180 && point.lon <= 180);
+      // keys() requires a map; abs() requires numbers; missing coordinates deny access.
+      return point == null || (point.keys().hasOnly(['lat', 'lon'])
+        && math.abs(point.lat) <= 90 && math.abs(point.lon) <= 180);
     }
 
     function validRouteCoordinates(data) {
       let points = data.get('routeCoordinates', []);
+      let size = points.size();
       return !data.keys().hasAny(['routeCoordinates']) || (points is list
-        && points.size() == data.stops.size() + 2 && points.size() >= 2 && points.size() <= 7
+        && size == data.stops.size() + 2 && size >= 2 && size <= 7
         && validRouteCoordinate(points[0]) && validRouteCoordinate(points[1])
-        && (points.size() < 3 || validRouteCoordinate(points[2]))
-        && (points.size() < 4 || validRouteCoordinate(points[3]))
-        && (points.size() < 5 || validRouteCoordinate(points[4]))
-        && (points.size() < 6 || validRouteCoordinate(points[5]))
-        && (points.size() < 7 || validRouteCoordinate(points[6])));
+        && (size < 3 || validRouteCoordinate(points[2]))
+        && (size < 4 || validRouteCoordinate(points[3]))
+        && (size < 5 || validRouteCoordinate(points[4]))
+        && (size < 6 || validRouteCoordinate(points[5]))
+        && (size < 7 || validRouteCoordinate(points[6])));
     }
 
     function validClientOrderCreate() {
+      let data = request.resource.data;
+      let kind = data.serviceType;
+      let details = data.get('serviceDetails', {});
+      let priced = data.keys().hasAny(['pricingType']);
       return signedIn()
-        && request.resource.data.keys().hasOnly([
+        && data.clientUid == request.auth.uid && data.source == 'online'
+        && data.keys().hasOnly([
           'orderNumber', 'serviceType', 'source', 'clientUid',
           'fromAddress', 'toAddress', 'stops', 'wishes', 'scheduledFor',
           'direction', 'priceText', 'priceAmount', 'serviceDetails', 'status',
           'createdAt', 'updatedAt', 'proposedPrice', 'auctionRound',
           'vehicleCategory', 'passengerCount', 'basePriceMin', 'basePriceMax',
           'calculatedPrice', 'customerOfferPrice', 'finalDisplayedPrice', 'pricingType', 'calculationType',
-          'priceUpdatedAt', 'customerIncreasedPrice', 'priceRevision', 'routeDistanceMeters', 'routeCoordinates'
+          'priceUpdatedAt', 'customerIncreasedPrice', 'priceRevision', 'routeDistanceMeters', 'routeCoordinates', 'soberFare'
         ])
-        && request.resource.data.clientUid == request.auth.uid
-        && request.resource.data.serviceType in ['taxi', 'delivery', 'auction']
-        && validVehicleFare(request.resource.data)
-        && validCustomerPrice(request.resource.data)
-        && (!request.resource.data.keys().hasAny(['pricingType']) || (request.resource.data.priceRevision == 0 && request.resource.data.priceUpdatedAt == request.time))
-        && request.resource.data.source == 'online'
-        && ((request.resource.data.serviceType == 'auction' && request.resource.data.status == 'bidding')
-          || (request.resource.data.serviceType != 'auction' && request.resource.data.status == 'searching'
-            && !request.resource.data.keys().hasAny(['proposedPrice', 'auctionRound'])))
-        && request.resource.data.orderNumber is string
-        && request.resource.data.orderNumber.size() > 0
-        && request.resource.data.orderNumber.size() <= 32
-        && request.resource.data.fromAddress is string
-        && request.resource.data.fromAddress.size() > 0
-        && request.resource.data.fromAddress.size() <= 240
-        && request.resource.data.toAddress is string
-        && request.resource.data.toAddress.size() > 0
-        && request.resource.data.toAddress.size() <= 240
-        && request.resource.data.stops is list
-        && request.resource.data.stops.size() <= 5
-        && validRouteCoordinates(request.resource.data)
-        && request.resource.data.wishes is string
-        && request.resource.data.wishes.size() <= 500
-        && request.resource.data.scheduledFor is string
-        && request.resource.data.scheduledFor.size() <= 40
-        && request.resource.data.direction is string
-        && request.resource.data.direction.size() <= 120
-        && request.resource.data.priceText is string
-        && request.resource.data.priceText.size() <= 80
-        && request.resource.data.priceAmount is number
-        && request.resource.data.priceAmount > 0
-        && request.resource.data.priceAmount <= 10000000
-        && (
-          (request.resource.data.serviceType == 'taxi'
-            && !request.resource.data.keys().hasAny(['serviceDetails']))
-          || (request.resource.data.serviceType == 'auction'
-            && !request.resource.data.keys().hasAny(['serviceDetails'])
-            && validAuctionPrice(request.resource.data.proposedPrice)
-            && request.resource.data.priceAmount == request.resource.data.proposedPrice
-            && request.resource.data.priceText == string(request.resource.data.proposedPrice) + ' ₸'
-            && request.resource.data.auctionRound == 1)
-          || (request.resource.data.serviceType == 'delivery'
-            && request.resource.data.serviceDetails is map
-            && request.resource.data.serviceDetails.keys().hasOnly(['store', 'items'])
-            && request.resource.data.serviceDetails.store is string
-            && request.resource.data.serviceDetails.store.size() <= 160
-            && request.resource.data.serviceDetails.items is string
-            && request.resource.data.serviceDetails.items.size() > 0
-            && request.resource.data.serviceDetails.items.size() <= 700)
-        )
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time;
+        && kind in ['taxi', 'delivery', 'auction', 'soberDriver']
+        && validSoberFare(data)
+        && (kind != 'soberDriver' || (data.get('soberFare', null) != null
+          && priced
+          && get(/databases/$(database)/documents/settings/soberDriverBooking).data.schemaVersion == 1))
+        && validVehicleFare(data)
+        && validCustomerPrice(data)
+        && (!priced || (data.priceRevision == 0 && data.priceUpdatedAt == request.time))
+        && ((kind == 'auction' && data.status == 'bidding')
+          || (kind != 'auction' && data.status == 'searching'
+            && !data.keys().hasAny(['proposedPrice', 'auctionRound'])))
+        && data.orderNumber is string
+        && data.orderNumber.size() > 0
+        && data.orderNumber.size() <= 32
+        && data.fromAddress is string
+        && data.fromAddress.size() > 0
+        && data.fromAddress.size() <= 240
+        && data.toAddress is string
+        && data.toAddress.size() > 0
+        && data.toAddress.size() <= 240
+        && data.stops is list
+        && data.stops.size() <= 5
+        && validRouteCoordinates(data)
+        && data.wishes is string
+        && data.wishes.size() <= 500
+        && data.scheduledFor is string
+        && data.scheduledFor.size() <= 40
+        && data.direction is string
+        && data.direction.size() <= 120
+        // Structured pricing above already validates these fields and their bounds.
+        && (priced || (data.priceText is string && data.priceText.size() <= 80
+          && data.priceAmount is number && data.priceAmount > 0 && data.priceAmount <= 10000000))
+        && (kind == 'taxi' ? !data.keys().hasAny(['serviceDetails'])
+          : kind == 'auction' ? (!data.keys().hasAny(['serviceDetails'])
+            && validAuctionPrice(data.proposedPrice)
+            && data.priceAmount == data.proposedPrice
+            && data.priceText == string(data.proposedPrice) + ' ₸' && data.auctionRound == 1)
+          : kind == 'soberDriver' ? (details is map
+            && details.keys().hasOnly(['carModel', 'transmission'])
+            && details.carModel is string
+            && details.carModel.size() > 0 && details.carModel.size() <= 120
+            && details.transmission in ['manual', 'automatic'])
+          : (details is map
+            && details.keys().hasOnly(['store', 'items'])
+            && details.store is string && details.store.size() <= 160
+            && details.items is string
+            && details.items.size() > 0 && details.items.size() <= 700))
+        && data.createdAt == request.time
+        && data.updatedAt == request.time;
     }
 
     function clientCancelsOwnSearchingOrder() {
@@ -724,17 +762,19 @@ service cloud.firestore {
     }
 
     function driverAcceptsSearchingOrder(orderId) {
+      let driverId = linkedDriverId();
+      let driver = get(driverDocument(driverId)).data;
       return driverIsAvailable()
-        && vehicleFitsOrder(resource.data, get(linkedDriverDocument()).data)
-        && validReservation(request.resource.data, get(linkedDriverDocument()).data)
+        && vehicleFitsOrder(resource.data, driver)
+        && validReservation(request.resource.data, driver)
         && resource.data.status == 'searching'
         && request.resource.data.status == 'accepted'
         && request.resource.data.assignedDriverUid == request.auth.uid
-        && request.resource.data.assignedDriverId == linkedDriverId()
-        && request.resource.data.driverName == get(linkedDriverDocument()).data.get('name', 'Водитель')
-        && request.resource.data.driverPhone == get(linkedDriverDocument()).data.get('phone', '')
-        && request.resource.data.driverCar == vehicleName(resource.data, get(linkedDriverDocument()).data)
-        && request.resource.data.driverColor == vehicleForOrder(resource.data, get(linkedDriverDocument()).data).get('color', '')
+        && request.resource.data.assignedDriverId == driverId
+        && request.resource.data.driverName == driver.get('name', 'Водитель')
+        && request.resource.data.driverPhone == driver.get('phone', '')
+        && request.resource.data.driverCar == vehicleName(resource.data, driver)
+        && request.resource.data.driverColor == vehicleForOrder(resource.data, driver).get('color', '')
         && request.resource.data.acceptedAt == request.time
         && request.resource.data.updatedAt == request.time
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -1007,13 +1047,14 @@ service cloud.firestore {
     match /settings/{settingId} {
       allow read: if settingId in ['customerPricing', 'driverServices'] || isAdmin() || (settingId == 'driverPortal' && mayOpenOrders());
       // A successful server read, even for an absent document, confirms v73 coordinate support.
-      allow get: if settingId == 'bookingCoordinates';
+      allow get: if settingId in ['bookingCoordinates', 'soberDriverBooking'];
       allow create, update: if isAdmin() && (settingId != 'customerPricing' || validCustomerPricingConfig(request.resource.data));
       allow delete: if isAdmin();
     }
 
     match /orders/{orderId} {
-      allow create: if (isAdmin() && validVehicleFare(request.resource.data) && adminAssignsSuitableVehicle(request.resource.data) && adminFinanceOrderCreate(orderId)) || validClientOrderCreate();
+      allow create: if validClientOrderCreate()
+        || (isAdmin() && validVehicleFare(request.resource.data) && adminAssignsSuitableVehicle(request.resource.data) && adminFinanceOrderCreate(orderId));
       allow read: if isAdmin()
         || (signedIn() && resource.data.clientUid == request.auth.uid)
         || (mayOpenOrders() && resource.data.status in ['searching', 'bidding'] && directionAllowed(resource.data, get(linkedDriverDocument()).data))

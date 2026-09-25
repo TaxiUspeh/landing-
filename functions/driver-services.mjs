@@ -6,7 +6,7 @@ export function serviceEnabled(driver = {}, direction = 'passenger') {
     : driver.passengerEnabled !== false && (driver.passengerStatus ?? 'active') === 'active';
 }
 export function allowedOrderServices(driver = {}) {
-  return [...(serviceEnabled(driver) ? PASSENGER_SERVICES : []), ...(serviceEnabled(driver, 'cargo') ? ['cargo'] : [])];
+  return [...(serviceEnabled(driver) ? PASSENGER_SERVICES.filter(service => service !== 'soberDriver' || driver.soberDriverEnabled === true) : []), ...(serviceEnabled(driver, 'cargo') ? ['cargo'] : [])];
 }
 export function profileForOrder(driver = {}, order = {}) {
   if (serviceDirection(order) !== 'cargo') return driver;
@@ -23,7 +23,7 @@ export function eligiblePushDevice(subscription, account, driver, targetUid = ''
   return typeof subscription.token === 'string' && subscription.token.length > 0
     && (!targetUid || uid === targetUid) && account?.active === true
     && String(account.driverId || '') === driverId && driver?.status === 'active' && driver.authUid === uid
-    && (!order || serviceEnabled(driver, serviceDirection(order)));
+    && (!order || allowedOrderServices(driver).includes(order.serviceType));
 }
 export function validCargoProfile(profile) {
   return !!profile && ['active', 'paused', 'blocked'].includes(profile.status)

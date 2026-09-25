@@ -1,4 +1,5 @@
-import { profileForOrder, serviceEnabled } from './functions/driver-services.mjs?v=69';
+import { profileForOrder, serviceEnabled } from './functions/driver-services.mjs?v=74';
+import { soberWorkAmount } from './sober-fare.js?v=74';
 // Positive balance is debt; negative balance is prepaid credit (existing storage convention).
 export const DEFAULT_FINANCE = Object.freeze({ commissionRate: 20, debtMode: 'unlimited', debtLimit: 0 });
 export const NEW_DRIVER_FINANCE = Object.freeze({ commissionRate: 20, debtMode: 'none', debtLimit: 0 });
@@ -22,10 +23,12 @@ export function fundingFor(driver, price, order = {}) {
     const settings = financeSettings(driver), balance = Number(driver.balance);
     if (!Number.isFinite(price) || price <= 0 || price > 10000000) return { allowed: false, reason: 'Стоимость заказа должен уточнить диспетчер.', shortfall: null };
     if (!validFinanceSettings(settings) || !Number.isFinite(balance)) return { allowed: false, reason: 'Попросите диспетчера проверить баланс и условия комиссии.', shortfall: null };
-    const amount = commissionFor(price, settings.commissionRate);
+    const baseAmount = soberWorkAmount(order, price);
+    if (baseAmount === null) return { allowed: false, reason: 'Диспетчер должен уточнить расходы на подачу и обратное такси.', shortfall: null };
+    const amount = commissionFor(baseAmount, settings.commissionRate);
     const ceiling = settings.debtMode === 'none' ? 0 : settings.debtLimit;
     const shortfall = settings.debtMode === 'unlimited' ? 0 : Math.max(0, moneyRound(balance + amount - ceiling));
-    return { allowed: shortfall === 0, amount, rate: settings.commissionRate, shortfall,
+    return { allowed: shortfall === 0, baseAmount, amount, rate: settings.commissionRate, shortfall,
         reason: shortfall ? `Недостаточно средств для комиссии. Пополните баланс на ${shortfall.toLocaleString('ru-RU')} ₸.` : '' };
 }
 export function hasOrderFunds(driver) {
@@ -40,18 +43,20 @@ export function hasOrderFunds(driver) {
 }
 export function reserveCommission(driver, price, order = {}) {
     driver = profileForOrder(driver, order);
-    const funding = fundingFor(driver, price);
+    const funding = fundingFor(driver, price, order);
     if (!funding.allowed) throw new Error(funding.reason);
     // Legacy profiles continue to work before the owner publishes the new rules.
-    return hasFinanceSettings(driver) ? { commissionTerms: { rate: funding.rate, baseAmount: price, amount: funding.amount } } : {};
+    return hasFinanceSettings(driver) || order.soberFare ? { commissionTerms: { rate: funding.rate, baseAmount: funding.baseAmount, amount: funding.amount } } : {};
 }
 export function orderCommission(order) {
     const terms = order.commissionTerms;
-    if (!terms) return { rate: 20, baseAmount: Number(order.priceAmount), amount: Number(order.priceAmount) / 5 };
-    if (terms.baseAmount !== order.priceAmount || terms.amount !== commissionFor(terms.baseAmount, terms.rate)) throw new Error('Условия комиссии заказа повреждены. Обратитесь к диспетчеру.');
+    const baseAmount = soberWorkAmount(order, Number(order.priceAmount));
+    if (baseAmount === null) throw new Error('Расходы трезвого водителя не подтверждены.');
+    if (!terms) return { rate: 20, baseAmount, amount: baseAmount / 5 };
+    if (terms.baseAmount !== baseAmount || terms.amount !== commissionFor(terms.baseAmount, terms.rate)) throw new Error('Условия комиссии заказа повреждены. Обратитесь к диспетчеру.');
     return terms;
 }
-export const commissionReason = order => `Комиссия ${orderCommission(order).rate}% от ${order.auctionRound ? 'согласованной цены аукциона' : 'максимальной цены онлайн-заказа'}`;
+export const commissionReason = order => `Комиссия ${orderCommission(order).rate}% от ${order.soberFare ? 'оплаты перегона без подачи и обратного такси' : order.auctionRound ? 'согласованной цены аукциона' : 'максимальной цены онлайн-заказа'}`;
 export const reservedCommission = orders => moneyRound(orders.filter(order => ['accepted', 'en_route', 'arrived', 'in_trip'].includes(order.status)).reduce((sum, order) => sum + orderCommission(order).amount, 0));
 export function financeSummary(driver, reserved = 0) {
     const settings = financeSettings(driver), balance = Number(driver.balance);

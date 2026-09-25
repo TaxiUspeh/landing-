@@ -1,4 +1,4 @@
-import { financeSettings, moneyRound } from './driver-finance.js?v=69';
+import { financeSettings, moneyRound } from './driver-finance.js?v=74';
 
 // Presentation only. Existing forms and their listeners keep their identity.
 export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = () => {}, onHistoryPeriodChange = () => {} } = {}) {

@@ -16,6 +16,14 @@ function isDispatcherAssignment(before, after) {
       || before?.status !== 'accepted' || before?.assignmentSource !== 'dispatcher'));
 }
 
+function soberExpensesReady(order) {
+  const fare = order?.soberFare;
+  return order?.serviceType === 'soberDriver' && fare?.schemaVersion === 1
+    && Number.isSafeInteger(fare.pickupAmount) && fare.pickupAmount >= 0
+    && Number.isSafeInteger(fare.returnAmount) && fare.returnAmount >= 0
+    && fare.pickupAmount + fare.returnAmount < order.priceAmount;
+}
+
 function createPushActions({ db, messaging, Timestamp, HttpsError, logger, eligibleSubscriptions,
   delay = ms => new Promise(resolve => setTimeout(resolve, ms)), now = Date.now }) {
   async function ownSubscription(uid, subscriptionId) {
@@ -84,17 +92,18 @@ function createPushActions({ db, messaging, Timestamp, HttpsError, logger, eligi
     return { accepted: true, testId };
   }
 
-  async function notifyAssignment(event, priceIncrease = false) {
+  async function notifyAssignment(event, priceIncrease = false, soberReady = false) {
     const before = event.data?.before?.data();
     const after = event.data?.after?.data();
-    if (priceIncrease ? !(before?.status === 'searching' && after?.status === 'searching' && after.customerIncreasedPrice === true && after.priceAmount > before.priceAmount && after.priceRevision === (before.priceRevision || 0) + 1) : !isDispatcherAssignment(before, after)) return;
+    if (soberReady ? !(before?.status === 'searching' && after?.status === 'searching' && !soberExpensesReady(before) && soberExpensesReady(after)) : priceIncrease ? !(before?.status === 'searching' && after?.status === 'searching' && after.customerIncreasedPrice === true && after.priceAmount > before.priceAmount && after.priceRevision === (before.priceRevision || 0) + 1) : !isDispatcherAssignment(before, after)) return;
     const eventTime = Date.parse(event.time || '');
     if (Number.isFinite(eventTime) && now() - eventTime > 300000) return;
     const orderId = event.params.orderId;
-    const uid = priceIncrease ? '' : after.assignedDriverUid;
+    const uid = priceIncrease || soberReady ? '' : after.assignedDriverUid;
     const current = (await db.doc(`orders/${orderId}`).get()).data();
-    if (priceIncrease ? current?.status !== 'searching' || current.priceRevision !== after.priceRevision || current.priceAmount !== after.priceAmount
+    if (soberReady ? current?.status !== 'searching' || !soberExpensesReady(current) : priceIncrease ? current?.status !== 'searching' || current.priceRevision !== after.priceRevision || current.priceAmount !== after.priceAmount
       : current?.status !== 'accepted' || current.assignedDriverUid !== uid || current.assignmentSource !== 'dispatcher' || millis(current.acceptedAt) !== millis(after.acceptedAt)) return;
+    if (current?.serviceType === 'soberDriver' && current.soberFare && !soberExpensesReady(current)) return;
     const subscriptions = await eligibleSubscriptions(uid, current);
     if (!subscriptions.length) {
       logger.info('Нет устройств для пуша назначения.', { orderId });
@@ -102,7 +111,7 @@ function createPushActions({ db, messaging, Timestamp, HttpsError, logger, eligi
     }
     // Firestore can redeliver one event. Track successful tokens and lease in a
     // server-only record so a retry only attempts the remaining destinations.
-    const eventRef = db.doc(`driverPushDeliveries/${hash(priceIncrease ? `price:${orderId}:${after.priceRevision}` : event.id)}`);
+    const eventRef = db.doc(`driverPushDeliveries/${hash(soberReady ? `sober-ready:${orderId}` : priceIncrease ? `price:${orderId}:${after.priceRevision}` : event.id)}`);
     const limitRef = db.doc(`driverPricePushLimits/${orderId}`);
     const delivered = await db.runTransaction(async transaction => {
       const snapshot = await transaction.get(eventRef);
@@ -125,11 +134,12 @@ function createPushActions({ db, messaging, Timestamp, HttpsError, logger, eligi
     const pending = [...unique.values()].filter(snapshot => !done.has(hash(snapshot.data().token)));
     try {
       for (let index = 0; index < pending.length; index += 500) {
+        if (soberReady) { const latest = (await db.doc(`orders/${orderId}`).get()).data(); if (latest?.status !== 'searching' || !soberExpensesReady(latest)) break; }
         if (priceIncrease) { const latest = (await db.doc(`orders/${orderId}`).get()).data(); if (latest?.status !== 'searching' || latest.priceRevision !== after.priceRevision) break; }
         const group = pending.slice(index, index + 500);
         const response = await messaging.sendEachForMulticast({
           tokens: group.map(snapshot => snapshot.data().token),
-          data: { type: priceIncrease ? 'order_price_increased' : 'order_assigned', orderId, title: priceIncrease ? 'Клиент повысил цену заказа' : 'Диспетчер назначил заказ',
+          data: { type: soberReady ? 'new_order' : priceIncrease ? 'order_price_increased' : 'order_assigned', orderId, title: soberReady ? 'Трезвый водитель: расходы подтверждены' : priceIncrease ? 'Клиент повысил цену заказа' : 'Диспетчер назначил заказ',
             body: priceIncrease ? `Новая цена: ${after.priceAmount} ₸. Откройте кабинет, чтобы посмотреть заказ.` : 'Откройте кабинет, чтобы посмотреть маршрут и цену.',
             url: `${PORTAL_URL}?order=${encodeURIComponent(orderId)}#driver-online-orders` },
           webpush: { headers: { TTL: '300', Urgency: 'high' } }
@@ -151,7 +161,7 @@ function createPushActions({ db, messaging, Timestamp, HttpsError, logger, eligi
       await eventRef.set({ leaseUntil: Timestamp.fromMillis(0) }, { merge: true });
     }
   }
-  return { sendTest, notifyAssignment, notifyPriceIncrease: event => notifyAssignment(event, true) };
+  return { sendTest, notifyAssignment, notifyPriceIncrease: event => notifyAssignment(event, true), notifySoberReady: event => notifyAssignment(event, false, true) };
 }
 
-module.exports = { createPushActions, isDispatcherAssignment, TEST_DELAY_MS, TEST_COOLDOWN_MS };
+module.exports = { createPushActions, soberExpensesReady, isDispatcherAssignment, TEST_DELAY_MS, TEST_COOLDOWN_MS };

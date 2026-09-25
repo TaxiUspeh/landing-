@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build:styles": "npx tailwindcss@3.4.17 -c tailwind.config.cjs -i styles/tailwind.input.css -o styles/tailwind.css --minify",
-    "check": "node scripts/check-site.mjs && node --test scripts/order-time.test.mjs scripts/driver-services.test.mjs scripts/customer-pricing.test.mjs scripts/booking-core.test.mjs scripts/booking-route.test.mjs scripts/manual-orders.test.mjs scripts/taxi-pricing.test.mjs scripts/pricing-adjustments.test.mjs scripts/delivery-pricing.test.mjs scripts/vehicle-categories.test.mjs scripts/driver-finance.test.mjs scripts/driver-push-worker.test.mjs functions/push-actions.test.cjs"
+    "check": "node scripts/check-site.mjs && node --test scripts/sober-pricing.test.mjs scripts/order-time.test.mjs scripts/driver-services.test.mjs scripts/customer-pricing.test.mjs scripts/booking-core.test.mjs scripts/booking-route.test.mjs scripts/manual-orders.test.mjs scripts/taxi-pricing.test.mjs scripts/pricing-adjustments.test.mjs scripts/delivery-pricing.test.mjs scripts/vehicle-categories.test.mjs scripts/driver-finance.test.mjs scripts/driver-push-worker.test.mjs functions/push-actions.test.cjs"
   },
   "devDependencies": {
     "tailwindcss": "3.4.17"

@@ -1,4 +1,4 @@
-import { serviceEnabled, serviceDirection } from './functions/driver-services.mjs?v=69';
+import { serviceEnabled, serviceDirection } from './functions/driver-services.mjs?v=74';
 export const VEHICLE_CATEGORIES = Object.freeze({
   sedan: Object.freeze({ label: 'Легковой', surchargePercent: 0 }),
   wagon: Object.freeze({ label: 'Универсал', surchargePercent: 20 }),
@@ -39,6 +39,7 @@ export function validVehicleProfile(serviceCategories, passengerSeats) {
 }
 export function driverCanServeOrder(driver, order = {}) {
   if (!serviceEnabled(driver, serviceDirection(order))) return false;
+  if (order.serviceType === 'soberDriver' && driver.soberDriverEnabled !== true) return false;
   if (order.serviceType && order.serviceType !== 'taxi') return true;
   const category = order.vehicleCategory ?? 'sedan';
   const count = order.passengerCount ?? 1;

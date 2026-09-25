@@ -1,4 +1,4 @@
-import { normalizeCity } from './booking-core.js?v=60';
+import { normalizeCity } from './booking-core.js?v=74';
 
 // The published list contains hub ↔ settlement prices. Never invent a trip
 // through the hub or silently omit an unknown leg of a multi-stop route.

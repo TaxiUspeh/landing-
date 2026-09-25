@@ -1,8 +1,9 @@
-import { addressWithCity } from './booking-core.js?v=60';
-import { priceSettings, offerFields, priceDescription, increaseOrderPrice } from './customer-pricing.js?v=67';
-import { createPriceControl } from './customer-price-control.js?v=73';
-import { orderCategorySummary } from './vehicle-categories.js?v=69';
-import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=69';
+import { soberFareForPrice } from './sober-fare.js?v=74';
+import { addressWithCity } from './booking-core.js?v=74';
+import { priceSettings, offerFields, priceDescription, increaseOrderPrice } from './customer-pricing.js?v=74';
+import { createPriceControl } from './customer-price-control.js?v=74';
+import { orderCategorySummary } from './vehicle-categories.js?v=74';
+import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=74';
 import { auth, db } from './firebase-config.js';
 import {
     onAuthStateChanged,
@@ -82,16 +83,16 @@ let lastObservedOrderStatus = '';
 let activeOrderView = 'taxi';
 
 function normalizedOrderService(serviceType) {
-    return ['delivery', 'auction'].includes(serviceType) ? serviceType : 'taxi';
+    return ['delivery', 'auction', 'soberDriver'].includes(serviceType) ? serviceType : 'taxi';
 }
 
 function orderView(serviceType = activeOrderView) {
-    if (serviceType === 'auction') {
-        const el = suffix => document.getElementById(`auction-${suffix}`);
+    if (['auction', 'soberDriver'].includes(serviceType)) {
+        const el = suffix => document.getElementById(`${serviceType}-${suffix}`);
         return {
-            serviceType, form: document.getElementById('auctionForm'),
-            onlineButton: el('online-order-button'), customerName: document.getElementById('auctionCustomerName'),
-            customerPhone: document.getElementById('auctionCustomerPhone'), status: document.getElementById('auctionStatus'),
+            serviceType, form: document.getElementById(`${serviceType}Form`),
+            onlineButton: el('online-order-button'), customerName: document.getElementById(`${serviceType}CustomerName`),
+            customerPhone: document.getElementById(`${serviceType}CustomerPhone`), status: document.getElementById(`${serviceType}Status`),
             panel: el('online-order-panel'), orderNumber: el('online-order-number'), orderStatus: el('online-order-status'),
             panelMessage: el('online-order-message'), orderRoute: el('online-order-route'), orderPrice: el('online-order-price'),
             driverBlock: el('online-driver'), driverName: el('online-driver-name'), driverCar: el('online-driver-car'),
@@ -375,7 +376,7 @@ function showOrderPanel(order) {
     setHidden(view.driverBlock, !hasDriver);
     if (hasDriver) {
         if (view.driverName) view.driverName.textContent = order.driverName || 'Водитель';
-        if (view.driverCar) view.driverCar.textContent = ([order.driverCar, order.driverColor].filter(Boolean).join(', ') || 'Автомобиль уточняется') + (order.serviceType === 'auction' && order.arrivalMinutes ? ` · Подача: ${order.arrivalMinutes} мин` : '');
+        if (view.driverCar) view.driverCar.textContent = (order.serviceType === 'soberDriver' ? `Ваш автомобиль: ${order.serviceDetails?.carModel || 'уточняется'} · ${order.serviceDetails?.transmission === 'manual' ? 'МКПП' : 'АКПП'}` : ([order.driverCar, order.driverColor].filter(Boolean).join(', ') || 'Автомобиль уточняется')) + (order.serviceType === 'auction' && order.arrivalMinutes ? ` · Подача: ${order.arrivalMinutes} мин` : '');
         if (view.driverCall) view.driverCall.href = telHref(order.driverPhone);
         setHidden(view.driverCall, !order.driverPhone);
     }
@@ -624,7 +625,7 @@ async function commitPendingSubmission(record) {
 }
 const priceControls = new Map();
 function updatePriceControls(order, view) {
-    if (!['taxi', 'delivery'].includes(order.serviceType) || !view.orderPrice) return;
+    if (!['taxi', 'delivery', 'soberDriver'].includes(order.serviceType) || !view.orderPrice) return;
     let entry = priceControls.get(order.serviceType);
     if (!entry) {
         const summary = document.createElement('p'); summary.className = 'customer-price-summary';
@@ -667,6 +668,63 @@ window.addEventListener('online', () => { void loadCustomerPricing(); });
 
 function containsRestrictedDeliveryItems(value) {
     return /(алкогол|пиво|вино|водк|сигар|табак|никотин|вейп)/i.test(String(value || ''));
+}
+
+async function createOnlineSoberOrder() {
+    if (window.bookingScreen?.isPreview() || !ONLINE_ORDERS_ENABLED || actionInProgress || resumeExistingOrder()) return;
+    activeOrderView = 'soberDriver';
+    const view = orderView('soberDriver'); setStatus('');
+    if (!window.soberBookingReady || !window.customerPricingReady) { setStatus('Онлайн-заказ услуги ещё подключается. Позвоните диспетчеру.'); return; }
+    const fromAddress = combineAddress('soberDriverFrom', 'soberDriverHouse', 'soberDriverApt');
+    const toAddress = document.getElementById('soberDriverTo').value.trim();
+    const carModel = document.getElementById('soberDriverCarModel').value.trim();
+    const transmission = document.getElementById('soberDriverTransmission').value;
+    const customerPhone = normalizePhone(view.customerPhone.value), customerName = view.customerName.value.trim();
+    if (!fromAddress || !toAddress) { setStatus('Укажите, где находится автомобиль и куда его перегнать.'); return; }
+    if (!carModel || !['manual', 'automatic'].includes(transmission)) { setStatus('Укажите марку автомобиля и коробку передач.'); view.form.reportValidity(); return; }
+    if (!validPhone(customerPhone)) { setStatus('Укажите корректный номер телефона.'); view.customerPhone.focus(); return; }
+    if (fromAddress.length > 240 || toAddress.length > 240 || carModel.length > 120 || customerName.length > 80) { setStatus('Сократите адрес, имя или марку автомобиля.'); return; }
+    const selection = window.getCustomerPriceSelection?.('soberDriver');
+    const quote = selection?.calculatedPrice === null ? null : window.getSoberFareForOrder?.();
+    const offered = selection?.amount ?? window.getCustomerPriceOffer?.('soberDriver') ?? null;
+    const route = window.bookingScreen?.orderRoute?.('soberDriver');
+    const wishes = window.bookingScreen?.soberData?.()?.wishes || '';
+    let pricing;
+    try { pricing = customerOrderPricing('soberDriver', quote?.priceAmount ?? null, offered, 'sober_route'); }
+    catch (error) { setStatus(error.message); return; }
+    if (!pricing) { setStatus('Дождитесь расчёта или предложите свою цену от 3 800 ₸.'); return; }
+    const soberFare = soberFareForPrice(window.getSoberExpenses?.(), pricing.priceAmount);
+    void prepareClientOrderSound(); setActionBusy(true, 'soberDriver');
+    try {
+        const user = await ensureSignedIn(), orderRef = customerOrderReference(user);
+        const batch = customerOrderBatch(orderRef, user);
+        batch.set(orderRef, {
+            orderNumber: createOrderNumber(), serviceType: 'soberDriver', source: 'online', clientUid: user.uid,
+            fromAddress, toAddress, stops: route?.stops.map(point => addressWithCity(point)) || [], ...coordinateFields(route),
+            wishes, scheduledFor: '', direction: route?.to.city || '', serviceDetails: { carModel, transmission },
+            ...pricing, soberFare, routeDistanceMeters: quote?.distanceMeters ?? null,
+            priceUpdatedAt: serverTimestamp(), status: 'searching', createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+        });
+        batch.set(doc(db, 'orderContacts', orderRef.id), {
+            clientUid: user.uid, customerName: customerName || 'Клиент', customerPhone, passengerPhone: '',
+            createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+        });
+        await batch.commit();
+        storeValue(CUSTOMER_NAME_STORAGE_KEY, customerName); storeValue(CUSTOMER_PHONE_STORAGE_KEY, customerPhone);
+        window.saveOrderToFullHistory?.(fromAddress, toAddress, pricing.priceText);
+        startOrderWatch(orderRef.id);
+    } catch (error) {
+        console.error('Заказ трезвого водителя не создан:', error);
+        setStatus('Не удалось отправить заказ. Проверьте интернет и повторите отправку.', false, 'soberDriver');
+        const pending = pendingSubmission(); if (pending?.writes) showPendingSubmission(pending);
+    } finally { setActionBusy(false, 'soberDriver'); }
+}
+async function loadSoberBooking() {
+    try {
+        const snapshot = await getDocFromServer(doc(db, 'settings', 'soberDriverBooking'));
+        window.soberBookingReady = snapshot.exists() && snapshot.data().schemaVersion === 1;
+    } catch { window.soberBookingReady = false; }
+    window.dispatchEvent(new Event('sober-booking-ready'));
 }
 
 async function createOnlineDeliveryOrder() {
@@ -823,7 +881,7 @@ async function cancelOnlineOrder() {
 }
 
 function restoreSavedContact() {
-    for (const view of [orderView('taxi'), orderView('delivery'), orderView('auction')]) {
+    for (const view of [orderView('taxi'), orderView('delivery'), orderView('auction'), orderView('soberDriver')]) {
         if (view.customerName && !view.customerName.value) {
             view.customerName.value = readStoredValue(CUSTOMER_NAME_STORAGE_KEY);
         }
@@ -946,6 +1004,13 @@ async function createOnlineAuctionOrder() {
         setStatus(error.code === 'permission-denied' ? 'Онлайн-аукцион пока недоступен. Позвоните диспетчеру.' : 'Не удалось отправить заказ. Проверьте интернет и попробуйте ещё раз.', false, 'auction');
     } finally { setActionBusy(false, 'auction'); }
 }
+void loadSoberBooking();
+window.addEventListener('online', () => { void loadSoberBooking(); });
+const soberView = orderView('soberDriver');
+soberView.onlineButton?.addEventListener('click', createOnlineSoberOrder);
+soberView.form?.addEventListener('submit', event => { event.preventDefault(); void createOnlineSoberOrder(); });
+soberView.cancelButton?.addEventListener('click', cancelOnlineOrder);
+soberView.newOrderButton?.addEventListener('click', resetToForm);
 const auctionView = orderView('auction');
 auctionView.onlineButton?.addEventListener('click', createOnlineAuctionOrder);
 auctionView.form?.addEventListener('submit', event => { event.preventDefault(); void createOnlineAuctionOrder(); });

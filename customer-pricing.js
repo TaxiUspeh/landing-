@@ -1,3 +1,4 @@
+import { soberFareDescription } from './sober-fare.js?v=74';
 // Amounts are integer KZT. Offers are final fares, never input to surge again.
 export const DEFAULT_CUSTOMER_PRICING = Object.freeze({ enabled: true, quickPercentages: [10, 20, 30], minimumIncrease: 1, maximumPrice: 1000000, taxiMinimum: 800, deliveryMinimum: 1200 });
 export function priceSettings(value = {}) {
@@ -12,7 +13,7 @@ export function priceSettings(value = {}) {
 }
 export function minimumOffer(service, calculated, config, current = null) {
   if (current !== null) return current + config.minimumIncrease;
-  return calculated ?? (service === 'delivery' ? config.deliveryMinimum : config.taxiMinimum);
+  return calculated ?? (service === 'soberDriver' ? 3800 : service === 'delivery' ? config.deliveryMinimum : config.taxiMinimum);
 }
 export function validOffer(amount, minimum, config) {
   return Number.isSafeInteger(amount) && amount >= minimum && amount <= config.maximumPrice;
@@ -33,7 +34,7 @@ export function priceDescription(order) {
   const original = order.calculatedPrice === null ? 'Автоматическая стоимость недоступна' : `Расчётная цена: ${priceLabel(order.calculatedPrice)}`;
   const offer = order.customerOfferPrice !== null ? `${order.customerIncreasedPrice ? '🔥 ' : ''}Клиент предлагает: ${priceLabel(order.priceAmount)}` : '';
   const raised = order.priceRevision > 0 ? `Цена повышена: ${priceLabel(order.previousPrice)} → ${priceLabel(order.priceAmount)}` : '';
-  return [original, offer, raised, order.routeDistanceMeters > 0 ? `По дорогам: ${(order.routeDistanceMeters / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} км` : order.calculatedPrice === null ? 'Расстояние не рассчитано' : ''].filter(Boolean).join(' · ');
+  return [soberFareDescription(order), original, offer, raised, order.routeDistanceMeters > 0 ? `По дорогам: ${(order.routeDistanceMeters / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} км` : order.calculatedPrice === null ? 'Расстояние не рассчитано' : ''].filter(Boolean).join(' · ');
 }
 // Security rules can see a concurrent price before the SDK retries its precondition.
 // One fresh transaction re-reads all fields; it never reuses a stale commission.
@@ -57,7 +58,7 @@ export async function increaseOrderPrice(db, sdk, { orderId, uid, amount, operat
     const order = orderSnap.data();
     if (!orderSnap.exists() || order.clientUid !== uid) throw new Error('Этот заказ недоступен.');
     if (order.status !== 'searching' || order.assignedDriverUid) throw new Error('Водитель уже принял заказ или поиск завершён. Цена не изменена.');
-    if (!['taxi', 'delivery'].includes(order.serviceType) || !config.enabled || !validOffer(amount, minimumOffer(order.serviceType, null, config, order.priceAmount), config)) throw new Error('Новая цена должна быть выше текущей и в пределах настроенного лимита.');
+    if (!['taxi', 'delivery', 'soberDriver'].includes(order.serviceType) || !config.enabled || !validOffer(amount, minimumOffer(order.serviceType, null, config, order.priceAmount), config)) throw new Error('Новая цена должна быть выше текущей и в пределах настроенного лимита.');
     const calculated = order.pricingType ? order.calculatedPrice : order.priceAmount;
     const fields = offerFields(calculated, amount, order.serviceType, config, order.calculationType || 'tariff');
     const revision = (order.priceRevision || 0) + 1;

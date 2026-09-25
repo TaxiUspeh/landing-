@@ -1,4 +1,4 @@
-import { minimumOffer, validOffer, priceLabel } from './customer-pricing.js?v=67';
+import { minimumOffer, validOffer, priceLabel } from './customer-pricing.js?v=74';
 export function createPriceControl({ host, id, onChange = () => {}, onConfirm = null }) {
   host.classList.add('customer-price-control');
   host.innerHTML = `<button type="button" class="customer-price-toggle" aria-expanded="false" aria-controls="${id}-editor">Предложить свою цену</button>
@@ -20,7 +20,7 @@ export function createPriceControl({ host, id, onChange = () => {}, onConfirm = 
     const basePrice = calculated();
     const minimum = minimumOffer(service, basePrice, config, current);
     const amount = value();
-    host.querySelector('.customer-price-base').textContent = current !== null ? `Текущая цена: ${priceLabel(current)}` : basePrice === null ? 'Укажите свою цену. Водитель сможет принять заказ.' : `Расчётная цена: ${priceLabel(basePrice)}`;
+    host.querySelector('.customer-price-base').textContent = current !== null ? `Текущая цена: ${priceLabel(current)}` : basePrice === null ? (service === 'soberDriver' ? 'Укажите свою цену. Если расходы неизвестны, диспетчер уточнит их перед назначением водителя.' : 'Укажите свою цену. Водитель сможет принять заказ.') : `Расчётная цена: ${priceLabel(basePrice)}`;
     host.querySelector('.customer-price-hint').textContent = basePrice === null ? 'Адрес и цена будут переданы водителю. Если нужно, добавьте ориентир в пожеланиях.' : 'Хотите сделать заказ привлекательнее для водителей? Вы можете предложить свою цену.';
     input.min = minimum; input.max = config.maximumPrice;
     error.textContent = amount !== null && !validOffer(amount, minimum, config) ? `Введите целую сумму от ${priceLabel(minimum)} до ${priceLabel(config.maximumPrice)}.` : '';

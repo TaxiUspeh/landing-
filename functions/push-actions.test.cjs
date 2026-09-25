@@ -135,3 +135,16 @@ test('price increase notifications target all drivers, deduplicate and suppress 
   const newer=priceEvent(f,2,4500,5000);await f.notifyPriceIncrease(newer);assert.equal(f.messages.length,1,'cooldown suppresses rapid repeats');
   f.advance(60001);const latest=priceEvent(f,3,5000,5500);await f.notifyPriceIncrease(e);assert.equal(f.messages.length,1);await f.notifyPriceIncrease(latest);assert.equal(f.messages.length,2);
 });
+
+test('sober expense confirmation notifies once, only while still searching, never on pending expenses', async () => {
+  const f=fixture();
+  const before={serviceType:'soberDriver',status:'searching',priceAmount:5000,soberFare:{schemaVersion:1,pickupAmount:null,returnAmount:null}};
+  const after={...before,soberFare:{schemaVersion:1,pickupAmount:800,returnAmount:1200}};
+  const event={id:'sober-event',params:{orderId:'order-1'},data:{before:{data:()=>before},after:{data:()=>after}}};
+  f.records.set('orders/order-1',after);
+  await f.notifySoberReady(event);await f.notifySoberReady(event);
+  assert.equal(f.messages.length,1);assert.equal(f.messages[0].data.type,'new_order');assert.equal(f.targets[0],'');
+  const closed=fixture();closed.records.set('orders/order-1',{...after,status:'cancelled'});await closed.notifySoberReady(event);assert.equal(closed.messages.length,0);
+  const pending=fixture();pending.records.set('orders/order-1',before);await pending.notifySoberReady(event);assert.equal(pending.messages.length,0);
+  const noChange=fixture();noChange.records.set('orders/order-1',after);await noChange.notifySoberReady({...event,data:{before:{data:()=>after},after:{data:()=>after}}});assert.equal(noChange.messages.length,0);
+});

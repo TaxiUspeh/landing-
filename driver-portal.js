@@ -1,12 +1,12 @@
 import { navigationRoute } from './booking-route.js?v=73';
 import { orderTimeInfo } from './order-time.js?v=71';
-import { normalizeCity } from './booking-core.js?v=60';
-import { serviceEnabled, allowedOrderServices, profileForOrder, assignmentVehicle, serviceDirection } from './functions/driver-services.mjs?v=69';
-import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=67';
-import { initDriverCabinet } from './driver-cabinet.js?v=69';
-import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=69';
-import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=69';
-import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=69';
+import { normalizeCity } from './booking-core.js?v=74';
+import { serviceEnabled, allowedOrderServices, profileForOrder, assignmentVehicle, serviceDirection } from './functions/driver-services.mjs?v=74';
+import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=74';
+import { initDriverCabinet } from './driver-cabinet.js?v=74';
+import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=74';
+import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=74';
+import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=74';
 import { app, auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -1769,7 +1769,7 @@ function orderServiceDetailsText(order) {
         ].filter(Boolean).join(' · ');
     }
     if (order.serviceType === 'soberDriver') {
-        return details.carModel ? `Автомобиль клиента: ${details.carModel}` : '';
+        return [details.carModel ? `Автомобиль клиента: ${details.carModel}` : '', details.transmission === 'manual' ? 'МКПП' : details.transmission === 'automatic' ? 'АКПП' : ''].filter(Boolean).join(' · ');
     }
     if (order.serviceType === 'assistance') {
         return [
@@ -2325,7 +2325,7 @@ async function advanceOrder(orderId, expectedStatus, nextStatus) {
                 if (!driverSnapshot.exists()) throw new Error('Карточка водителя не найдена.');
                 if (historySnapshot.exists()) throw new Error('Комиссия по этому заказу уже учтена.');
 
-                commissionBaseAmount = Number(order.priceAmount);
+                commissionBaseAmount = orderCommission(order).baseAmount;
                 previousBalance = Number(driverSnapshot.data().balance);
                 if (!Number.isFinite(commissionBaseAmount) || commissionBaseAmount <= 0) {
                     throw new Error('В заказе нет корректной цены для комиссии.');

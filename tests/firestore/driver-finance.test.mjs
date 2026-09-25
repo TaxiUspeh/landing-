@@ -1,3 +1,6 @@
+import { confirmSoberExpenses } from '../../sober-dispatch.js';
+import { offerFields, priceSettings, increaseOrderPrice } from '../../customer-pricing.js';
+import { allowedOrderServices } from '../../functions/driver-services.mjs';
 import { assignmentVehicle } from '../../functions/driver-services.mjs';
 import { retryPriceConflict } from '../../customer-pricing.js';
 import { readFile } from 'node:fs/promises';
@@ -47,7 +50,54 @@ async function settings(patch) {
 }
 async function arriveComplete() {assert.ok((await run('advanceOrder','driver-a',['order-a','accepted','arrived'])).success);return run('advanceOrder','driver-a',['order-a','arrived','completed']);}
 async function test(name, fn) {await seed();await fn();console.log('PASS: '+name);passed++;}
+async function soberOrder(overrides={}) {
+ await sdk.deleteDoc(doc(db('admin'),'orders','order-a'));
+ await updateDoc(doc(db('admin'),'drivers','d-a'),{soberDriverEnabled:true});
+ await setDoc(doc(db('admin'),'settings','soberDriverBooking'),{schemaVersion:1});
+ await order('order-a',{serviceType:'soberDriver',serviceDetails:{carModel:'Toyota',transmission:'manual'},
+   ...offerFields(5000,null,'soberDriver',priceSettings(),'sober_route'),priceUpdatedAt:serverTimestamp(),
+   soberFare:{schemaVersion:1,base:'Белоусовка',pickupAmount:1000,returnAmount:1000},...overrides});
+}
 try {
+ await test('sober online create, opt-in queries, acceptance and completion charge only work once',async()=>{
+  await soberOrder();
+  await updateDoc(doc(db('admin'),'drivers','d-a'),{soberDriverEnabled:false});
+  await assertFails(getDoc(doc(db('driver-a'),'orders','order-a')));
+  const ordinaryQuery=sdk.query(sdk.collection(db('driver-a'),'orders'),sdk.where('status','==','searching'),sdk.where('serviceType','in',allowedOrderServices({})));
+  assert.equal((await sdk.getDocs(ordinaryQuery)).size,0);
+  await assertFails(updateDoc(doc(db('driver-a'),'drivers','d-a'),{soberDriverEnabled:true}));
+  await updateDoc(doc(db('admin'),'drivers','d-a'),{soberDriverEnabled:true});
+  assert.ok((await getDoc(doc(db('driver-a'),'orders','order-a'))).exists());
+  assert.ok((await run('acceptOrder','driver-a',['order-a'])).success);
+  assert.deepEqual((await readOrder()).commissionTerms,{rate:20,baseAmount:3000,amount:600});
+  await assertFails(updateDoc(doc(db('admin'),'orders','order-a'),{soberFare:{schemaVersion:1,base:'Белоусовка',pickupAmount:0,returnAmount:0}}));
+  assert.ok((await arriveComplete()).success);assert.equal((await readDriver()).balance,500);assert.equal((await readOrder()).commissionBaseAmount,3000);
+  assert.ok(!(await run('advanceOrder','driver-a',['order-a','arrived','completed'])).success);assert.equal((await readDriver()).balance,500);
+ });
+ await test('sober own price is saved without geocoding, then expenses confirmed and commission reserved',async()=>{
+  await soberOrder({...offerFields(null,4000,'soberDriver',priceSettings()),soberFare:{schemaVersion:1,base:'Белоусовка',pickupAmount:null,returnAmount:null},fromAddress:'Чапаева көшесі, у трассы'});
+  assert.ok(!(await run('acceptOrder','driver-a',['order-a'])).success);
+  await assert.rejects(confirmSoberExpenses(db('admin'),sdk,{orderId:'order-a',uid:'admin',pickupAmount:2500,returnAmount:2500}));
+  await assertFails(updateDoc(doc(db('client'),'orders','order-a'),{soberFare:{schemaVersion:1,base:'Белоусовка',pickupAmount:1000,returnAmount:1000}}));
+  await confirmSoberExpenses(db('admin'),sdk,{orderId:'order-a',uid:'admin',pickupAmount:1000,returnAmount:1000});
+  assert.equal((await readOrder()).priceAmount,4000);assert.ok((await run('assignOrderManually','admin',['order-a','d-a'])).success);
+ });
+ await test('sober price increase freezes taxi expenses; dispatcher completion uses the work base',async()=>{
+  await soberOrder();
+  await increaseOrderPrice(db('client'),sdk,{orderId:'order-a',uid:'client',amount:6000,operationId:'sober-increase'});
+  assert.equal((await readOrder()).soberFare.pickupAmount,1000);
+  assert.ok((await run('acceptOrder','driver-a',['order-a'])).success);
+  assert.equal((await readOrder()).commissionTerms.baseAmount,4000);
+  assert.ok((await run('completeOnlineOrder','admin',[{id:'order-a',...await readOrder()}])).success);
+  assert.equal((await readOrder()).commissionBaseAmount,4000);assert.equal((await readDriver()).balance,700);
+ });
+ await test('sober payload rejects missing model, bogus expenses and prices below minimum',async()=>{
+  await soberOrder();
+  const base={...await readOrder(),createdAt:serverTimestamp(),updatedAt:serverTimestamp(),priceUpdatedAt:serverTimestamp()};
+  for(const offered of [null,6000]) await setDoc(doc(db('client'),'orders',`full-sober-${offered}`),{...base,...offerFields(5000,offered,'soberDriver',priceSettings(),'sober_route'),stops:Array(5).fill('Остановка'),routeCoordinates:Array(7).fill({lat:50.132,lon:82.533}),wishes:'Ориентир '.repeat(50)});
+  for(const point of [{lat:'50.132',lon:82.533},{lat:true,lon:82.533},{lat:50.132},{lat:91,lon:82.533},{lat:50.132,lon:181},{lat:50.132,lon:82.533,other:0},'invalid-coordinate']) await assertFails(setDoc(doc(db('client'),'orders','bad-point'),{...base,routeCoordinates:[point,null]}));
+  for(const patch of [{serviceDetails:{carModel:'',transmission:'manual'}},{soberFare:{schemaVersion:1,base:'Белоусовка',pickupAmount:-1,returnAmount:1000}},{soberFare:{schemaVersion:1,base:'Белоусовка',pickupAmount:4000,returnAmount:1000}},{priceAmount:1000,priceText:'1000 ₸',finalDisplayedPrice:1000,calculatedPrice:1000}]) await assertFails(setDoc(doc(db('client'),'orders','bad-sober'),{...base,...patch}));
+ });
  await test('zero-price orders cannot be created by clients or dispatchers',async()=>{
   await assertFails(order('zero-price',{priceAmount:0,priceText:'Стоимость уточняется'}));
   await assertFails(setDoc(doc(db('admin'),'orders','zero-manual'),{...await readOrder(),source:'dispatcher',clientUid:'',priceAmount:0}));

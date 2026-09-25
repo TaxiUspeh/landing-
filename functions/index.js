@@ -5,7 +5,7 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 const { getMessaging } = require('firebase-admin/messaging');
-const { createPushActions } = require('./push-actions');
+const { createPushActions, soberExpensesReady } = require('./push-actions');
 
 initializeApp();
 setGlobalOptions({ region: 'us-central1', maxInstances: 2 });
@@ -56,7 +56,7 @@ async function eligibleDriverPushSubscriptions(targetDriverUid = '', order = nul
 
 exports.notifyDriversOfNewOnlineOrder = onDocumentCreated('orders/{orderId}', async event => {
   const order = event.data?.data();
-  if (!order) return;
+  if (!order || (order.serviceType === 'soberDriver' && order.soberFare && !soberExpensesReady(order))) return;
 
   const sendToAllDrivers = order.status === 'searching'
     && ['online', 'dispatcher'].includes(order.source);
@@ -119,4 +119,8 @@ exports.notifyDriversOfOrderAssignment = onDocumentUpdated(
 
 exports.notifyDriversOfPriceIncrease = onDocumentUpdated(
   { document: 'orders/{orderId}', retry: true, timeoutSeconds: 60 }, pushActions.notifyPriceIncrease
+);
+
+exports.notifyDriversOfSoberReady = onDocumentUpdated(
+  { document: 'orders/{orderId}', retry: true, timeoutSeconds: 60 }, pushActions.notifySoberReady
 );

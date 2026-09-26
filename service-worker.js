@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v74-sober-driver';
+const CACHE_NAME = 'taxi-uspeh-v75-cargo-card-save';
 const APP_SHELL = [
   './',
   './sober-fare.js?v=74',
@@ -39,7 +39,7 @@ const APP_SHELL = [
   './driver-cabinet.js?v=74',
   './styles/driver-cabinet.css?v=72',
   './dispatcher.html',
-  './dispatcher.js?v=74',
+  './dispatcher.js?v=75',
   './firebase-config.js',
   './food.html',
   './SHASHDVOR.html',

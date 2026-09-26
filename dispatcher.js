@@ -2632,6 +2632,14 @@ async function ensureUidAvailable(uid, driverId) {
     }
 }
 
+// Cargo profiles contain flat values. Firestore reads may return their keys in a different order.
+function sameCargoProfile(left, right) {
+    if (left == null || right == null) return left === right;
+    const keys = Object.keys(left);
+    return keys.length === Object.keys(right).length
+        && keys.every(key => Object.hasOwn(right, key) && left[key] === right[key]);
+}
+
 async function saveDriver(original, controls) {
     controls.button.disabled = true;
     setMessage(controls.message, '');
@@ -2666,7 +2674,7 @@ async function saveDriver(original, controls) {
             const editedBalance = requestedBalance !== Number(original.balance);
             if (editedBalance && Number(fresh.balance) !== Number(original.balance)) throw new Error('Баланс уже изменился. Обновите карточку и повторите корректировку.');
             const balance = editedBalance ? requestedBalance : Number(fresh.balance);
-            if (cargo && JSON.stringify(fresh.cargoProfile) !== JSON.stringify(original.cargoProfile)) throw new Error('Грузовая карточка уже изменилась. Обновите её.');
+            if (cargo && !sameCargoProfile(fresh.cargoProfile, original.cargoProfile)) throw new Error('Грузовая карточка уже изменилась. Обновите её.');
             if (!cargo && fresh.passengerEnabled === false) throw new Error('Легковое направление отключено. Обновите карточку.');
             if (JSON.stringify(financeSettings(fresh)) !== JSON.stringify(financeSettings(original))) throw new Error('Условия комиссии уже изменились. Обновите карточку.');
             const financeChanged = !Object.hasOwn(fresh, 'commissionRate') || JSON.stringify(financeSettings(fresh)) !== JSON.stringify(financial);
@@ -2676,7 +2684,7 @@ async function saveDriver(original, controls) {
                 balance, status, authUid, updatedAt: serverTimestamp(), updatedBy: currentUser.uid,
                 ...(financeChanged ? { financeChangeId: financeHistoryRef.id } : {})
             });
-            if (cargo && JSON.stringify(fresh.cargoProfile) !== JSON.stringify(cargoProfile)) transaction.set(doc(collection(db, 'driverServiceHistory')), {
+            if (cargo && !sameCargoProfile(fresh.cargoProfile, cargoProfile)) transaction.set(doc(collection(db, 'driverServiceHistory')), {
                 driverId: original.id, direction: 'cargo', previous: fresh.cargoProfile || null, next: cargoProfile,
                 changedAt: serverTimestamp(), changedBy: currentUser.uid
             });

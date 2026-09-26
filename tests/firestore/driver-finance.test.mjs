@@ -31,7 +31,7 @@ async function order(id, overrides={}) { return setDoc(doc(db('client'),'orders'
 async function run(name, uid, args=[], overrides={}) {
  const database=db(uid),profile=(await getDoc(doc(db('admin'),'drivers','d-a'))).data();
  const messages=[];
- const context={document:{getElementById:id=>id==='existing-driver-number'?{value:'1'}:{}},drivers:[{id:'d-a',...profile}],driverDirectory:'cargo',assignmentVehicle,cargoServicesReady:true,retryPriceConflict,...sdk,...finance,...auction,driverCanServeOrder,validVehicleProfile,ensureUidAvailable:async()=>{},parseBalance:value=>Number(value),validateUid:()=>true,db:database,currentUser:{uid},currentDriver:profile,currentDriverId:'d-a',currentCanTakeOrders:finance.hasOrderFunds(profile),currentBaseEligible:finance.hasOrderFunds(profile),orderActionInProgress:false,dispatcherCompletionInProgress:false,manualOrderAssignmentInProgress:false,
+ const context={document:{getElementById:id=>id==='existing-driver-number'?{value:'1'}:{}},drivers:[{id:'d-a',...profile}],driverDirectory:'cargo',sameCargoProfile:Function(extract(dispatcherSource,'sameCargoProfile')+'; return sameCargoProfile;')(),assignmentVehicle,cargoServicesReady:true,retryPriceConflict,...sdk,...finance,...auction,driverCanServeOrder,validVehicleProfile,ensureUidAvailable:async()=>{},parseBalance:value=>Number(value),validateUid:()=>true,db:database,currentUser:{uid},currentDriver:profile,currentDriverId:'d-a',currentCanTakeOrders:finance.hasOrderFunds(profile),currentBaseEligible:finance.hasOrderFunds(profile),orderActionInProgress:false,dispatcherCompletionInProgress:false,manualOrderAssignmentInProgress:false,
  ACTIVE_ORDER_STATUSES:active,CANCELLABLE_ORDER_STATUSES:new Set([...active,'searching','bidding']),REQUEUEABLE_ORDER_STATUSES:new Set(['accepted','en_route','arrived']),REQUEUE_REASONS:[['car_issue','Неисправность автомобиля']],AVAILABLE_DRIVER_STATE:{status:'available',activeOrderId:''},
  window:{confirm:()=>true},console:{warn:()=>{},error:()=>{}},elements:{onlineOrdersMessage:{}},
  renderOnlineOrders:()=>{},showOrdersMessage:(message,success)=>messages.push({message,success}),setMessage:(el,message,success)=>messages.push({message,success}),formatMoney:value=>String(value)+' ₸',normalizeUid:value=>value,
@@ -265,12 +265,27 @@ try {
   await assertFails(updateDoc(doc(db('admin'),'drivers','d-a'),{cargoProfile:{...cargoProfile,payloadKg:0}}));
   await assertFails(updateDoc(doc(db('admin'),'drivers','d-a'),{cargoProfile:{...cargoProfile,commissionRate:101}}));
  });
- await test('saving cargo commission preserves passenger car, rate, shared balance and account',async()=>{
+ await test('cargo save tolerates reordered snapshot fields, persists the truck and preserves passenger edits',async()=>{
   await cargoDriver();const original={id:'d-a',...await readDriver()};
+  original.cargoProfile=Object.fromEntries(Object.entries(original.cargoProfile).reverse());
+  assert.notEqual(JSON.stringify(original.cargoProfile),JSON.stringify((await readDriver()).cargoProfile));
+  const controls={direction:'cargo',serviceStatus:{value:'active'},name:{value:'Driver'},phone:{value:''},car:{value:'ГАЗ 33021'},color:{value:'Серый'},balance:{value:'-100'},status:{value:'active'},uid:{value:'driver-a'},button:{},message:{},vehicleControls:{read:base=>({...cargoProfile,plate:'TEST-27',bodyType:'Бортовой',dimensions:'',...base})},financeControls:{read:()=>({commissionRate:7,debtMode:'limited',debtLimit:1000})}};
+  await updateDoc(doc(db('admin'),'drivers','d-a'),{balance:50});const result=await run('saveDriver','admin',[original,controls]);assert.ok(result.success,result.message);
+  const updated=await readDriver();assert.equal(updated.balance,50);assert.equal(updated.commissionRate,20);assert.equal(updated.car,'');assert.equal(updated.authUid,'driver-a');
+  assert.deepEqual(updated.cargoProfile,{...cargoProfile,car:'ГАЗ 33021',color:'Серый',plate:'TEST-27',bodyType:'Бортовой',dimensions:'',commissionRate:7});
+  const history=()=>sdk.getDocs(sdk.collection(db('admin'),'driverServiceHistory'));assert.equal((await history()).size,1);
+  controls.balance.value='50';assert.ok((await run('saveDriver','admin',[{id:'d-a',...updated},controls])).success);assert.equal((await history()).size,1,'unchanged cargo save must not create an audit entry');
+  const passengerControls={...controls,direction:'passenger',car:{value:'Легковой'},color:{value:'Синий'},vehicleControls:{read:()=>({serviceCategories:['sedan'],passengerSeats:4,soberDriverEnabled:false})},financeControls:{read:()=>({commissionRate:20,debtMode:'limited',debtLimit:1000})}};
+  assert.ok((await run('saveDriver','admin',[{id:'d-a',...await readDriver()},passengerControls])).success);
+  const after=await readDriver();assert.equal(after.car,'Легковой');assert.equal(after.color,'Синий');assert.deepEqual(after.cargoProfile,updated.cargoProfile);assert.equal((await history()).size,1);
+ });
+ await test('cargo save rejects a genuine concurrent change without overwriting it',async()=>{
+  await cargoDriver();const original={id:'d-a',...await readDriver()};
+  await updateDoc(doc(db('admin'),'drivers','d-a'),{'cargoProfile.plate':'NEW-PLATE'});
   const controls={direction:'cargo',serviceStatus:{value:'active'},name:{value:'Driver'},phone:{value:''},car:{value:'Газель'},color:{value:'Белый'},balance:{value:'-100'},status:{value:'active'},uid:{value:'driver-a'},button:{},message:{},vehicleControls:{read:base=>({...cargoProfile,...base})},financeControls:{read:()=>({commissionRate:7,debtMode:'limited',debtLimit:1000})}};
-  await updateDoc(doc(db('admin'),'drivers','d-a'),{balance:50});assert.ok((await run('saveDriver','admin',[original,controls])).success);
-  const updated=await readDriver();assert.equal(updated.balance,50);assert.equal(updated.commissionRate,20);assert.equal(updated.car,'');assert.equal(updated.cargoProfile.commissionRate,7);assert.equal(updated.authUid,'driver-a');
-  const history=await sdk.getDocs(sdk.collection(db('admin'),'driverServiceHistory'));assert.equal(history.size,1);assert.equal(history.docs[0].data().next.commissionRate,7);
+  const result=await run('saveDriver','admin',[original,controls]);assert.ok(!result.success);assert.match(result.message,/Грузовая карточка уже изменилась/);
+  assert.equal((await readDriver()).cargoProfile.plate,'NEW-PLATE');assert.equal((await readDriver()).cargoProfile.commissionRate,5);
+  assert.equal((await sdk.getDocs(sdk.collection(db('admin'),'driverServiceHistory'))).size,0);
  });
  await test('new cargo registration creates one cargo-only person and cannot overwrite ID or Google link',async()=>{
   const fields=Object.fromEntries(Object.entries({newDriverNumber:'30',newDriverName:'New cargo',newDriverPhone:'',newDriverCar:'Газель',newDriverColor:'Белый',newDriverBalance:'-100',newDriverUid:'cargo-new',newDriverStatus:'active'}).map(([key,value])=>[key,{value}]));

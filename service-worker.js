@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v75-cargo-card-save';
+const CACHE_NAME = 'taxi-uspeh-v76-local-bus';
 const APP_SHELL = [
   './',
   './sober-fare.js?v=74',
@@ -9,6 +9,9 @@ const APP_SHELL = [
   './cargo-profile-controls.js?v=74',
   './driver-finance-controls.js?v=74',
   './index.html',
+  './bus-schedule.js?v=76',
+  './local-bus-schedule.js?v=76',
+  './styles/bus-schedule.css?v=76',
   './customer-pricing.js?v=74',
   './customer-price-control.js?v=74',
   './customer-pricing-settings.js?v=74',

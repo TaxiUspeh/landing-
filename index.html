@@ -493,6 +493,7 @@
 
     </style>
     <link rel="stylesheet" href="./styles/client-home.css?v=56">
+    <link rel="stylesheet" href="./styles/bus-schedule.css?v=76">
 <link rel="stylesheet" href="./styles/customer-pricing.css?v=67">
 </head>
 <body class="client-home text-gray-900 min-h-screen flex flex-col">
@@ -570,7 +571,7 @@
 </i>
 <span>
 <strong>Расписание автобусов</strong>
-<small>Белоусовка ⇄ Усть-Каменогорск / Глубокое</small>
+<small>По Белоусовке, в Глубокое и Усть-Каменогорск</small>
 </span>
 <i class="fas fa-chevron-right" aria-hidden="true">
 </i>
@@ -869,18 +870,55 @@
                     <button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="busScheduleModal">×</button>
                 </div>
 
-                <!-- Tabs/Buttons for Routes -->
-                <div class="grid grid-cols-2 gap-2.5 mb-4">
-                    <button onclick="window.toggleBusRoute('uka')" id="btnRouteUka" class="py-3 px-1 rounded-xl text-[13px] font-extrabold transition-all btn-active bg-indigo-600 text-white shadow-md border border-indigo-700 uppercase">
-                        В Усть-Каменогорск
-                    </button>
-                    <button onclick="window.toggleBusRoute('glub')" id="btnRouteGlub" class="py-3 px-1 rounded-xl text-[13px] font-extrabold transition-all btn-active bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 border border-transparent uppercase">
-                        В Глубокое
-                    </button>
+                <div class="bus-route-tabs" role="tablist" aria-label="Маршрут автобуса">
+                    <button type="button" id="btnRouteLocal" data-bus-route="local" class="bus-route-tab" role="tab" aria-selected="false" aria-controls="routeLocalContent" tabindex="-1">По Белоусовке</button>
+                    <button type="button" id="btnRouteUka" data-bus-route="uka" class="bus-route-tab" role="tab" aria-selected="true" aria-controls="routeUkaContent">В Усть-Каменогорск</button>
+                    <button type="button" id="btnRouteGlub" data-bus-route="glub" class="bus-route-tab" role="tab" aria-selected="false" aria-controls="routeGlubContent" tabindex="-1">В Глубокое</button>
+                </div>
+
+                <div id="routeLocalContent" class="local-bus hidden text-left" role="tabpanel" aria-labelledby="btnRouteLocal" hidden>
+                    <h4>Колледж ⇄ Тереховка</h4>
+                    <p class="bus-note">Местный автобус · каждый час · маршрут 30 минут</p>
+                    <div class="bus-controls">
+                        <label>День поездки
+                            <select id="localBusDay">
+                                <option value="today">Сегодня</option>
+                                <option value="weekday">Будни</option>
+                                <option value="weekend">Выходные и праздники</option>
+                            </select>
+                        </label>
+                        <label>Направление
+                            <select id="localBusDirection">
+                                <option value="outbound">К Тереховке — от Колледжа</option>
+                                <option value="inbound">К Колледжу — от Тереховки</option>
+                            </select>
+                        </label>
+                        <label>Моя остановка <select id="localBusStop"></select></label>
+                    </div>
+                    <p id="localBusDayInfo" class="bus-note"></p>
+                    <div class="bus-next">
+                        <h5 id="localBusNextTitle">Ближайшие рейсы на вашей остановке</h5>
+                        <div id="localBusNext" class="bus-time-list" role="status" aria-live="polite" aria-atomic="true"></div>
+                    </div>
+                    <p class="bus-note">Время указано по расписанию. Прохождение промежуточных остановок ориентировочное.</p>
+                    <details>
+                        <summary>Все рейсы с моей остановки</summary>
+                        <p id="localBusStopTimes" class="bus-stop-times"></p>
+                    </details>
+                    <details>
+                        <summary>Все остановки и время</summary>
+                        <label class="bus-trip-label"><span id="localBusTripLabel">Рейс от Колледжа</span><select id="localBusTrip"></select></label>
+                        <table id="localBusTable" class="bus-timetable">
+                            <caption>Время прохождения остановок выбранного рейса</caption>
+                            <tbody id="localBusRows"></tbody>
+                        </table>
+                    </details>
+                    <p id="localBusRange" class="bus-note"></p>
+                    <p id="localBusEnd" class="bus-note"></p>
                 </div>
 
                 <!-- Uka Content -->
-                <div id="routeUkaContent" class="space-y-4 animate-fade-in text-left">
+                <div id="routeUkaContent" role="tabpanel" aria-labelledby="btnRouteUka" class="space-y-4 animate-fade-in text-left">
                     <div class="bg-indigo-50 dark:bg-gray-800 p-4 rounded-xl border border-indigo-100 dark:border-gray-700 shadow-sm">
                         <h4 class="font-bold text-sm text-indigo-900 dark:text-indigo-300 mb-2 border-b border-indigo-200 dark:border-indigo-800 pb-1 flex items-center"><i class="fas fa-map-marker-alt mr-2"></i> Из Белоусовки в У-Ка</h4>
                         <div class="flex flex-wrap gap-2 mb-4">
@@ -918,7 +956,7 @@
                 </div>
 
                 <!-- Glubokoye Content -->
-                <div id="routeGlubContent" class="space-y-4 hidden animate-fade-in text-left">
+                <div id="routeGlubContent" role="tabpanel" aria-labelledby="btnRouteGlub" hidden class="space-y-4 hidden animate-fade-in text-left">
                     <!-- Будние дни -->
                     <div class="bg-teal-50 dark:bg-gray-800 p-4 rounded-xl border border-teal-100 dark:border-gray-700 shadow-sm mb-3">
                         <h4 class="font-bold text-sm text-teal-900 dark:text-teal-300 mb-2 border-b border-teal-200 dark:border-teal-800 pb-1 flex items-center"><i class="fas fa-calendar-day mr-2"></i> Будние дни (Пн-Пт)</h4>
@@ -975,6 +1013,10 @@
         </div>
     </div>
     <!-- === END BUS SCHEDULE MODAL === -->
+    <script type="module">
+        import { initBusSchedule } from './bus-schedule.js?v=76';
+        window.toggleBusRoute = initBusSchedule()?.selectRoute;
+    </script>
 
     <!-- === DRIVER APPLICATION MODAL === -->
     <div id="driverModal" class="modal-overlay" aria-hidden="true" role="dialog">
@@ -2994,25 +3036,6 @@
             } else {
                 content.classList.add('hidden');
                 if (icon) icon.classList.remove('rotate-180');
-            }
-        }
-
-        window.toggleBusRoute = function(route) {
-            const btnUka = document.getElementById('btnRouteUka');
-            const btnGlub = document.getElementById('btnRouteGlub');
-            const contentUka = document.getElementById('routeUkaContent');
-            const contentGlub = document.getElementById('routeGlubContent');
-
-            if (route === 'uka') {
-                btnUka.className = 'py-3 px-1 rounded-xl text-[13px] font-extrabold transition-all btn-active bg-indigo-600 text-white shadow-md border border-indigo-700 uppercase';
-                btnGlub.className = 'py-3 px-1 rounded-xl text-[13px] font-extrabold transition-all btn-active bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 border border-transparent uppercase';
-                contentUka.classList.remove('hidden');
-                contentGlub.classList.add('hidden');
-            } else {
-                btnGlub.className = 'py-3 px-1 rounded-xl text-[13px] font-extrabold transition-all btn-active bg-teal-600 text-white shadow-md border border-teal-700 uppercase';
-                btnUka.className = 'py-3 px-1 rounded-xl text-[13px] font-extrabold transition-all btn-active bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 border border-transparent uppercase';
-                contentGlub.classList.remove('hidden');
-                contentUka.classList.add('hidden');
             }
         }
 

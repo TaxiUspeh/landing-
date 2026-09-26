@@ -1,0 +1,33 @@
+#busScheduleModal { --bus-bg: #fff; --bus-soft: #eef2ff; --bus-text: #17233b; --bus-muted: #52617a; --bus-border: #cdd5e7; --bus-accent: #4338ca; }
+.dark #busScheduleModal { --bus-bg: #1f2937; --bus-soft: #283753; --bus-text: #f1f5f9; --bus-muted: #b9c8df; --bus-border: #52617a; --bus-accent: #a5b4fc; }
+#busScheduleModal [hidden] { display: none !important; }
+.bus-route-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 18px; }
+.bus-route-tab { min-height: 48px; padding: 8px 5px; border: 1px solid var(--bus-border); border-radius: 12px; background: var(--bus-bg); color: var(--bus-text); font-size: 12px; font-weight: 750; line-height: 1.35; overflow-wrap: normal; }
+.bus-route-tab[data-bus-route="local"] { grid-column: 1 / -1; }
+.bus-route-tab[aria-selected="true"] { background: #4338ca; border-color: #4338ca; color: #fff; }
+.bus-route-tab:focus-visible, .local-bus select:focus-visible, .local-bus summary:focus-visible { outline: 3px solid var(--bus-accent); outline-offset: 3px; }
+.local-bus { color: var(--bus-text); font-size: 14px; line-height: 1.5; }
+.local-bus h4 { font-size: 19px; font-weight: 800; margin: 0 0 3px; }
+.bus-note { font-size: 12px; color: var(--bus-muted); margin: 8px 0 14px; }
+.bus-controls { display: grid; gap: 12px; margin: 16px 0; }
+.bus-controls label, .bus-trip-label { display: grid; gap: 5px; font-size: 13px; font-weight: 700; }
+.local-bus select { width: 100%; min-width: 0; min-height: 46px; padding: 9px 30px 9px 10px; font: inherit; font-size: 14px; color: var(--bus-text); background: var(--bus-bg); border: 1px solid var(--bus-border); border-radius: 10px; color-scheme: light; text-overflow: ellipsis; }
+.dark .local-bus select { color-scheme: dark; }
+.local-bus option { color: var(--bus-text); background: var(--bus-bg); }
+.bus-next { margin: 18px 0; padding: 14px; border-radius: 14px; background: var(--bus-soft); border: 1px solid var(--bus-border); }
+.bus-next h5 { font-size: 13px; font-weight: 750; margin-bottom: 10px; }
+.bus-time-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.bus-time-card { display: grid; gap: 3px; }
+.bus-time-card strong { font-size: clamp(18px, 6vw, 26px); color: var(--bus-accent); font-variant-numeric: tabular-nums; }
+.bus-time-card small { color: var(--bus-muted); font-size: 11px; }
+.bus-empty { grid-column: 1 / -1; font-size: 14px; }
+.bus-stop-times { color: var(--bus-muted); font-size: 13px; line-height: 1.9; font-variant-numeric: tabular-nums; }
+.local-bus details { border-top: 1px solid var(--bus-border); padding: 13px 0; }
+.local-bus summary { cursor: pointer; font-weight: 750; min-height: 32px; }
+.bus-trip-label { margin: 12px 0; }
+.bus-timetable { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bus-timetable th, .bus-timetable td { text-align: left; padding: 9px 6px; border-bottom: 1px solid var(--bus-border); }
+.bus-timetable th { font-weight: 500; overflow-wrap: anywhere; }
+.bus-timetable td { width: 60px; vertical-align: top; font-weight: 750; font-variant-numeric: tabular-nums; }
+.bus-timetable .bus-selected-stop { background: var(--bus-soft); color: var(--bus-accent); }
+.bus-timetable caption { text-align: left; color: var(--bus-muted); font-size: 12px; padding-bottom: 6px; }

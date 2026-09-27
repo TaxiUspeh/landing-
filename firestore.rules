@@ -555,7 +555,8 @@ service cloud.firestore {
     function directionAllowed(order, driver) {
       return (order.serviceType == 'cargo' && driver.get('cargoProfile', {}).get('status', '') == 'active')
         || (order.serviceType in ['taxi', 'delivery', 'auction', 'soberDriver', 'assistance'] && passengerEnabled(driver)
-          && (order.serviceType != 'soberDriver' || driver.get('soberDriverEnabled', false) == true));
+          && (order.serviceType != 'soberDriver' || driver.get('soberDriverEnabled', false) == true)
+          && (order.serviceType != 'assistance' || driver.get('assistanceEnabled', false) == true));
     }
     function vehicleForOrder(order, driver) {
       return order.get('serviceType', 'taxi') == 'cargo' ? driver.get('cargoProfile', {}) : driver;
@@ -570,7 +571,7 @@ service cloud.firestore {
     }
     function validServiceProfiles(driver) {
       let cargo = driver.get('cargoProfile', null);
-      return driver.get('soberDriverEnabled', false) is bool && driver.get('passengerEnabled', true) is bool
+      return driver.get('assistanceEnabled', false) is bool && driver.get('soberDriverEnabled', false) is bool && driver.get('passengerEnabled', true) is bool
         && driver.get('passengerStatus', 'active') in ['active', 'paused', 'blocked']
         && (cargo == null || (cargo is map && cargo.keys().hasOnly(['status', 'car', 'color', 'plate', 'bodyType', 'dimensions', 'payloadKg', 'commissionRate'])
           && cargo.status in ['active', 'paused', 'blocked']
@@ -641,7 +642,7 @@ service cloud.firestore {
       let operation = after.get('lastPriceOperationId', '');
       let changePath = /databases/$(database)/documents/orders/$(orderId)/priceChanges/$(operation);
       let change = getAfter(changePath).data;
-      return signedIn() && before.clientUid == request.auth.uid && before.serviceType in ['taxi', 'delivery', 'soberDriver']
+      return signedIn() && before.clientUid == request.auth.uid && before.serviceType in ['taxi', 'delivery', 'soberDriver', 'assistance']
         && before.status == 'searching' && before.get('assignedDriverUid', '') == ''
         && cfg.get('enabled', true) == true
         && after.diff(before).affectedKeys().hasOnly(['priceAmount', 'priceText', 'calculatedPrice', 'customerOfferPrice', 'finalDisplayedPrice', 'pricingType', 'calculationType', 'customerIncreasedPrice', 'priceRevision', 'previousPrice', 'lastPriceOperationId', 'priceUpdatedAt', 'updatedAt'])
@@ -656,7 +657,7 @@ service cloud.firestore {
         && !exists(changePath) && existsAfter(changePath)
         && change.clientUid == request.auth.uid && change.oldPrice == before.priceAmount
         && change.newPrice == after.priceAmount && change.revision == after.priceRevision && change.changedAt == request.time
-        && validCustomerPrice(after);
+        && (before.serviceType == 'assistance' ? validAssistancePrice(after) : validCustomerPrice(after));
     }
 
     function validVehicleFare(data) {
@@ -801,6 +802,42 @@ service cloud.firestore {
         && data.direction is string && data.direction.size() <= 120
         && data.serviceDetails.keys().hasOnly(['description']) && data.serviceDetails.description is string
         && data.serviceDetails.description.size() > 0 && data.serviceDetails.description.size() <= 700
+        && data.createdAt == request.time && data.updatedAt == request.time;
+    }
+
+    function validAssistancePrice(data) {
+      let cfg = customerPricingConfig();
+      let amount = data.priceAmount;
+      return data.serviceType == 'assistance' && cfg.get('enabled', true) == true
+        && amount is int && amount >= 1500 && amount <= cfg.get('maximumPrice', 1000000)
+        && data.calculatedPrice == null && data.customerOfferPrice == amount && data.finalDisplayedPrice == amount
+        && data.priceText == string(amount) + ' ₸'
+        && data.pricingType == 'customer_offer_unavailable' && data.calculationType == 'unavailable'
+        && data.priceRevision is int && data.priceRevision >= 0 && data.priceUpdatedAt is timestamp
+        && data.customerIncreasedPrice == (data.priceRevision > 0);
+    }
+    function validClientAssistanceCreate() {
+      let data = request.resource.data;
+      let details = data.get('serviceDetails', {});
+      return signedIn() && data.serviceType == 'assistance' && data.source == 'online' && data.clientUid == request.auth.uid
+        && data.keys().hasOnly(['orderNumber', 'serviceType', 'source', 'clientUid', 'fromAddress', 'toAddress', 'stops', 'wishes', 'scheduledFor', 'direction', 'priceText', 'priceAmount', 'serviceDetails', 'status', 'createdAt', 'updatedAt', 'routeCoordinates',
+          'calculatedPrice', 'customerOfferPrice', 'finalDisplayedPrice', 'pricingType', 'calculationType', 'priceUpdatedAt', 'customerIncreasedPrice', 'priceRevision'])
+        && get(/databases/$(database)/documents/settings/assistanceBooking).data.schemaVersion == 1
+        && validAssistancePrice(data) && data.priceRevision == 0 && data.priceUpdatedAt == request.time
+        && data.status == 'searching'
+        && data.orderNumber is string && data.orderNumber.size() > 0 && data.orderNumber.size() <= 32
+        && data.fromAddress is string && data.fromAddress.size() > 0 && data.fromAddress.size() <= 240
+        && data.toAddress == 'Помощь: ' + details.assistanceType
+        && data.stops == [] && validRouteCoordinates(data)
+        && (!data.keys().hasAny(['routeCoordinates']) || data.routeCoordinates[1] == null)
+        && data.wishes is string && data.wishes.size() <= 500 && data.scheduledFor == ''
+        && data.direction is string && data.direction.size() <= 120
+        && details.keys().hasOnly(['assistanceType', 'carModel', 'licencePlate', 'task'])
+        && details.assistanceType in ['Подкачать колесо', 'Прикурить автомобиль', 'Прочее поручение/помощь']
+        && details.carModel is string && details.carModel.size() <= 120
+        && details.licencePlate is string && details.licencePlate.size() <= 32
+        && details.task is string && details.task.size() <= 700
+        && (details.assistanceType != 'Прочее поручение/помощь' || details.task.size() > 0)
         && data.createdAt == request.time && data.updatedAt == request.time;
     }
 
@@ -1126,13 +1163,13 @@ service cloud.firestore {
     match /settings/{settingId} {
       allow read: if settingId in ['customerPricing', 'driverServices'] || isAdmin() || (settingId == 'driverPortal' && mayOpenOrders());
       // A successful server read, even for an absent document, confirms v73 coordinate support.
-      allow get: if settingId in ['bookingCoordinates', 'soberDriverBooking', 'cargoBooking'];
+      allow get: if settingId in ['bookingCoordinates', 'soberDriverBooking', 'cargoBooking', 'assistanceBooking'];
       allow create, update: if isAdmin() && (settingId != 'customerPricing' || validCustomerPricingConfig(request.resource.data));
       allow delete: if isAdmin();
     }
 
     match /orders/{orderId} {
-      allow create: if validClientOrderCreate() || validClientCargoCreate()
+      allow create: if validClientOrderCreate() || validClientCargoCreate() || validClientAssistanceCreate()
         || (isAdmin() && validVehicleFare(request.resource.data) && adminAssignsSuitableVehicle(request.resource.data) && adminFinanceOrderCreate(orderId));
       allow read: if isAdmin()
         || (signedIn() && resource.data.clientUid == request.auth.uid)

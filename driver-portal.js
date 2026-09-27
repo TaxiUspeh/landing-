@@ -1,15 +1,15 @@
 import { isMeteredCargo, cargoCanComplete, cargoFareDescription } from './cargo-fare.js?v=77';
 import { createCargoWorkControls } from './cargo-controls.js?v=77';
-import { updateCargoWork } from './cargo-work.js?v=77';
-import { navigationRoute } from './booking-route.js?v=73';
+import { updateCargoWork } from './cargo-work.js?v=78';
+import { navigationRoute } from './booking-route.js?v=78';
 import { orderTimeInfo } from './order-time.js?v=71';
-import { normalizeCity } from './booking-core.js?v=77';
-import { serviceEnabled, allowedOrderServices, profileForOrder, assignmentVehicle, serviceDirection } from './functions/driver-services.mjs?v=74';
-import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=74';
-import { initDriverCabinet } from './driver-cabinet.js?v=77';
-import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=77';
-import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=74';
-import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=77';
+import { normalizeCity } from './booking-core.js?v=78';
+import { serviceEnabled, allowedOrderServices, profileForOrder, assignmentVehicle, serviceDirection } from './functions/driver-services.mjs?v=78';
+import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=78';
+import { initDriverCabinet } from './driver-cabinet.js?v=78';
+import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=78';
+import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=78';
+import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=78';
 import { app, auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,

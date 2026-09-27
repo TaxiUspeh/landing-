@@ -1,4 +1,4 @@
-import { priceSettings, DEFAULT_CUSTOMER_PRICING } from './customer-pricing.js?v=74';
+import { priceSettings, DEFAULT_CUSTOMER_PRICING } from './customer-pricing.js?v=78';
 export function initCustomerPricingSettings({ db, doc, getDoc, setDoc, serverTimestamp, uid }) {
   const form = document.getElementById('customer-pricing-settings');
   if (!form) return;

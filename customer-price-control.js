@@ -1,4 +1,4 @@
-import { minimumOffer, validOffer, priceLabel } from './customer-pricing.js?v=74';
+import { minimumOffer, validOffer, priceLabel } from './customer-pricing.js?v=78';
 export function createPriceControl({ host, id, onChange = () => {}, onConfirm = null }) {
   host.classList.add('customer-price-control');
   host.innerHTML = `<button type="button" class="customer-price-toggle" aria-expanded="false" aria-controls="${id}-editor">Предложить свою цену</button>
@@ -20,7 +20,7 @@ export function createPriceControl({ host, id, onChange = () => {}, onConfirm = 
     const basePrice = calculated();
     const minimum = minimumOffer(service, basePrice, config, current);
     const amount = value();
-    host.querySelector('.customer-price-base').textContent = current !== null ? `Текущая цена: ${priceLabel(current)}` : basePrice === null ? (service === 'soberDriver' ? 'Укажите свою цену. Если расходы неизвестны, диспетчер уточнит их перед назначением водителя.' : 'Укажите свою цену. Водитель сможет принять заказ.') : `Расчётная цена: ${priceLabel(basePrice)}`;
+    host.querySelector('.customer-price-base').textContent = current !== null ? `Текущая цена: ${priceLabel(current)}` : basePrice === null ? (service === 'assistance' ? 'Предложите цену помощи от 1 500 ₸. Водитель примет заявку на указанную сумму.' : service === 'soberDriver' ? 'Укажите свою цену. Если расходы неизвестны, диспетчер уточнит их перед назначением водителя.' : 'Укажите свою цену. Водитель сможет принять заказ.') : `Расчётная цена: ${priceLabel(basePrice)}`;
     host.querySelector('.customer-price-hint').textContent = basePrice === null ? 'Адрес и цена будут переданы водителю. Если нужно, добавьте ориентир в пожеланиях.' : 'Хотите сделать заказ привлекательнее для водителей? Вы можете предложить свою цену.';
     input.min = minimum; input.max = config.maximumPrice;
     error.textContent = amount !== null && !validOffer(amount, minimum, config) ? `Введите целую сумму от ${priceLabel(minimum)} до ${priceLabel(config.maximumPrice)}.` : '';
@@ -33,7 +33,7 @@ export function createPriceControl({ host, id, onChange = () => {}, onConfirm = 
   reset.onclick = () => { expanded = false; editor.hidden = true; input.value = ''; toggle.setAttribute('aria-expanded', 'false'); refresh(); onChange(); };
   input.oninput = () => { refresh(); onChange(); };
   confirm.onclick = async () => { if (confirm.disabled) return; const amount = value(); busy = true; refresh(); let failure = ''; try { await onConfirm(amount); expanded = false; input.value = ''; editor.hidden = true; toggle.setAttribute('aria-expanded', 'false'); } catch (e) { failure = e.message; } finally { busy = false; refresh(); if (failure) { error.textContent = failure; confirm.textContent = 'Повторить изменение цены'; } } };
-  return { value, calculated, request: () => { if (!expanded) toggle.click(); input.focus(); if (value() === null || value() === 0) error.textContent = 'Укажите желаемую стоимость поездки.'; }, active: () => expanded, valid: () => !!context && context.visible && value() !== null && validOffer(value(), minimumOffer(context.service, calculated(), context.config, context.current), context.config),
+  return { value, calculated, request: () => { if (!expanded) toggle.click(); input.focus(); if (value() === null || value() === 0) error.textContent = context?.service === 'assistance' ? 'Укажите цену помощи от 1 500 ₸.' : 'Укажите желаемую стоимость поездки.'; }, active: () => expanded, valid: () => !!context && context.visible && value() !== null && validOffer(value(), minimumOffer(context.service, calculated(), context.config, context.current), context.config),
     update(next) {
       context = { current: null, ...next }; host.hidden = !next.visible;
       if (!next.visible) { expanded = false; editor.hidden = true; toggle.setAttribute('aria-expanded', 'false'); }

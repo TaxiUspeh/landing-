@@ -23,6 +23,10 @@ export function routeCoordinates(points) {
 export function navigationRoute(order, addresses) {
   const coordinates = Array.isArray(order.routeCoordinates) && order.routeCoordinates.length === addresses.length
     ? order.routeCoordinates : [];
+  if (order.serviceType === 'assistance') {
+    const point = hasCoordinates(order.routeCoordinates?.[0]) ? order.routeCoordinates[0] : addressCoordinates(order.fromAddress);
+    return `~${point ? `${point.lat},${point.lon}` : order.fromAddress}`;
+  }
   return addresses.map((address, index) => {
     const point = hasCoordinates(coordinates[index]) ? coordinates[index] : addressCoordinates(address);
     return point ? `${point.lat},${point.lon}` : address;

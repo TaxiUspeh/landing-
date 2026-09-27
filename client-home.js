@@ -1,4 +1,4 @@
-import { BOOKING_SERVICES } from './booking-core.js?v=77';
+import { BOOKING_SERVICES } from './booking-core.js?v=78';
 
 // Presentation only: existing booking forms and Firebase order panels stay in place.
 export function initClientHome() {
@@ -8,7 +8,7 @@ export function initClientHome() {
   const byId = id => document.getElementById(id);
   const visible = node => node && !node.hidden && !node.classList.contains('hidden');
   const text = id => byId(id)?.textContent.trim() || '';
-  const panels = ['taxi', 'delivery', 'auction', 'soberDriver', 'cargo'].map(service => ({
+  const panels = ['taxi', 'delivery', 'auction', 'soberDriver', 'cargo', 'assistance'].map(service => ({
     service, node: byId(`${service}-online-order-panel`)
   })).filter(item => item.node);
   let page = 'home';
@@ -38,7 +38,7 @@ export function initClientHome() {
     }
     const hint = document.createElement('p');
     hint.className = 'home-muted';
-    hint.textContent = 'Нажмите на маршрут, чтобы повторить поездку.';
+    hint.textContent = 'Нажмите на запись, чтобы повторить заказ.';
     container.append(hint);
     for (const order of orders) {
       const button = document.createElement('button');
@@ -47,11 +47,13 @@ export function initClientHome() {
       const date = document.createElement('small');
       date.textContent = [order.date, order.time].filter(Boolean).join(' · ');
       const route = document.createElement('strong');
-      route.textContent = `${String(order.from || '—')} → ${String(order.to || '—')}`;
+      route.textContent = order.serviceType === 'assistance' ? `${String(order.from || '—')} · Помощь на дороге` : `${String(order.from || '—')} → ${String(order.to || '—')}`;
       const price = document.createElement('span');
       price.textContent = String(order.price || 'Цена уточняется');
       button.append(date, route, price);
-      button.addEventListener('click', () => window.repeatOrder?.(String(order.from || ''), String(order.to || '')));
+      button.addEventListener('click', () => order.serviceType === 'assistance'
+        ? window.repeatOrder?.(String(order.from || ''), '', 'assistance')
+        : window.repeatOrder?.(String(order.from || ''), String(order.to || '')));
       container.append(button);
     }
   }

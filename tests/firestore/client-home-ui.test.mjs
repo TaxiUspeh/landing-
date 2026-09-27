@@ -75,6 +75,10 @@ window.localStorage.setItem('taxi_full_orders_history', JSON.stringify([{ from:'
 click('.home-nav [data-home-go="trips"]'); assert.equal(get('homeHistory').querySelector('img'), null);
 let repeated = null; window.repeatOrder = (...args) => { repeated = args; };
 click('#homeHistory .home-trip'); assert.deepEqual(repeated, ['<img src=x onerror=alert(1)>', 'Глубокое']);
+window.localStorage.setItem('taxi_full_orders_history', JSON.stringify([{ from: 'Трасса, 8 км', to: 'Помощь: Подкачать колесо', serviceType: 'assistance', price: '1500 ₸' }]));
+click('.home-nav [data-home-go="trips"]');
+assert.match(get('homeHistory').textContent, /Помощь на дороге/);
+click('#homeHistory .home-trip'); assert.deepEqual(repeated, ['Трасса, 8 км', '', 'assistance']);
 click('.home-nav [data-home-go="more"]');
 assert.equal(document.querySelector('.home-nav [aria-current="page"]').dataset.homeGo, 'more');
 for (const [action, method] of [['install','installApp'], ['share','shareApp'], ['theme','toggleTheme'], ['notifications','togglePushNotifications']]) {

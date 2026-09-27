@@ -1,4 +1,4 @@
-import { VEHICLE_CATEGORIES, driverCategories, driverPassengerSeats } from './vehicle-categories.js?v=74';
+import { VEHICLE_CATEGORIES, driverCategories, driverPassengerSeats } from './vehicle-categories.js?v=78';
 let controlNumber = 0;
 export function createVehicleControls(driver = {}) {
   const id = `vehicle-profile-${++controlNumber}`;
@@ -23,5 +23,8 @@ export function createVehicleControls(driver = {}) {
   const soberLabel = document.createElement('label'); soberLabel.className = 'vehicle-category-choice';
   const sober = document.createElement('input'); sober.type = 'checkbox'; sober.checked = driver.soberDriverEnabled === true;
   soberLabel.append(sober, document.createTextNode('Трезвый водитель — допуск к перегону автомобиля клиента')); fieldset.append(soberLabel);
-  return { element: fieldset, read: () => ({ soberDriverEnabled: sober.checked, serviceCategories: [...inputs].filter(([, input]) => input.checked).map(([category]) => category), passengerSeats: Number(seats.value) }), reset: () => { sober.checked = false; inputs.get('wagon').checked = false; inputs.get('minivan').checked = false; seats.value = '4'; sync(); } };
+  const assistanceLabel = document.createElement('label'); assistanceLabel.className = 'vehicle-category-choice';
+  const assistance = document.createElement('input'); assistance.type = 'checkbox'; assistance.checked = driver.assistanceEnabled === true;
+  assistanceLabel.append(assistance, document.createTextNode('Помощь на дороге — получать заявки на помощь')); fieldset.append(assistanceLabel);
+  return { element: fieldset, read: () => ({ assistanceEnabled: assistance.checked, soberDriverEnabled: sober.checked, serviceCategories: [...inputs].filter(([, input]) => input.checked).map(([category]) => category), passengerSeats: Number(seats.value) }), reset: () => { assistance.checked = false; sober.checked = false; inputs.get('wagon').checked = false; inputs.get('minivan').checked = false; seats.value = '4'; sync(); } };
 }

@@ -1,4 +1,4 @@
-import { validCargoProfile } from './functions/driver-services.mjs?v=74';
+import { validCargoProfile } from './functions/driver-services.mjs?v=78';
 
 export function createCargoControls(profile = {}) {
   const element = document.createElement('fieldset'); element.className = 'vehicle-profile-wide grid grid-cols-1 sm:grid-cols-2 gap-3';

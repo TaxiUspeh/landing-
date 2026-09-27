@@ -7,7 +7,7 @@ export const BOOKING_SERVICES = [
   { id: 'minivan', label: 'Минивэн', icon: 'shuttle-van', form: 'taxi', online: true, wish: 'Нужен минивэн' },
   { id: 'cargo', label: 'Грузовой', icon: 'truck', form: 'cargo', online: true },
   { id: 'soberDriver', label: 'Трезвый водитель', icon: 'key', form: 'soberDriver', online: true },
-  { id: 'assistance', label: 'Помощь на дороге', icon: 'tools', form: 'assistance' },
+  { id: 'assistance', label: 'Помощь на дороге', icon: 'tools', form: 'assistance', online: true },
   { id: 'preorder', label: 'Предварительный заказ', icon: 'calendar-alt', form: 'taxi', online: true }
 ];
 

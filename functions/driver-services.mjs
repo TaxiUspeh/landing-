@@ -6,7 +6,7 @@ export function serviceEnabled(driver = {}, direction = 'passenger') {
     : driver.passengerEnabled !== false && (driver.passengerStatus ?? 'active') === 'active';
 }
 export function allowedOrderServices(driver = {}) {
-  return [...(serviceEnabled(driver) ? PASSENGER_SERVICES.filter(service => service !== 'soberDriver' || driver.soberDriverEnabled === true) : []), ...(serviceEnabled(driver, 'cargo') ? ['cargo'] : [])];
+  return [...(serviceEnabled(driver) ? PASSENGER_SERVICES.filter(service => (service !== 'soberDriver' || driver.soberDriverEnabled === true) && (service !== 'assistance' || driver.assistanceEnabled === true)) : []), ...(serviceEnabled(driver, 'cargo') ? ['cargo'] : [])];
 }
 export function profileForOrder(driver = {}, order = {}) {
   if (serviceDirection(order) !== 'cargo') return driver;

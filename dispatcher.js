@@ -1,13 +1,16 @@
+import { isMeteredCargo, cargoCanComplete, cargoFareDescription } from './cargo-fare.js?v=77';
+import { createCargoWorkControls } from './cargo-controls.js?v=77';
+import { updateCargoWork } from './cargo-work.js?v=77';
 import { confirmSoberExpenses, createSoberExpenseEditor } from './sober-dispatch.js?v=74';
 import { serviceEnabled, profileForOrder, assignmentVehicle } from './functions/driver-services.mjs?v=74';
 import { createCargoControls } from './cargo-profile-controls.js?v=74';
 import { initCustomerPricingSettings } from './customer-pricing-settings.js?v=74';
 import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=74';
-import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=74';
-import { createFinanceControls } from './driver-finance-controls.js?v=74';
+import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=77';
+import { createFinanceControls } from './driver-finance-controls.js?v=77';
 import { createVehicleControls } from './vehicle-category-controls.js?v=74';
 import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=74';
-import { currentAuctionOffer } from './auction-core.js?v=74';
+import { currentAuctionOffer } from './auction-core.js?v=77';
 import { auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -2023,8 +2026,8 @@ function dispatcherOrderServiceDetailsText(order) {
     }
     if (order.serviceType === 'cargo') {
         return [
-            details.cargoDescription ? `Груз: ${details.cargoDescription}` : '',
-            Number(details.movers) > 0 ? `Грузчики: ${details.movers}` : 'Грузчики не требуются'
+            (details.cargoDescription || details.description) ? `Груз: ${details.cargoDescription || details.description}` : '',
+            Number(order.cargoFare?.moversCount ?? details.movers) > 0 ? `Грузчики: ${order.cargoFare?.moversCount ?? details.movers}` : 'Грузчики не требуются'
         ].filter(Boolean).join(' · ');
     }
     if (order.serviceType === 'soberDriver') {
@@ -2086,6 +2089,9 @@ function createOnlineOrderCard(order) {
     detailsPanel.className = 'border-t border-slate-200 p-4 dark:border-slate-800';
     detailsPanel.hidden = !expanded;
     card.append(summary, detailsPanel);
+    if (isMeteredCargo(order)) detailsPanel.before(createOrderText('p', 'mt-2 text-sm', cargoFareDescription(order)));
+    if (isMeteredCargo(order) && order.status === 'in_trip') detailsPanel.before(createCargoWorkControls(order, values => updateCargoWork(db, { doc, runTransaction, serverTimestamp }, { ...values, orderId: order.id, uid: currentUser.uid }), true));
+
 
     if (order.source === 'dispatcher') {
         detailsPanel.append(createOrderText(
@@ -2228,7 +2234,7 @@ function createOnlineOrderCard(order) {
             complete.type = 'button';
             complete.className = 'rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-extrabold';
             complete.textContent = 'Завершить заказ';
-            complete.disabled = dispatcherCompletionInProgress;
+            complete.disabled = dispatcherCompletionInProgress || !cargoCanComplete(order);
             complete.addEventListener('click', () => void completeOnlineOrder(order));
             actions.append(complete);
         }
@@ -2455,6 +2461,7 @@ async function completeOnlineOrder(order) {
         setMessage(elements.onlineOrdersMessage, 'Нельзя завершить заказ: водитель не назначен.');
         return;
     }
+    if (!cargoCanComplete(order)) { setMessage(elements.onlineOrdersMessage, 'Сначала водитель должен начать работу и отправить пробег, затем подтвердите итоговую стоимость.'); return; }
     if (!window.confirm(`Завершить заказ ${order.orderNumber || order.id} от имени диспетчера? Комиссия будет учтена, а водитель снова станет свободным.`)) return;
 
     dispatcherCompletionInProgress = true;
@@ -2469,6 +2476,7 @@ async function completeOnlineOrder(order) {
                 throw new Error('Статус заказа уже изменился.');
             }
             const currentOrder = orderSnapshot.data();
+            if (!cargoCanComplete(currentOrder)) throw new Error('Итоговый пробег ещё не подтверждён.');
             const driverId = String(currentOrder.assignedDriverId || '');
             if (!driverId) throw new Error('У заказа нет назначенного водителя.');
 

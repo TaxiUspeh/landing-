@@ -1,4 +1,4 @@
-import { BOOKING_SERVICES } from './booking-core.js?v=74';
+import { BOOKING_SERVICES } from './booking-core.js?v=77';
 
 // Presentation only: existing booking forms and Firebase order panels stay in place.
 export function initClientHome() {
@@ -8,7 +8,7 @@ export function initClientHome() {
   const byId = id => document.getElementById(id);
   const visible = node => node && !node.hidden && !node.classList.contains('hidden');
   const text = id => byId(id)?.textContent.trim() || '';
-  const panels = ['taxi', 'delivery', 'auction', 'soberDriver'].map(service => ({
+  const panels = ['taxi', 'delivery', 'auction', 'soberDriver', 'cargo'].map(service => ({
     service, node: byId(`${service}-online-order-panel`)
   })).filter(item => item.node);
   let page = 'home';

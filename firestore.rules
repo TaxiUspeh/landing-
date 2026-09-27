@@ -201,7 +201,7 @@ service cloud.firestore {
         && data.previousBalance is number
         && data.newBalance is number
         && data.difference is number
-        && data.reason == (hasSoberFare(order) ? 'Комиссия ' + string(rate) + '% от оплаты перегона без подачи и обратного такси' : order.get('auctionRound', 0) > 0
+        && data.reason == (meteredCargo(order) ? 'Комиссия ' + string(rate) + '% от подтверждённой стоимости грузоперевозки' : hasSoberFare(order) ? 'Комиссия ' + string(rate) + '% от оплаты перегона без подачи и обратного такси' : order.get('auctionRound', 0) > 0
           ? 'Комиссия ' + string(rate) + '% от согласованной цены аукциона' : 'Комиссия ' + string(rate) + '% от максимальной цены онлайн-заказа')
         && data.changedAt == request.time
         && data.changedBy == request.auth.uid
@@ -463,7 +463,7 @@ service cloud.firestore {
 
     function adminFinanceOrderCreate(orderId) {
       let data = request.resource.data;
-      return validSoberFare(data) && data.priceAmount is number && data.priceAmount > 0 && data.priceAmount <= 10000000
+      return validInitialCargo(data) && validSoberFare(data) && data.priceAmount is number && data.priceAmount > 0 && data.priceAmount <= 10000000
         && (data.get('assignedDriverUid', '') == '' ? data.get('commissionTerms', null) == null : adminReservation(orderId, data));
     }
 
@@ -472,12 +472,70 @@ service cloud.firestore {
       let after = request.resource.data;
       let changed = after.diff(before).affectedKeys();
       let statePath = /databases/$(database)/documents/driverStates/$(before.get('assignedDriverUid', ''));
-      return after.status == 'accepted' && (!activeOrderStatus(before.status) || changed.hasAny(['assignedDriverId', 'assignedDriverUid']))
-        ? adminReservation(orderId, after)
-        : ((!changed.hasAny(['commissionTerms', 'priceAmount']) || before.get('commissionTerms', null) == null)
-          && (before.get('commissionTerms', null) == null || !activeOrderStatus(before.status) || activeOrderStatus(after.status)
-            || (getAfter(statePath).data.status == 'available' && getAfter(statePath).data.activeOrderId == ''
-              && (after.status != 'completed' || validCommissionSettlement(orderId, before.assignedDriverId)))));
+      return (meteredCargo(before) && validCargoApproval())
+        || (validAdminCargoUpdate() && (
+          after.status == 'accepted' && (!activeOrderStatus(before.status) || changed.hasAny(['assignedDriverId', 'assignedDriverUid']))
+          ? adminReservation(orderId, after)
+          : ((!changed.hasAny(['commissionTerms', 'priceAmount']) || before.get('commissionTerms', null) == null)
+            && (before.get('commissionTerms', null) == null || !activeOrderStatus(before.status) || activeOrderStatus(after.status)
+              || (getAfter(statePath).data.status == 'available' && getAfter(statePath).data.activeOrderId == ''
+                && (after.status != 'completed' || validCommissionSettlement(orderId, before.assignedDriverId)))))
+        ));
+    }
+
+    function meteredCargo(data) {
+      return data.get('serviceType', '') == 'cargo' && data.get('cargoFare', null) != null;
+    }
+    function validInitialCargo(data) {
+      let fare = data.get('cargoFare', null);
+      return fare == null || (data.serviceType == 'cargo' && fare is map
+        && fare.keys().hasOnly(['schemaVersion', 'baseAmount', 'includedMinutes', 'kmRate', 'moversCount', 'moverAmount'])
+        && fare.schemaVersion == 1 && fare.baseAmount == 6000 && fare.includedMinutes == 60 && fare.kmRate == 250
+        && fare.moversCount is int && fare.moversCount >= 0 && fare.moversCount <= 2 && fare.moverAmount == fare.moversCount * 3000
+        && data.priceAmount == 6000 + fare.moverAmount
+        && !data.keys().hasAny(['cargoStartedAt', 'cargoFinishedAt', 'cargoReportedMeters', 'cargoConfirmedMeters', 'cargoConfirmedAt', 'cargoConfirmedBy']));
+    }
+    function validCargoMeters(meters) {
+      return meters is int && meters >= 0 && meters <= 10000000 && meters % 100 == 0;
+    }
+    function validCargoApproval() {
+      let before = resource.data;
+      let after = request.resource.data;
+      let meters = after.get('cargoConfirmedMeters', -1);
+      let total = 6000 + before.get('cargoFare', {}).get('moverAmount', 0) + meters / 100 * 25;
+      let terms = after.get('commissionTerms', {});
+      return meteredCargo(before) && before.status == 'in_trip' && after.status == 'in_trip'
+        && before.get('cargoConfirmedAt', null) == null && before.get('cargoFinishedAt', null) is timestamp
+        && before.get('cancellationRequestStatus', '') != 'pending'
+        && validCargoMeters(meters)
+        && (meters == 0 || before.cargoFinishedAt > before.cargoStartedAt + duration.value(60, 'm'))
+        && after.diff(before).affectedKeys().hasOnly(['cargoConfirmedMeters', 'cargoConfirmedAt', 'cargoConfirmedBy', 'priceAmount', 'priceText', 'commissionTerms', 'updatedAt'])
+        && after.cargoConfirmedAt == request.time && after.cargoConfirmedBy == request.auth.uid && after.updatedAt == request.time
+        && after.priceAmount == total && after.priceText == string(int(total)) + ' ₸'
+        && terms.keys().hasOnly(['rate', 'baseAmount', 'amount']) && terms.rate == before.commissionTerms.rate
+        && terms.baseAmount == total && terms.amount == financeAmount(total, terms.rate);
+    }
+    function validAdminCargoUpdate() {
+      let before = resource.data;
+      let after = request.resource.data;
+      return !after.diff(before).affectedKeys().hasAny(['cargoFare', 'cargoStartedAt', 'cargoFinishedAt', 'cargoReportedMeters', 'cargoConfirmedMeters', 'cargoConfirmedAt', 'cargoConfirmedBy'])
+        && (!meteredCargo(before) || ((before.get('cargoStartedAt', null) == null || !after.diff(before).affectedKeys().hasAny(['assignedDriverUid', 'assignedDriverId'])) && (!after.diff(before).affectedKeys().hasAny(['priceAmount', 'priceText']))
+          && (after.status != 'completed' || before.get('cargoConfirmedAt', null) is timestamp)));
+    }
+    function driverUpdatesCargoWork(orderId) {
+      let before = resource.data;
+      let after = request.resource.data;
+      let changed = after.diff(before).affectedKeys();
+      return meteredCargo(before) && driverIsBusyWithOrder(orderId)
+        && before.assignedDriverUid == request.auth.uid && before.assignedDriverId == linkedDriverId()
+        && before.get('cancellationRequestStatus', '') != 'pending' && after.updatedAt == request.time
+        && ((before.status == 'arrived' && after.status == 'in_trip' && before.get('cargoStartedAt', null) == null
+          && after.cargoStartedAt == request.time && changed.hasOnly(['status', 'cargoStartedAt', 'updatedAt']))
+          || (before.status == 'in_trip' && after.status == 'in_trip' && before.get('cargoStartedAt', null) is timestamp
+            && before.get('cargoFinishedAt', null) == null && after.cargoFinishedAt == request.time
+            && validCargoMeters(after.cargoReportedMeters)
+            && (after.cargoReportedMeters == 0 || request.time > before.cargoStartedAt + duration.value(60, 'm'))
+            && changed.hasOnly(['cargoReportedMeters', 'cargoFinishedAt', 'updatedAt'])));
     }
 
     function validVehicleProfile(data) {
@@ -727,6 +785,25 @@ service cloud.firestore {
         && data.updatedAt == request.time;
     }
 
+    function validClientCargoCreate() {
+      let data = request.resource.data;
+      return signedIn() && data.serviceType == 'cargo' && data.source == 'online' && data.clientUid == request.auth.uid
+        && data.keys().hasOnly(['orderNumber', 'serviceType', 'source', 'clientUid', 'fromAddress', 'toAddress', 'stops', 'wishes', 'scheduledFor', 'direction', 'priceText', 'priceAmount', 'serviceDetails', 'status', 'createdAt', 'updatedAt', 'routeCoordinates', 'cargoFare'])
+        && data.get('cargoFare', null) != null && validInitialCargo(data)
+        && get(/databases/$(database)/documents/settings/cargoBooking).data.schemaVersion == 1
+        && data.status == 'searching' && data.priceText == 'Предварительно: ' + string(data.priceAmount) + ' ₸'
+        && data.orderNumber is string && data.orderNumber.size() > 0 && data.orderNumber.size() <= 32
+        && data.fromAddress is string && data.fromAddress.size() > 0 && data.fromAddress.size() <= 240
+        && data.toAddress is string && data.toAddress.size() > 0 && data.toAddress.size() <= 240
+        && data.stops is list && data.stops.size() <= 5 && validRouteCoordinates(data)
+        && data.wishes is string && data.wishes.size() <= 500
+        && data.scheduledFor is string && data.scheduledFor.size() <= 40
+        && data.direction is string && data.direction.size() <= 120
+        && data.serviceDetails.keys().hasOnly(['description']) && data.serviceDetails.description is string
+        && data.serviceDetails.description.size() > 0 && data.serviceDetails.description.size() <= 700
+        && data.createdAt == request.time && data.updatedAt == request.time;
+    }
+
     function clientCancelsOwnSearchingOrder() {
       return signedIn()
         && resource.data.clientUid == request.auth.uid
@@ -796,6 +873,8 @@ service cloud.firestore {
 
     function assignedDriverAdvancesOrder(orderId) {
       return driverIsBusyWithOrder(orderId)
+        && (!meteredCargo(resource.data) || (!(request.resource.data.status in ['in_trip', 'completed'])
+          || (request.resource.data.status == 'completed' && resource.data.get('cargoConfirmedAt', null) is timestamp)))
         && resource.data.assignedDriverUid == request.auth.uid
         && resource.data.assignedDriverId == linkedDriverId()
         && resource.data.get('cancellationRequestStatus', '') != 'pending'
@@ -1047,13 +1126,13 @@ service cloud.firestore {
     match /settings/{settingId} {
       allow read: if settingId in ['customerPricing', 'driverServices'] || isAdmin() || (settingId == 'driverPortal' && mayOpenOrders());
       // A successful server read, even for an absent document, confirms v73 coordinate support.
-      allow get: if settingId in ['bookingCoordinates', 'soberDriverBooking'];
+      allow get: if settingId in ['bookingCoordinates', 'soberDriverBooking', 'cargoBooking'];
       allow create, update: if isAdmin() && (settingId != 'customerPricing' || validCustomerPricingConfig(request.resource.data));
       allow delete: if isAdmin();
     }
 
     match /orders/{orderId} {
-      allow create: if validClientOrderCreate()
+      allow create: if validClientOrderCreate() || validClientCargoCreate()
         || (isAdmin() && validVehicleFare(request.resource.data) && adminAssignsSuitableVehicle(request.resource.data) && adminFinanceOrderCreate(orderId));
       allow read: if isAdmin()
         || (signedIn() && resource.data.clientUid == request.auth.uid)
@@ -1069,7 +1148,7 @@ service cloud.firestore {
           && driverAcceptsSearchingOrder(orderId))
         || (resource.data.get('assignedDriverUid', '') == request.auth.uid
           && ((request.resource.data.status in ['searching', 'bidding'] && assignedDriverReturnsOrderToSearch(orderId))
-            || (!(request.resource.data.status in ['searching', 'bidding']) && assignedDriverAdvancesOrder(orderId))));
+            || (!(request.resource.data.status in ['searching', 'bidding']) && ((request.resource.data.status == 'in_trip' && driverUpdatesCargoWork(orderId)) || assignedDriverAdvancesOrder(orderId)))));
       allow delete: if isAdmin();
     }
 

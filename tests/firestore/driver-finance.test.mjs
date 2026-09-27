@@ -1,3 +1,5 @@
+import { initialCargoFare, cargoCanComplete } from '../../cargo-fare.js';
+import { updateCargoWork } from '../../cargo-work.js';
 import { confirmSoberExpenses } from '../../sober-dispatch.js';
 import { offerFields, priceSettings, increaseOrderPrice } from '../../customer-pricing.js';
 import { allowedOrderServices } from '../../functions/driver-services.mjs';
@@ -31,7 +33,7 @@ async function order(id, overrides={}) { return setDoc(doc(db('client'),'orders'
 async function run(name, uid, args=[], overrides={}) {
  const database=db(uid),profile=(await getDoc(doc(db('admin'),'drivers','d-a'))).data();
  const messages=[];
- const context={document:{getElementById:id=>id==='existing-driver-number'?{value:'1'}:{}},drivers:[{id:'d-a',...profile}],driverDirectory:'cargo',sameCargoProfile:Function(extract(dispatcherSource,'sameCargoProfile')+'; return sameCargoProfile;')(),assignmentVehicle,cargoServicesReady:true,retryPriceConflict,...sdk,...finance,...auction,driverCanServeOrder,validVehicleProfile,ensureUidAvailable:async()=>{},parseBalance:value=>Number(value),validateUid:()=>true,db:database,currentUser:{uid},currentDriver:profile,currentDriverId:'d-a',currentCanTakeOrders:finance.hasOrderFunds(profile),currentBaseEligible:finance.hasOrderFunds(profile),orderActionInProgress:false,dispatcherCompletionInProgress:false,manualOrderAssignmentInProgress:false,
+ const context={document:{getElementById:id=>id==='existing-driver-number'?{value:'1'}:{}},drivers:[{id:'d-a',...profile}],driverDirectory:'cargo',sameCargoProfile:Function(extract(dispatcherSource,'sameCargoProfile')+'; return sameCargoProfile;')(),assignmentVehicle,cargoServicesReady:true,cargoCanComplete,retryPriceConflict,...sdk,...finance,...auction,driverCanServeOrder,validVehicleProfile,ensureUidAvailable:async()=>{},parseBalance:value=>Number(value),validateUid:()=>true,db:database,currentUser:{uid},currentDriver:profile,currentDriverId:'d-a',currentCanTakeOrders:finance.hasOrderFunds(profile),currentBaseEligible:finance.hasOrderFunds(profile),orderActionInProgress:false,dispatcherCompletionInProgress:false,manualOrderAssignmentInProgress:false,
  ACTIVE_ORDER_STATUSES:active,CANCELLABLE_ORDER_STATUSES:new Set([...active,'searching','bidding']),REQUEUEABLE_ORDER_STATUSES:new Set(['accepted','en_route','arrived']),REQUEUE_REASONS:[['car_issue','Неисправность автомобиля']],AVAILABLE_DRIVER_STATE:{status:'available',activeOrderId:''},
  window:{confirm:()=>true},console:{warn:()=>{},error:()=>{}},elements:{onlineOrdersMessage:{}},
  renderOnlineOrders:()=>{},showOrdersMessage:(message,success)=>messages.push({message,success}),setMessage:(el,message,success)=>messages.push({message,success}),formatMoney:value=>String(value)+' ₸',normalizeUid:value=>value,
@@ -299,6 +301,77 @@ try {
  await test('legacy dual driver cannot bypass shared lock through unreserved dispatcher assignment',async()=>{
   await seed({},-100);await cargoDriver();await cargoOrder();assert.ok((await run('acceptOrder','driver-a',['cargo-a'])).success);
   await assertFails(updateDoc(doc(db('admin'),'orders','order-a'),{status:'accepted',assignedDriverUid:'driver-a',assignedDriverId:'d-a',driverName:'Driver',driverPhone:'',driverCar:'',driverColor:''}));
+ });
+ async function onlineCargo(overrides={}) {
+  await cargoDriver(); await setDoc(doc(db('admin'),'settings','cargoBooking'),{schemaVersion:1});
+  await sdk.deleteDoc(doc(db('admin'),'orders','order-a'));
+  await order('order-a',{serviceType:'cargo',cargoFare:initialCargoFare(),serviceDetails:{description:'Коробки'},priceAmount:6000,priceText:'Предварительно: 6000 ₸',...overrides});
+ }
+ const work=(uid,action,rest={})=>updateCargoWork(db(uid),sdk,{orderId:'order-a',uid,action,...rest});
+ async function beginCargo() {
+  await onlineCargo(); assert.ok((await run('acceptOrder','driver-a',['order-a'])).success);
+  assert.ok((await run('advanceOrder','driver-a',['order-a','accepted','arrived'])).success);
+  await work('driver-a','start');
+ }
+ async function setStartMinutesAgo(minutes) {
+  // Time travel only in emulator seed; production clients cannot change the server start time.
+  await env.withSecurityRulesDisabled(ctx=>updateDoc(doc(ctx.firestore(),'orders','order-a'),{cargoStartedAt:Timestamp.fromMillis(Date.now()-minutes*60000)}));
+ }
+ await test('cargo online requires published backend marker and immutable 6000 tariff; max route still fits rules budget',async()=>{
+  await assertFails(order('cargo-no-marker',{serviceType:'cargo',cargoFare:initialCargoFare(),serviceDetails:{description:'Ящики'},priceAmount:6000}));
+  await onlineCargo({stops:['1','2','3','4','5'],routeCoordinates:Array.from({length:7},()=>({lat:50,lon:82})),fromAddress:'Чапаева көшесі, поле'});
+  for (const patch of [{priceAmount:1},{cargoFare:{...initialCargoFare(),kmRate:1}},{cargoConfirmedAt:serverTimestamp()},{cargoStartedAt:serverTimestamp()}]) {
+   await assertFails(order('bad-cargo',{serviceType:'cargo',cargoFare:initialCargoFare(),serviceDetails:{description:'Ящики'},priceAmount:6000,...patch}));
+  }
+  await assertFails(updateDoc(doc(db('client'),'orders','order-a'),{priceAmount:1}));
+ });
+ await test('cargo first-hour work finishes at 6000 after explicit zero and dispatcher confirmation',async()=>{
+  await beginCargo();
+  await assert.rejects(work('driver-a','start'));
+  await assertFails(updateDoc(doc(db('driver-a'),'orders','order-a'),{cargoStartedAt:Timestamp.fromMillis(1),updatedAt:serverTimestamp()}));
+  await assert.rejects(work('driver-a','report',{meters:5000}));
+  await assertFails(updateDoc(doc(db('driver-a'),'orders','order-a'),{cargoReportedMeters:5000,cargoFinishedAt:serverTimestamp(),updatedAt:serverTimestamp()}));
+  assert.ok(!(await run('advanceOrder','driver-a',['order-a','in_trip','completed'])).success);
+  await work('driver-a','report',{meters:0});
+  await assert.rejects(work('admin','confirm',{meters:100,expectedReportedMeters:0}));
+  await work('admin','confirm',{meters:0,expectedReportedMeters:0});
+  assert.equal((await readOrder()).priceAmount,6000);
+  assert.ok((await run('advanceOrder','driver-a',['order-a','in_trip','completed'])).success);
+  assert.equal((await readDriver()).balance,200);
+ });
+ await test('post-hour 5.2 km is 7300; only dispatcher approves and frozen cargo rate applies once',async()=>{
+  await beginCargo(); await setStartMinutesAgo(90);
+  await work('driver-a','report',{meters:5200});
+  assert.equal((await readOrder()).priceAmount,6000);
+  await assertFails(work('driver-a','confirm',{meters:5200,expectedReportedMeters:5200}));
+  await assertFails(work('client','confirm',{meters:5200,expectedReportedMeters:5200}));
+  await updateDoc(doc(db('admin'),'drivers','d-a'),{cargoProfile:{...cargoProfile,commissionRate:90}});
+  await work('admin','confirm',{meters:5200,expectedReportedMeters:5200});
+  const approved=await readOrder();assert.equal(approved.priceAmount,7300);assert.equal(approved.cargoConfirmedBy,'admin');
+  assert.deepEqual(approved.commissionTerms,{rate:5,baseAmount:7300,amount:365});
+  await assert.rejects(work('admin','confirm',{meters:9000,expectedReportedMeters:5200}));
+  await assertFails(updateDoc(doc(db('admin'),'orders','order-a'),{priceAmount:6000}));
+  assert.ok((await run('completeOnlineOrder','admin',[{id:'order-a',...approved}])).success);
+  assert.equal((await readDriver()).balance,265);
+  assert.ok(!(await run('advanceOrder','driver-a',['order-a','in_trip','completed'])).success);
+  assert.equal((await readDriver()).balance,265);
+ });
+ await test('dispatcher correction retains original mileage and cannot rewrite elapsed time or commission rate',async()=>{
+  await beginCargo();await setStartMinutesAgo(70);await work('driver-a','report',{meters:6000});
+  await assert.rejects(work('admin','confirm',{meters:5000,expectedReportedMeters:0}));
+  const ref=doc(db('admin'),'orders','order-a');
+  for(const patch of [{cargoReportedMeters:5000},{cargoStartedAt:Timestamp.fromMillis(1)},{cargoFare:{...initialCargoFare(),baseAmount:7000}},{status:'completed'}]) await assertFails(updateDoc(ref,patch));
+  await assertFails(updateDoc(ref,{cargoConfirmedMeters:5000,cargoConfirmedAt:serverTimestamp(),cargoConfirmedBy:'admin',priceAmount:7250,priceText:'7250 ₸',commissionTerms:{rate:0,baseAmount:7250,amount:0},updatedAt:serverTimestamp()}));
+  await work('admin','confirm',{meters:5000,expectedReportedMeters:6000});
+  const corrected=await readOrder();assert.equal(corrected.cargoReportedMeters,6000);assert.equal(corrected.cargoConfirmedMeters,5000);assert.equal(corrected.priceAmount,7250);
+ });
+ await test('concurrent start/report/approval are idempotent and zero post-hour distance incurs no surcharge',async()=>{
+  await beginCargo();await setStartMinutesAgo(120);
+  const reports=await Promise.allSettled([work('driver-a','report',{meters:0}),work('driver-a','report',{meters:1000})]);
+  assert.equal(reports.filter(r=>r.status==='fulfilled').length,1);
+  const reported=(await readOrder()).cargoReportedMeters;
+  const approvals=await Promise.allSettled([work('admin','confirm',{meters:0,expectedReportedMeters:reported}),work('admin','confirm',{meters:0,expectedReportedMeters:reported})]);
+  assert.equal(approvals.filter(r=>r.status==='fulfilled').length,1);assert.equal((await readOrder()).priceAmount,6000);
  });
  console.log(`ALL ${passed} DRIVER FINANCE CHECKS PASSED`);
 } finally {await env.cleanup();}

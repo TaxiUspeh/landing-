@@ -1,12 +1,15 @@
+import { isMeteredCargo, cargoCanComplete, cargoFareDescription } from './cargo-fare.js?v=77';
+import { createCargoWorkControls } from './cargo-controls.js?v=77';
+import { updateCargoWork } from './cargo-work.js?v=77';
 import { navigationRoute } from './booking-route.js?v=73';
 import { orderTimeInfo } from './order-time.js?v=71';
-import { normalizeCity } from './booking-core.js?v=74';
+import { normalizeCity } from './booking-core.js?v=77';
 import { serviceEnabled, allowedOrderServices, profileForOrder, assignmentVehicle, serviceDirection } from './functions/driver-services.mjs?v=74';
 import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=74';
-import { initDriverCabinet } from './driver-cabinet.js?v=74';
-import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=74';
+import { initDriverCabinet } from './driver-cabinet.js?v=77';
+import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=77';
 import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=74';
-import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=74';
+import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=77';
 import { app, auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -1764,8 +1767,8 @@ function orderServiceDetailsText(order) {
     }
     if (order.serviceType === 'cargo') {
         return [
-            details.cargoDescription ? `Груз: ${details.cargoDescription}` : '',
-            Number(details.movers) > 0 ? `Грузчики: ${details.movers}` : 'Грузчики не требуются'
+            (details.cargoDescription || details.description) ? `Груз: ${details.cargoDescription || details.description}` : '',
+            Number(order.cargoFare?.moversCount ?? details.movers) > 0 ? `Грузчики: ${order.cargoFare?.moversCount ?? details.movers}` : 'Грузчики не требуются'
         ].filter(Boolean).join(' · ');
     }
     if (order.serviceType === 'soberDriver') {
@@ -1913,9 +1916,10 @@ function createOrderCard(order, assigned, archived = false) {
 
     const service = createText('p', 'cabinet-service', orderServiceLabel(order));
     const route = createOrderRoute(order);
-    const price = createText('p', 'cabinet-price', order.priceText || 'Цена уточняется');
+    const price = createText('p', 'cabinet-price', isMeteredCargo(order) ? `${order.cargoConfirmedAt ? '' : '~ '}${formatMoney(order.priceAmount)}` : order.priceText || 'Цена уточняется');
     const compactHeading = document.createElement('div'); compactHeading.className = 'cabinet-order-heading';
     const serviceCopy = document.createElement('div'); serviceCopy.append(service);
+    if (isMeteredCargo(order) && !order.cargoConfirmedAt) serviceCopy.append(createText('span', 'cabinet-order-offer', 'Предварительно'));
     if (order.priceRevision > 0 || order.customerOfferPrice != null) {
         serviceCopy.append(createText('p', 'cabinet-price-note', order.priceRevision > 0 ? 'Цена повышена' : 'Цена клиента'));
     }
@@ -1937,6 +1941,7 @@ function createOrderCard(order, assigned, archived = false) {
     disclosure.open = orderDisclosureState.get(order.id) ?? (assigned && !archived);
     const summary = createText('summary', '', assigned ? orderStatusLabel(order.status) : 'Подробнее и действия');
     const body = document.createElement('div'); body.append(header);
+    if (isMeteredCargo(order)) body.append(createText('p', 'cabinet-price-details', cargoFareDescription(order)));
     if (order.pricingType) body.append(createText('p', 'cabinet-price-details', priceDescription(order)));
     disclosure.append(summary, body); card.append(disclosure);
 
@@ -1996,7 +2001,9 @@ function createOrderCard(order, assigned, archived = false) {
         actions.append(contact);
         void loadOrderContact(order.id, contact, quickActions);
 
-        const next = cancellationPending ? null : NEXT_ORDER_STATUS[order.status];
+        const metered = isMeteredCargo(order);
+        if (metered && !cancellationPending) primaryActions.append(createCargoWorkControls(order, values => updateCargoWork(db, { doc, runTransaction, serverTimestamp }, { ...values, orderId: order.id, uid: currentUser.uid })));
+        const next = cancellationPending || (metered && ['arrived', 'in_trip'].includes(order.status) && !cargoCanComplete(order)) ? null : NEXT_ORDER_STATUS[order.status];
         if (next) {
             const statusButton = document.createElement('button');
             statusButton.type = 'button';
@@ -2304,6 +2311,7 @@ async function advanceOrder(orderId, expectedStatus, nextStatus) {
             if (order.assignedDriverUid !== currentUser.uid || order.status !== expectedStatus) {
                 throw new Error('Статус заказа уже изменился.');
             }
+            if (nextStatus === 'completed' && !cargoCanComplete(order)) throw new Error('Сначала отправьте пробег и дождитесь подтверждения диспетчера.');
             let stateSnapshot = null;
             let driverSnapshot = null;
             let historySnapshot = null;

@@ -388,7 +388,7 @@ service cloud.firestore {
     function canFundOrder(driver, price) {
       let mode = driver.get('debtMode', 'unlimited');
       return driver.balance is number && price is number && price > 0 && price <= 10000000
-        && (mode == 'unlimited' || math.round((driver.balance + financeAmount(price, driver.get('commissionRate', 20))) * 100)
+        && (mode == 'unlimited' || math.round((driver.balance + driver.get('carpoolReservedAmount', 0) + financeAmount(price, driver.get('commissionRate', 20))) * 100)
           <= (mode == 'none' ? 0 : driver.debtLimit * 100));
     }
 
@@ -444,7 +444,8 @@ service cloud.firestore {
     }
 
     function adminFinanceProfileUpdate(driverId) {
-      return validFinanceProfile(request.resource.data)
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['carpoolReservedAmount', 'carpoolActiveTripId'])
+        && validFinanceProfile(request.resource.data)
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['commissionRate', 'debtMode', 'debtLimit', 'financeChangeId'])
           || (hasFinanceSettings(request.resource.data) && validFinanceAudit(driverId, financeSettings(resource.data), request.resource.data)));
     }
@@ -571,7 +572,9 @@ service cloud.firestore {
     }
     function validServiceProfiles(driver) {
       let cargo = driver.get('cargoProfile', null);
-      return driver.get('assistanceEnabled', false) is bool && driver.get('soberDriverEnabled', false) is bool && driver.get('passengerEnabled', true) is bool
+      return driver.get('carpoolEnabled', false) is bool
+        && (driver.get('carpoolCommissionRate', null) == null || (driver.carpoolCommissionRate is int && driver.carpoolCommissionRate >= 0 && driver.carpoolCommissionRate <= 100))
+        && driver.get('assistanceEnabled', false) is bool && driver.get('soberDriverEnabled', false) is bool && driver.get('passengerEnabled', true) is bool
         && driver.get('passengerStatus', 'active') in ['active', 'paused', 'blocked']
         && (cargo == null || (cargo is map && cargo.keys().hasOnly(['status', 'car', 'color', 'plate', 'bodyType', 'dimensions', 'payloadKg', 'commissionRate'])
           && cargo.status in ['active', 'paused', 'blocked']
@@ -1063,8 +1066,8 @@ service cloud.firestore {
 
     match /drivers/{driverId} {
       allow read: if isAdmin() || isLinkedDriver(driverId);
-      allow create: if isAdmin() && validServiceProfiles(request.resource.data) && validVehicleProfile(request.resource.data) && adminFinanceProfileCreate(driverId);
-      allow delete: if isAdmin();
+      allow create: if isAdmin() && !request.resource.data.keys().hasAny(['carpoolReservedAmount', 'carpoolActiveTripId']) && validServiceProfiles(request.resource.data) && validVehicleProfile(request.resource.data) && adminFinanceProfileCreate(driverId);
+      allow delete: if isAdmin() && resource.data.get('carpoolActiveTripId', '') == '' && resource.data.get('carpoolReservedAmount', 0) == 0;
       allow update: if (isAdmin() && validServiceProfiles(request.resource.data) && validVehicleProfile(request.resource.data) && adminFinanceProfileUpdate(driverId)) || driverAppliesOwnOnlineCommission(driverId);
     }
 
@@ -1163,9 +1166,32 @@ service cloud.firestore {
     match /settings/{settingId} {
       allow read: if settingId in ['customerPricing', 'driverServices'] || isAdmin() || (settingId == 'driverPortal' && mayOpenOrders());
       // A successful server read, even for an absent document, confirms v73 coordinate support.
-      allow get: if settingId in ['bookingCoordinates', 'soberDriverBooking', 'cargoBooking', 'assistanceBooking'];
+      allow get: if settingId in ['bookingCoordinates', 'soberDriverBooking', 'cargoBooking', 'assistanceBooking', 'carpoolBooking'];
       allow create, update: if isAdmin() && (settingId != 'customerPricing' || validCustomerPricingConfig(request.resource.data));
       allow delete: if isAdmin();
+    }
+
+
+    // Poputki commands use callable functions. Public trip cards contain no phone numbers.
+    match /carpoolTrips/{tripId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+    match /carpoolBookings/{bookingId} {
+      allow read: if signedIn() && (resource.data.clientUid == request.auth.uid || resource.data.driverUid == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+    match /carpoolContacts/{bookingId} {
+      allow read: if signedIn() && (resource.data.clientUid == request.auth.uid || resource.data.driverUid == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+    match /carpoolTripContacts/{tripId} {
+      allow read: if signedIn() && (resource.data.driverUid == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+    match /carpoolBoardingCodes/{bookingId} {
+      allow read: if signedIn() && resource.data.clientUid == request.auth.uid;
+      allow write: if false;
     }
 
     match /orders/{orderId} {

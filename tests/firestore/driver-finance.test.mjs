@@ -100,6 +100,13 @@ try {
   for(const point of [{lat:'50.132',lon:82.533},{lat:true,lon:82.533},{lat:50.132},{lat:91,lon:82.533},{lat:50.132,lon:181},{lat:50.132,lon:82.533,other:0},'invalid-coordinate']) await assertFails(setDoc(doc(db('client'),'orders','bad-point'),{...base,routeCoordinates:[point,null]}));
   for(const patch of [{serviceDetails:{carModel:'',transmission:'manual'}},{soberFare:{schemaVersion:1,base:'Белоусовка',pickupAmount:-1,returnAmount:1000}},{soberFare:{schemaVersion:1,base:'Белоусовка',pickupAmount:4000,returnAmount:1000}},{priceAmount:1000,priceText:'1000 ₸',finalDisplayedPrice:1000,calculatedPrice:1000}]) await assertFails(setDoc(doc(db('client'),'orders','bad-sober'),{...base,...patch}));
  });
+ await test('server-held carpool commission prevents an ordinary order from exceeding the shared limit',async()=>{
+  await env.withSecurityRulesDisabled(ctx=>updateDoc(doc(ctx.firestore(),'drivers','d-a'),{carpoolReservedAmount:600}));
+  assert.ok(!(await run('acceptOrder','driver-a',['order-a'])).success);
+  assert.ok(!(await run('assignOrderManually','admin',['order-a','d-a'])).success);
+  await env.withSecurityRulesDisabled(ctx=>updateDoc(doc(ctx.firestore(),'drivers','d-a'),{carpoolReservedAmount:0}));
+  assert.ok((await run('acceptOrder','driver-a',['order-a'])).success);
+ });
  await test('zero-price orders cannot be created by clients or dispatchers',async()=>{
   await assertFails(order('zero-price',{priceAmount:0,priceText:'Стоимость уточняется'}));
   await assertFails(setDoc(doc(db('admin'),'orders','zero-manual'),{...await readOrder(),source:'dispatcher',clientUid:'',priceAmount:0}));

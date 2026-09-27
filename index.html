@@ -495,6 +495,7 @@
     <link rel="stylesheet" href="./styles/client-home.css?v=56">
     <link rel="stylesheet" href="./styles/bus-schedule.css?v=76">
 <link rel="stylesheet" href="./styles/customer-pricing.css?v=67">
+<link rel="stylesheet" href="./styles/carpool.css?v=79">
 </head>
 <body class="client-home text-gray-900 min-h-screen flex flex-col">
 
@@ -662,7 +663,7 @@
 <button type="button" class="home-tile" data-home-service="intercity" >
 <i class="fas fa-route" aria-hidden="true">
 </i>
-<span>Межгород</span>
+<span>Межгород / Попутки</span>
 </button>
 <button type="button" class="home-tile" data-home-service="auction" >
 <i class="fas fa-gavel" aria-hidden="true">
@@ -2281,7 +2282,7 @@
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
         import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=78";
-        import { initBookingScreen } from "./booking-screen.js?v=78";
+        import { initBookingScreen } from "./booking-screen.js?v=79";
         import { normalizeCity } from "./booking-core.js?v=78";
         import { selectPriceAdjustment, adjustmentText } from "./pricing-adjustments.js?v=63";
         import { createSoberPricing } from './sober-pricing.js?v=78';
@@ -5151,6 +5152,6 @@
         initClientHome();
 
     </script>
-    <script type="module" src="./client-orders.js?v=78"></script>
+    <script type="module" src="./client-orders.js?v=79"></script>
 </body>
 </html>

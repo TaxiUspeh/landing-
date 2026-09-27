@@ -27,7 +27,7 @@ export function fundingFor(driver, price, order = {}) {
     if (baseAmount === null) return { allowed: false, reason: 'Диспетчер должен уточнить расходы на подачу и обратное такси.', shortfall: null };
     const amount = commissionFor(baseAmount, settings.commissionRate);
     const ceiling = settings.debtMode === 'none' ? 0 : settings.debtLimit;
-    const shortfall = settings.debtMode === 'unlimited' ? 0 : Math.max(0, moneyRound(balance + amount - ceiling));
+    const shortfall = settings.debtMode === 'unlimited' ? 0 : Math.max(0, moneyRound(balance + (driver.carpoolReservedAmount || 0) + amount - ceiling));
     return { allowed: shortfall === 0, baseAmount, amount, rate: settings.commissionRate, shortfall,
         reason: shortfall ? `Недостаточно средств для комиссии. Пополните баланс на ${shortfall.toLocaleString('ru-RU')} ₸.` : '' };
 }
@@ -38,7 +38,7 @@ export function hasOrderFunds(driver) {
         const balance = Number(driver.balance);
         if (!validFinanceSettings(settings) || !Number.isFinite(balance)) return false;
         const ceiling = settings.debtMode === 'none' ? 0 : settings.debtLimit;
-        return settings.debtMode === 'unlimited' || (settings.commissionRate === 0 ? balance <= ceiling : balance < ceiling);
+        return settings.debtMode === 'unlimited' || (settings.commissionRate === 0 ? balance + (driver.carpoolReservedAmount || 0) <= ceiling : balance + (driver.carpoolReservedAmount || 0) < ceiling);
     });
 }
 export function reserveCommission(driver, price, order = {}) {
@@ -59,6 +59,7 @@ export function orderCommission(order) {
 export const commissionReason = order => `Комиссия ${orderCommission(order).rate}% от ${order.cargoFare ? 'подтверждённой стоимости грузоперевозки' : order.soberFare ? 'оплаты перегона без подачи и обратного такси' : order.auctionRound ? 'согласованной цены аукциона' : 'максимальной цены онлайн-заказа'}`;
 export const reservedCommission = orders => moneyRound(orders.filter(order => ['accepted', 'en_route', 'arrived', 'in_trip'].includes(order.status)).reduce((sum, order) => sum + orderCommission(order).amount, 0));
 export function financeSummary(driver, reserved = 0) {
+    reserved = moneyRound(reserved + (driver.carpoolReservedAmount || 0));
     const settings = financeSettings(driver), balance = Number(driver.balance);
     const fmt = value => value.toLocaleString('ru-RU') + ' ₸';
     const limit = settings.debtMode === 'none' ? 'Долг запрещён' : settings.debtMode === 'unlimited' ? 'Без лимита долга' : `Лимит долга: ${fmt(settings.debtLimit)}`;

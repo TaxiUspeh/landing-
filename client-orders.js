@@ -1,3 +1,5 @@
+import { initCarpoolClient } from './carpool-ui.js?v=79';
+import { createCarpoolApi } from './carpool-api.js?v=79';
 import { assistanceDetails } from './assistance-booking.js?v=78';
 import { initialCargoFare, cargoAmount, isMeteredCargo, cargoFareDescription } from './cargo-fare.js?v=77';
 import { soberFareForPrice } from './sober-fare.js?v=74';
@@ -5,7 +7,7 @@ import { addressWithCity } from './booking-core.js?v=78';
 import { priceSettings, offerFields, priceDescription, increaseOrderPrice } from './customer-pricing.js?v=78';
 import { createPriceControl } from './customer-price-control.js?v=78';
 import { orderCategorySummary } from './vehicle-categories.js?v=78';
-import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=78';
+import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=79';
 import { auth, db } from './firebase-config.js';
 import {
     onAuthStateChanged,
@@ -1158,3 +1160,7 @@ elements.dispatcherCall?.setAttribute('href', 'tel:+77770649648');
 elements.deliveryDispatcherCall?.setAttribute('href', 'tel:+77770649648');
 
 void restoreActiveOrder();
+
+function mountCarpoolClient() { initCarpoolClient(document.getElementById('carpoolClient'), createCarpoolApi()); }
+window.addEventListener('booking-screen-ready', mountCarpoolClient);
+mountCarpoolClient();

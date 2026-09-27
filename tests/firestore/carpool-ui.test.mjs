@@ -1,0 +1,50 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { JSDOM } from 'jsdom';
+import { initBookingScreen } from '../../booking-screen.js';
+import { initCarpoolClient, carpoolDay } from '../../carpool-ui.js';
+import { initCarpoolWork } from '../../carpool-work.js';
+const dom=new JSDOM(await readFile('../../index.html','utf8'),{url:'https://example.test/',pretendToBeVisual:true});
+for(const key of ['window','document','MutationObserver','Option','HTMLElement','FormData','Event'])globalThis[key]=key==='window'?dom.window:dom.window[key];
+Object.defineProperty(globalThis,'navigator',{value:dom.window.navigator,configurable:true});
+globalThis.fetch=async()=>({ok:true,json:async()=>({features:[]})});
+window.openModal=()=>{};window.closeModal=()=>{};window.initSimulationMap=async()=>{};window.scrollTo=()=>{};window.confirm=()=>true;
+window.HTMLElement.prototype.scrollIntoView=()=>{};
+for(const name of ['Taxi','Delivery','Cargo','Sober'])window[`update${name}Price`]=()=>{};
+const get=id=>document.getElementById(id),flush=()=>new Promise(r=>setTimeout(r,20));
+initBookingScreen();
+let tripUpdate,mineUpdate,driverUpdate,passengerUpdate,filters;
+const commands=[];
+const trip={id:'trip1',status:'open',driverId:'30',driverUid:'driver',driverName:'Водитель',car:'Лада',fromCity:'Белоусовка',toCity:'Усть-Каменогорск',departureAt:{seconds:(Date.now()+3600000)/1000},pickup:'Автостанция',dropoff:'Центр',totalSeats:4,availableSeats:4,seatPrice:1500,commissionRate:10,reservedAmount:0,priceLocked:false};
+const api={user:async()=>({uid:'client'}),ready:async()=>true,
+ watchTrips:(f,next)=>{filters=f;tripUpdate=next;next([trip]);return()=>{};},watchMine:(_uid,next)=>{mineUpdate=next;next([]);return()=>{};},
+ watchDriverTrips:(_uid,next)=>{driverUpdate=next;next([]);return()=>{};},watchPassengers:(_trip,_admin,next)=>{passengerUpdate=next;next([]);return()=>{};},
+ read:async(name)=>name==='carpoolBoardingCodes'?{code:'1234'}:{name:'Пассажир',phone:'+77000000002',driverPhone:'+77000000001'},
+ command:async data=>{commands.push(data);return{tripId:'trip1',bookingId:'booking1'};}};
+initCarpoolClient(get('carpoolClient'),api);
+window.repeatOrder('Белоусовка','Усть-Каменогорск');document.querySelector('[data-booking-service="intercity"]').click();
+assert.equal(get('bookingIntercitySwitch').hidden,false);get('bookingIntercitySeats').click();await flush();
+assert.equal(get('carpoolClient').hidden,false);assert.equal(get('bookingFooter').hidden,true);assert.ok(get('mapModal').classList.contains('carpool-mode'));
+assert.equal(filters.fromKey,'белоусовка');assert.equal(filters.toKey,'усть каменогорск');
+const host=get('carpoolClient');const clickText=(root,text)=>{const b=[...root.querySelectorAll('button')].find(b=>b.textContent===text);assert.ok(b,text);b.click();};
+clickText(host,'Забронировать места');let booking=host.querySelector('form[data-trip]');
+booking.elements.name.value='<img src=x onerror=alert(1)>';booking.elements.phone.value='+77000000002';booking.elements.count.value='2';booking.elements.count.dispatchEvent(new Event('input'));
+assert.match(booking.textContent.replace(/\s/g,''),/3000₸/);
+tripUpdate([{...trip,availableSeats:3}]);booking=host.querySelector('form[data-trip]');assert.equal(booking.hidden,false);assert.equal(booking.elements.name.value,'<img src=x onerror=alert(1)>');assert.equal(booking.elements.count.value,'2');
+booking.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));await flush();assert.equal(commands.at(-1).seats,2);assert.equal(commands.at(-1).expectedSeatPrice,1500);
+await mineUpdate([{...trip,id:'booking1',tripId:'trip1',clientUid:'client',status:'confirmed',seats:2,amount:3000}]);await flush();
+assert.match(host.textContent,/Код посадки: 1234/);assert.equal(host.querySelector('img'),null);assert.ok(host.querySelector('a[href="tel:+77000000001"]'));
+clickText(host,'Отменить бронь');await flush();assert.equal(commands.at(-1).action,'cancelBooking');
+get('bookingIntercityWhole').click();assert.equal(get('carpoolClient').hidden,true);assert.equal(get('bookingFooter').hidden,false);assert.equal(get('taxiFrom').value,'Белоусовка');
+assert.equal(carpoolDay(Date.parse('2026-09-27T20:30:00Z')),'2026-09-28');
+const workHost=document.createElement('section');document.body.append(workHost);const work=initCarpoolWork(workHost,api);
+await work.setContext({uid:'driver'},{name:'Водитель',phone:'+77000000001',status:'active',carpoolEnabled:true,carpoolCommissionRate:10,passengerSeats:4});await flush();
+const form=workHost.querySelector('form');form.elements.pickup.value='Автостанция';form.elements.dropoff.value='Центр';form.elements.seatPrice.value='1500';
+form.elements.departure.value='2026-09-28T18:30';form.dispatchEvent(new Event('submit',{cancelable:true}));await flush();
+assert.equal(commands.at(-1).action,'publish');assert.equal(commands.at(-1).departureMs,Date.parse('2026-09-28T13:30:00Z'));
+driverUpdate([{...trip,priceLocked:true}]);await flush();assert.equal([...workHost.querySelectorAll('summary')].some(e=>e.textContent==='Изменить поездку'),false);
+const details=[...workHost.querySelectorAll('details')].find(e=>e.querySelector('summary')?.textContent==='Пассажиры и бронирования');details.open=true;await flush();
+await passengerUpdate([{id:'booking1',status:'confirmed',seats:2,amount:3000}]);await flush();
+const boarding=[...details.querySelectorAll('form')].find(f=>f.elements.code);assert.ok(boarding);boarding.elements.code.value='1234';boarding.dispatchEvent(new Event('submit',{cancelable:true}));await flush();assert.equal(commands.at(-1).action,'board');
+work.destroy();console.log('PASS: intercity modes, live seats without losing typed data, totals, private boarding code, cancellation, driver publication and Kazakhstan time');
+await new Promise(r=>setTimeout(r,1100));dom.window.close();

@@ -45,6 +45,70 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "carpoolTrips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fromKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "toKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "departureAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "carpoolTrips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "driverUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "carpoolBookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "clientUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "carpoolBookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tripId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "driverUid",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

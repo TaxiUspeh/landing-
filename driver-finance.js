@@ -56,7 +56,7 @@ export function orderCommission(order) {
     if (terms.baseAmount !== baseAmount || terms.amount !== commissionFor(terms.baseAmount, terms.rate)) throw new Error('Условия комиссии заказа повреждены. Обратитесь к диспетчеру.');
     return terms;
 }
-export const commissionReason = order => `Комиссия ${orderCommission(order).rate}% от ${order.soberFare ? 'оплаты перегона без подачи и обратного такси' : order.auctionRound ? 'согласованной цены аукциона' : 'максимальной цены онлайн-заказа'}`;
+export const commissionReason = order => `Комиссия ${orderCommission(order).rate}% от ${order.cargoFare ? 'подтверждённой стоимости грузоперевозки' : order.soberFare ? 'оплаты перегона без подачи и обратного такси' : order.auctionRound ? 'согласованной цены аукциона' : 'максимальной цены онлайн-заказа'}`;
 export const reservedCommission = orders => moneyRound(orders.filter(order => ['accepted', 'en_route', 'arrived', 'in_trip'].includes(order.status)).reduce((sum, order) => sum + orderCommission(order).amount, 0));
 export function financeSummary(driver, reserved = 0) {
     const settings = financeSettings(driver), balance = Number(driver.balance);

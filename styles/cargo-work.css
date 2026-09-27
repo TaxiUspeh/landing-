@@ -1,0 +1,10 @@
+.cargo-work { width:100%; margin-block:12px; padding:14px; border:1px solid #b8c9e2; border-radius:12px; background:#eef4ff; color:#172b4d; font-size:14px; line-height:1.5; }
+.cargo-work:empty { display:none; }
+.cargo-work p { margin:6px 0; overflow-wrap:anywhere; }
+.cargo-work label { display:block; font-weight:700; }
+.cargo-work input { display:block; width:100%; box-sizing:border-box; min-height:44px; margin:8px 0; padding:10px; background:#fff; color:#172b4d; border:1px solid #809abb; border-radius:8px; }
+.cargo-work button { min-height:48px; width:100%; padding:10px 14px; margin-top:10px; border-radius:10px; background:#1d4ed8; color:#fff; font-weight:700; }
+.cargo-work button:disabled { opacity:.65; }
+.cargo-work :focus-visible { outline:3px solid #eab308; outline-offset:2px; }
+.dark .cargo-work { background:#1b2c43; color:#e7f0ff; border-color:#517096; }
+.dark .cargo-work input { color:#f1f5f9; background:#111d30; border-color:#6c88ad; }

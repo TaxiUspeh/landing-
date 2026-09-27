@@ -1,9 +1,10 @@
+import { initialCargoFare, cargoAmount, isMeteredCargo, cargoFareDescription } from './cargo-fare.js?v=77';
 import { soberFareForPrice } from './sober-fare.js?v=74';
-import { addressWithCity } from './booking-core.js?v=74';
+import { addressWithCity } from './booking-core.js?v=77';
 import { priceSettings, offerFields, priceDescription, increaseOrderPrice } from './customer-pricing.js?v=74';
 import { createPriceControl } from './customer-price-control.js?v=74';
 import { orderCategorySummary } from './vehicle-categories.js?v=74';
-import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=74';
+import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=77';
 import { auth, db } from './firebase-config.js';
 import {
     onAuthStateChanged,
@@ -83,11 +84,11 @@ let lastObservedOrderStatus = '';
 let activeOrderView = 'taxi';
 
 function normalizedOrderService(serviceType) {
-    return ['delivery', 'auction', 'soberDriver'].includes(serviceType) ? serviceType : 'taxi';
+    return ['delivery', 'auction', 'soberDriver', 'cargo'].includes(serviceType) ? serviceType : 'taxi';
 }
 
 function orderView(serviceType = activeOrderView) {
-    if (['auction', 'soberDriver'].includes(serviceType)) {
+    if (['auction', 'soberDriver', 'cargo'].includes(serviceType)) {
         const el = suffix => document.getElementById(`${serviceType}-${suffix}`);
         return {
             serviceType, form: document.getElementById(`${serviceType}Form`),
@@ -339,6 +340,7 @@ function statusPresentation(order) {
     if (status === 'searching' && order?.requeuedAt) {
         return ['Подбираем другого водителя', 'bg-amber-100 text-amber-900 border-amber-300'];
     }
+    if (isMeteredCargo(order) && status === 'in_trip') return [order.cargoConfirmedAt ? 'Стоимость подтверждена' : order.cargoFinishedAt ? 'Диспетчер проверяет пробег' : 'Грузовая работа началась', 'bg-indigo-100 text-indigo-900 border-indigo-300'];
     const statuses = {
         bidding: ['Ждём предложения водителей', 'bg-amber-100 text-amber-900 border-amber-300'],
         searching: ['Ищем свободного водителя', 'bg-amber-100 text-amber-900 border-amber-300'],
@@ -367,6 +369,11 @@ function showOrderPanel(order) {
     }
     if (view.orderPrice) view.orderPrice.textContent = order.priceText || 'Цена уточняется';
     updatePriceControls(order, view);
+    if (order.serviceType === 'cargo' && view.orderPrice) {
+        let summary = view.panel.querySelector('[data-cargo-summary]');
+        if (!summary) { summary = document.createElement('p'); summary.dataset.cargoSummary = ''; summary.className = 'customer-price-summary'; view.orderPrice.after(summary); }
+        summary.textContent = cargoFareDescription(order);
+    }
     if (view.orderStatus) {
         view.orderStatus.className = `rounded-xl border p-3 text-sm font-extrabold ${statusClasses}`;
         view.orderStatus.textContent = statusText;
@@ -727,6 +734,56 @@ async function loadSoberBooking() {
     window.dispatchEvent(new Event('sober-booking-ready'));
 }
 
+async function createOnlineCargoOrder() {
+    if (window.bookingScreen?.isPreview() || !ONLINE_ORDERS_ENABLED || actionInProgress || resumeExistingOrder()) return;
+    activeOrderView = 'cargo';
+    const view = orderView('cargo'); setStatus('');
+    if (!window.cargoBookingReady) { setStatus('Онлайн-заказ грузоперевозок ещё подключается. Позвоните диспетчеру.'); return; }
+    const fromAddress = combineAddress('cargoFrom', 'cargoHouse', 'cargoApt');
+    const toAddress = document.getElementById('cargoTo').value.trim();
+    const description = document.getElementById('cargoDescription').value.trim();
+    const scheduledFor = document.getElementById('cargoDateTime').value;
+    const customerPhone = normalizePhone(view.customerPhone.value), customerName = view.customerName.value.trim();
+    if (!fromAddress || !toAddress || !description) { setStatus('Укажите адрес погрузки, выгрузки и описание груза.'); view.form.reportValidity(); return; }
+    if (!validPhone(customerPhone)) { setStatus('Укажите корректный номер телефона.'); view.customerPhone.focus(); return; }
+    if (fromAddress.length > 240 || toAddress.length > 240 || description.length > 700 || customerName.length > 80) { setStatus('Сократите адрес, описание груза или имя.'); return; }
+    const route = window.bookingScreen?.orderRoute?.('cargo');
+    let cargoFare;
+    try { cargoFare = initialCargoFare(Number(document.getElementById('cargoMovers').value)); }
+    catch (error) { setStatus(error.message); return; }
+    const priceAmount = cargoAmount(cargoFare), priceText = `Предварительно: ${priceAmount} ₸`;
+    void prepareClientOrderSound(); setActionBusy(true, 'cargo');
+    try {
+        const user = await ensureSignedIn(), orderRef = customerOrderReference(user);
+        const batch = customerOrderBatch(orderRef, user);
+        batch.set(orderRef, {
+            orderNumber: createOrderNumber(), serviceType: 'cargo', source: 'online', clientUid: user.uid,
+            fromAddress, toAddress, stops: route?.stops.map(point => addressWithCity(point)) || [], ...coordinateFields(route),
+            wishes: route?.wishes || '', scheduledFor, direction: route?.to.city || '', serviceDetails: { description },
+            cargoFare, priceAmount, priceText, status: 'searching', createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+        });
+        batch.set(doc(db, 'orderContacts', orderRef.id), {
+            clientUid: user.uid, customerName: customerName || 'Клиент', customerPhone, passengerPhone: '',
+            createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+        });
+        await batch.commit();
+        storeValue(CUSTOMER_NAME_STORAGE_KEY, customerName); storeValue(CUSTOMER_PHONE_STORAGE_KEY, customerPhone);
+        window.saveOrderToFullHistory?.(fromAddress, toAddress, priceText);
+        startOrderWatch(orderRef.id);
+    } catch (error) {
+        console.error('Грузовой заказ не создан:', error);
+        setStatus('Не удалось отправить заказ. Проверьте интернет и повторите отправку.', false, 'cargo');
+        const pending = pendingSubmission(); if (pending?.writes) showPendingSubmission(pending);
+    } finally { setActionBusy(false, 'cargo'); }
+}
+async function loadCargoBooking() {
+    try {
+        const snapshot = await getDocFromServer(doc(db, 'settings', 'cargoBooking'));
+        window.cargoBookingReady = snapshot.exists() && snapshot.data().schemaVersion === 1;
+    } catch { window.cargoBookingReady = false; }
+    window.dispatchEvent(new Event('cargo-booking-ready'));
+}
+
 async function createOnlineDeliveryOrder() {
     if (window.bookingScreen?.isPreview()) return;
     if (!ONLINE_ORDERS_ENABLED || actionInProgress) return;
@@ -881,7 +938,7 @@ async function cancelOnlineOrder() {
 }
 
 function restoreSavedContact() {
-    for (const view of [orderView('taxi'), orderView('delivery'), orderView('auction'), orderView('soberDriver')]) {
+    for (const view of [orderView('taxi'), orderView('delivery'), orderView('auction'), orderView('soberDriver'), orderView('cargo')]) {
         if (view.customerName && !view.customerName.value) {
             view.customerName.value = readStoredValue(CUSTOMER_NAME_STORAGE_KEY);
         }
@@ -1004,6 +1061,13 @@ async function createOnlineAuctionOrder() {
         setStatus(error.code === 'permission-denied' ? 'Онлайн-аукцион пока недоступен. Позвоните диспетчеру.' : 'Не удалось отправить заказ. Проверьте интернет и попробуйте ещё раз.', false, 'auction');
     } finally { setActionBusy(false, 'auction'); }
 }
+void loadCargoBooking();
+window.addEventListener('online', () => { void loadCargoBooking(); });
+const cargoView = orderView('cargo');
+cargoView.onlineButton?.addEventListener('click', createOnlineCargoOrder);
+cargoView.form?.addEventListener('submit', event => { event.preventDefault(); void createOnlineCargoOrder(); });
+cargoView.cancelButton?.addEventListener('click', cancelOnlineOrder);
+cargoView.newOrderButton?.addEventListener('click', resetToForm);
 void loadSoberBooking();
 window.addEventListener('online', () => { void loadSoberBooking(); });
 const soberView = orderView('soberDriver');

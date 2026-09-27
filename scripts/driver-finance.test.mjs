@@ -27,3 +27,9 @@ test('reservation freezes rate; cancellation and completion release it without a
  assert.throws(()=>reserveCommission({...driver,debtLimit:100},5000),/Пополните/);
  assert.throws(()=>orderCommission({...order,priceAmount:6000}),/повреждены/);
 });
+
+test('carpool reserves reduce funds available for ordinary orders',()=>{
+ const d={balance:0,commissionRate:20,debtMode:'limited',debtLimit:1000,carpoolReservedAmount:600};
+ assert.equal(fundingFor(d,5000).allowed,false);assert.equal(fundingFor(d,5000).shortfall,600);
+ assert.equal(fundingFor(d,2000).allowed,true);assert.equal(hasOrderFunds({...d,carpoolReservedAmount:1000}),false);
+});

@@ -1,6 +1,6 @@
 const { logger } = require('firebase-functions');
 const { setGlobalOptions } = require('firebase-functions/v2');
-const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, Timestamp } = require('firebase-admin/firestore');
@@ -124,3 +124,32 @@ exports.notifyDriversOfPriceIncrease = onDocumentUpdated(
 exports.notifyDriversOfSoberReady = onDocumentUpdated(
   { document: 'orders/{orderId}', retry: true, timeoutSeconds: 60 }, pushActions.notifySoberReady
 );
+
+const { createCarpoolActions } = require('./carpool.cjs');
+const carpoolActions = createCarpoolActions({ db, Timestamp, HttpsError });
+exports.carpoolCommand = onCall({ timeoutSeconds: 60 }, carpoolActions.command);
+
+
+const { carpoolBookingMessage } = require('./carpool-push.cjs');
+exports.notifyCarpoolBooking = onDocumentWritten({ document: 'carpoolBookings/{bookingId}', retry: true }, async event => {
+  const before = event.data?.before.data(), after = event.data?.after.data();
+  const data = carpoolBookingMessage(before, after, event.params.bookingId);
+  if (!data) return;
+  const subscriptions = await eligibleDriverPushSubscriptions(after.driverUid);
+  for (const group of chunks(subscriptions, 500)) {
+    const response = await getMessaging().sendEachForMulticast({ data, tokens: group.map(s => s.data().token), webpush: { headers: { TTL: '300', Urgency: 'high' }, fcmOptions: { link: data.url } } });
+    await Promise.all(response.responses.map((r, i) => !r.success && INVALID_TOKEN_CODES.has(r.error?.code) ? group[i].ref.delete() : null));
+    if (response.responses.some(r => !r.success && !INVALID_TOKEN_CODES.has(r.error?.code))) throw new Error('Carpool push temporarily unavailable');
+  }
+});
+exports.pauseCarpoolWhenDriverDisabled = onDocumentUpdated('drivers/{driverId}', async event => {
+  const driver = event.data?.after.data();
+  if (!driver?.carpoolActiveTripId || (driver.status === 'active' && driver.carpoolEnabled === true && driver.passengerEnabled !== false && (driver.passengerStatus || 'active') === 'active')) return;
+  await db.runTransaction(async tx => {
+    const fresh = (await tx.get(db.doc(`drivers/${event.params.driverId}`))).data();
+    if (!fresh?.carpoolActiveTripId || (fresh.status === 'active' && fresh.carpoolEnabled === true && fresh.passengerEnabled !== false && (fresh.passengerStatus || 'active') === 'active')) return;
+    const ref = db.doc(`carpoolTrips/${fresh.carpoolActiveTripId}`);
+    const trip = (await tx.get(ref)).data();
+    if (trip?.status === 'open') tx.update(ref, { status: 'closed', closedReason: 'access', updatedAt: Timestamp.now() });
+  });
+});

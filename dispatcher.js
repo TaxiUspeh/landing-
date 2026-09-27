@@ -1,16 +1,18 @@
+import { initCarpoolWork } from './carpool-work.js?v=79';
+import { createCarpoolApi } from './carpool-api.js?v=79';
 import { isMeteredCargo, cargoCanComplete, cargoFareDescription } from './cargo-fare.js?v=77';
 import { createCargoWorkControls } from './cargo-controls.js?v=77';
-import { updateCargoWork } from './cargo-work.js?v=78';
+import { updateCargoWork } from './cargo-work.js?v=79';
 import { confirmSoberExpenses, createSoberExpenseEditor } from './sober-dispatch.js?v=74';
 import { serviceEnabled, profileForOrder, assignmentVehicle } from './functions/driver-services.mjs?v=78';
 import { createCargoControls } from './cargo-profile-controls.js?v=78';
 import { initCustomerPricingSettings } from './customer-pricing-settings.js?v=78';
 import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=78';
-import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=78';
-import { createFinanceControls } from './driver-finance-controls.js?v=78';
-import { createVehicleControls } from './vehicle-category-controls.js?v=78';
+import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=79';
+import { createFinanceControls } from './driver-finance-controls.js?v=79';
+import { createVehicleControls } from './vehicle-category-controls.js?v=79';
 import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=78';
-import { currentAuctionOffer } from './auction-core.js?v=78';
+import { currentAuctionOffer } from './auction-core.js?v=79';
 import { auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -371,7 +373,10 @@ async function copyUid() {
     }
 }
 
+const dispatcherCarpool = initCarpoolWork(document.getElementById('dispatcher-carpool'), createCarpoolApi(), true);
+
 function stopAdminPanel() {
+    dispatcherCarpool?.destroy();
     if (unsubscribeDrivers) unsubscribeDrivers();
     if (unsubscribeDriverStates) unsubscribeDriverStates();
     if (unsubscribeOrders) unsubscribeOrders();
@@ -413,6 +418,7 @@ async function checkAdminAccess(user) {
         }
 
         setHidden(elements.panel, false);
+        void dispatcherCarpool?.setContext(user);
         startDriversListener();
         startDriverStatesListener();
         startOrdersListeners();

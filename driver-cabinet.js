@@ -1,4 +1,4 @@
-import { financeSettings, moneyRound } from './driver-finance.js?v=78';
+import { financeSettings, moneyRound } from './driver-finance.js?v=79';
 
 // Presentation only. Existing forms and their listeners keep their identity.
 export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = () => {}, onHistoryPeriodChange = () => {} } = {}) {
@@ -29,7 +29,7 @@ export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = ()
     finance.className = 'cabinet-finance'; finance.replaceChildren();
     oldGrid.replaceWith(identityRow, wallet);
     const views = {};
-    for (const [key, label] of [['orders','Заказы'],['balance','Баланс'],['chat','Диспетчер'],['profile','Профиль и настройки']]) {
+    for (const [key, label] of [['orders','Заказы'],['carpool','Попутки'],['balance','Баланс'],['chat','Диспетчер'],['profile','Профиль и настройки']]) {
         const section = node('section', 'cabinet-view'); section.id = `driver-view-${key}`;
         section.setAttribute('aria-label', label); section.hidden = key !== 'orders';
         if (key !== 'orders') section.append(node('h3', 'cabinet-view-title', label));
@@ -76,7 +76,7 @@ export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = ()
     const nav = node('nav', 'cabinet-nav'); nav.id = 'driver-cabinet-nav'; nav.hidden = true;
     nav.setAttribute('aria-label', 'Разделы кабинета');
     const navButtons = new Map();
-    for (const [key, label, icon] of [['orders','Заказы','list'],['balance','Баланс','wallet'],['chat','Диспетчер','comments'],['profile','Профиль','user']]) {
+    for (const [key, label, icon] of [['orders','Заказы','list'],['carpool','Попутки','route'],['balance','Баланс','wallet'],['chat','Диспетчер','comments'],['profile','Профиль','user']]) {
         const control = button('', () => open(key)); control.dataset.cabinetView = key;
         control.setAttribute('aria-controls', views[key].id);
         const symbol = node('i', `fas fa-${icon}`); symbol.setAttribute('aria-hidden', 'true');
@@ -137,6 +137,7 @@ export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = ()
         }
     }
     function updateFinance(driver, reserved = 0) {
+        reserved = moneyRound(reserved + (driver.carpoolReservedAmount || 0));
         const settings = financeSettings(driver), balance = Number(driver.balance);
         const rates = [driver.passengerEnabled !== false ? `Легковые ${settings.commissionRate}%` : '', driver.cargoProfile ? `Грузовые ${driver.cargoProfile.commissionRate}%` : ''].filter(Boolean).join(' · ');
         rate.textContent = driver.cargoProfile ? rates : `Комиссия ${settings.commissionRate}%`;

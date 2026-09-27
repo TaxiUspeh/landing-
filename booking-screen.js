@@ -17,7 +17,7 @@ export function initBookingScreen({ preview = false } = {}) {
   const mapMessage = $('mapOverlayText');
   const geocoder = createGeocoder();
   const emptyPoint = () => ({ address: '', city: 'Белоусовка', lat: null, lon: null });
-  const state = { mode: 'taxi', category: 'taxi', from: emptyPoint(), to: emptyPoint(), stops: [], details: '', note: '', passengerCount: 5, service: BOOKING_SERVICES[0], channel: 'online', revision: 0 };
+  const state = { mode: 'taxi', intercityKind: 'whole', category: 'taxi', from: emptyPoint(), to: emptyPoint(), stops: [], details: '', note: '', passengerCount: 5, service: BOOKING_SERVICES[0], channel: 'online', revision: 0 };
   let opened = false, returnFocus = null, pickerTarget = null, pickerRevision = 0;
   let locating = false, initialLocationRequested = false, locationRevision = 0, searchRevision = 0;
   let originRevision = 0, locationRequest = 0;
@@ -47,6 +47,8 @@ export function initBookingScreen({ preview = false } = {}) {
         <section class="booking-sheet" aria-label="Маршрут и услуга">
           <button type="button" id="bookingGrip" class="booking-grip" aria-controls="bookingScroll" aria-label="Свернуть поля и увеличить карту" aria-expanded="true"><span>Больше карты · потяните вниз</span></button>
           <div class="booking-scroll" id="bookingScroll">
+            <div id="bookingIntercitySwitch" class="intercity-switch" role="group" aria-label="Межгород" hidden><button type="button" id="bookingIntercityWhole" aria-pressed="true">Машина целиком</button><button type="button" id="bookingIntercitySeats" aria-pressed="false">Попутки · по местам</button></div>
+            <section id="carpoolClient" hidden></section>
             <div id="bookingCommon">
               <button type="button" class="booking-city" id="bookingCity"><i class="fas fa-map-marker-alt" aria-hidden="true"></i><span>Белоусовка</span><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
               <div class="booking-address">
@@ -367,7 +369,16 @@ export function initBookingScreen({ preview = false } = {}) {
     const service = state.service;
     if (service.form === 'soberDriver') $('bookingServiceHelp').textContent = soberServiceHelp();
     const hasCard = activeCard();
-    $('bookingCommon').hidden = hasCard;
+    const shared = state.mode === 'intercity' && state.service.form === 'taxi' && state.intercityKind === 'seats';
+    $('bookingIntercitySwitch').hidden = state.mode !== 'intercity' || state.service.form !== 'taxi';
+    $('bookingIntercityWhole').setAttribute('aria-pressed', String(!shared));
+    $('bookingIntercitySeats').setAttribute('aria-pressed', String(shared));
+    $('carpoolClient').hidden = !shared;
+    overlay.classList.toggle('carpool-mode', shared);
+    $('bookingPanels').hidden = shared;
+    $('bookingCommon').hidden = hasCard || shared;
+    if (shared) { $('bookingFooter').hidden = true; $('bookingExtras').hidden = true; $('bookingStatus').hidden = true; sheet.setEnabled(false); return; }
+    $('bookingStatus').hidden = false;
     $('bookingFooter').hidden = hasCard;
     $('bookingExtras').hidden = hasCard;
     contacts.get(service.form)?.update();
@@ -756,7 +767,7 @@ export function initBookingScreen({ preview = false } = {}) {
     modeledCarCity: async point => (await geocoder.reverse(point.lat,point.lon))[0]?.city || null,
     renderDeliveryRoute: () => { if (opened && state.service.form === 'delivery') void drawRoute(); },
     getRouteDistance: async points => (await getRoute(points))?.distance ?? null,
-    isOpen: () => opened, isPreview: () => preview,
+    isCarpool: () => opened && state.mode === 'intercity' && state.intercityKind === 'seats', isOpen: () => opened, isPreview: () => preview,
     vehicleRequest: () => ({ vehicleCategory: categoryForService(state.service.form === 'taxi' ? state.category : 'taxi'), passengerCount: state.service.form === 'taxi' && state.category === 'minivan' ? state.passengerCount : 1 }),
     auctionData: () => ({ stops: state.stops.map(p => addressWithCity(p)), wishes: state.note }),
     deliveryData: () => opened && state.service.form === 'delivery' ? { stops: state.stops.map(p => addressWithCity(p)), wishes: state.note } : null
@@ -771,6 +782,8 @@ export function initBookingScreen({ preview = false } = {}) {
     originalClose('historyModal'); open(serviceType === 'assistance' ? 'assistance' : 'taxi'); changed();
   };
 
+  $('bookingIntercityWhole').onclick = () => { state.intercityKind = 'whole'; refresh(); window.simMap?.invalidateSize(); };
+  $('bookingIntercitySeats').onclick = () => { state.intercityKind = 'seats'; refresh(); window.dispatchEvent(new window.Event('carpool-open')); };
   $('bookingClose').onclick = close;
   $('bookingHistory').onclick = () => { close(); originalOpen('historyModal'); window.renderOrderHistory?.(); };
   $('bookingLocate').onclick = locate;
@@ -810,6 +823,7 @@ export function initBookingScreen({ preview = false } = {}) {
     }
   }, true);
   window.addEventListener('resize', () => { if (opened) window.simMap?.invalidateSize(); });
+  window.dispatchEvent(new window.Event('booking-screen-ready'));
   // Do not auto-open: the home page remains available until the customer chooses to order.
   selectService('taxi');
   if (preview) {

@@ -23,6 +23,7 @@ const original = Object.fromEntries(['driver-logout-button','driver-dispatcher-c
 const events = [];
 let authListener;
 const context = vm.createContext({
+        initCarpoolWork:()=>({destroy(){},setContext:async()=>{}}), createCarpoolApi:()=>({}),
     ...cargo, createCargoWorkControls, ...finance, ...categories, ...auction, navigationRoute, initDriverCabinet, orderTimeInfo, normalizeCity, priceDescription,
     document, window, navigator:window.navigator, localStorage:window.localStorage,
     URLSearchParams, console, setTimeout:()=>1, clearTimeout:()=>{}, setInterval:()=>1, clearInterval:()=>{},
@@ -144,7 +145,7 @@ assert.equal(get('driver-work-status-card').dataset.brief,'false');
 assert.match(get('driver-work-status-detail').textContent,/Пополните баланс/);
 
 // Presentation keeps finance meaning and exposes the main actions without disclosure.
-assert.equal(document.querySelectorAll('#driver-cabinet-nav button').length, 4);
+assert.equal(document.querySelectorAll('#driver-cabinet-nav button').length, 5);
 assert.equal(get('driver-order-order-0').querySelector('[data-order-control="accept"]').closest('details'), null);
 document.querySelector('[data-cabinet-view="profile"]').click();
 assert.equal(get('driver-view-profile').hidden, false);

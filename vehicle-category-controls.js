@@ -26,5 +26,11 @@ export function createVehicleControls(driver = {}) {
   const assistanceLabel = document.createElement('label'); assistanceLabel.className = 'vehicle-category-choice';
   const assistance = document.createElement('input'); assistance.type = 'checkbox'; assistance.checked = driver.assistanceEnabled === true;
   assistanceLabel.append(assistance, document.createTextNode('Помощь на дороге — получать заявки на помощь')); fieldset.append(assistanceLabel);
-  return { element: fieldset, read: () => ({ assistanceEnabled: assistance.checked, soberDriverEnabled: sober.checked, serviceCategories: [...inputs].filter(([, input]) => input.checked).map(([category]) => category), passengerSeats: Number(seats.value) }), reset: () => { assistance.checked = false; sober.checked = false; inputs.get('wagon').checked = false; inputs.get('minivan').checked = false; seats.value = '4'; sync(); } };
+  const carpoolLabel = document.createElement('label'); carpoolLabel.className = 'vehicle-category-choice';
+  const carpool = document.createElement('input'); carpool.type = 'checkbox'; carpool.checked = driver.carpoolEnabled === true;
+  carpoolLabel.append(carpool, document.createTextNode('Попутки — разрешить публикацию рейсов')); fieldset.append(carpoolLabel);
+  const carpoolRateLabel = document.createElement('label'); carpoolRateLabel.textContent = 'Комиссия за попутки, % (пусто — как у такси)';
+  const carpoolRate = document.createElement('input'); carpoolRate.type = 'number'; carpoolRate.min = '0'; carpoolRate.max = '100'; carpoolRate.step = '1'; carpoolRate.value = driver.carpoolCommissionRate ?? '';
+  carpoolRateLabel.append(carpoolRate); fieldset.append(carpoolRateLabel);
+  return { element: fieldset, read: () => ({ carpoolEnabled: carpool.checked, carpoolCommissionRate: carpoolRate.value === '' ? null : Number(carpoolRate.value), assistanceEnabled: assistance.checked, soberDriverEnabled: sober.checked, serviceCategories: [...inputs].filter(([, input]) => input.checked).map(([category]) => category), passengerSeats: Number(seats.value) }), reset: () => { carpool.checked = false; carpoolRate.value = ''; assistance.checked = false; sober.checked = false; inputs.get('wagon').checked = false; inputs.get('minivan').checked = false; seats.value = '4'; sync(); } };
 }

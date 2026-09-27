@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/check-site.mjs
-      - run: node --test scripts/assistance-booking.test.mjs scripts/cargo-fare.test.mjs scripts/local-bus-schedule.test.mjs scripts/sober-pricing.test.mjs scripts/order-time.test.mjs scripts/driver-services.test.mjs scripts/customer-pricing.test.mjs scripts/booking-core.test.mjs scripts/booking-route.test.mjs scripts/manual-orders.test.mjs scripts/taxi-pricing.test.mjs scripts/pricing-adjustments.test.mjs scripts/delivery-pricing.test.mjs scripts/vehicle-categories.test.mjs scripts/driver-finance.test.mjs scripts/driver-push-worker.test.mjs functions/push-actions.test.cjs
+      - run: node --test scripts/assistance-booking.test.mjs scripts/cargo-fare.test.mjs scripts/local-bus-schedule.test.mjs scripts/sober-pricing.test.mjs scripts/order-time.test.mjs scripts/driver-services.test.mjs scripts/customer-pricing.test.mjs scripts/booking-core.test.mjs scripts/booking-route.test.mjs scripts/manual-orders.test.mjs scripts/taxi-pricing.test.mjs scripts/pricing-adjustments.test.mjs scripts/delivery-pricing.test.mjs scripts/vehicle-categories.test.mjs scripts/driver-finance.test.mjs scripts/driver-push-worker.test.mjs functions/push-actions.test.cjs functions/carpool-push.test.cjs
       - name: Install DOM test dependency
         run: |
           npm install --prefix "$RUNNER_TEMP/booking-ui" --no-save --ignore-scripts jsdom@26.1.0
@@ -28,6 +28,7 @@ jobs:
           node cargo-ui.test.mjs
           node cargo-booking-ui.test.mjs
           node assistance-ui.test.mjs
+          node carpool-ui.test.mjs
           node vehicle-ui.test.mjs
           node client-home-ui.test.mjs
           node compact-booking-ui.test.mjs
@@ -47,5 +48,6 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: npm ci --prefix tests/firestore --ignore-scripts
+      - run: npm ci --prefix functions --ignore-scripts
       - name: Check customer price and commission transactions
-        run: tests/firestore/node_modules/.bin/firebase emulators:exec --config firebase.test.json --only firestore --project demo-taxi-rules-check 'cd tests/firestore && node customer-pricing.test.mjs && node driver-finance.test.mjs'
+        run: tests/firestore/node_modules/.bin/firebase emulators:exec --config firebase.test.json --only firestore --project demo-taxi-rules-check 'cd tests/firestore && node customer-pricing.test.mjs && node driver-finance.test.mjs && node carpool.test.mjs'

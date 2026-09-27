@@ -39,6 +39,7 @@ function fixture({ timeout = 15000 } = {}) {
     Object.defineProperty(dom.window.navigator, 'serviceWorker', { value: serviceWorker });
     dom.window.localStorage.setItem('taxi-uspeh-driver-push-device-id-v1', 'phone-1');
     const context = vm.createContext({
+        initCarpoolWork:()=>({destroy(){},setContext:async()=>{}}), createCarpoolApi:()=>({}),
         ...finance, ...categories, ...auction, initDriverCabinet, orderTimeInfo, normalizeCity, priceDescription,
         window: dom.window, document: dom.window.document, navigator: dom.window.navigator,
         localStorage: dom.window.localStorage, Notification: permission, atob, URLSearchParams,

@@ -1,15 +1,17 @@
+import { initCarpoolWork } from './carpool-work.js?v=79';
+import { createCarpoolApi } from './carpool-api.js?v=79';
 import { isMeteredCargo, cargoCanComplete, cargoFareDescription } from './cargo-fare.js?v=77';
 import { createCargoWorkControls } from './cargo-controls.js?v=77';
-import { updateCargoWork } from './cargo-work.js?v=78';
+import { updateCargoWork } from './cargo-work.js?v=79';
 import { navigationRoute } from './booking-route.js?v=78';
 import { orderTimeInfo } from './order-time.js?v=71';
 import { normalizeCity } from './booking-core.js?v=78';
 import { serviceEnabled, allowedOrderServices, profileForOrder, assignmentVehicle, serviceDirection } from './functions/driver-services.mjs?v=78';
 import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=78';
-import { initDriverCabinet } from './driver-cabinet.js?v=78';
-import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=78';
+import { initDriverCabinet } from './driver-cabinet.js?v=79';
+import { financeSettings, hasFinanceSettings, fundingFor, hasOrderFunds, reserveCommission, orderCommission, commissionReason, reservedCommission } from './driver-finance.js?v=79';
 import { driverCanServeOrder, driverCategorySummary, orderCategorySummary } from './vehicle-categories.js?v=78';
-import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=78';
+import { auctionOfferId, currentAuctionOffer, validAuctionPrice, validArrivalMinutes, OFFER_LIFETIME_MS } from './auction-core.js?v=79';
 import { app, auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -182,6 +184,7 @@ let authActionInProgress = false;
 let orderActionInProgress = false;
 let currentUser = null;
 let currentDriverId = '';
+const carpoolWork = initCarpoolWork(document.getElementById('driver-view-carpool'), createCarpoolApi());
 let currentDriver = null;
 let currentAccount = null;
 let currentBaseEligible = false;
@@ -516,6 +519,10 @@ function listenForTestPushes() {
     if (unsubscribePushForeground) return;
     unsubscribePushForeground = onMessage(getMessaging(app), async payload => {
         const data = payload?.data || {};
+        if (data.type === 'carpool' && orderAlertsEnabled && canConfigureDriverPush()) {
+            await showSystemNotification({ title: data.title || 'Попутки', body: data.body || 'Изменение бронирования', tag: data.orderId || 'carpool', url: './drivers.html?carpool=1' });
+            return;
+        }
         if (data.type !== 'push_test' || !orderAlertsEnabled || !canConfigureDriverPush()) return;
         driverPushTestReceived = true;
         showPushTestResult('Тестовый пуш получен на это устройство.');
@@ -1706,6 +1713,7 @@ function stopOrderWatches() {
 }
 
 function stopProfileWatches() {
+    carpoolWork?.destroy();
     driverPushGeneration += 1;
     driverPushDiagnostic = '';
     unsubscribePushForeground?.();
@@ -2570,9 +2578,11 @@ function watchDriverProfile(user) {
             showMessage('');
             currentAccount = account;
             currentDriver = driver;
+            void carpoolWork?.setContext(user, driver);
             currentDriverId = String(account.driverId);
             currentBaseEligible = canAccessOrders(driver, account);
             updateMobilePrimaryAction();
+            if (new URLSearchParams(window.location.search).has('carpool')) { cabinet?.open('carpool'); window.history.replaceState(null, '', window.location.pathname); }
             void loadDriverPushSettings();
             watchBalanceHistory(currentDriverId);
             watchDriverChat(user, currentDriverId);

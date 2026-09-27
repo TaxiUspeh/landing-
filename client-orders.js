@@ -1,10 +1,11 @@
+import { assistanceDetails } from './assistance-booking.js?v=78';
 import { initialCargoFare, cargoAmount, isMeteredCargo, cargoFareDescription } from './cargo-fare.js?v=77';
 import { soberFareForPrice } from './sober-fare.js?v=74';
-import { addressWithCity } from './booking-core.js?v=77';
-import { priceSettings, offerFields, priceDescription, increaseOrderPrice } from './customer-pricing.js?v=74';
-import { createPriceControl } from './customer-price-control.js?v=74';
-import { orderCategorySummary } from './vehicle-categories.js?v=74';
-import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=77';
+import { addressWithCity } from './booking-core.js?v=78';
+import { priceSettings, offerFields, priceDescription, increaseOrderPrice } from './customer-pricing.js?v=78';
+import { createPriceControl } from './customer-price-control.js?v=78';
+import { orderCategorySummary } from './vehicle-categories.js?v=78';
+import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=78';
 import { auth, db } from './firebase-config.js';
 import {
     onAuthStateChanged,
@@ -84,11 +85,11 @@ let lastObservedOrderStatus = '';
 let activeOrderView = 'taxi';
 
 function normalizedOrderService(serviceType) {
-    return ['delivery', 'auction', 'soberDriver', 'cargo'].includes(serviceType) ? serviceType : 'taxi';
+    return ['delivery', 'auction', 'soberDriver', 'cargo', 'assistance'].includes(serviceType) ? serviceType : 'taxi';
 }
 
 function orderView(serviceType = activeOrderView) {
-    if (['auction', 'soberDriver', 'cargo'].includes(serviceType)) {
+    if (['auction', 'soberDriver', 'cargo', 'assistance'].includes(serviceType)) {
         const el = suffix => document.getElementById(`${serviceType}-${suffix}`);
         return {
             serviceType, form: document.getElementById(`${serviceType}Form`),
@@ -341,6 +342,7 @@ function statusPresentation(order) {
         return ['Подбираем другого водителя', 'bg-amber-100 text-amber-900 border-amber-300'];
     }
     if (isMeteredCargo(order) && status === 'in_trip') return [order.cargoConfirmedAt ? 'Стоимость подтверждена' : order.cargoFinishedAt ? 'Диспетчер проверяет пробег' : 'Грузовая работа началась', 'bg-indigo-100 text-indigo-900 border-indigo-300'];
+    if (order?.serviceType === 'assistance' && status === 'completed') return ['Помощь выполнена', 'bg-green-100 text-green-900 border-green-300'];
     const statuses = {
         bidding: ['Ждём предложения водителей', 'bg-amber-100 text-amber-900 border-amber-300'],
         searching: ['Ищем свободного водителя', 'bg-amber-100 text-amber-900 border-amber-300'],
@@ -363,7 +365,7 @@ function showOrderPanel(order) {
     if (view.orderRoute) {
         view.orderRoute.textContent = [
             orderCategorySummary(order),
-            `${order.fromAddress || '—'} → ${order.toAddress || '—'}`,
+            order.serviceType === 'assistance' ? `${order.fromAddress || '—'} · ${order.serviceDetails?.assistanceType || 'Помощь на дороге'}` : `${order.fromAddress || '—'} → ${order.toAddress || '—'}`,
             deliveryItems ? `Что доставить: ${deliveryItems}` : ''
         ].filter(Boolean).join(' · ');
     }
@@ -632,7 +634,7 @@ async function commitPendingSubmission(record) {
 }
 const priceControls = new Map();
 function updatePriceControls(order, view) {
-    if (!['taxi', 'delivery', 'soberDriver'].includes(order.serviceType) || !view.orderPrice) return;
+    if (!['taxi', 'delivery', 'soberDriver', 'assistance'].includes(order.serviceType) || !view.orderPrice) return;
     let entry = priceControls.get(order.serviceType);
     if (!entry) {
         const summary = document.createElement('p'); summary.className = 'customer-price-summary';
@@ -782,6 +784,60 @@ async function loadCargoBooking() {
         window.cargoBookingReady = snapshot.exists() && snapshot.data().schemaVersion === 1;
     } catch { window.cargoBookingReady = false; }
     window.dispatchEvent(new Event('cargo-booking-ready'));
+}
+
+async function createOnlineAssistanceOrder() {
+    if (window.bookingScreen?.isPreview() || !ONLINE_ORDERS_ENABLED || actionInProgress || resumeExistingOrder()) return;
+    activeOrderView = 'assistance';
+    const view = orderView('assistance'); setStatus('');
+    if (!window.assistanceBookingReady || !window.customerPricingReady || !window.customerPriceSettings?.enabled) {
+        setStatus('Онлайн-заказ помощи пока недоступен. Позвоните диспетчеру.'); return;
+    }
+    const fromAddress = combineAddress('assistanceAddress', 'assistanceHouse', 'assistanceApt');
+    const customerPhone = normalizePhone(view.customerPhone.value), customerName = view.customerName.value.trim();
+    if (!fromAddress) { setStatus('Укажите, где нужна помощь: адрес или точку на карте.'); return; }
+    if (!validPhone(customerPhone)) { setStatus('Укажите корректный номер телефона.'); view.customerPhone.focus(); return; }
+    if (fromAddress.length > 240 || customerName.length > 80) { setStatus('Сократите адрес или имя. Ориентир можно написать в деталях.'); return; }
+    const route = window.bookingScreen?.orderRoute?.('assistance');
+    const offered = window.getCustomerPriceSelection?.('assistance')?.amount ?? window.getCustomerPriceOffer?.('assistance') ?? null;
+    let serviceDetails, pricing;
+    try {
+        serviceDetails = assistanceDetails({ assistanceType: document.getElementById('assistanceType').value,
+            carModel: document.getElementById('carModel').value, licencePlate: document.getElementById('licencePlate').value,
+            task: document.getElementById('assistanceTask').value });
+        pricing = customerOrderPricing('assistance', null, offered, 'unavailable');
+    } catch (error) { setStatus(error.message); return; }
+    if (!pricing) { setStatus('Предложите цену помощи от 1 500 ₸.'); return; }
+    void prepareClientOrderSound(); setActionBusy(true, 'assistance');
+    try {
+        const user = await ensureSignedIn(), orderRef = customerOrderReference(user), batch = customerOrderBatch(orderRef, user);
+        batch.set(orderRef, {
+            orderNumber: createOrderNumber(), serviceType: 'assistance', source: 'online', clientUid: user.uid,
+            fromAddress, toAddress: `Помощь: ${serviceDetails.assistanceType}`, stops: [],
+            ...coordinateFields({ coordinates: [route?.coordinates?.[0] || null, null] }),
+            wishes: route?.wishes || '', scheduledFor: '', direction: route?.from.city || '', serviceDetails,
+            ...pricing, priceUpdatedAt: serverTimestamp(), status: 'searching', createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+        });
+        batch.set(doc(db, 'orderContacts', orderRef.id), {
+            clientUid: user.uid, customerName: customerName || 'Клиент', customerPhone, passengerPhone: '',
+            createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+        });
+        await batch.commit();
+        storeValue(CUSTOMER_NAME_STORAGE_KEY, customerName); storeValue(CUSTOMER_PHONE_STORAGE_KEY, customerPhone);
+        window.saveOrderToFullHistory?.(fromAddress, `Помощь: ${serviceDetails.assistanceType}`, pricing.priceText, 'assistance');
+        startOrderWatch(orderRef.id);
+    } catch (error) {
+        console.error('Заявка на помощь не создана:', error);
+        setStatus('Не удалось отправить заявку. Проверьте интернет и повторите отправку.', false, 'assistance');
+        const pending = pendingSubmission(); if (pending?.writes) showPendingSubmission(pending);
+    } finally { setActionBusy(false, 'assistance'); }
+}
+async function loadAssistanceBooking() {
+    try {
+        const snapshot = await getDocFromServer(doc(db, 'settings', 'assistanceBooking'));
+        window.assistanceBookingReady = snapshot.exists() && snapshot.data().schemaVersion === 1;
+    } catch { window.assistanceBookingReady = false; }
+    window.dispatchEvent(new Event('assistance-booking-ready'));
 }
 
 async function createOnlineDeliveryOrder() {
@@ -938,7 +994,7 @@ async function cancelOnlineOrder() {
 }
 
 function restoreSavedContact() {
-    for (const view of [orderView('taxi'), orderView('delivery'), orderView('auction'), orderView('soberDriver'), orderView('cargo')]) {
+    for (const view of [orderView('taxi'), orderView('delivery'), orderView('auction'), orderView('soberDriver'), orderView('cargo'), orderView('assistance')]) {
         if (view.customerName && !view.customerName.value) {
             view.customerName.value = readStoredValue(CUSTOMER_NAME_STORAGE_KEY);
         }
@@ -1061,6 +1117,13 @@ async function createOnlineAuctionOrder() {
         setStatus(error.code === 'permission-denied' ? 'Онлайн-аукцион пока недоступен. Позвоните диспетчеру.' : 'Не удалось отправить заказ. Проверьте интернет и попробуйте ещё раз.', false, 'auction');
     } finally { setActionBusy(false, 'auction'); }
 }
+void loadAssistanceBooking();
+window.addEventListener('online', () => { void loadAssistanceBooking(); });
+const assistanceView = orderView('assistance');
+assistanceView.onlineButton?.addEventListener('click', createOnlineAssistanceOrder);
+assistanceView.form?.addEventListener('submit', event => { event.preventDefault(); void createOnlineAssistanceOrder(); });
+assistanceView.cancelButton?.addEventListener('click', cancelOnlineOrder);
+assistanceView.newOrderButton?.addEventListener('click', resetToForm);
 void loadCargoBooking();
 window.addEventListener('online', () => { void loadCargoBooking(); });
 const cargoView = orderView('cargo');

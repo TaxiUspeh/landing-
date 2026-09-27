@@ -1,4 +1,4 @@
-import { profileForOrder, serviceEnabled } from './functions/driver-services.mjs?v=74';
+import { profileForOrder, serviceEnabled } from './functions/driver-services.mjs?v=78';
 import { soberWorkAmount } from './sober-fare.js?v=74';
 // Positive balance is debt; negative balance is prepaid credit (existing storage convention).
 export const DEFAULT_FINANCE = Object.freeze({ commissionRate: 20, debtMode: 'unlimited', debtLimit: 0 });

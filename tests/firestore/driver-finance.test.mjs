@@ -373,5 +373,43 @@ try {
   const approvals=await Promise.allSettled([work('admin','confirm',{meters:0,expectedReportedMeters:reported}),work('admin','confirm',{meters:0,expectedReportedMeters:reported})]);
   assert.equal(approvals.filter(r=>r.status==='fulfilled').length,1);assert.equal((await readOrder()).priceAmount,6000);
  });
+ async function assistanceOrder(overrides={}) {
+  await setDoc(doc(db('admin'),'settings','assistanceBooking'),{schemaVersion:1});
+  await sdk.deleteDoc(doc(db('admin'),'orders','order-a'));
+  await order('order-a',{serviceType:'assistance',toAddress:'Помощь: Подкачать колесо',
+   serviceDetails:{assistanceType:'Подкачать колесо',carModel:'Toyota',licencePlate:'TEST-27',task:'У магазина'},
+   ...offerFields(null,1500,'assistance',priceSettings()),priceUpdatedAt:serverTimestamp(),...overrides});
+ }
+ await test('assistance create requires explicit price, backend marker, a single address and useful task',async()=>{
+  await assertFails(order('help-no-marker',{serviceType:'assistance',...offerFields(null,1500,'assistance',priceSettings()),priceUpdatedAt:serverTimestamp(),serviceDetails:{assistanceType:'Подкачать колесо',carModel:'',licencePlate:'',task:''}}));
+  await assistanceOrder({fromAddress:'Чапаева көшесі, у трассы',routeCoordinates:[{lat:50.2,lon:82.6},null]});
+  const good={...await readOrder(),createdAt:serverTimestamp(),updatedAt:serverTimestamp(),priceUpdatedAt:serverTimestamp()};
+  for(const patch of [{priceAmount:1499,customerOfferPrice:1499,finalDisplayedPrice:1499,priceText:'1499 ₸'},
+   {priceAmount:0},{stops:['Не должно быть']},{routeCoordinates:[{lat:50.2,lon:82.6},{lat:50,lon:83}]},
+   {serviceDetails:{...good.serviceDetails,assistanceType:'Прочее поручение/помощь',task:''},toAddress:'Помощь: Прочее поручение/помощь'},
+   {serviceDetails:{...good.serviceDetails,assistanceType:'Unknown'}},{assignedDriverUid:'driver-a'},{calculatedPrice:1500}]) await assertFails(setDoc(doc(db('client'),'orders','bad-help'),{...good,...patch}));
+ });
+ await test('assistance opt-in isolates list and acceptance; client increases price then commission is frozen',async()=>{
+  await assistanceOrder();
+  await assertFails(getDoc(doc(db('driver-a'),'orders','order-a')));
+  const open=()=>sdk.getDocs(sdk.query(sdk.collection(db('driver-a'),'orders'),sdk.where('status','==','searching'),sdk.where('serviceType','in',allowedOrderServices({}))));
+  assert.equal((await open()).size,0);
+  await assertFails(updateDoc(doc(db('driver-a'),'drivers','d-a'),{assistanceEnabled:true}));
+  await updateDoc(doc(db('admin'),'drivers','d-a'),{assistanceEnabled:true});
+  assert.ok((await getDoc(doc(db('driver-a'),'orders','order-a'))).exists());
+  const increase={orderId:'order-a',uid:'client',amount:2000,operationId:'help-increase'};
+  await increaseOrderPrice(db('client'),sdk,increase);await increaseOrderPrice(db('client'),sdk,increase);
+  assert.equal((await readOrder()).priceAmount,2000);assert.equal((await readOrder()).priceRevision,1);
+  assert.ok((await run('acceptOrder','driver-a',['order-a'])).success);
+  await assert.rejects(increaseOrderPrice(db('client'),sdk,{...increase,amount:2500,operationId:'after-accept'}));
+  await updateDoc(doc(db('admin'),'drivers','d-a'),{assistanceEnabled:false});
+  assert.ok((await arriveComplete()).success);assert.equal((await readDriver()).balance,300);
+ });
+ await test('assistance client can cancel searching order and dispatcher cannot assign unapproved driver',async()=>{
+  await assistanceOrder();
+  assert.ok(!(await run('assignOrderManually','admin',['order-a','d-a'])).success);
+  await updateDoc(doc(db('client'),'orders','order-a'),{status:'cancelled',cancelledBy:'client',cancelledAt:serverTimestamp(),updatedAt:serverTimestamp()});
+  assert.equal((await readOrder()).status,'cancelled');assert.equal((await readDriver()).balance,-100);
+ });
  console.log(`ALL ${passed} DRIVER FINANCE CHECKS PASSED`);
 } finally {await env.cleanup();}

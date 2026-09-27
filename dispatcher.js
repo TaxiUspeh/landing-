@@ -1,16 +1,16 @@
 import { isMeteredCargo, cargoCanComplete, cargoFareDescription } from './cargo-fare.js?v=77';
 import { createCargoWorkControls } from './cargo-controls.js?v=77';
-import { updateCargoWork } from './cargo-work.js?v=77';
+import { updateCargoWork } from './cargo-work.js?v=78';
 import { confirmSoberExpenses, createSoberExpenseEditor } from './sober-dispatch.js?v=74';
-import { serviceEnabled, profileForOrder, assignmentVehicle } from './functions/driver-services.mjs?v=74';
-import { createCargoControls } from './cargo-profile-controls.js?v=74';
-import { initCustomerPricingSettings } from './customer-pricing-settings.js?v=74';
-import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=74';
-import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=77';
-import { createFinanceControls } from './driver-finance-controls.js?v=77';
-import { createVehicleControls } from './vehicle-category-controls.js?v=74';
-import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=74';
-import { currentAuctionOffer } from './auction-core.js?v=77';
+import { serviceEnabled, profileForOrder, assignmentVehicle } from './functions/driver-services.mjs?v=78';
+import { createCargoControls } from './cargo-profile-controls.js?v=78';
+import { initCustomerPricingSettings } from './customer-pricing-settings.js?v=78';
+import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=78';
+import { financeSettings, NEW_DRIVER_FINANCE, hasOrderFunds, fundingFor, reserveCommission, orderCommission, commissionReason, financeSummary, reservedCommission } from './driver-finance.js?v=78';
+import { createFinanceControls } from './driver-finance-controls.js?v=78';
+import { createVehicleControls } from './vehicle-category-controls.js?v=78';
+import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=78';
+import { currentAuctionOffer } from './auction-core.js?v=78';
 import { auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -1961,7 +1961,7 @@ async function createPhoneOrder(event) {
                 const driver = driverSnapshot.data();
                 const driverUid = normalizeUid(driver.authUid || '');
                 if (!driverUid || driver.status !== 'active') throw new Error('Водитель недоступен для назначения.');
-                if (!driverCanServeOrder(driver, baseOrder)) throw new Error('Автомобиль водителя не подходит по категории или числу мест.');
+                if (!driverCanServeOrder(driver, baseOrder)) throw new Error('Проверьте допуск водителя к этой услуге, категорию автомобиля и число мест.');
 
                 const stateRef = doc(db, 'driverStates', driverUid);
                 const stateSnapshot = await transaction.get(stateRef);
@@ -2363,7 +2363,7 @@ async function assignOrderManually(orderId, driverId) {
             }
             if (!driverSnapshot.exists()) throw new Error('Карточка водителя не найдена.');
             const driver = driverSnapshot.data();
-            if (!driverCanServeOrder(driver, orderSnapshot.data())) throw new Error('Автомобиль водителя не подходит по категории или числу мест.');
+            if (!driverCanServeOrder(driver, orderSnapshot.data())) throw new Error('Проверьте допуск водителя к этой услуге, категорию автомобиля и число мест.');
             const driverUid = normalizeUid(driver.authUid || '');
             if (!driverUid || driver.status !== 'active') {
                 throw new Error('Водитель недоступен для онлайн-заказов.');

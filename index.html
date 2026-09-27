@@ -1860,16 +1860,16 @@
     <div id="assistanceModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">
             <div class="p-6">
-                <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🙋 Помощь</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="assistanceModal">×</button></div>
+                <div class="flex justify-between items-center border-b pb-4 mb-4"><h3 class="text-xl font-bold text-gray-800">🛠 Помощь на дороге</h3><button class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1" data-modal="assistanceModal">×</button></div>
                 <form id="assistanceForm" class="space-y-4">
                     <div class="flex flex-col"><label for="assistanceType" class="text-sm font-medium text-gray-700 mb-1">Тип помощи *</label><select id="assistanceType" name="type" class="form-input-control" required><option value="">Выберите...</option><option value="Подкачать колесо">Подкачать колесо</option><option value="Прикурить автомобиль">Прикурить автомобиль</option><option value="Прочее поручение/помощь">Прочее</option></select></div>
                     <div id="carDetails" class="space-y-4 p-3.5 bg-teal-50 rounded-xl border border-dashed border-teal-300 hidden"><div class="flex flex-col"><label for="carModel" class="text-sm font-medium text-gray-700 mb-1">Марка авто</label>
                         <div class="input-wrapper">
                             <i class="fas fa-car input-icon"></i>
-                            <input id="carModel" name="carModel" type="text" class="form-input-control pl-10">
+                            <input id="carModel" name="carModel" maxlength="120" type="text" class="form-input-control pl-10">
                         </div>
-                    </div><div class="flex flex-col"><label for="licencePlate" class="text-sm font-medium text-gray-700 mb-1">Гос. номер</label><input id="licencePlate" name="licencePlate" type="text" class="form-input-control"></div></div>
-                    <div class="flex flex-col"><label for="assistanceTask" class="text-sm font-medium text-gray-700 mb-1">Детали</label><textarea id="assistanceTask" name="task" rows="3" class="form-input-control"></textarea></div>
+                    </div><div class="flex flex-col"><label for="licencePlate" class="text-sm font-medium text-gray-700 mb-1">Гос. номер</label><input id="licencePlate" name="licencePlate" maxlength="32" type="text" class="form-input-control"></div></div>
+                    <div class="flex flex-col"><label for="assistanceTask" class="text-sm font-medium text-gray-700 mb-1">Детали</label><textarea id="assistanceTask" name="task" rows="3" maxlength="700" placeholder="Что случилось и как найти автомобиль" class="form-input-control"></textarea></div>
                     <div class="flex flex-col"><label for="assistanceAddress" class="text-sm font-medium text-gray-700 mb-1">Адрес *</label>
                         <div class="flex gap-1.5 w-full">
                             <div class="input-wrapper flex-grow min-w-0">
@@ -1883,12 +1883,72 @@
                             <input id="assistanceApt" name="assistanceApt" type="text" class="form-input-control w-1/2 text-center text-sm" placeholder="Подъезд">
                         </div>
                     </div>
+                    <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-3.5 space-y-3">
+                        <div>
+                            <p class="text-sm font-bold text-indigo-900">Контакт для онлайн-заказа</p>
+                            <p class="text-xs text-indigo-700 mt-0.5">Водитель свяжется с вами по указанному телефону.</p>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label for="assistanceCustomerName" class="text-xs font-semibold text-gray-700">
+                                Ваше имя
+                                <input id="assistanceCustomerName" name="customerName" type="text" maxlength="80" autocomplete="name" class="form-input-control mt-1" placeholder="Например, Виталий">
+                            </label>
+                            <label for="assistanceCustomerPhone" class="text-xs font-semibold text-gray-700">
+                                Телефон для связи
+                                <input id="assistanceCustomerPhone" name="customerPhone" type="tel" maxlength="32" autocomplete="tel" inputmode="tel" class="form-input-control mt-1" placeholder="+7 777 000 00 00">
+                            </label>
+                        </div>
+                    </div>
                     <div id="assistanceStatus" class="status-message p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden" role="alert"></div>
                     <div class="pt-4 border-t mt-6 flex justify-between items-center">
-                        <div><div class="price-note text-xs text-gray-500">Стоимость:</div><div class="text-xl font-black text-indigo-700">от 1500 тг</div></div>
-                        <button type="submit" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg transition duration-200 btn-active btn-hover">Оформить</button>
+                        <div><div class="price-note text-xs text-gray-500">Минимальная стоимость:</div><div class="text-xl font-black text-indigo-700">от 1 500 ₸</div></div>
+                        <button id="assistance-online-order-button" type="button" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg transition duration-200 btn-active btn-hover"><span data-online-label>Заказать онлайн</span></button>
                     </div>
                 </form>
+                <section id="assistance-online-order-panel" class="hidden space-y-4" aria-live="polite">
+                    <div class="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <p class="text-xs font-semibold text-blue-700">Онлайн-заказ</p>
+                                <p id="assistance-online-order-number" class="font-black text-blue-950">—</p>
+                            </div>
+                            <i class="fas fa-tools text-2xl text-blue-600" aria-hidden="true"></i>
+                        </div>
+                        <div id="assistance-online-order-status" class="mt-3 rounded-xl border p-3 text-sm font-extrabold">Статус обновляется</div>
+                        <dl class="mt-3 space-y-2 text-sm text-gray-800">
+                            <div><dt class="text-xs text-gray-500">Где нужна помощь</dt><dd id="assistance-online-order-route" class="font-semibold break-words">—</dd></div>
+                            <div><dt class="text-xs text-gray-500">Стоимость</dt><dd id="assistance-online-order-price" class="font-bold">—</dd></div>
+                        </dl>
+                    </div>
+
+                    <div id="assistance-online-driver" class="hidden rounded-2xl border border-green-200 bg-green-50 p-4">
+                        <p class="text-xs font-semibold text-green-700">Назначенный водитель</p>
+                        <p id="assistance-online-driver-name" class="font-black text-green-950 mt-1">—</p>
+                        <p id="assistance-online-driver-car" class="text-sm text-green-800">—</p>
+                        <a id="assistance-online-driver-call" href="#" class="hidden mt-3 w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-3 font-bold text-center block">
+                            <i class="fas fa-phone mr-2" aria-hidden="true"></i>Позвонить водителю
+                        </a>
+                    </div>
+
+                    <p id="assistance-online-order-message" class="hidden rounded-xl border p-3 text-sm" role="status"></p>
+                    <p id="assistance-online-cancellation-notice" class="hidden rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-900" role="status"></p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <select id="assistance-online-cancel-reason" class="hidden rounded-xl border border-red-200 bg-white px-3 py-3 text-sm font-semibold text-gray-800">
+                            <option value="">Причина отмены</option>
+                            <option value="plans_changed">Изменились планы</option>
+                            <option value="no_longer_needed">Услуга больше не нужна</option>
+                            <option value="called_other_taxi">Нашёл другого водителя</option>
+                            <option value="other">Другая причина</option>
+                        </select>
+                        <button id="assistance-online-cancel-button" type="button" class="hidden bg-red-100 hover:bg-red-200 text-red-800 border border-red-200 rounded-xl py-3 font-bold">Отменить заказ</button>
+                        <button id="assistance-online-new-order-button" type="button" class="hidden bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 font-bold">Новый заказ</button>
+                        <a id="assistance-online-dispatcher-call" href="tel:+77770649648" class="bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-xl py-3 font-bold text-center">
+                            <i class="fas fa-headset mr-2" aria-hidden="true"></i>Позвонить диспетчеру
+                        </a>
+                    </div>
+                </section>
+
             </div>
         </div>
     </div>
@@ -2220,14 +2280,14 @@
     <!-- ========================================================= -->
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
-        import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=74";
-        import { initBookingScreen } from "./booking-screen.js?v=77";
-        import { normalizeCity } from "./booking-core.js?v=77";
+        import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=78";
+        import { initBookingScreen } from "./booking-screen.js?v=78";
+        import { normalizeCity } from "./booking-core.js?v=78";
         import { selectPriceAdjustment, adjustmentText } from "./pricing-adjustments.js?v=63";
-        import { createSoberPricing } from './sober-pricing.js?v=77';
-        import { createDeliveryPricing } from "./delivery-pricing.js?v=77";
-        import { publishedRouteFare, distanceFare, formatTaxiFare } from "./taxi-pricing.js?v=77";
-        import { initClientHome } from "./client-home.js?v=77";
+        import { createSoberPricing } from './sober-pricing.js?v=78';
+        import { createDeliveryPricing } from "./delivery-pricing.js?v=78";
+        import { publishedRouteFare, distanceFare, formatTaxiFare } from "./taxi-pricing.js?v=78";
+        import { initClientHome } from "./client-home.js?v=78";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -2956,7 +3016,7 @@
             await setAddressHistory();
         }
 
-        window.saveOrderToFullHistory = function(from, to, price) {
+        window.saveOrderToFullHistory = function(from, to, price, serviceType) {
             const now = new Date();
             const order = {
                 id: Date.now(),
@@ -2966,6 +3026,7 @@
                 to: to,
                 price: price
             };
+            if (serviceType === 'assistance') order.serviceType = serviceType;
             let orders = JSON.parse(localStorage.getItem(FULL_HISTORY_KEY) || '[]');
             orders.unshift(order);
             if(orders.length > 50) orders = orders.slice(0, 50);
@@ -3046,7 +3107,9 @@
                 const row = document.createElement('button');
                 row.type = 'button';
                 row.className = 'w-full p-3 border-b flex justify-between items-center text-left hover:bg-gray-50 dark:hover:bg-gray-700';
-                row.addEventListener('click', () => window.repeatOrder(String(order.from || ''), String(order.to || '')));
+                row.addEventListener('click', () => order.serviceType === 'assistance'
+                    ? window.repeatOrder(String(order.from || ''), '', 'assistance')
+                    : window.repeatOrder(String(order.from || ''), String(order.to || '')));
 
                 const route = document.createElement('div');
                 route.className = 'flex-grow';
@@ -3058,7 +3121,7 @@
                 from.textContent = `● ${String(order.from || '')}`;
                 const to = document.createElement('div');
                 to.className = 'text-sm font-semibold text-gray-800 dark:text-white mt-1';
-                to.textContent = `● ${String(order.to || '')}`;
+                to.textContent = order.serviceType === 'assistance' ? 'Помощь на дороге' : `● ${String(order.to || '')}`;
                 route.append(date, from, to);
 
                 const summary = document.createElement('div');
@@ -4875,7 +4938,7 @@
                 const modalKey = Object.keys(MODALS).find(key => MODALS[key].formId === formId);
                 const modalConfig = MODALS[modalKey];
                 
-                if (!modalConfig || ['auction', 'cargo'].includes(modalKey)) return;
+                if (!modalConfig || ['auction', 'cargo', 'assistance'].includes(modalKey)) return;
 
                 const modalId = modalConfig.id;
                 const statusEl = document.getElementById(modalId.replace('Modal', 'Status'));
@@ -5088,6 +5151,6 @@
         initClientHome();
 
     </script>
-    <script type="module" src="./client-orders.js?v=77"></script>
+    <script type="module" src="./client-orders.js?v=78"></script>
 </body>
 </html>

@@ -1,11 +1,11 @@
 import { soberFareDescription, soberFareForPrice } from './sober-fare.js?v=74';
-import { hasCoordinates, coordinatePoint, addressCoordinates, routeCoordinates, within } from './booking-route.js?v=73';
-import { createPriceControl } from './customer-price-control.js?v=74';
-import { DEFAULT_CUSTOMER_PRICING, priceLabel } from './customer-pricing.js?v=74';
-import { deliveryCityKey, deliveryPickupMode } from './delivery-pricing.js?v=77';
+import { hasCoordinates, coordinatePoint, addressCoordinates, routeCoordinates, within } from './booking-route.js?v=78';
+import { createPriceControl } from './customer-price-control.js?v=78';
+import { DEFAULT_CUSTOMER_PRICING, priceLabel } from './customer-pricing.js?v=78';
+import { deliveryCityKey, deliveryPickupMode } from './delivery-pricing.js?v=78';
 import { createBookingSheet } from './booking-sheet.js?v=54';
-import { categoryForService, categoryCaption } from './vehicle-categories.js?v=74';
-import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=77';
+import { categoryForService, categoryCaption } from './vehicle-categories.js?v=78';
+import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=78';
 
 export function initBookingScreen({ preview = false } = {}) {
   const $ = id => document.getElementById(id);
@@ -110,9 +110,10 @@ export function initBookingScreen({ preview = false } = {}) {
   window.getCustomerPriceSelection = service => service === state.service.form && customerPrice.valid()
     ? { amount: customerPrice.value(), calculatedPrice: customerPrice.calculated() } : null;
   window.addEventListener('customer-pricing-ready', queueRefresh);
+  window.addEventListener('assistance-booking-ready', queueRefresh);
   window.addEventListener('cargo-booking-ready', queueRefresh);
   window.addEventListener('sober-booking-ready', queueRefresh);
-  function onlineAvailable(service) { return service.online && (service.form !== 'soberDriver' || window.soberBookingReady === true) && (service.form !== 'cargo' || window.cargoBookingReady === true); }
+  function onlineAvailable(service) { return service.online && (service.form !== 'soberDriver' || window.soberBookingReady === true) && (service.form !== 'cargo' || window.cargoBookingReady === true) && (service.form !== 'assistance' || (window.assistanceBookingReady === true && window.customerPricingReady === true && window.customerPriceSettings?.enabled === true && window.customerPriceSettings.maximumPrice >= 1500)); }
   function soberServiceHelp() { return (onlineAvailable(state.service) ? 'Перегон вашего автомобиля: 230 ₸/км, общий минимум 3 800 ₸. Подача и обратное такси считаются от базовой точки Белоусовки и включены в итог.' : 'Подключаем онлайн-заказ услуги. Пока позвоните диспетчеру.'); }
   function fareStateFor(service) { return service === 'taxi' ? window.getTaxiPriceState?.() : service === 'delivery' ? window.getDeliveryPriceState?.() : service === 'soberDriver' ? window.getSoberPriceState?.() : 'ready'; }
   $('bookingRetryPrice').onclick = () => { window.updateTaxiPrice?.(); window.updateDeliveryPrice?.(); window.updateSoberPrice?.(); };
@@ -341,7 +342,7 @@ export function initBookingScreen({ preview = false } = {}) {
       $('taxiDateTime').min = local.toISOString().slice(0, 16);
     }
     const key = state.service.id;
-    $('bookingServiceHelp').textContent = taxi && ['wagon','minivan'].includes(state.category) ? categoryCaption(state.category) + ' к стоимости легкового автомобиля.' : key === 'delivery' ? 'Укажите адрес доставки и список товаров. Можно выбрать любой магазин; для посылки нужен адрес получения.' : key === 'cargo' ? 'Первый час — 6 000 ₸: дорога и время погрузки включены. После часа — 250 ₸/км. Итоговую стоимость подтвердит диспетчер.' : key === 'soberDriver' ? soberServiceHelp() : key === 'auction' ? 'Предложите цену и выберите водителя из ответивших.' : !onlineAvailable(state.service) ? 'Онлайн-заказ этой услуги пока недоступен.' : '';
+    $('bookingServiceHelp').textContent = taxi && ['wagon','minivan'].includes(state.category) ? categoryCaption(state.category) + ' к стоимости легкового автомобиля.' : key === 'delivery' ? 'Укажите адрес доставки и список товаров. Можно выбрать любой магазин; для посылки нужен адрес получения.' : key === 'assistance' ? 'Укажите место и тип помощи. Предложите цену от 1 500 ₸ — водитель примет заявку на указанную сумму. Можно написать адрес вручную или выбрать точку на карте.' : key === 'cargo' ? 'Первый час — 6 000 ₸: дорога и время погрузки включены. После часа — 250 ₸/км. Итоговую стоимость подтвердит диспетчер.' : key === 'soberDriver' ? soberServiceHelp() : key === 'auction' ? 'Предложите цену и выберите водителя из ответивших.' : !onlineAvailable(state.service) ? 'Онлайн-заказ этой услуги пока недоступен.' : '';
     contacts.get(state.service.form)?.update();
     changed();
   }
@@ -379,8 +380,8 @@ export function initBookingScreen({ preview = false } = {}) {
     const awaitingFare = fareState === 'pending';
     const unknownFare = fareState === 'unavailable' || (fareState === 'incomplete' && !missingRoute());
     const calculated = service.form === 'taxi' ? window.getTaxiFareForOrder?.()?.priceMax ?? null : service.form === 'delivery' ? window.getDeliveryFareForOrder?.()?.priceAmount ?? null : service.form === 'soberDriver' ? window.getSoberFareForOrder?.()?.priceAmount ?? null : null;
-    const offerAvailable = window.customerPricingReady && window.customerPriceSettings?.enabled && ['taxi', 'delivery', 'soberDriver'].includes(service.form) && !missingRoute();
-    customerPrice.update({ visible: offerAvailable, service: service.form, calculated, config: window.customerPriceSettings || DEFAULT_CUSTOMER_PRICING, key: JSON.stringify([state.from, state.to, state.stops, service.form, state.category, state.passengerCount, state.details]) });
+    const offerAvailable = window.customerPricingReady && window.customerPriceSettings?.enabled && ['taxi', 'delivery', 'soberDriver', 'assistance'].includes(service.form) && !missingRoute();
+    customerPrice.update({ visible: offerAvailable, service: service.form, calculated, config: window.customerPriceSettings || DEFAULT_CUSTOMER_PRICING, key: JSON.stringify([state.from, state.to, state.stops, service.form, state.category, state.passengerCount, state.details, service.form === 'assistance' ? $('assistanceType').value : null]) });
     const hasOffer = offerAvailable && customerPrice.valid();
     const offerInvalid = offerAvailable && customerPrice.active() && !hasOffer;
     const selectedPrice = hasOffer ? customerPrice.value() : calculated;
@@ -392,12 +393,12 @@ export function initBookingScreen({ preview = false } = {}) {
     $('bookingCustomerPrice').inert = Boolean(busy);
     $('bookingRetryPrice').disabled = Boolean(busy);
     $('bookingSubmit').disabled = !onlineAvailable(service) || busy || (!offerAvailable && (awaitingFare || unknownFare)) || !onlineButton || onlineButton.classList.contains('hidden') || overlay.classList.contains('booking-picking');
-    $('bookingSubmit').textContent = !onlineAvailable(service) ? 'Онлайн-заказ пока недоступен' : submitting ? 'Оформляем…' : missingRoute() ? (service.form === 'delivery' && !state.from.address && state.to.address ? 'Указать место получения' : 'Указать маршрут') : awaitingFare && !hasOffer ? 'Рассчитываем стоимость…' : unknownFare && !hasOffer ? 'Предложите свою цену' : offerInvalid ? 'Укажите вашу цену' : !validPhone($(`${service.form}CustomerPhone`)?.value) ? 'Указать телефон' : service.form === 'auction' ? 'Найти водителя' : selectedPrice ? `Заказать за ${priceLabel(selectedPrice)}` : 'Заказать онлайн';
+    $('bookingSubmit').textContent = !onlineAvailable(service) ? 'Онлайн-заказ пока недоступен' : submitting ? 'Оформляем…' : missingRoute() ? (service.form === 'delivery' && !state.from.address && state.to.address ? 'Указать место получения' : 'Указать маршрут') : awaitingFare && !hasOffer ? 'Рассчитываем стоимость…' : unknownFare && !hasOffer ? 'Предложите свою цену' : offerInvalid ? 'Укажите вашу цену' : !validPhone($(`${service.form}CustomerPhone`)?.value) ? 'Указать телефон' : service.form === 'assistance' && !hasOffer ? 'Указать цену от 1 500 ₸' : service.form === 'auction' ? 'Найти водителя' : selectedPrice ? `Заказать за ${priceLabel(selectedPrice)}` : 'Заказать онлайн';
     $('bookingPriceHelp').hidden = true;
     $('bookingRetryPrice').hidden = !unknownFare || awaitingFare;
     const deliveryFare = service.form === 'delivery' ? (window.getDeliveryEstimate?.() || window.getDeliveryFareForOrder?.()) : null;
     const full = service.form === 'delivery' ? state.to.address : state.from.address && (service.form === 'assistance' || state.to.address);
-    let price = service.form === 'taxi' ? $('taxiPriceEstimate').textContent : service.form === 'delivery' ? $('deliveryPriceEstimate').textContent : service.form === 'cargo' ? $('cargoTotalPrice').textContent : service.form === 'auction' ? ($('auctionPrice').value ? `${$('auctionPrice').value} ₸` : 'Ваша цена') : service.form === 'assistance' ? 'от 1500 тг' : $('soberDriverPriceEstimate').textContent;
+    let price = service.form === 'taxi' ? $('taxiPriceEstimate').textContent : service.form === 'delivery' ? $('deliveryPriceEstimate').textContent : service.form === 'cargo' ? $('cargoTotalPrice').textContent : service.form === 'auction' ? ($('auctionPrice').value ? `${$('auctionPrice').value} ₸` : 'Ваша цена') : service.form === 'assistance' ? 'от 1 500 ₸' : $('soberDriverPriceEstimate').textContent;
     if (deliveryFare) price = deliveryFare.amountText;
     if (hasOffer) price = priceLabel(selectedPrice);
     else if (unknownFare) price = 'Не удалось рассчитать стоимость';
@@ -416,16 +417,22 @@ export function initBookingScreen({ preview = false } = {}) {
     $('bookingPriceReason').hidden = !full || !deliveryFare;
     $('bookingPriceReason').textContent = deliveryFare
       ? `${deliveryFare.reason}. ${deliveryFare.preview ? 'От случайной машины на карте (модель). Укажите место получения или выберите любой магазин.' : deliveryFare.anyStore ? 'Любой магазин. Расчёт от случайной машины на карте (модель). Товары оплачиваются отдельно.' : 'Один наибольший коэффициент. Товары оплачиваются отдельно.'}` : '';
-    $('bookingPriceCaption').textContent = hasOffer ? 'Ваша цена' : service.form === 'cargo' ? 'Предварительная стоимость' : service.form === 'auction' ? 'Предложение водителю' : service.form === 'taxi' ? 'Стоимость поездки' : service.form === 'delivery' ? (!state.from.address || deliveryFare?.preview ? 'Предварительная стоимость доставки' : 'Стоимость доставки') : 'Примерная стоимость';
+    $('bookingPriceCaption').textContent = hasOffer ? 'Ваша цена' : service.form === 'assistance' ? 'Минимальная стоимость' : service.form === 'cargo' ? 'Предварительная стоимость' : service.form === 'auction' ? 'Предложение водителю' : service.form === 'taxi' ? 'Стоимость поездки' : service.form === 'delivery' ? (!state.from.address || deliveryFare?.preview ? 'Предварительная стоимость доставки' : 'Стоимость доставки') : 'Примерная стоимость';
   }
   function queueRefresh() {
     if (refreshQueued) return;
     refreshQueued = true;
     queueMicrotask(() => { refreshQueued = false; refresh(); });
   }
+  $('assistanceType').addEventListener('change', () => {
+    const car = ['Подкачать колесо', 'Прикурить автомобиль'].includes($('assistanceType').value);
+    $('carDetails').classList.toggle('hidden', !car);
+    $('assistanceTask').required = $('assistanceType').value === 'Прочее поручение/помощь';
+    queueRefresh();
+  });
   const observer = new MutationObserver(queueRefresh);
   for (const id of ['taxiPriceEstimate', 'deliveryPriceEstimate', 'cargoTotalPrice', 'soberDriverPriceEstimate']) observer.observe($(id), { childList: true, subtree: true, characterData: true });
-  for (const key of ['taxi', 'delivery', 'auction', 'soberDriver', 'cargo']) {
+  for (const key of ['taxi', 'delivery', 'auction', 'soberDriver', 'cargo', 'assistance']) {
     observer.observe($(`${key}-online-order-panel`), { attributes: true, attributeFilter: ['class'] });
     observer.observe($(`${key}-online-order-status`), { childList: true, subtree: true, characterData: true });
     observer.observe($(`${key}-online-order-button`), { attributes: true, attributeFilter: ['disabled', 'class'] });
@@ -445,7 +452,7 @@ export function initBookingScreen({ preview = false } = {}) {
     if (state.service.form === 'taxi' && state.category === 'minivan' && (!Number.isInteger(state.passengerCount) || state.passengerCount < 1 || state.passengerCount > 8)) return showError('Укажите от 1 до 8 пассажиров.', $('bookingPassengerCount'));
     const form = $(`${state.service.form}Form`);
     if (state.channel === 'online') {
-      if (addressWithCity(state.from, state.details).length > 230 || addressWithCity(state.to).length > 230) return showError('Сократите адрес до 230 символов. Дополнительные указания можно написать в примечании.');
+      if (addressWithCity(state.from, state.details).length > 230 || (state.service.form !== 'assistance' && addressWithCity(state.to).length > 230)) return showError('Сократите адрес до 230 символов. Дополнительные указания можно написать в примечании.');
       if (state.service.form === 'delivery' && $('deliveryStore').value.length > 160) return showError('Сократите место получения до 160 символов.');
       if (state.service.form === 'delivery' && $('deliveryItems').value.length > 700) return showError('Сократите список товаров до 700 символов.', $('deliveryItems'));
     }
@@ -468,11 +475,11 @@ export function initBookingScreen({ preview = false } = {}) {
     if (preview) { showError('Режим просмотра: адреса и услуга выбраны. Заказ не отправляется.'); return; }
     // Address edits already start calculation. Submitting must not restart it or erase an offer.
     sync({ calculate: false });
-    if (['taxi', 'delivery', 'soberDriver'].includes(state.service.form)) {
+    if (['taxi', 'delivery', 'soberDriver', 'assistance'].includes(state.service.form)) {
       const fareState = fareStateFor(state.service.form);
-      if ((customerPrice.active() || ['pending', 'unavailable', 'incomplete'].includes(fareState)) && !customerPrice.valid()) {
+      if ((state.service.form === 'assistance' || customerPrice.active() || ['pending', 'unavailable', 'incomplete'].includes(fareState)) && !customerPrice.valid()) {
         customerPrice.request();
-        return showError('Укажите желаемую стоимость поездки.', $('booking-offer-amount'));
+        return showError(state.service.form === 'assistance' ? 'Укажите цену помощи от 1 500 ₸.' : 'Укажите желаемую стоимость поездки.', $('booking-offer-amount'));
       }
     }
     submitting = true; refresh();
@@ -699,7 +706,7 @@ export function initBookingScreen({ preview = false } = {}) {
     }
   }
   function open(id = state.service.id) {
-    const currentOrder = ['taxi', 'delivery', 'auction', 'soberDriver', 'cargo'].find(key => !$(`${key}-online-order-panel`).classList.contains('hidden'));
+    const currentOrder = ['taxi', 'delivery', 'auction', 'soberDriver', 'cargo', 'assistance'].find(key => !$(`${key}-online-order-panel`).classList.contains('hidden'));
     if (currentOrder) id = currentOrder;
     if (!opened) {
       returnFocus = document.activeElement; opened = true;
@@ -754,14 +761,14 @@ export function initBookingScreen({ preview = false } = {}) {
     auctionData: () => ({ stops: state.stops.map(p => addressWithCity(p)), wishes: state.note }),
     deliveryData: () => opened && state.service.form === 'delivery' ? { stops: state.stops.map(p => addressWithCity(p)), wishes: state.note } : null
   };
-  window.repeatOrder = (from, to) => {
+  window.repeatOrder = (from, to, serviceType = 'taxi') => {
     const readPoint = value => {
       const match = value.match(/\s*\(([^()]+)\)\s*$/u);
       return { ...emptyPoint(), address: match ? value.slice(0, match.index) : value, city: match ? normalizeCity(match[1]) : 'Белоусовка' };
     };
     originRevision++; locating = false; state.mode = 'taxi';
-    state.from = readPoint(from); state.to = readPoint(to); state.details = ''; state.stops = [];
-    originalClose('historyModal'); open('taxi'); changed();
+    state.from = readPoint(from); state.to = serviceType === 'assistance' ? emptyPoint() : readPoint(to); state.details = ''; state.stops = [];
+    originalClose('historyModal'); open(serviceType === 'assistance' ? 'assistance' : 'taxi'); changed();
   };
 
   $('bookingClose').onclick = close;

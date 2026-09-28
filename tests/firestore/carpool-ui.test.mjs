@@ -16,7 +16,7 @@ initBookingScreen();
 let tripUpdate,mineUpdate,driverUpdate,passengerUpdate,filters;
 const commands=[];
 const trip={id:'trip1',status:'open',driverId:'30',driverUid:'driver',driverName:'Водитель',car:'Лада',fromCity:'Белоусовка',toCity:'Усть-Каменогорск',departureAt:{seconds:(Date.now()+3600000)/1000},pickup:'Автостанция',dropoff:'Центр',totalSeats:4,availableSeats:4,seatPrice:1500,commissionRate:10,reservedAmount:0,priceLocked:false};
-const api={user:async()=>({uid:'client'}),ready:async()=>true,
+const api={onUser:callback=>{callback({uid:'client'});return()=>{};},user:async()=>({uid:'client'}),ready:async()=>true,
  watchTrips:(f,next)=>{filters=f;tripUpdate=next;next([trip]);return()=>{};},watchMine:(_uid,next)=>{mineUpdate=next;next([]);return()=>{};},
  watchDriverTrips:(_uid,next)=>{driverUpdate=next;next([]);return()=>{};},watchPassengers:(_trip,_admin,next)=>{passengerUpdate=next;next([]);return()=>{};},
  read:async(name)=>name==='carpoolBoardingCodes'?{code:'1234'}:{name:'Пассажир',phone:'+77000000002',driverPhone:'+77000000001'},

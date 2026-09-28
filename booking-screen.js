@@ -716,9 +716,9 @@ export function initBookingScreen({ preview = false } = {}) {
       if (!overlay.classList.contains('booking-picking')) window.simMap.fitBounds(routeLayer.getBounds(), { padding: [40, 40], maxZoom: 16 });
     }
   }
-  function open(id = state.service.id) {
+  function open(id = state.service.id, preferCurrentOrder = true) {
     const currentOrder = ['taxi', 'delivery', 'auction', 'soberDriver', 'cargo', 'assistance'].find(key => !$(`${key}-online-order-panel`).classList.contains('hidden'));
-    if (currentOrder) id = currentOrder;
+    if (currentOrder && preferCurrentOrder) { id = currentOrder; state.mode = 'taxi'; state.intercityKind = 'whole'; }
     if (!opened) {
       returnFocus = document.activeElement; opened = true;
       overlay.classList.add('active'); overlay.setAttribute('aria-hidden', 'false'); document.body.classList.add('booking-open');
@@ -756,6 +756,14 @@ export function initBookingScreen({ preview = false } = {}) {
   };
   window.openMapModal = () => open();
   window.bookingScreen = {
+    openService(id) {
+      if (['taxi', 'wagon', 'minivan'].includes(id)) { state.mode = 'taxi'; state.intercityKind = 'whole'; }
+      open(id);
+    },
+    openCarpool(bookingId = '') {
+      state.intercityKind = 'seats'; open('intercity', false);
+      window.dispatchEvent(new window.CustomEvent('carpool-open', { detail: { bookingId } }));
+    },
     onLocation, locationError, coordinates, renderMapStatus, deliveryRoutePoints,
     soberRoutePoints: () => opened && state.service.form === 'soberDriver' ? [state.from, ...state.stops, state.to].map((point, index) => ({ ...point, address: [point.address, index === 0 ? parseHouseDetails(state.details).house : ''].filter(Boolean).join(', ') })) : null,
     soberData: () => opened && state.service.form === 'soberDriver' ? { wishes: state.note } : null,

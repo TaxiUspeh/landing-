@@ -1,4 +1,5 @@
 import { carpoolCityKey } from './functions/carpool-cities.mjs?v=79';
+import { carpoolBookings } from './carpool-bookings.js?v=80';
 export { carpoolCityKey };
 export const carpoolMillis = value => value?.toMillis?.() ?? (value?.seconds ? value.seconds * 1000 : 0);
 export const carpoolMoney = value => `${Number(value).toLocaleString('ru-RU')} ₸`;
@@ -34,7 +35,7 @@ export function callLink(phone, label = 'Позвонить') {
   else { link.href = 'tel:+77770649648'; link.textContent = 'Позвонить диспетчеру'; }
   return link;
 }
-export function initCarpoolClient(host, api) {
+export function initCarpoolClient(host, api, bookingsStore = carpoolBookings) {
   if (!host || host.dataset.ready) return;
   host.dataset.ready = 'true'; host.classList.add('carpool');
   const status = el('p', '', 'carpool-status'); status.setAttribute('role', 'status');
@@ -44,20 +45,26 @@ export function initCarpoolClient(host, api) {
   const day = field(search, 'Дата выезда', 'date', carpoolDay(), 'date'); day.min = carpoolDay();
   const seats = field(search, 'Нужно мест', 'seats', '1', 'number'); seats.min = '1'; seats.max = '8'; seats.step = '1';
   const find = el('button', 'Найти машины', 'carpool-primary'); find.type = 'submit'; search.append(find);
-  const list = el('div'), mine = el('div');
-  host.append(el('h2', 'Попутки'), el('p', 'Цена за одно место. Время Казахстана. Оплата водителю.'), search, status, list, el('h2', 'Мои бронирования'), mine);
-  let stopTrips = null, stopMine = null, started = false, revision = 0, ready = false, rows = [], clientUid = '';
+  const list = el('div'), mine = el('div'); mine.id = 'carpoolMyBookings';
+  const mineStatus = el('p'); mineStatus.setAttribute('role', 'status');
+  host.append(el('h2', 'Попутки'), el('p', 'Цена за одно место. Время Казахстана. Оплата водителю.'), search, status, list, el('h2', 'Мои бронирования'), mineStatus, mine);
+  let stopTrips = null, started = false, revision = 0, ready = false, rows = [], clientUid = '', selectedBooking = '';
+  let lastBookings = null, openRevision = 0, focusRevision = 0;
   const drafts = new Map();
   const error = e => report(status, e.code === 'permission-denied' ? 'Доступ к попуткам пока не подключён. Обновите страницу или позвоните диспетчеру.' : 'Не удалось обновить данные. Проверьте интернет.', true);
   async function open() {
     if (started) return;
+    const request = ++openRevision;
     started = true; report(status, 'Подключаем попутки…');
     try {
-      const user = await api.user(true); clientUid = user?.uid || ''; ready = await api.ready();
+      const user = await api.user(true); const enabled = await api.ready();
+      if (request !== openRevision) return;
+      clientUid = user?.uid || ''; ready = enabled;
       if (!ready) { report(status, 'Онлайн-бронирование попуток подключается. Пока позвоните диспетчеру.'); find.disabled = true; started = false; return; }
-      find.disabled = false; stopMine?.(); stopMine = api.watchMine(user.uid, renderMine, error);
+      find.disabled = false; await bookingsStore.refresh(user);
+      if (request !== openRevision) return;
       await searchTrips();
-    } catch (e) { started = false; error(e); }
+    } catch (e) { if (request === openRevision) { started = false; error(e); } }
   }
   async function searchTrips() {
     if (!search.reportValidity()) return;
@@ -93,7 +100,8 @@ export function initCarpoolClient(host, api) {
     const request = ++revision; mine.replaceChildren();
     if (!bookings.length) { mine.append(el('p', 'У вас пока нет бронирований.')); return; }
     for (const booking of bookings) {
-      const card = el('article', '', 'carpool-card'); card.append(el('p', carpoolStatus(booking.status), 'carpool-badge'), el('h3', `${booking.fromCity} → ${booking.toCity}`),
+      const card = el('article', '', 'carpool-card'); card.dataset.bookingId = booking.id; card.tabIndex = -1;
+      card.append(el('p', carpoolStatus(booking.status), 'carpool-badge'), el('h3', `${booking.fromCity} → ${booking.toCity}`),
         el('p', carpoolDate(booking.departureAt)), el('p', `${booking.seats} мест · ${carpoolMoney(booking.amount)}`), el('p', `${booking.driverName} · ${booking.car}`),
         el('p', `Посадка: ${booking.pickup}`), el('p', `Высадка: ${booking.dropoff}`));
       const message = el('p'); message.setAttribute('role', 'status');
@@ -103,20 +111,52 @@ export function initCarpoolClient(host, api) {
         void run(event.currentTarget, message, () => api.command({ action: 'cancelBooking', tripId: booking.tripId, bookingId: booking.id }));
       }));
       card.append(message); mine.append(card);
-      if (['confirmed', 'boarded', 'disputed'].includes(booking.status)) {
-        try {
-          const [contact, secret] = await Promise.all([api.read('carpoolContacts', booking.id), booking.status === 'confirmed' ? api.read('carpoolBoardingCodes', booking.id) : null]);
-          if (request !== revision) return;
-          if (secret) card.append(el('strong', `Код посадки: ${secret.code}`, 'carpool-code'), el('p', 'Сообщите код водителю при посадке.'));
-          card.append(callLink(contact?.driverPhone, 'Позвонить водителю'), callLink('', 'Позвонить диспетчеру'));
-        } catch { if (request === revision) report(message, 'Контакты временно недоступны. Позвоните диспетчеру.', true); }
-      }
+      focusBooking();
+      if (['confirmed', 'boarded', 'disputed'].includes(booking.status)) void loadContact(booking, card, message, request);
     }
   }
+  async function loadContact(booking, card, message, request) {
+    try {
+      const [contact, secret] = await Promise.all([api.read('carpoolContacts', booking.id), booking.status === 'confirmed' ? api.read('carpoolBoardingCodes', booking.id) : null]);
+      if (request !== revision) return;
+      if (secret) card.append(el('strong', `Код посадки: ${secret.code}`, 'carpool-code'), el('p', 'Сообщите код водителю при посадке.'));
+      card.append(callLink(contact?.driverPhone, 'Позвонить водителю'), callLink('', 'Позвонить диспетчеру'));
+    } catch { if (request === revision) report(message, 'Контакты временно недоступны. Позвоните диспетчеру.', true); }
+  }
+  function focusBooking() {
+    if (!selectedBooking || !window.bookingScreen?.isCarpool?.()) return;
+    const card = [...mine.children].find(node => node.dataset.bookingId === selectedBooking);
+    if (!card) return;
+    selectedBooking = '';
+    const request = ++focusRevision;
+    const focus = (attempt = 0) => {
+      if (request !== focusRevision || !card.isConnected || !window.bookingScreen?.isCarpool?.()) return;
+      card.focus({ preventScroll: true });
+      if (document.activeElement === card) card.scrollIntoView({ block: 'start', behavior: 'instant' });
+      // The modal becomes focusable on the next animation frame, after visibility changes.
+      else if (attempt < 20) window.requestAnimationFrame(() => focus(attempt + 1));
+    };
+    focus();
+  }
+  const openFromEvent = event => {
+    selectedBooking = event.detail?.bookingId || '';
+    void open(); focusBooking();
+  };
+  const online = () => { void bookingsStore.refresh(); if (!started && window.bookingScreen?.isCarpool?.()) void open(); };
   search.onsubmit = event => { event.preventDefault(); void searchTrips(); };
-  window.addEventListener('carpool-open', () => void open());
-  window.addEventListener('online', () => { if (!started) void open(); });
+  bookingsStore.start(api);
+  const stopBookings = bookingsStore.subscribe(state => {
+    if (clientUid && state.uid !== clientUid) {
+      stopTrips?.(); openRevision++; revision++; focusRevision++; started = false; ready = false; selectedBooking = '';
+      drafts.clear(); list.replaceChildren(); mine.replaceChildren();
+    }
+    clientUid = state.uid;
+    if (lastBookings !== state.bookings) { lastBookings = state.bookings; void renderMine(state.bookings); }
+    report(mineStatus, state.error || (state.loading ? 'Загружаем бронирования…' : ''), Boolean(state.error));
+    mine.hidden = !state.bookings.length && Boolean(state.loading || state.error);
+  });
+  window.addEventListener('carpool-open', openFromEvent);
+  window.addEventListener('online', online);
   if (window.bookingScreen?.isCarpool?.()) void open();
-  const stopAuth = api.onUser?.(user => { if (clientUid && user?.uid !== clientUid) { stopTrips?.(); stopMine?.(); revision++; started = false; ready = false; clientUid = ''; drafts.clear(); list.replaceChildren(); mine.replaceChildren(); if (!host.hidden) void open(); } });
-  return { open, destroy() { stopTrips?.(); stopMine?.(); stopAuth?.(); revision++; } };
+  return { open, destroy() { stopTrips?.(); stopBookings(); revision++; openRevision++; focusRevision++; window.removeEventListener('carpool-open', openFromEvent); window.removeEventListener('online', online); } };
 }

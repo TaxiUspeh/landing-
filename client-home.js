@@ -1,7 +1,9 @@
 import { BOOKING_SERVICES } from './booking-core.js?v=78';
+import { carpoolBookings, activeCarpoolBookings } from './carpool-bookings.js?v=80';
+import { carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis } from './carpool-ui.js?v=80';
 
 // Presentation only: existing booking forms and Firebase order panels stay in place.
-export function initClientHome() {
+export function initClientHome({ bookingsStore = carpoolBookings } = {}) {
   const root = document.getElementById('clientHome');
   if (!root || root.dataset.ready) return;
   root.dataset.ready = 'true';
@@ -12,10 +14,80 @@ export function initClientHome() {
     service, node: byId(`${service}-online-order-panel`)
   })).filter(item => item.node);
   let page = 'home';
+  let carpoolState = bookingsStore.getState(), taxiActive = 0, cancellation = null;
+  const node = (tag, copy, cls = '') => { const element = document.createElement(tag); element.textContent = copy; element.className = cls; return element; };
+
+  function openBooking(booking) { window.bookingScreen?.openCarpool?.(booking.id); }
+
+  function bookingCard(booking, featured = false) {
+    const card = node('button', '', featured ? 'home-current home-carpool' : 'home-trip home-carpool');
+    card.type = 'button'; card.dataset.carpoolBooking = booking.id;
+    card.append(node('small', `${featured ? 'Ваша попутка' : 'Попутка'} · ${carpoolStatus(booking.status)}`),
+      node('strong', `${booking.fromCity} → ${booking.toCity}`),
+      node('span', carpoolDate(booking.departureAt)),
+      node('span', `Мест: ${booking.seats} · Итого ${carpoolMoney(booking.amount)}`),
+      node('b', 'Открыть бронь →'));
+    card.addEventListener('click', () => openBooking(booking));
+    return card;
+  }
+
+  function syncTripCount() {
+    const count = taxiActive + activeCarpoolBookings(carpoolState.bookings).length;
+    const nav = document.querySelector('.home-nav [data-home-go="trips"]');
+    const badge = nav?.querySelector('[data-home-trip-count]');
+    if (badge) { badge.hidden = count === 0; badge.textContent = String(count); }
+    nav?.setAttribute('aria-label', count ? `Мои поездки. Активных: ${count}` : 'Мои поездки');
+    const all = root.querySelector('[data-home-all-trips]');
+    if (all) { all.hidden = count < 2; all.textContent = `Все мои поездки · ${count}`; }
+  }
+
+  function renderCarpool() {
+    const active = activeCarpoolBookings(carpoolState.bookings);
+    const home = root.querySelector('[data-home-carpool]');
+    home.replaceChildren(); home.hidden = !active.length;
+    if (active.length) {
+      home.append(bookingCard(active[0], true));
+      const all = node('button', '', 'home-all-trips'); all.type = 'button'; all.dataset.homeAllTrips = '';
+      all.addEventListener('click', () => showPage('trips')); home.append(all);
+    }
+    const message = root.querySelector('[data-home-carpool-message]'); message.replaceChildren();
+    message.hidden = !cancellation && !(carpoolState.error && active.length);
+    if (cancellation) {
+      message.append(node('p', `Попутка ${cancellation.fromCity} → ${cancellation.toCity}: бронь отменена.`));
+      const details = node('button', 'Посмотреть бронь'); details.type = 'button'; details.onclick = () => openBooking(cancellation);
+      const dismiss = node('button', 'Понятно'); dismiss.type = 'button'; dismiss.onclick = () => { cancellation = null; renderCarpool(); };
+      message.append(details, dismiss);
+    }
+    if (carpoolState.error && active.length) message.append(node('p', carpoolState.error));
+    const trips = root.querySelector('[data-home-carpool-trips]');
+    const expanded = trips.querySelector('details')?.open || false;
+    trips.replaceChildren(); trips.hidden = !carpoolState.uid;
+    if (carpoolState.uid) {
+      trips.append(node('h3', 'Бронирования попуток', 'home-section-title'));
+      if (carpoolState.loading || carpoolState.error) {
+        const info = node('p', carpoolState.error || 'Загружаем бронирования…', 'home-muted'); info.setAttribute('role', 'status'); trips.append(info);
+        if (carpoolState.error) {
+          const retry = node('button', 'Обновить бронирования', 'home-all-trips'); retry.type = 'button'; retry.onclick = () => void bookingsStore.refresh(); trips.append(retry);
+        }
+      }
+      active.forEach(booking => trips.append(bookingCard(booking)));
+      if (!active.length && !carpoolState.loading && !carpoolState.error) trips.append(node('p', 'Активных броней попуток пока нет.', 'home-muted'));
+      const activeIds = new Set(active.map(booking => booking.id));
+      const history = carpoolState.bookings.filter(booking => !activeIds.has(booking.id))
+        .sort((a, b) => carpoolMillis(b.updatedAt || b.createdAt || b.departureAt) - carpoolMillis(a.updatedAt || a.createdAt || a.departureAt));
+      if (history.length) {
+        const details = document.createElement('details'); details.className = 'home-carpool-history'; details.open = expanded;
+        details.append(node('summary', `История попуток · ${history.length}`));
+        history.forEach(booking => details.append(bookingCard(booking))); trips.append(details);
+      }
+    }
+    syncTripCount();
+  }
 
   function openService(id) {
     const service = BOOKING_SERVICES.find(item => item.id === id);
     if (!service) return;
+    if (window.bookingScreen?.openService) { window.bookingScreen.openService(id); return; }
     window.openModal?.(`${service.form}Modal`);
     // Use the existing category selector so pricing, seats and wishes stay in sync.
     document.querySelector(`[data-booking-service="${id}"]`)?.click();
@@ -32,7 +104,7 @@ export function initClientHome() {
     if (!orders.length) {
       const empty = document.createElement('p');
       empty.className = 'home-empty';
-      empty.textContent = 'Сохранённых поездок пока нет. Текущий онлайн-заказ появится выше после оформления.';
+      empty.textContent = 'Сохранённых заказов такси и других услуг пока нет. Текущий онлайн-заказ появится выше после оформления.';
       container.append(empty);
       return;
     }
@@ -81,6 +153,8 @@ export function initClientHome() {
     const available = panels.filter(item => visible(item.node));
     const isActive = item => !visible(byId(`${item.service}-online-new-order-button`));
     const order = available.find(isActive) || available[0];
+    taxiActive = order && isActive(order) ? 1 : 0;
+    syncTripCount();
     for (const container of root.querySelectorAll('[data-home-current], [data-home-latest]')) {
       const show = order && (!container.hasAttribute('data-home-current') || isActive(order));
       container.hidden = !show;
@@ -129,4 +203,13 @@ export function initClientHome() {
   window.addEventListener('storage', event => { if (event.key === 'taxi_full_orders_history' && page === 'trips') renderHistory(); });
   showPage('home', false);
   syncOrder();
+  bookingsStore.subscribe(next => {
+    if (next.uid !== carpoolState.uid) cancellation = null;
+    else {
+      const previous = new Set(activeCarpoolBookings(carpoolState.bookings).map(booking => booking.id));
+      const cancelled = next.bookings.find(booking => previous.has(booking.id) && booking.status === 'cancelled');
+      if (cancelled) cancellation = cancelled;
+    }
+    carpoolState = next; renderCarpool();
+  });
 }

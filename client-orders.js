@@ -1,5 +1,5 @@
-import { initCarpoolClient } from './carpool-ui.js?v=80';
-import { createCarpoolApi } from './carpool-api.js?v=79';
+import { initCarpoolClient } from './carpool-ui.js?v=81';
+import { createCarpoolApi } from './carpool-api.js?v=81';
 import { assistanceDetails } from './assistance-booking.js?v=78';
 import { initialCargoFare, cargoAmount, isMeteredCargo, cargoFareDescription } from './cargo-fare.js?v=77';
 import { soberFareForPrice } from './sober-fare.js?v=74';

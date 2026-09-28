@@ -62,6 +62,17 @@ test('waits for BUILDING indexes and never enables early', async () => {
   assert.deepEqual(f.sleeps, [5000]);
 });
 
+test('simple journey capability is enabled only by explicit post-deployment activation', async () => {
+  const f = fixture(({ url, method, body }) => {
+    if (method !== 'PATCH') return indexResponse(url);
+    assert.deepEqual(url.searchParams.getAll('updateMask.fieldPaths'), ['schemaVersion', 'updatedAt', 'journeyVersion']);
+    assert.equal(JSON.parse(body).fields.journeyVersion.integerValue, '2');
+    return json({});
+  });
+  await f.run({ simpleJourney: true });
+  assert.match(f.logs.at(-1), /Поездки без кода подключены/);
+});
+
 test('missing indexes, incorrect scope/order and extra indexed fields do not activate', async () => {
   for (const indexes of [
     deployed.slice(1),

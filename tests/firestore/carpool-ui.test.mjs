@@ -16,10 +16,10 @@ initBookingScreen();
 let tripUpdate,mineUpdate,driverUpdate,passengerUpdate,filters;
 const commands=[];
 const trip={id:'trip1',status:'open',driverId:'30',driverUid:'driver',driverName:'Водитель',car:'Лада',fromCity:'Белоусовка',toCity:'Усть-Каменогорск',departureAt:{seconds:(Date.now()+3600000)/1000},pickup:'Автостанция',dropoff:'Центр',totalSeats:4,availableSeats:4,seatPrice:1500,commissionRate:10,reservedAmount:0,priceLocked:false};
-const api={onUser:callback=>{callback({uid:'client'});return()=>{};},user:async()=>({uid:'client'}),ready:async()=>true,
+const api={onUser:callback=>{callback({uid:'client'});return()=>{};},user:async()=>({uid:'client'}),ready:async()=>true,simpleJourneyReady:async()=>true,
  watchTrips:(f,next)=>{filters=f;tripUpdate=next;next([trip]);return()=>{};},watchMine:(_uid,next)=>{mineUpdate=next;next([]);return()=>{};},
  watchDriverTrips:(_uid,next)=>{driverUpdate=next;next([]);return()=>{};},watchPassengers:(_trip,_admin,next)=>{passengerUpdate=next;next([]);return()=>{};},
- read:async(name)=>name==='carpoolBoardingCodes'?{code:'1234'}:{name:'Пассажир',phone:'+77000000002',driverPhone:'+77000000001'},
+ read:async(name)=>{assert.notEqual(name,'carpoolBoardingCodes');return {name:'Пассажир',phone:'+77000000002',driverPhone:'+77000000001'};},
  command:async data=>{commands.push(data);return{tripId:'trip1',bookingId:'booking1'};}};
 initCarpoolClient(get('carpoolClient'),api);
 window.repeatOrder('Белоусовка','Усть-Каменогорск');document.querySelector('[data-booking-service="intercity"]').click();
@@ -33,7 +33,7 @@ assert.match(booking.textContent.replace(/\s/g,''),/3000₸/);
 tripUpdate([{...trip,availableSeats:3}]);booking=host.querySelector('form[data-trip]');assert.equal(booking.hidden,false);assert.equal(booking.elements.name.value,'<img src=x onerror=alert(1)>');assert.equal(booking.elements.count.value,'2');
 booking.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));await flush();assert.equal(commands.at(-1).seats,2);assert.equal(commands.at(-1).expectedSeatPrice,1500);
 await mineUpdate([{...trip,id:'booking1',tripId:'trip1',clientUid:'client',status:'confirmed',seats:2,amount:3000}]);await flush();
-assert.match(host.textContent,/Код посадки: 1234/);assert.equal(host.querySelector('img'),null);assert.ok(host.querySelector('a[href="tel:+77000000001"]'));
+assert.doesNotMatch(host.textContent,/Код посадки|Сообщите код/);assert.equal(host.querySelector('img'),null);assert.ok(host.querySelector('a[href="tel:+77000000001"]'));
 clickText(host,'Отменить бронь');await flush();assert.equal(commands.at(-1).action,'cancelBooking');
 get('bookingIntercityWhole').click();assert.equal(get('carpoolClient').hidden,true);assert.equal(get('bookingFooter').hidden,false);assert.equal(get('taxiFrom').value,'Белоусовка');
 assert.equal(carpoolDay(Date.parse('2026-09-27T20:30:00Z')),'2026-09-28');
@@ -45,6 +45,17 @@ assert.equal(commands.at(-1).action,'publish');assert.equal(commands.at(-1).depa
 driverUpdate([{...trip,priceLocked:true}]);await flush();assert.equal([...workHost.querySelectorAll('summary')].some(e=>e.textContent==='Изменить поездку'),false);
 const details=[...workHost.querySelectorAll('details')].find(e=>e.querySelector('summary')?.textContent==='Пассажиры и бронирования');details.open=true;await flush();
 await passengerUpdate([{id:'booking1',status:'confirmed',seats:2,amount:3000}]);await flush();
-const boarding=[...details.querySelectorAll('form')].find(f=>f.elements.code);assert.ok(boarding);boarding.elements.code.value='1234';boarding.dispatchEvent(new Event('submit',{cancelable:true}));await flush();assert.equal(commands.at(-1).action,'board');
-work.destroy();console.log('PASS: intercity modes, live seats without losing typed data, totals, private boarding code, cancellation, driver publication and Kazakhstan time');
+assert.equal(details.querySelector('input[name=code]'),null);assert.doesNotMatch(details.textContent,/Код посадки|Пассажир сел/);
+clickText(workHost,'Начать поездку');await flush();assert.equal(commands.at(-1).action,'start');
+driverUpdate([{...trip,status:'in_trip'}]);await flush();
+clickText(workHost,'Завершить поездку');await flush();assert.equal(commands.at(-1).action,'complete');
+await mineUpdate([{...trip,id:'booking1',tripId:'trip1',clientUid:'client',status:'in_trip',seats:2,amount:3000}]);await flush();
+assert.match(host.textContent,/В пути/);assert.equal([...host.querySelectorAll('button')].some(b=>b.textContent==='Отменить бронь'),false);
+assert.ok(host.querySelector('a[href="tel:+77000000001"]'));
+const pendingHost=document.createElement('section');document.body.append(pendingHost);
+const pendingWork=initCarpoolWork(pendingHost,{...api,simpleJourneyReady:async()=>false});
+await pendingWork.setContext({uid:'driver'},{status:'active',carpoolEnabled:true});driverUpdate([trip]);await flush();
+assert.equal([...pendingHost.querySelectorAll('button')].find(b=>b.textContent==='Начать поездку').disabled,true);
+pendingWork.destroy();
+work.destroy();console.log('PASS: intercity modes, live seats without losing typed data, totals, no boarding codes, cancellation, simple start/complete, deployment gate and Kazakhstan time');
 await new Promise(r=>setTimeout(r,1100));dom.window.close();

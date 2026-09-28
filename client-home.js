@@ -1,6 +1,6 @@
 import { BOOKING_SERVICES } from './booking-core.js?v=78';
-import { carpoolBookings, activeCarpoolBookings } from './carpool-bookings.js?v=80';
-import { carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis } from './carpool-ui.js?v=80';
+import { carpoolBookings, activeCarpoolBookings } from './carpool-bookings.js?v=81';
+import { carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis } from './carpool-ui.js?v=81';
 
 // Presentation only: existing booking forms and Firebase order panels stay in place.
 export function initClientHome({ bookingsStore = carpoolBookings } = {}) {

@@ -11,6 +11,7 @@ export function createCarpoolApi() {
     onUser(callback) { return onAuthStateChanged(auth, callback); },
     async user(anonymous = false) { await auth.authStateReady(); if (!auth.currentUser && anonymous) await signInAnonymously(auth); return auth.currentUser; },
     async ready() { try { const snap = await getDocFromServer(doc(db, 'settings', 'carpoolBooking')); return snap.data()?.schemaVersion === 1; } catch { return false; } },
+    async simpleJourneyReady() { try { const snap = await getDocFromServer(doc(db, 'settings', 'carpoolBooking')); return snap.data()?.journeyVersion >= 2; } catch { return false; } },
     async read(name, id) { const snap = await getDocFromServer(doc(db, name, id)); return snap.exists() ? { id: snap.id, ...snap.data() } : null; },
     watchTrips(filters, next, error) {
       return listen('carpoolTrips', [where('status', '==', 'open'), where('fromKey', '==', filters.fromKey), where('toKey', '==', filters.toKey),

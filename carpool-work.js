@@ -1,4 +1,4 @@
-import { el, button, field, report, run, tripCard, callLink, carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis } from './carpool-ui.js?v=80';
+import { el, button, field, report, run, tripCard, callLink, carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis } from './carpool-ui.js?v=81';
 
 export function initCarpoolWork(host, api, admin = false) {
   if (!host) return null;
@@ -10,7 +10,7 @@ export function initCarpoolWork(host, api, admin = false) {
   host.append(el('p', admin ? 'Рейсы, пассажиры и комиссия. Спорные отмены подтверждает диспетчер.' : 'Межгород по местам. Вы сами задаёте цену. Выезд в указанное время, даже если салон заполнен не полностью.'), status, rate);
   if (!admin) host.append(create);
   host.append(list, history);
-  let uid = '', driver = null, ready = false, stop = null, revision = 0;
+  let uid = '', driver = null, ready = false, simpleReady = false, stop = null, revision = 0;
   const passengers = new Set(), expanded = new Set();
   const error = () => report(status, 'Не удалось обновить рейсы. Проверьте подключение и опубликованные правила Firebase.', true);
   const form = tripForm(null); create.append(form);
@@ -63,18 +63,13 @@ export function initCarpoolWork(host, api, admin = false) {
           try { const contact = await api.read('carpoolContacts', booking.id); if (generation !== request) return;
             card.prepend(el('p', contact?.name || 'Пассажир')); card.append(callLink(contact?.phone, 'Позвонить пассажиру'));
           } catch { if (generation === request) card.append(el('p', 'Контакт временно недоступен.')); }
-          if (['confirmed','disputed','boarded'].includes(booking.status)) {
-            if (booking.status === 'confirmed' && ['open','closed'].includes(trip.status)) {
-              const board = el('form', '', 'carpool-form'), code = field(board, 'Код посадки у пассажира', 'code'); code.inputMode = 'numeric'; code.pattern = '[0-9]{4}'; code.maxLength = 4;
-              const accept = el('button', 'Пассажир сел'); accept.type = 'submit'; board.append(accept);
-              board.onsubmit = event => { event.preventDefault(); if (board.reportValidity()) void run(accept, message, () => api.command({action:'board',tripId:trip.id,bookingId:booking.id,code:code.value})); }; card.append(board);
-            }
+          if (['confirmed','in_trip','disputed','boarded'].includes(booking.status)) {
             if (booking.status === 'confirmed' || admin) {
               const details = el('details'); details.append(el('summary', admin ? 'Решение диспетчера' : 'Неявка / проблема'));
               const form = el('form', '', 'carpool-form'), reason = field(form, 'Комментарий', 'reason', '', 'textarea'); reason.maxLength = 300;
               if (admin) {
                 const label = el('label', 'Решение'), choice = el('select'); choice.name = 'outcome';
-                for (const [value,text] of [['cancelled','Отменить бронь без комиссии'],['boarded','Подтвердить посадку']]) {const option=el('option',text);option.value=value;choice.append(option);} label.append(choice);form.append(label);
+                for (const [value,text] of [['cancelled','Отменить бронь без комиссии'],['participating','Пассажир едет']]) {const option=el('option',text);option.value=value;choice.append(option);} label.append(choice);form.append(label);
               }
               const send = el('button', admin ? 'Сохранить решение' : 'Передать диспетчеру'); send.type='submit';form.append(send);details.append(form);card.append(details);
               form.onsubmit=event=>{event.preventDefault();if(form.reportValidity())void run(send,message,()=>api.command({action:admin?'resolve':'dispute',tripId:trip.id,bookingId:booking.id,reason:reason.value.trim(),...(admin?{outcome:form.elements.outcome.value}:{})}));};
@@ -97,12 +92,13 @@ export function initCarpoolWork(host, api, admin = false) {
       if(trip.status==='completed')card.append(el('p',`Доход по броням: ${carpoolMoney(trip.revenue)} · комиссия ${carpoolMoney(trip.commissionAmount)}`));
       const details=el('details');details.append(el('summary','Пассажиры и бронирования'));showPassengers(details,trip);card.append(details);
       const actions=el('div','','carpool-actions');
-      const action=(label,action)=>actions.append(button(label,event=>void run(event.currentTarget,message,()=>api.command({action,tripId:trip.id}))));
+      const action=(label,action,disabled=false)=>{const control=button(label,event=>void run(event.currentTarget,message,()=>api.command({action,tripId:trip.id})));control.disabled=disabled;actions.append(control);};
       if(['open','closed'].includes(trip.status)){
         if(!trip.priceLocked){const edit=el('details');edit.append(el('summary','Изменить поездку'));const form=tripForm(trip);edit.append(form);card.append(edit);
           edit.addEventListener('toggle',async()=>{if(edit.open&&!form.elements.phone.value){try{const contact=await api.read('carpoolTripContacts',trip.id);form.elements.phone.value=contact?.phone||'';}catch{}}});}
         if(trip.status==='open')action('Закрыть набор','close');else if(trip.availableSeats>0)action('Открыть набор','reopen');
-        action('Начать поездку','start');reasonForm(card,trip,'cancelTrip','Отменить рейс');
+        card.append(el('p', simpleReady ? 'Нажмите «Начать поездку», когда пассажиры готовы. Все действующие брони перейдут в статус «В пути». Неявку отметьте до выезда.' : 'Управление поездкой временно обновляется. Свяжитесь с диспетчером.'));
+        action('Начать поездку','start',!simpleReady);reasonForm(card,trip,'cancelTrip','Отменить рейс');
       }
       if(trip.status==='in_trip'){action('Завершить поездку','complete');if(admin)reasonForm(card,trip,'cancelTrip','Отменить поездку в пути');}
       card.append(actions,message);(['open','closed','in_trip'].includes(trip.status)?list:historyList).append(card);
@@ -118,7 +114,9 @@ export function initCarpoolWork(host, api, admin = false) {
     if(nextUid===uid)return;
     stop?.();stop=null;passengers.forEach(stop=>stop());passengers.clear();uid=nextUid;const generation=++revision;list.replaceChildren();historyList.replaceChildren();
     if(!uid){ready=false;create.hidden=true;return;}
-    report(status,'Загружаем рейсы…');ready=await api.ready();if(generation!==revision)return;
+    report(status,'Загружаем рейсы…');
+    const loaded=await Promise.all([api.ready(),api.simpleJourneyReady()]);if(generation!==revision)return;
+    [ready,simpleReady]=loaded;
     if(!ready){report(status,'Попутки пока не подключены. Обновите страницу после подключения.');create.hidden=true;return;}
     report(status,'Рейсы обновляются автоматически.');
     stop=admin?api.watchAdminTrips(render,error):api.watchDriverTrips(uid,render,error);

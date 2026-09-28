@@ -1,9 +1,10 @@
 import { BOOKING_SERVICES } from './booking-core.js?v=78';
-import { carpoolBookings, activeCarpoolBookings } from './carpool-bookings.js?v=81';
-import { carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis } from './carpool-ui.js?v=81';
+import { carpoolBookings, activeCarpoolBookings } from './carpool-bookings.js?v=82';
+import { carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis } from './carpool-common.js?v=82';
+import { passengerRequests, activePassengerRequests } from './passenger-request-store.js?v=82';
 
 // Presentation only: existing booking forms and Firebase order panels stay in place.
-export function initClientHome({ bookingsStore = carpoolBookings } = {}) {
+export function initClientHome({ bookingsStore = carpoolBookings, requestsStore = passengerRequests } = {}) {
   const root = document.getElementById('clientHome');
   if (!root || root.dataset.ready) return;
   root.dataset.ready = 'true';
@@ -14,6 +15,7 @@ export function initClientHome({ bookingsStore = carpoolBookings } = {}) {
     service, node: byId(`${service}-online-order-panel`)
   })).filter(item => item.node);
   let page = 'home';
+  let requestState = requestsStore.getState();
   let carpoolState = bookingsStore.getState(), taxiActive = 0, cancellation = null;
   const node = (tag, copy, cls = '') => { const element = document.createElement(tag); element.textContent = copy; element.className = cls; return element; };
 
@@ -32,7 +34,7 @@ export function initClientHome({ bookingsStore = carpoolBookings } = {}) {
   }
 
   function syncTripCount() {
-    const count = taxiActive + activeCarpoolBookings(carpoolState.bookings).length;
+    const count = taxiActive + activeCarpoolBookings(carpoolState.bookings).length + activePassengerRequests(requestState.requests).length;
     const nav = document.querySelector('.home-nav [data-home-go="trips"]');
     const badge = nav?.querySelector('[data-home-trip-count]');
     if (badge) { badge.hidden = count === 0; badge.textContent = String(count); }
@@ -84,7 +86,25 @@ export function initClientHome({ bookingsStore = carpoolBookings } = {}) {
     syncTripCount();
   }
 
+  function renderRequests() {
+    const active = activePassengerRequests(requestState.requests);
+    for (const [selector, featured] of [['[data-home-requests]', true], ['[data-home-requests-trips]', false]]) {
+      const container = root.querySelector(selector); if (!container) continue;
+      container.replaceChildren(); container.hidden = !active.length;
+      if (!featured && active.length) container.append(node('h3', 'Ищу машину · мои заявки', 'home-section-title'));
+      for (const request of featured ? active.slice(0, 1) : active) {
+        const card = node('button', '', featured ? 'home-current home-carpool' : 'home-trip home-carpool');
+        card.type = 'button'; card.dataset.passengerRequest = request.id;
+        card.append(node('small', 'Ваша заявка · Ищу машину'), node('strong', `${request.fromCity} → ${request.toCity}`), node('span', `${carpoolDate(request.departureAt)} · мест: ${request.seats}`), node('b', 'Открыть заявку →'));
+        card.onclick = () => window.bookingScreen?.openCarpool?.('', request.id); container.append(card);
+      }
+      if (active.length && requestState.error) container.append(node('p', requestState.error, 'home-muted'));
+    }
+    syncTripCount();
+  }
+
   function openService(id) {
+    if (id === 'intercity' && window.bookingScreen?.openCarpool) { window.bookingScreen.openCarpool(); return; }
     const service = BOOKING_SERVICES.find(item => item.id === id);
     if (!service) return;
     if (window.bookingScreen?.openService) { window.bookingScreen.openService(id); return; }
@@ -201,6 +221,9 @@ export function initClientHome({ bookingsStore = carpoolBookings } = {}) {
   const observer = new MutationObserver(syncOrder);
   panels.forEach(item => observer.observe(item.node, { attributes: true, attributeFilter: ['class', 'hidden'], childList: true, characterData: true, subtree: true }));
   window.addEventListener('storage', event => { if (event.key === 'taxi_full_orders_history' && page === 'trips') renderHistory(); });
+  root.querySelector('[data-home-carpool-open]')?.addEventListener('click', () => window.bookingScreen?.openCarpool?.());
+  requestsStore.subscribe(next => { requestState = next; renderRequests(); });
+  window.setInterval(renderRequests, 60000);
   showPage('home', false);
   syncOrder();
   bookingsStore.subscribe(next => {

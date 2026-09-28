@@ -495,7 +495,7 @@
     <link rel="stylesheet" href="./styles/client-home.css?v=80">
     <link rel="stylesheet" href="./styles/bus-schedule.css?v=76">
 <link rel="stylesheet" href="./styles/customer-pricing.css?v=67">
-<link rel="stylesheet" href="./styles/carpool.css?v=79">
+<link rel="stylesheet" href="./styles/carpool.css?v=82">
 </head>
 <body class="client-home text-gray-900 min-h-screen flex flex-col">
 
@@ -524,6 +524,7 @@
 <div data-home-current hidden aria-live="polite">
 </div>
 <div data-home-carpool hidden></div>
+<div data-home-requests hidden></div>
 <div data-home-carpool-message class="home-carpool-message" hidden role="status"></div>
 <div class="home-order-card">
 <h2>Куда поедем?</h2>
@@ -568,6 +569,9 @@
 <span>Все услуги</span>
 </button>
 </div>
+<button type="button" class="home-row home-intercity" data-home-carpool-open>
+<i class="fas fa-car" aria-hidden="true"></i><span><strong>Межгород / Попутки</strong><small>Рейсы водителей и заявки «Ищу машину»</small></span><i class="fas fa-chevron-right" aria-hidden="true"></i>
+</button>
 <h2 class="home-section-title">Полезное рядом</h2>
 <button type="button" class="home-row" data-home-modal="busScheduleModal">
 <i class="fas fa-bus-alt" aria-hidden="true">
@@ -714,6 +718,7 @@
 <div data-home-latest hidden aria-live="polite">
 </div>
 <section data-home-carpool-trips hidden aria-label="Бронирования попуток"></section>
+<section data-home-requests-trips hidden aria-label="Мои заявки попутчика"></section>
 <h3 class="home-section-title">История на этом устройстве</h3>
 <div id="homeHistory">
 </div>
@@ -2286,13 +2291,13 @@
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
         import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=78";
-        import { initBookingScreen } from "./booking-screen.js?v=80";
+        import { initBookingScreen } from "./booking-screen.js?v=82";
         import { normalizeCity } from "./booking-core.js?v=78";
         import { selectPriceAdjustment, adjustmentText } from "./pricing-adjustments.js?v=63";
         import { createSoberPricing } from './sober-pricing.js?v=78';
         import { createDeliveryPricing } from "./delivery-pricing.js?v=78";
         import { publishedRouteFare, distanceFare, formatTaxiFare } from "./taxi-pricing.js?v=78";
-        import { initClientHome } from "./client-home.js?v=81";
+        import { initClientHome } from "./client-home.js?v=82";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -5156,6 +5161,6 @@
         initClientHome();
 
     </script>
-    <script type="module" src="./client-orders.js?v=81"></script>
+    <script type="module" src="./client-orders.js?v=82"></script>
 </body>
 </html>

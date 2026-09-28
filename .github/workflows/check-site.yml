@@ -29,6 +29,7 @@ jobs:
           node cargo-booking-ui.test.mjs
           node assistance-ui.test.mjs
           node carpool-ui.test.mjs
+          node carpool-hub-ui.test.mjs
           node carpool-home-ui.test.mjs
           node vehicle-ui.test.mjs
           node client-home-ui.test.mjs

@@ -38,7 +38,7 @@ function createCarpoolActions({ db, Timestamp, HttpsError, now = () => Date.now(
     const uid = request.auth?.uid;
     if (!uid) fail('Войдите в приложение.', 'unauthenticated');
     const input = request.data || {}, action = input.action;
-    if (!['publish', 'edit', 'book', 'cancelBooking', 'dispute', 'resolve', 'close', 'reopen', 'start', 'complete', 'cancelTrip'].includes(action)) fail('Неизвестное действие.', 'invalid-argument');
+    if (!['createRequest', 'closeRequest', 'publish', 'edit', 'book', 'cancelBooking', 'dispute', 'resolve', 'close', 'reopen', 'start', 'complete', 'cancelTrip'].includes(action)) fail('Неизвестное действие.', 'invalid-argument');
     if (typeof input.operationId !== 'string' || !/^[a-zA-Z0-9_-]{12,80}$/.test(input.operationId)) fail('Обновите страницу и повторите действие.', 'invalid-argument');
     const receiptRef = db.doc(`carpoolOperations/${digest(uid + ':' + input.operationId)}`);
     const fingerprint = digest(JSON.stringify(input));
@@ -54,6 +54,45 @@ function createCarpoolActions({ db, Timestamp, HttpsError, now = () => Date.now(
       if (['publish', 'edit', 'book'].includes(action)) {
         const settings = await tx.get(db.doc('settings/carpoolBooking'));
         if (settings.data()?.schemaVersion !== 1) fail('Попутки пока не подключены. Позвоните диспетчеру.');
+      }
+      if (action === 'createRequest' || action === 'closeRequest') {
+        if (action === 'createRequest') {
+          const settings = (await tx.get(db.doc('settings/carpoolBooking'))).data();
+          if (settings?.hubVersion !== 1) fail('Заявки попутчиков пока не подключены. Попробуйте позже.');
+          const fromCity = text(input.fromCity, 150, 'Откуда'), toCity = text(input.toCity, 150, 'Куда');
+          const fromKey = cityKey(fromCity), toKey = cityKey(toCity);
+          if (!fromKey || !toKey || fromKey === toKey) fail('Укажите разные пункты отправления и назначения.');
+          const departureMs = integer(input.departureMs, at.toMillis() + 5 * 60000, at.toMillis() + 30 * 86400000, 'Выезд в ближайшие 30 дней, не ранее чем через 5 минут');
+          const seats = integer(input.seats, 1, 8, 'Количество мест');
+          const name = text(input.name, 80, 'Имя'), contactPhone = phone(input.phone);
+          const stateRef = db.doc(`passenger_request_state/${uid}`), state = (await tx.get(stateRef)).data();
+          const previous = await Promise.all((state?.activeIds || []).map(id => tx.get(db.doc(`passenger_requests/${id}`))));
+          const current = previous.filter(s => s.exists && s.data().status === 'open' && s.data().departureAt.toMillis() > at.toMillis());
+          if (current.some(s => { const r = s.data(); return r.fromKey === fromKey && r.toKey === toKey && r.departureAt.toMillis() === departureMs && r.seats === seats; })) fail('У вас уже есть такая заявка. Она отображается в «Моих заявках».');
+          if (current.length >= 3) fail('У вас уже три активные заявки. Закройте ненужную.');
+          const requestId = digest(uid + ':' + input.operationId).slice(0, 40);
+          for (const old of previous) if (old.exists && old.data().status === 'open' && old.data().departureAt.toMillis() <= at.toMillis()) {
+            tx.update(old.ref, { status: 'expired', updatedAt: at });
+            tx.delete(db.doc(`passenger_request_contacts/${old.id}`));
+          }
+          tx.set(db.doc(`passenger_requests/${requestId}`), { clientUid: uid, fromCity, toCity, fromKey, toKey,
+            departureAt: Timestamp.fromMillis(departureMs), seats, status: 'open', createdAt: at, updatedAt: at });
+          tx.set(db.doc(`passenger_request_contacts/${requestId}`), { clientUid: uid, name, phone: contactPhone });
+          tx.set(stateRef, { activeIds: [...current.map(s => s.id), requestId] });
+          return finish({ requestId });
+        }
+        const requestId = text(input.requestId, 64, 'Заявка');
+        if (!/^[a-zA-Z0-9_-]+$/.test(requestId)) fail('Неверная заявка.', 'invalid-argument');
+        const ref = db.doc(`passenger_requests/${requestId}`), row = (await tx.get(ref)).data();
+        if (!row) fail('Заявка не найдена.', 'not-found');
+        if (row.clientUid !== uid && !admin) fail('Можно закрыть только свою заявку.', 'permission-denied');
+        if (!['found', 'cancelled'].includes(input.outcome)) fail('Выберите причину закрытия заявки.');
+        if (row.status !== 'open') return finish({ requestId });
+        const stateRef = db.doc(`passenger_request_state/${row.clientUid}`), state = (await tx.get(stateRef)).data();
+        tx.update(ref, { status: input.outcome, closedBy: uid, updatedAt: at });
+        tx.delete(db.doc(`passenger_request_contacts/${requestId}`));
+        tx.set(stateRef, { activeIds: (state?.activeIds || []).filter(id => id !== requestId) });
+        return finish({ requestId });
       }
       if (action === 'publish') {
         const account = (await tx.get(db.doc(`driverAccounts/${uid}`))).data();
@@ -119,10 +158,23 @@ function createCarpoolActions({ db, Timestamp, HttpsError, now = () => Date.now(
           const mode = driver.debtMode || 'unlimited', ceiling = mode === 'none' ? 0 : driver.debtLimit || 0;
           if (mode !== 'unlimited' && money(driver.balance + held + ordinaryReserved) > ceiling) fail('У водителя недостаточно доступного баланса для новой брони. Выберите другую машину.');
           const tripContact = (await tx.get(db.doc(`carpoolTripContacts/${tripId}`))).data();
+          let demand, demandRef, demandState, demandStateRef;
+          if (input.requestId) {
+            if (typeof input.requestId !== 'string' || !/^[a-zA-Z0-9_-]{1,64}$/.test(input.requestId)) fail('Неверная заявка.', 'invalid-argument');
+            demandRef = db.doc(`passenger_requests/${input.requestId}`); demand = (await tx.get(demandRef)).data();
+            if (!demand || demand.clientUid !== uid || demand.status !== 'open') fail('Заявка уже закрыта или принадлежит другому пассажиру.');
+            if (demand.fromKey !== trip.fromKey || demand.toKey !== trip.toKey || demand.seats !== seats) fail('Маршрут и число мест должны совпадать с вашей заявкой.');
+            demandStateRef = db.doc(`passenger_request_state/${uid}`); demandState = (await tx.get(demandStateRef)).data();
+          }
           const booking = { tripId, clientUid: uid, driverUid: trip.driverUid, driverId: trip.driverId, seats, seatPrice: trip.seatPrice,
             amount, commissionRate: trip.commissionRate, commissionAmount: commission, status: 'confirmed',
             fromCity: trip.fromCity, toCity: trip.toCity, departureAt: trip.departureAt, pickup: trip.pickup, dropoff: trip.dropoff,
-            driverName: trip.driverName, car: trip.car, createdAt: at, updatedAt: at };
+            driverName: trip.driverName, car: trip.car, createdAt: at, updatedAt: at, ...(demand ? { requestId: input.requestId } : {}) };
+          if (demand) {
+            tx.update(demandRef, { status: 'matched', bookingId, tripId, updatedAt: at });
+            tx.delete(db.doc(`passenger_request_contacts/${input.requestId}`));
+            tx.set(demandStateRef, { activeIds: (demandState?.activeIds || []).filter(id => id !== input.requestId) });
+          }
           tx.set(bookingRef, booking);
           tx.set(db.doc(`carpoolContacts/${bookingId}`), { clientUid: uid, driverUid: trip.driverUid,
             name: text(input.name, 80, 'Имя'), phone: phone(input.phone), driverPhone: tripContact?.phone || '' });

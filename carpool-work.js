@@ -1,4 +1,5 @@
-import { el, button, field, report, run, tripCard, callLink, carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis } from './carpool-ui.js?v=81';
+import { el, button, field, report, run, tripCard, callLink, carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis } from './carpool-common.js?v=82';
+import { initPassengerDemand } from './carpool-requests.js?v=82';
 
 export function initCarpoolWork(host, api, admin = false) {
   if (!host) return null;
@@ -10,6 +11,15 @@ export function initCarpoolWork(host, api, admin = false) {
   host.append(el('p', admin ? 'Рейсы, пассажиры и комиссия. Спорные отмены подтверждает диспетчер.' : 'Межгород по местам. Вы сами задаёте цену. Выезд в указанное время, даже если салон заполнен не полностью.'), status, rate);
   if (!admin) host.append(create);
   host.append(list, history);
+  const tripsPanel = el('section'), demandPanel = el('section'); demandPanel.hidden = true;
+  while (host.firstChild) tripsPanel.append(host.firstChild);
+  const navigation = el('div', '', 'carpool-tabs'); navigation.setAttribute('role', 'group'); navigation.setAttribute('aria-label', 'Разделы попуток');
+  const demand = initPassengerDemand(demandPanel, api, admin);
+  const tripsTab = button('Мои рейсы', () => selectTab(false)), demandTab = button('Заявки от пассажиров', () => selectTab(true));
+  if (admin) tripsTab.textContent = 'Рейсы водителей';
+  navigation.append(tripsTab, demandTab); host.append(navigation, tripsPanel, demandPanel);
+  function selectTab(showDemand) { tripsPanel.hidden = showDemand; demandPanel.hidden = !showDemand; tripsTab.setAttribute('aria-pressed', String(!showDemand)); demandTab.setAttribute('aria-pressed', String(showDemand)); demand.show(showDemand); }
+  selectTab(false);
   let uid = '', driver = null, ready = false, simpleReady = false, stop = null, revision = 0;
   const passengers = new Set(), expanded = new Set();
   const error = () => report(status, 'Не удалось обновить рейсы. Проверьте подключение и опубликованные правила Firebase.', true);
@@ -109,6 +119,7 @@ export function initCarpoolWork(host, api, admin = false) {
     driver=profile; const nextUid=user?.uid||'';
     if (nextUid !== uid && !admin) form.elements.phone.value = profile?.phone || '';
     const allowed=profile?.carpoolEnabled===true&&profile?.status==='active'&&profile?.passengerEnabled!==false&&(profile?.passengerStatus||'active')==='active';
+    demand.setContext(user, admin || allowed);
     if(!admin){create.hidden=!ready||!allowed||!!profile?.carpoolActiveTripId;rate.textContent=allowed?`Ваша комиссия за попутки: ${profile.carpoolCommissionRate??profile.commissionRate??20}%. Один открытый рейс на водителя.`:'Публикацию рейсов включает диспетчер в вашей карточке: «Попутки».';
       form.elements.phone.value ||= profile?.phone||'';form.elements.totalSeats.max=String(profile?.passengerSeats||4);}
     if(nextUid===uid)return;
@@ -121,5 +132,5 @@ export function initCarpoolWork(host, api, admin = false) {
     report(status,'Рейсы обновляются автоматически.');
     stop=admin?api.watchAdminTrips(render,error):api.watchDriverTrips(uid,render,error);
   }
-  return {setContext,destroy(){stop?.();passengers.forEach(stop=>stop());passengers.clear();revision++;uid='';list.replaceChildren();historyList.replaceChildren();create.hidden=true;}};
+  return {setContext,destroy(){demand.destroy();stop?.();passengers.forEach(stop=>stop());passengers.clear();revision++;uid='';list.replaceChildren();historyList.replaceChildren();create.hidden=true;}};
 }

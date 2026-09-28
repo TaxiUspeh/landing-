@@ -1,7 +1,7 @@
-const { createHash, randomInt } = require('node:crypto');
+const { createHash } = require('node:crypto');
 const digest = value => createHash('sha256').update(value).digest('hex');
 const money = value => Math.round(value * 100) / 100;
-const activeBooking = b => ['confirmed', 'boarded', 'disputed'].includes(b.status);
+const activeBooking = b => ['confirmed', 'in_trip', 'boarded', 'disputed'].includes(b.status);
 const activeTrip = t => ['open', 'closed', 'in_trip'].includes(t.status);
 
 // All seat, reservation and settlement changes share one server transaction.
@@ -38,7 +38,7 @@ function createCarpoolActions({ db, Timestamp, HttpsError, now = () => Date.now(
     const uid = request.auth?.uid;
     if (!uid) fail('Войдите в приложение.', 'unauthenticated');
     const input = request.data || {}, action = input.action;
-    if (!['publish', 'edit', 'book', 'cancelBooking', 'board', 'dispute', 'resolve', 'close', 'reopen', 'start', 'complete', 'cancelTrip'].includes(action)) fail('Неизвестное действие.', 'invalid-argument');
+    if (!['publish', 'edit', 'book', 'cancelBooking', 'dispute', 'resolve', 'close', 'reopen', 'start', 'complete', 'cancelTrip'].includes(action)) fail('Неизвестное действие.', 'invalid-argument');
     if (typeof input.operationId !== 'string' || !/^[a-zA-Z0-9_-]{12,80}$/.test(input.operationId)) fail('Обновите страницу и повторите действие.', 'invalid-argument');
     const receiptRef = db.doc(`carpoolOperations/${digest(uid + ':' + input.operationId)}`);
     const fingerprint = digest(JSON.stringify(input));
@@ -82,7 +82,7 @@ function createCarpoolActions({ db, Timestamp, HttpsError, now = () => Date.now(
       if (!driver) fail('Карточка водителя недоступна. Обратитесь к диспетчеру.');
       const account = (await tx.get(db.doc(`driverAccounts/${trip.driverUid}`))).data();
       const stateRef = db.doc(`driverStates/${trip.driverUid}`), state = (await tx.get(stateRef)).data();
-      if (['edit', 'close', 'reopen', 'start', 'complete', 'cancelTrip', 'board', 'dispute'].includes(action) && !owner && !admin) fail('Этот рейс принадлежит другому водителю.', 'permission-denied');
+      if (['edit', 'close', 'reopen', 'start', 'complete', 'cancelTrip', 'dispute'].includes(action) && !owner && !admin) fail('Этот рейс принадлежит другому водителю.', 'permission-denied');
       if (['edit', 'reopen', 'start', 'book'].includes(action) && !eligible(driver, account, trip.driverUid, trip.driverId)) fail('Рейс временно недоступен: водитель не допущен к попуткам.');
       if (action === 'edit') {
         if (!['open', 'closed'].includes(trip.status) || trip.priceLocked) fail('После первой брони маршрут, время и цена зафиксированы.');
@@ -92,7 +92,7 @@ function createCarpoolActions({ db, Timestamp, HttpsError, now = () => Date.now(
         return finish({ tripId });
       }
       const bookingId = action === 'book' ? digest(tripId + ':' + uid).slice(0, 40) : input.bookingId;
-      if (['book', 'cancelBooking', 'board', 'dispute', 'resolve'].includes(action)) {
+      if (['book', 'cancelBooking', 'dispute', 'resolve'].includes(action)) {
         if (typeof bookingId !== 'string' || !/^[a-zA-Z0-9_-]{1,64}$/.test(bookingId)) fail('Неверная бронь.', 'invalid-argument');
         const bookingRef = db.doc(`carpoolBookings/${bookingId}`), previous = (await tx.get(bookingRef)).data();
         if (action !== 'book' && (!previous || previous.tripId !== tripId)) fail('Бронь не найдена.', 'not-found');
@@ -126,25 +126,13 @@ function createCarpoolActions({ db, Timestamp, HttpsError, now = () => Date.now(
           tx.set(bookingRef, booking);
           tx.set(db.doc(`carpoolContacts/${bookingId}`), { clientUid: uid, driverUid: trip.driverUid,
             name: text(input.name, 80, 'Имя'), phone: phone(input.phone), driverPhone: tripContact?.phone || '' });
-          tx.set(db.doc(`carpoolBoardingCodes/${bookingId}`), { clientUid: uid, code: String(randomInt(1000, 10000)), attempts: 0 });
+          tx.delete(db.doc(`carpoolBoardingCodes/${bookingId}`)); // Remove an obsolete code if a legacy booking is renewed.
           tx.update(tripRef, { availableSeats: trip.availableSeats - seats, bookedSeats: trip.bookedSeats + seats,
             bookingCount: trip.bookingCount + (previous ? 0 : 1), priceLocked: true, reservedAmount: money(trip.reservedAmount + commission),
             status: seats === trip.availableSeats ? 'closed' : 'open', closedReason: seats === trip.availableSeats ? 'full' : '', updatedAt: at });
           tx.update(driverRef, { carpoolReservedAmount: held });
           tx.set(clientRef, { activeCount: clientState.activeCount + 1 });
           return finish({ tripId, bookingId });
-        }
-        if (action === 'board') {
-          if (previous.status !== 'confirmed' || !['open', 'closed'].includes(trip.status)) fail('Посадка для этой брони недоступна.');
-          if (at.toMillis() < trip.departureAt.toMillis() - 30 * 60000) fail('Отметить посадку можно за 30 минут до выезда.');
-          const codeRef = db.doc(`carpoolBoardingCodes/${bookingId}`), secret = (await tx.get(codeRef)).data();
-          if (!secret || secret.attempts >= 5) fail('Посадку должен подтвердить диспетчер: исчерпаны попытки кода.');
-          if (String(input.code) !== secret.code) {
-            tx.update(codeRef, { attempts: secret.attempts + 1 });
-            return finish({ error: 'Код посадки не совпадает. Уточните его у пассажира.' });
-          }
-          tx.update(bookingRef, { status: 'boarded', boardedAt: at, updatedAt: at });
-          return finish({ bookingId });
         }
         if (action === 'dispute') {
           if (previous.status !== 'confirmed' || !activeTrip(trip)) fail('Эту бронь уже обработали.');
@@ -155,16 +143,18 @@ function createCarpoolActions({ db, Timestamp, HttpsError, now = () => Date.now(
           if (!admin) fail('Решение принимает диспетчер.', 'permission-denied');
           if (!activeBooking(previous) || !activeTrip(trip)) fail('Бронь уже закрыта.');
           const reason = text(input.reason, 300, 'Решение диспетчера');
-          if (input.outcome === 'boarded') {
-            tx.update(bookingRef, { status: 'boarded', reason, resolvedBy: uid, updatedAt: at });
+          if (['participating', 'boarded'].includes(input.outcome)) {
+            tx.update(bookingRef, { status: trip.status === 'in_trip' ? 'in_trip' : 'confirmed', reason, resolvedBy: uid, updatedAt: at });
+            tx.delete(db.doc(`carpoolBoardingCodes/${bookingId}`));
             return finish({ bookingId });
           }
           if (input.outcome !== 'cancelled') fail('Выберите решение диспетчера.');
         } else if (action === 'cancelBooking') {
           if (previous.clientUid !== uid) fail('Можно отменить только свою бронь.', 'permission-denied');
           if (previous.status === 'cancelled') return finish({ bookingId });
-          if (previous.status !== 'confirmed' || !['open', 'closed'].includes(trip.status)) fail('Для отмены после посадки свяжитесь с диспетчером.');
+          if (previous.status !== 'confirmed' || !['open', 'closed'].includes(trip.status)) fail('Для отмены после начала поездки свяжитесь с диспетчером.');
         }
+        tx.delete(db.doc(`carpoolBoardingCodes/${bookingId}`));
         const released = previous.commissionAmount;
         tx.update(bookingRef, { status: 'cancelled', cancelledBy: uid, reason: action === 'resolve' ? input.reason.trim() : 'Отмена пассажиром', updatedAt: at });
         tx.update(tripRef, { availableSeats: trip.availableSeats + previous.seats, bookedSeats: trip.bookedSeats - previous.seats,
@@ -183,11 +173,19 @@ function createCarpoolActions({ db, Timestamp, HttpsError, now = () => Date.now(
       const bookings = (await tx.get(db.collection('carpoolBookings').where('tripId', '==', tripId))).docs;
       const active = bookings.filter(s => activeBooking(s.data()));
       if (action === 'start') {
+        if (trip.status === 'in_trip') {
+          if (state?.activeOrderId !== `carpool_${tripId}`) fail('Диспетчер должен проверить статус водителя.');
+          return finish({ tripId });
+        }
         if (!['open', 'closed'].includes(trip.status)) fail('Рейс уже отправлен или закрыт.');
         if (at.toMillis() < trip.departureAt.toMillis() - 15 * 60000) fail('Выезд доступен за 15 минут до указанного времени.');
         if (state?.status === 'busy') fail('Сначала завершите текущий заказ.');
-        if (!active.some(s => s.data().status === 'boarded')) fail('Подтвердите посадку пассажира по коду.');
-        if (active.some(s => s.data().status === 'confirmed')) fail('Отметьте посадку или передайте неявку диспетчеру по каждой брони.');
+        const travelling = active.filter(s => ['confirmed', 'boarded'].includes(s.data().status));
+        if (!travelling.length) fail('Нет действующих броней для начала поездки.');
+        for (const booking of travelling) {
+          tx.update(booking.ref, { status: 'in_trip', startedAt: at, updatedAt: at });
+          tx.delete(db.doc(`carpoolBoardingCodes/${booking.id}`));
+        }
         tx.update(tripRef, { status: 'in_trip', startedAt: at, updatedAt: at });
         tx.set(stateRef, { driverId: trip.driverId, status: 'busy', activeOrderId: `carpool_${tripId}`, lastSeen: at, updatedAt: at });
         return finish({ tripId });
@@ -195,12 +193,11 @@ function createCarpoolActions({ db, Timestamp, HttpsError, now = () => Date.now(
       if (action === 'complete') {
         if (trip.status === 'completed') return finish({ tripId });
         if (trip.status !== 'in_trip') fail('Сначала начните поездку.');
-        if (active.some(s => s.data().status !== 'boarded')) fail('Диспетчер должен разрешить спорные брони перед завершением.');
+        if (active.some(s => !['in_trip', 'boarded'].includes(s.data().status))) fail('Диспетчер должен разрешить спорные брони перед завершением.');
         if (state?.activeOrderId !== `carpool_${tripId}`) fail('Диспетчер должен проверить статус водителя.');
       } else if (action === 'cancelTrip') {
         if (trip.status === 'cancelled') return finish({ tripId });
         if (!['open', 'closed'].includes(trip.status) && !(admin && trip.status === 'in_trip')) fail('Поездку в пути может отменить диспетчер.');
-        if (!admin && active.some(s => s.data().status === 'boarded')) fail('После посадки пассажиров отмену оформляет диспетчер.');
         text(input.reason, 300, 'Причина отмены');
       }
       const clients = new Map();
@@ -217,8 +214,11 @@ function createCarpoolActions({ db, Timestamp, HttpsError, now = () => Date.now(
       const newBalance = money(driver.balance + (completed ? amount : 0));
       tx.update(driverRef, { carpoolReservedAmount: money((driver.carpoolReservedAmount || 0) - amount),
         carpoolActiveTripId: '', ...(completed ? { balance: newBalance } : {}) });
-      for (const s of active) tx.update(s.ref, { status: completed ? 'completed' : 'cancelled', updatedAt: at,
-        ...(completed ? { completedAt: at } : { cancelledBy: uid, reason: input.reason.trim() }) });
+      for (const s of active) {
+        tx.update(s.ref, { status: completed ? 'completed' : 'cancelled', updatedAt: at,
+          ...(completed ? { completedAt: at } : { cancelledBy: uid, reason: input.reason.trim() }) });
+        tx.delete(db.doc(`carpoolBoardingCodes/${s.id}`));
+      }
       for (const [clientUid, count] of clients) tx.set(db.doc(`carpoolClientState/${clientUid}`), { activeCount: Math.max(0, count - 1) });
       tx.update(tripRef, { status: completed ? 'completed' : 'cancelled', reservedAmount: 0, updatedAt: at,
         ...(completed ? { completedAt: at, commissionAmount: amount, revenue } : { cancelledAt: at, cancelledBy: uid, reason: input.reason.trim() }) });

@@ -1,4 +1,4 @@
-const activeStatuses = new Set(['confirmed', 'boarded', 'disputed']);
+const activeStatuses = new Set(['confirmed', 'in_trip', 'boarded', 'disputed']);
 const millis = value => value?.toMillis?.() ?? ((value?.seconds || 0) * 1000);
 export const activeCarpoolBookings = bookings => bookings.filter(booking => activeStatuses.has(booking.status))
   .sort((a, b) => millis(a.departureAt) - millis(b.departureAt));

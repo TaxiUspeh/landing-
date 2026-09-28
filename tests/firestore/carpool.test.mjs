@@ -60,21 +60,22 @@ try{
   await assert.rejects(call('client4','book',{...request,seats:2},'same-booking-operation'));
   assert.equal((await read('drivers/30')).carpoolReservedAmount,600);
  });
- await test('price freezes, contacts and boarding code stay private, invalid code attempts are limited',async()=>{
+ await test('price freezes, contacts stay private, and new or legacy bookings need no code',async()=>{
   const {tripId}=await publish();await assert.rejects(book('client1',tripId,1,{expectedSeatPrice:1000}));
   const {bookingId}=await book('client1',tripId,2);
+  assert.equal(await read('carpoolBoardingCodes/'+bookingId),undefined);
   await assert.rejects(call('driver','edit',{tripId,...tripFields(),seatPrice:2000}));
-  for(const name of ['carpoolContacts','carpoolBookings','carpoolBoardingCodes']) await assertFails(getDoc(doc(client('stranger'),name,bookingId)));
+  for(const name of ['carpoolContacts','carpoolBookings']) await assertFails(getDoc(doc(client('stranger'),name,bookingId)));
   await assertSucceeds(getDoc(doc(client('driver'),'carpoolContacts',bookingId)));
-  await assertFails(getDoc(doc(client('driver'),'carpoolBoardingCodes',bookingId)));
-  await assertSucceeds(getDoc(doc(client('client1'),'carpoolBoardingCodes',bookingId)));
+  await db.doc('carpoolBoardingCodes/'+bookingId).set({clientUid:'client1',code:'1234',attempts:5});
+  for(const uid of ['client1','driver','stranger','admin']) await assertFails(getDoc(doc(client(uid),'carpoolBoardingCodes',bookingId)));
   const owned=query(collection(client('client1'),'carpoolBookings'),where('clientUid','==','client1'));assert.equal((await getDocs(owned)).size,1);
   const assigned=query(collection(client('driver'),'carpoolBookings'),where('driverUid','==','driver'),where('tripId','==',tripId));assert.equal((await getDocs(assigned)).size,1);
-  time+=45*60000;
-  for(let i=0;i<5;i++) assert.ok((await call('driver','board',{tripId,bookingId,code:'0000'})).error);
-  const code=(await read('carpoolBoardingCodes/'+bookingId)).code;await assert.rejects(call('driver','board',{tripId,bookingId,code}));
-  await assert.rejects(call('driver','resolve',{tripId,bookingId,outcome:'boarded',reason:'Попытка'}));
-  await call('admin','resolve',{tripId,bookingId,outcome:'boarded',reason:'Пассажир подтвердил посадку'});
+  await assert.rejects(call('driver','board',{tripId,bookingId,code:'1234'}));
+  await assert.rejects(call('driver','resolve',{tripId,bookingId,outcome:'participating',reason:'Попытка'}));
+  await call('admin','resolve',{tripId,bookingId,outcome:'participating',reason:'Пассажир едет'});
+  assert.equal((await read('carpoolBookings/'+bookingId)).status,'confirmed');
+  assert.equal(await read('carpoolBoardingCodes/'+bookingId),undefined);
  });
  await test('shared funds account for ordinary orders and carpool reservations',async()=>{
   await db.doc('drivers/30').update({balance:800});const {tripId}=await publish();
@@ -85,31 +86,71 @@ try{
   await db.doc('driverStates/driver').update({status:'busy',activeOrderId:'taxi'});
   await assert.rejects(book('client2',tripId));
  });
- await test('boarding, ordinary-trip conflict, one settlement and release of reserves',async()=>{
-  const {tripId}=await publish(),{bookingId}=await book('client1',tripId,3);
-  time+=45*60000;const code=(await read('carpoolBoardingCodes/'+bookingId)).code;
-  await call('driver','board',{tripId,bookingId,code});
-  await assert.rejects(call('client1','cancelBooking',{tripId,bookingId}));
-  await assert.rejects(call('driver','cancelTrip',{tripId,reason:'Передумал'}));
+ await test('one start moves all valid bookings into trip; settlement charges once and excludes cancellations',async()=>{
+  const {tripId}=await publish(),a=await book('client1',tripId,2),b=await book('client2',tripId),c=await book('client3',tripId);
+  await call('client3','cancelBooking',{tripId,bookingId:c.bookingId});
+  await assert.rejects(call('driver','start',{tripId}));
+  await assert.rejects(call('driver','complete',{tripId}));
+  time+=45*60000;
+  await assert.rejects(call('client1','start',{tripId}));await assert.rejects(call('stranger','complete',{tripId}));
   await db.doc('driverStates/driver').update({status:'busy',activeOrderId:'taxi'});await assert.rejects(call('driver','start',{tripId}));
   await db.doc('driverStates/driver').update({status:'available',activeOrderId:''});await call('driver','start',{tripId});
+  const started=(await read('carpoolTrips/'+tripId)).startedAt.toMillis();time+=1000;
+  await call('driver','start',{tripId});assert.equal((await read('carpoolTrips/'+tripId)).startedAt.toMillis(),started);
+  for(const row of [a,b])assert.equal((await read('carpoolBookings/'+row.bookingId)).status,'in_trip');
+  assert.equal((await read('carpoolBookings/'+c.bookingId)).status,'cancelled');
+  await assert.rejects(call('client1','cancelBooking',{tripId,bookingId:a.bookingId}));
+  await assert.rejects(call('driver','cancelTrip',{tripId,reason:'Передумал'}));
+  await assert.rejects(book('client4',tripId));
   assert.equal((await read('driverStates/driver')).activeOrderId,'carpool_'+tripId);
   await db.doc('drivers/30').update({carpoolCommissionRate:20,carpoolEnabled:false});
   await call('driver','complete',{tripId});await call('driver','complete',{tripId});
   const driver=await read('drivers/30');assert.equal(driver.balance,450);assert.equal(driver.carpoolReservedAmount,0);assert.equal(driver.carpoolActiveTripId,'');
-  assert.equal((await read('carpoolBookings/'+bookingId)).status,'completed');assert.equal((await read('carpoolClientState/client1')).activeCount,0);
-  const history=await read('balanceHistory/carpool_'+tripId);assert.equal(history.commissionRate,10);assert.equal(history.commissionAmount,450);assert.equal(history.difference,450);
+  for(const row of [a,b])assert.equal((await read('carpoolBookings/'+row.bookingId)).status,'completed');
+  for(const uid of ['client1','client2','client3'])assert.equal((await read('carpoolClientState/'+uid)).activeCount,0);
+  const history=await read('balanceHistory/carpool_'+tripId);assert.equal(history.commissionRate,10);assert.equal(history.commissionAmount,450);assert.equal(history.difference,450);assert.equal(history.commissionBaseAmount,4500);
   assert.equal((await read('driverStates/driver')).status,'available');
  });
- await test('disputed no-show is resolved by dispatcher, and cancellation releases seats once',async()=>{
+ await test('optional no-show dispute is excluded from start and resolved before settlement',async()=>{
   const {tripId}=await publish(),a=await book('client1',tripId,2),b=await book('client2',tripId,2);
   await call('driver','dispute',{tripId,bookingId:b.bookingId,reason:'Пассажир не отвечает'});
+  time+=45*60000;await call('driver','start',{tripId});
+  assert.equal((await read('carpoolBookings/'+a.bookingId)).status,'in_trip');
+  assert.equal((await read('carpoolBookings/'+b.bookingId)).status,'disputed');
+  await assert.rejects(call('driver','complete',{tripId}));
   await assert.rejects(call('driver','resolve',{tripId,bookingId:b.bookingId,outcome:'cancelled',reason:'Неявка'}));
   await call('admin','resolve',{tripId,bookingId:b.bookingId,outcome:'cancelled',reason:'Неявка подтверждена'});
-  assert.equal((await read('carpoolTrips/'+tripId)).availableSeats,2);assert.equal((await read('drivers/30')).carpoolReservedAmount,300);
-  await call('driver','cancelTrip',{tripId,reason:'Поломка'});await call('driver','cancelTrip',{tripId,reason:'Поломка'});
-  assert.equal((await read('carpoolBookings/'+a.bookingId)).status,'cancelled');assert.equal((await read('drivers/30')).carpoolReservedAmount,0);
-  assert.equal((await read('drivers/30')).balance,0);
+  assert.equal((await read('drivers/30')).carpoolReservedAmount,300);
+  await call('driver','complete',{tripId});assert.equal((await read('drivers/30')).balance,300);
+ });
+ await test('cancellation racing with start cannot charge a cancelled seat or corrupt reserves',async()=>{
+  const {tripId}=await publish();await book('client1',tripId);const b=await book('client2',tripId);time+=45*60000;
+  const [start,cancel]=await Promise.allSettled([call('driver','start',{tripId}),call('client2','cancelBooking',{tripId,bookingId:b.bookingId})]);
+  assert.equal(start.status,'fulfilled');
+  const cancelled=cancel.status==='fulfilled',expected=cancelled?150:300;
+  assert.equal((await read('carpoolBookings/'+b.bookingId)).status,cancelled?'cancelled':'in_trip');
+  assert.equal((await read('drivers/30')).carpoolReservedAmount,expected);
+  await call('driver','complete',{tripId});await call('driver','complete',{tripId});
+  assert.equal((await read('drivers/30')).balance,expected);assert.equal((await read('drivers/30')).carpoolReservedAmount,0);
+ });
+ await test('empty trip cannot start; dispatcher cancellation in transit releases all holds without commission',async()=>{
+  const {tripId}=await publish();time+=45*60000;await assert.rejects(call('driver','start',{tripId}));
+  const a=await book('client1',tripId,2);await call('driver','start',{tripId});
+  await call('admin','cancelTrip',{tripId,reason:'Поломка'});await call('admin','cancelTrip',{tripId,reason:'Поломка'});
+  assert.equal((await read('carpoolBookings/'+a.bookingId)).status,'cancelled');
+  assert.equal((await read('drivers/30')).balance,0);assert.equal((await read('drivers/30')).carpoolReservedAmount,0);
+  assert.equal((await read('driverStates/driver')).status,'available');assert.equal(await read('balanceHistory/carpool_'+tripId),undefined);
+ });
+ await test('legacy boarded bookings can start or finish without reading a code',async()=>{
+  for(const alreadyStarted of [false,true]){
+   await seed();const {tripId}=await publish(),{bookingId}=await book('client1',tripId);time+=45*60000;
+   await db.doc('carpoolBookings/'+bookingId).update({status:'boarded'});
+   await db.doc('carpoolBoardingCodes/'+bookingId).set({clientUid:'client1',code:'1234',attempts:5});
+   if(alreadyStarted){await db.doc('carpoolTrips/'+tripId).update({status:'in_trip'});await db.doc('driverStates/driver').update({status:'busy',activeOrderId:'carpool_'+tripId});}
+   else await call('driver','start',{tripId});
+   await call('driver','complete',{tripId});assert.equal((await read('drivers/30')).balance,150);
+   assert.equal(await read('carpoolBoardingCodes/'+bookingId),undefined);
+  }
  });
  console.log(`ALL ${passed} CARPOOL CHECKS PASSED`);
 }finally{await env.cleanup();await deleteApp(app);}

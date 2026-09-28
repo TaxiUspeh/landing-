@@ -1189,9 +1189,9 @@ service cloud.firestore {
       allow read: if signedIn() && (resource.data.driverUid == request.auth.uid || isAdmin());
       allow write: if false;
     }
+    // Legacy boarding codes are retired; the driver starts the whole trip.
     match /carpoolBoardingCodes/{bookingId} {
-      allow read: if signedIn() && resource.data.clientUid == request.auth.uid;
-      allow write: if false;
+      allow read, write: if false;
     }
 
     match /orders/{orderId} {

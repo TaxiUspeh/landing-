@@ -65,7 +65,7 @@ test('failed readiness can be retried and does not create an anonymous account',
 test('active bookings sort by departure and retain overdue uncompleted bookings', () => {
   const bookings = [{ id: 'later', status: 'confirmed', departureAt: { seconds: 30 } },
     { id: 'done', status: 'completed', departureAt: { seconds: 2 } },
-    { id: 'earlier', status: 'boarded', departureAt: { seconds: 10 } },
+    { id: 'earlier', status: 'in_trip', departureAt: { seconds: 10 } },
     { id: 'dispute', status: 'disputed', departureAt: { seconds: 20 } },
     { id: 'cancel', status: 'cancelled', departureAt: { seconds: 1 } }];
   assert.deepEqual(activeCarpoolBookings(bookings).map(booking => booking.id), ['earlier', 'dispute', 'later']);

@@ -30,7 +30,7 @@ async function setup() {
     user: async () => ({ uid: 'passenger' }), ready: async () => true,
     watchMine(uid, callback, error) { assert.equal(uid, 'passenger'); watches++; next = callback; fail = error; return () => {}; },
     watchTrips(filters, callback) { callback([]); return () => {}; },
-    read: async name => name === 'carpoolBoardingCodes' ? { code: '1234' } : { driverPhone: '+77000000001' },
+    read: async name => { assert.notEqual(name, 'carpoolBoardingCodes'); return { driverPhone: '+77000000001' }; },
     command: async () => ({}),
   };
   const store = createCarpoolBookings(); initBookingScreen();
@@ -52,7 +52,7 @@ assert.equal(query('[data-home-carpool-booking]'), null);
 assert.equal(query('[data-home-carpool] [data-carpool-booking]').dataset.carpoolBooking, 'near');
 assert.equal(query('[data-home-trip-count]').textContent, '2');
 assert.equal(query('[data-home-trip-count]').hidden, false);
-assert.equal(query('[data-home-carpool]').textContent.includes('1234'), false, 'Boarding code stays inside details');
+assert.doesNotMatch(get('carpoolClient').textContent, /Код посадки/);
 const services = [...document.querySelectorAll('.home-service-grid [data-home-service]')].map(node => node.dataset.homeService);
 assert.deepEqual(services.slice(0, 4), ['taxi', 'wagon', 'intercity', 'minivan']);
 query('[data-home-all-trips]').click();
@@ -77,6 +77,9 @@ get('bookingClose').click(); query('[data-home-current] button').click();
 assert.equal(window.bookingScreen.isCarpool(), false, 'Taxi summary opens the ordinary order');
 assert.equal(get('carpoolClient').hidden, true); get('bookingClose').click();
 
+f.next([{ ...booking, status: 'in_trip' }, later, past]); await flush();
+assert.match(query('[data-home-carpool]').textContent, /В пути/);
+assert.equal(query('[data-home-trip-count]').textContent, '3');
 f.next([{ ...booking, status: 'cancelled' }, later, past]); await flush();
 assert.equal(query('[data-home-carpool] [data-carpool-booking]').dataset.carpoolBooking, 'later');
 assert.equal(query('[data-home-trip-count]').textContent, '2');

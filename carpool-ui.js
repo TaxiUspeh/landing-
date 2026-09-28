@@ -1,11 +1,11 @@
 import { carpoolCityKey } from './functions/carpool-cities.mjs?v=79';
-import { carpoolBookings } from './carpool-bookings.js?v=80';
+import { carpoolBookings } from './carpool-bookings.js?v=81';
 export { carpoolCityKey };
 export const carpoolMillis = value => value?.toMillis?.() ?? (value?.seconds ? value.seconds * 1000 : 0);
 export const carpoolMoney = value => `${Number(value).toLocaleString('ru-RU')} ₸`;
 export const carpoolDate = value => new Intl.DateTimeFormat('ru-RU', { timeZone: 'Asia/Almaty', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }).format(carpoolMillis(value));
 export const carpoolDay = (now = Date.now()) => new Date(now + 5 * 3600000).toISOString().slice(0, 10);
-export const carpoolStatus = status => ({open:'Идёт набор',closed:'Бронирование закрыто',in_trip:'В пути',completed:'Поездка завершена',cancelled:'Отменено',confirmed:'Места забронированы',boarded:'Посадка подтверждена',disputed:'Проверяет диспетчер'})[status] || status;
+export const carpoolStatus = status => ({open:'Идёт набор',closed:'Бронирование закрыто',in_trip:'В пути',completed:'Поездка завершена',cancelled:'Отменено',confirmed:'Места забронированы',boarded:'Бронь подтверждена',disputed:'Проверяет диспетчер'})[status] || status;
 export function el(tag, text = '', cls = '') { const node = document.createElement(tag); node.textContent = text; if (cls) node.className = cls; return node; }
 export function button(text, action, cls = '') { const node = el('button', text, cls); node.type = 'button'; node.addEventListener('click', action); return node; }
 export function field(form, title, name, value = '', type = 'text', required = true) {
@@ -112,14 +112,13 @@ export function initCarpoolClient(host, api, bookingsStore = carpoolBookings) {
       }));
       card.append(message); mine.append(card);
       focusBooking();
-      if (['confirmed', 'boarded', 'disputed'].includes(booking.status)) void loadContact(booking, card, message, request);
+      if (['confirmed', 'in_trip', 'boarded', 'disputed'].includes(booking.status)) void loadContact(booking, card, message, request);
     }
   }
   async function loadContact(booking, card, message, request) {
     try {
-      const [contact, secret] = await Promise.all([api.read('carpoolContacts', booking.id), booking.status === 'confirmed' ? api.read('carpoolBoardingCodes', booking.id) : null]);
+      const contact = await api.read('carpoolContacts', booking.id);
       if (request !== revision) return;
-      if (secret) card.append(el('strong', `Код посадки: ${secret.code}`, 'carpool-code'), el('p', 'Сообщите код водителю при посадке.'));
       card.append(callLink(contact?.driverPhone, 'Позвонить водителю'), callLink('', 'Позвонить диспетчеру'));
     } catch { if (request === revision) report(message, 'Контакты временно недоступны. Позвоните диспетчеру.', true); }
   }

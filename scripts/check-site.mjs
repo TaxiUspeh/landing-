@@ -63,7 +63,7 @@ for (const expected of [
   'href="./drivers.html"',
   'Заказать онлайн',
   'Через WhatsApp',
-  'src="./client-orders.js?v=82"'
+  'src="./client-orders.js?v=84"'
 ]) {
   if (!index.includes(expected)) failures.push('index.html: missing hybrid online order behavior ' + expected);
 }
@@ -327,7 +327,7 @@ const tailwindConfig = await readFile('tailwind.config.cjs', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
 const dispatcherQuickSearchHtml = await readFile('dispatcher.html', 'utf8');
 const dispatcherQuickSearchScript = await readFile('dispatcher.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v83-carpool-auth'")) failures.push('service-worker.js: map booking cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v84-address-labels'")) failures.push('service-worker.js: map booking cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("'./styles/tailwind.css'")) failures.push('service-worker.js: local Tailwind stylesheet is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
@@ -367,7 +367,7 @@ for (const expected of [
   "'./dispatcher.html'",
   "'./dispatcher.js?v=83'",
   "'./firebase-config.js'",
-  "'./client-orders.js?v=82'",
+  "'./client-orders.js?v=84'",
   "'./client-home.js?v=82'",
   "'./styles/client-home.css?v=80'",
   'const cachedPage = await caches.match(event.request)'

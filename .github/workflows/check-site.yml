@@ -33,6 +33,7 @@ jobs:
           node carpool-home-ui.test.mjs
           node vehicle-ui.test.mjs
           node client-home-ui.test.mjs
+          node booking-address-ui.test.mjs
           node compact-booking-ui.test.mjs
           node driver-cabinet-ui.test.mjs
           node driver-push-ui.test.mjs

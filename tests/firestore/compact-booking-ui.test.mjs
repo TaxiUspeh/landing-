@@ -216,7 +216,7 @@ window.L={marker:()=>marker,divIcon:()=>({}),geoJSON:()=>({addTo(){return this;}
 window.simMap={getCenter:()=>center,invalidateSize(){},setView(){},removeLayer(){},fitBounds(){},off(){},on(){}};
 get('bookingTo').click();get('bookingOnMap').click();get('bookingPickConfirm').click();
 assert.equal(get('bookingPickConfirm').disabled,true);
-await new Promise(resolve=>setTimeout(resolve,2600));
+await new Promise(resolve=>setTimeout(resolve,8600));
 const mapDestination=window.bookingScreen.orderRoute('taxi').to;
 assert.equal(mapDestination.city,'');assert.equal(mapDestination.lat,center.lat);assert.equal(mapDestination.lon,center.lng);
 assert.match(get('bookingToValue').textContent,/Точка на карте: 50.87654, 82.65432/);

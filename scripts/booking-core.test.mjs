@@ -54,3 +54,23 @@ test('temporary geocoder failures can be retried and do not poison the request q
   assert.equal((await geocoder.search('Юбилейная, Белоусовка')).length, 1);
   assert.equal(attempts, 2);
 });
+
+test('settlement and city-only results retain a readable address without duplicating the city', () => {
+  const place = photonPoint({ geometry:{coordinates:[82,50]}, properties:{osm_key:'place',name:'Belousovka'} });
+  assert.equal(addressWithCity(place),'Belousovka');
+  const cityOnly = photonPoint({ geometry:{coordinates:[82,50]}, properties:{city:'Белоусовка'} });
+  assert.equal(cityOnly.address,'Белоусовка');assert.equal(addressWithCity(cityOnly),'Белоусовка');
+  assert.equal(addressWithCity({address:'Жукова',city:'Белоусовка'}),'Жукова, Белоусовка');
+});
+
+test('stalled and queued requests have a total deadline, are evicted and can be retried', async () => {
+  let fail=true, calls=0;
+  const geocoder=createGeocoder({interval:0,timeout:30,fetcher:async()=>{
+    calls++;if(fail)return new Promise(()=>{});return {ok:true,json:async()=>({features:[feature()]})};
+  }});
+  const results=await Promise.allSettled([geocoder.search('first'),geocoder.search('second')]);
+  assert.ok(results.every(result=>result.status==='rejected'));
+  fail=false;
+  assert.equal((await geocoder.search('first')).length,1,'expired cached promise is replaced');
+  assert.ok(calls<=3);
+});

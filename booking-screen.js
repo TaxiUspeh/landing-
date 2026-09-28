@@ -5,9 +5,9 @@ import { DEFAULT_CUSTOMER_PRICING, priceLabel } from './customer-pricing.js?v=78
 import { deliveryCityKey, deliveryPickupMode } from './delivery-pricing.js?v=78';
 import { createBookingSheet } from './booking-sheet.js?v=54';
 import { categoryForService, categoryCaption } from './vehicle-categories.js?v=78';
-import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=78';
+import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=84';
 
-export function initBookingScreen({ preview = false } = {}) {
+export function initBookingScreen({ preview = false, geocoder = createGeocoder() } = {}) {
   const $ = id => document.getElementById(id);
   const overlay = $('mapModal');
   if (!overlay || window.bookingScreen) return;
@@ -15,7 +15,6 @@ export function initBookingScreen({ preview = false } = {}) {
   const originalClose = window.closeModal;
   const mapElement = $('simulationMap');
   const mapMessage = $('mapOverlayText');
-  const geocoder = createGeocoder();
   const emptyPoint = () => ({ address: '', city: 'Белоусовка', lat: null, lon: null });
   const state = { mode: 'taxi', intercityKind: 'whole', category: 'taxi', from: emptyPoint(), to: emptyPoint(), stops: [], details: '', note: '', passengerCount: 5, service: BOOKING_SERVICES[0], channel: 'online', revision: 0 };
   let opened = false, returnFocus = null, pickerTarget = null, pickerRevision = 0;
@@ -541,33 +540,43 @@ export function initBookingScreen({ preview = false } = {}) {
     const revision = ++searchRevision;
     $('bookingSearchStatus').textContent = 'Ищем адрес…';
     $('bookingSearchResults').replaceChildren();
-    try {
-      const center = Number.isFinite(state.from.lat) ? state.from : undefined;
-      // Include selected locality, but do not duplicate a city already written in the query.
-      const text = city && !query.toLowerCase().includes(city.toLowerCase()) ? `${query}, ${city}, Казахстан` : `${query}, Казахстан`;
-      let results = await geocoder.search(text, center);
-      if (revision !== searchRevision || $('bookingPicker').hidden) return;
-      if (city && !query.toLowerCase().includes(city.toLowerCase())) {
-        const nearby = await geocoder.search(`${query}, Казахстан`, center);
-        const seen = new Set(results.map(point => pointKey(point.address, point.city)));
-        for (const point of nearby) if (!seen.has(pointKey(point.address, point.city))) { results.push(point); seen.add(pointKey(point.address, point.city)); }
-      }
-      if (revision !== searchRevision || $('bookingPicker').hidden) return;
+    const center = Number.isFinite(state.from.lat) ? state.from : undefined;
+    const scoped = city && !query.toLowerCase().includes(city.toLowerCase());
+    const text = scoped ? `${query}, ${city}, Казахстан` : `${query}, Казахстан`;
+    let results = [];
+    const current = () => revision === searchRevision && !$('bookingPicker').hidden;
+    function renderResults(pending = false, failed = false) {
+      if (!current()) return;
       results = results.filter(p => !p.country || p.country.toUpperCase() === 'KZ').sort((a, b) => Number(b.city === city) - Number(a.city === city)).slice(0, 10);
-      $('bookingSearchStatus').textContent = results.length ? 'Выберите адрес. Проверьте населённый пункт.' : 'Адрес не найден в справочнике. Можно использовать введённый адрес или выбрать точку на карте.';
+      $('bookingSearchStatus').textContent = results.length ? 'Выберите адрес. Проверьте населённый пункт.'
+        : pending ? 'Ищем адрес… Можно использовать введённый адрес без ожидания.'
+        : failed ? 'Поиск временно недоступен. Можно ввести адрес вручную или выбрать точку на карте.'
+        : 'Адрес не найден в справочнике. Можно использовать введённый адрес или выбрать точку на карте.';
+      $('bookingSearchResults').replaceChildren();
       for (const point of results) {
         const button = document.createElement('button'); button.type = 'button'; button.className = 'booking-result';
         const icon = document.createElement('i'); icon.className = 'fas fa-map-marker-alt'; icon.setAttribute('aria-hidden', 'true');
         const copy = document.createElement('span'); const title = document.createElement('strong'); title.textContent = point.address;
         const context = document.createElement('small'); context.textContent = [point.city || 'Уточните населённый пункт', point.context].filter(Boolean).join(' · ');
         copy.append(title, context); button.append(icon, copy);
-        button.onclick = () => {
-          applyPoint(point);
-        };
+        button.onclick = () => applyPoint(point);
         $('bookingSearchResults').append(button);
       }
-    } catch { if (revision === searchRevision) $('bookingSearchStatus').textContent = 'Поиск временно недоступен. Можно ввести адрес вручную или выбрать точку на карте.'; }
+    }
+    const first = await geocoder.search(text, center).catch(() => null);
+    if (!current()) return;
+    results = first || [];
+    // Show usable results immediately; an optional broader search must not hide or discard them.
+    renderResults(Boolean(scoped), first === null);
+    if (!scoped) return;
+    const nearby = await geocoder.search(`${query}, Казахстан`, center).catch(() => null);
+    if (!current()) return;
+    if (!nearby?.length && results.length) return;
+    const seen = new Set(results.map(point => pointKey(point.address, point.city)));
+    for (const point of nearby || []) if (!seen.has(pointKey(point.address, point.city))) { results.push(point); seen.add(pointKey(point.address, point.city)); }
+    renderResults(false, first === null || nearby === null);
   }
+
   function manualAddress() {
     const address = $('bookingSearchInput').value.trim(); const city = normalizeCity($('bookingSearchCity').value);
     if (!address) { $('bookingSearchStatus').textContent = 'Укажите адрес или выберите точку на карте.'; return; }
@@ -604,12 +613,12 @@ export function initBookingScreen({ preview = false } = {}) {
     $('bookingPickConfirm').disabled = true;
     $('bookingPickConfirm').textContent = 'Определяем адрес…';
     try {
-      const results = await within(geocoder.reverse(coordinates.lat, coordinates.lon), 2500, []);
+      const results = await within(geocoder.reverse(coordinates.lat, coordinates.lon), 8500, []);
       if (revision !== pickerRevision || target !== pickerTarget || !opened) return;
       const point = results[0];
-      const found = point?.address && !point.isSettlement;
+      const found = Boolean(point?.address);
       applyPoint(found ? { ...point, ...coordinates } : coordinatePoint(coordinates));
-      $('bookingLocationStatus').textContent = found ? 'Проверьте адрес выбранной точки и уточните дом.'
+      $('bookingLocationStatus').textContent = found ? (point.isSettlement ? 'Населённый пункт определён. Точная точка сохранена; уточните улицу или ориентир.' : 'Проверьте адрес выбранной точки и уточните дом.')
         : 'Точка сохранена. Водитель получит координаты. Укажите ориентир и место подъезда в пожеланиях.';
     } finally { $('bookingPickConfirm').disabled = false; $('bookingPickConfirm').textContent = 'Выбрать эту точку'; }
   }
@@ -626,11 +635,11 @@ export function initBookingScreen({ preview = false } = {}) {
     }
     $('bookingLocationStatus').textContent = 'Определяем улицу и дом…';
     try {
-      const results = await within(geocoder.reverse(lat, lon), 2500, []);
+      const results = await within(geocoder.reverse(lat, lon), 8500, []);
       if (!opened || request !== locationRequest || revision !== originRevision) return;
       locating = false;
       const point = results[0];
-      if (!point?.address || point.isSettlement) {
+      if (!point?.address) {
         state.from = coordinatePoint({ lat, lon }); state.details = '';
         if (!state.to.address) state.to.city = '';
         $('bookingLocationStatus').textContent = 'Место подачи сохранено по координатам. Уточните точку или добавьте ориентир в пожеланиях.';
@@ -639,7 +648,7 @@ export function initBookingScreen({ preview = false } = {}) {
       state.from = { ...point, lat, lon, address: point.street || point.address };
       state.details = point.house || '';
       if (!state.to.address) state.to.city = point.city;
-      $('bookingLocationStatus').textContent = 'Адрес определён. Проверьте дом и подъезд.';
+      $('bookingLocationStatus').textContent = point.isSettlement ? 'Населённый пункт определён. Точная точка сохранена; уточните улицу или ориентир.' : 'Адрес определён. Проверьте дом и подъезд.';
       changed(); window.simMap?.setView([lat, lon], 16);
     } catch {
       if (opened && request === locationRequest && revision === originRevision) {

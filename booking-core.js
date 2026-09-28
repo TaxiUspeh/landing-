@@ -34,7 +34,8 @@ export function photonPoint(feature) {
   const city = normalizeCity(p.city || p.town || p.village || p.locality || (p.osm_key === 'place' ? p.name : '') || '');
   const street = p.street || p.name || '';
   if (!street && !city) return null;
-  return { city, address: [street, p.housenumber].filter(Boolean).join(', '), street, house: p.housenumber || '', lat, lon, country: p.countrycode || '', isSettlement: p.osm_key === 'place', context: [p.district, p.state].filter(Boolean).join(', ') };
+  const isSettlement = !p.housenumber && (!street || (p.osm_key === 'place' && !p.street));
+  return { city, address: [street, p.housenumber].filter(Boolean).join(', ') || city, street, house: p.housenumber || '', lat, lon, country: p.countrycode || '', isSettlement, context: [p.district, p.state].filter(Boolean).join(', ') };
 }
 
 export function parseHouseDetails(value = '') {
@@ -48,6 +49,7 @@ export function completeAddress(point, details = '') {
 
 export function addressWithCity(point, details = '') {
   const address = completeAddress(point, details);
+  if (normalizeCity(address).toLowerCase() === normalizeCity(point.city || '').toLowerCase()) return address;
   return address ? [address, point.city].filter(Boolean).join(', ') : '';
 }
 
@@ -57,26 +59,30 @@ export function serviceWishes(note, service) {
 
 // Only geography is sent to Photon; passenger contacts, entrance and notes stay out of requests.
 // Requests are serialized, deduplicated and kept in memory for this page session.
-export function createGeocoder({ fetcher = globalThis.fetch, baseUrl = 'https://photon.komoot.io', interval = 1100 } = {}) {
+export function createGeocoder({ fetcher = globalThis.fetch, baseUrl = 'https://photon.komoot.io', interval = 1100, timeout = 8000 } = {}) {
   const cache = new Map();
   let tail = Promise.resolve();
   let lastRequest = 0;
   function request(path, params) {
     const url = `${baseUrl}${path}?${new URLSearchParams(params)}`;
     if (cache.has(url)) return cache.get(url);
-    const promise = tail.catch(() => {}).then(async () => {
+    const controller = new AbortController();
+    let timer;
+    // Bound queue time as well as network time. Expired jobs must not delay later lookups.
+    const expiration = new Promise((_, reject) => {
+      timer = setTimeout(() => { controller.abort(); reject(new Error('Address lookup timed out')); }, timeout);
+    });
+    const work = tail.catch(() => {}).then(async () => {
       const delay = interval - (Date.now() - lastRequest);
       if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay));
+      if (controller.signal.aborted) throw new Error('Address lookup expired in queue');
       lastRequest = Date.now();
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 9000);
-      try {
-        const response = await fetcher(url, { signal: controller.signal });
-        if (!response.ok) throw new Error('Address service unavailable');
-        const body = await response.json();
-        return (body.features || []).map(photonPoint).filter(Boolean);
-      } finally { clearTimeout(timeout); }
+      const response = await fetcher(url, { signal: controller.signal });
+      if (!response.ok) throw new Error('Address service unavailable');
+      const body = await response.json();
+      return (body.features || []).map(photonPoint).filter(Boolean);
     });
+    const promise = Promise.race([work, expiration]).finally(() => clearTimeout(timer));
     cache.set(url, promise);
     tail = promise;
     promise.catch(() => cache.delete(url));

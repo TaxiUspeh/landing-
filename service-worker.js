@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v83-carpool-auth';
+const CACHE_NAME = 'taxi-uspeh-v84-address-labels';
 const APP_SHELL = [
   './carpool-common.js?v=82',
   './carpool-feed.js?v=82',
@@ -40,14 +40,14 @@ const APP_SHELL = [
   './styles/auction.css?v=51',
   './styles/tailwind.css',
   './styles/booking-screen.css?v=68',
-  './booking-screen.js?v=82',
+  './booking-screen.js?v=84',
   './booking-route.js?v=78',
   './booking-sheet.js?v=54',
-  './booking-core.js?v=78',
+  './booking-core.js?v=84',
   './taxi-pricing.js?v=78',
   './pricing-adjustments.js?v=63',
   './delivery-pricing.js?v=78',
-  './client-orders.js?v=82',
+  './client-orders.js?v=84',
   './holiday-calendar.js',
   './drivers.html',
   './drivers.webmanifest',

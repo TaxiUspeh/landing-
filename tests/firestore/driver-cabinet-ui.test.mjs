@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 import { JSDOM } from 'jsdom';
+import { initCarpoolWork } from '../../carpool-work.js';
 import { initDriverCabinet } from '../../driver-cabinet.js';
 import * as finance from '../../driver-finance.js';
 import * as categories from '../../vehicle-categories.js';
@@ -22,8 +23,16 @@ const get = id => document.getElementById(id);
 const original = Object.fromEntries(['driver-logout-button','driver-dispatcher-chat-form','driver-mobile-share','driver-install-app-button'].map(id=>[id,get(id)]));
 const events = [];
 let authListener;
+let demandListener, demandStops = 0;
+const requestRows = [{ id:'request-astana', status:'open', fromCity:'Усть-Каменогорск', toCity:'Астана', seats:1, departureAt:{seconds:Date.now()/1000+86400} }];
+const carpoolApi = {
+    ready:async()=>true, simpleJourneyReady:async()=>true, hubReady:async()=>true,
+    watchDriverTrips(_uid, cb){ cb([]); return ()=>{}; },
+    watchRequests(_count, cb){ demandListener=cb; cb(requestRows); return ()=>{demandStops++;}; },
+    read:async()=>({name:'Пассажир',phone:'+77000000002'})
+};
 const context = vm.createContext({
-        initCarpoolWork:()=>({destroy(){},setContext:async()=>{}}), createCarpoolApi:()=>({}),
+        initCarpoolWork, createCarpoolApi:()=>carpoolApi,
     ...cargo, createCargoWorkControls, ...finance, ...categories, ...auction, navigationRoute, initDriverCabinet, orderTimeInfo, normalizeCity, priceDescription,
     document, window, navigator:window.navigator, localStorage:window.localStorage,
     URLSearchParams, console, setTimeout:()=>1, clearTimeout:()=>{}, setInterval:()=>1, clearInterval:()=>{},
@@ -193,6 +202,28 @@ assert.equal(publicInfo.children.length,1);
 assert.ok(get('driver-mobile-share').closest('.cabinet-legacy-bar'));
 assert.ok(get('driver-install-app-button').closest('#driver-install-offer'));
 assert.ok(get('driver-user-name').closest('#driver-signed-in'));
+// Real portal auth teardown must preserve the reusable demand UI, including on first sign-in.
+const workHost=get('driver-view-carpool');
+const profile={status:'active',carpoolEnabled:true,passengerEnabled:true,passengerSeats:4};
+const flush=()=>new Promise(resolve=>setTimeout(resolve,0));
+for (const uid of ['driver-a','driver-a','driver-b']) {
+    await run('carpoolWork').setContext({uid},profile);
+    [...workHost.querySelectorAll('button')].find(b=>b.textContent==='Заявки от пассажиров').click();
+    await flush();
+    assert.ok(workHost.querySelector('h2'), 'auth reset preserves the demand heading');
+    assert.match(workHost.textContent,/Усть-Каменогорск → Астана/);
+    assert.ok(workHost.querySelector('[data-request-id="request-astana"]'), 'request is attached to the live cabinet');
+    [...workHost.querySelectorAll('button')].find(b=>b.textContent==='Связаться с пассажиром').click();
+    await flush();
+    assert.ok(workHost.querySelector('a[href="tel:+77000000002"]'));
+    const late=demandListener, previousStops=demandStops;
+    authListener(null);
+    assert.ok(demandStops>previousStops, 'sign-out stops the demand subscription');
+    late(requestRows);
+    assert.equal(workHost.querySelector('[data-request-id]'),null, 'late callbacks cannot restore private data');
+    assert.equal(workHost.querySelector('a[href^="tel:"]'),null);
+}
+run('carpoolWork.destroy()');
 await Promise.resolve();
 dom.window.close();
 console.log('PASS: 10 orders, preserved handlers, navigation, finance, chat, active steps, cancellation, history and sign-out');

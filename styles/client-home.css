@@ -63,6 +63,15 @@ body.client-home { --home-bg:#f3f6fb; --home-paper:#fff; --home-text:#172b50; --
 .home-current strong, .home-trip strong { font-size:16px; font-weight:750; }
 .home-current span { font-size:13px; line-height:1.5; }
 .home-current b { font-size:13px; color:var(--home-blue); margin-top:4px; }
+.home-carpool { line-height:1.45; }
+.home-carpool b { font-size:13px; color:var(--home-blue); }
+.home-main .home-all-trips { padding:10px 14px; margin:-4px 0 12px; color:var(--home-blue); background:var(--home-paper); border:1px solid var(--home-line); border-radius:12px; font-size:13px; font-weight:700; }
+.home-carpool-history summary { cursor:pointer; padding:12px 0; font-size:14px; font-weight:700; color:var(--home-text); }
+.home-carpool-message { padding:12px 14px; margin:0 0 12px; border:1px solid var(--home-line); background:var(--home-paper); border-radius:14px; font-size:13px; line-height:1.5; overflow-wrap:anywhere; }
+.home-carpool-message button { padding:8px 12px 0 0; color:var(--home-blue); font-weight:700; }
+.home-nav [data-home-go="trips"] { position:relative; }
+.home-nav .home-nav-count { position:absolute; top:2px; left:calc(50% + 10px); display:grid; place-items:center; min-width:20px; height:20px; padding:0 5px; border-radius:12px; background:#facc15; color:#172554; border:2px solid var(--home-paper); font-size:11px; font-weight:800; }
+.home-nav [hidden] { display:none!important; }
 .home-footer { color:var(--home-muted); font-size:12px; line-height:1.7; text-align:center; margin:24px 0 8px; }
 .home-footer a { color:var(--home-blue); text-decoration:underline; display:inline-block; padding:10px; }
 .home-main #locationBtn { background:var(--home-paper); color:var(--home-text); border:1px solid var(--home-line); font-size:14px; padding:13px 14px; border-radius:16px; }

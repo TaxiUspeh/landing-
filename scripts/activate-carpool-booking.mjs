@@ -17,7 +17,7 @@ export function matchesIndex(expected, actual) {
 
 export async function activateCarpool({
   token, wanted, fetchImpl = fetch, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
-  log = console.log, attempts = 120, simpleJourney = false,
+  log = console.log, attempts = 120, simpleJourney = false, passengerHub = false,
 }) {
   if (!token) throw new Error('Не получен доступ Google Cloud Shell. Проверьте вход в Google-аккаунт.');
   if (!wanted?.length) throw new Error('В файле firestore.indexes.json не найдены индексы попуток.');
@@ -57,19 +57,22 @@ export async function activateCarpool({
     if (attempt % 6 === 0) log('Ожидаем готовности индексов попуток…');
     if (attempt + 1 < attempts) await sleep(5000);
   }
-  if (!ready) throw new Error(simpleJourney
-    ? 'Индексы ещё строятся или отсутствуют. Поездки без кода не включены. Повторите полный deploy-carpool-booking.sh через несколько минут.'
+  if (!ready) throw new Error(simpleJourney || passengerHub
+    ? 'Индексы ещё строятся или отсутствуют. Новые возможности попуток не включены. Повторите полный deploy-carpool-booking.sh через несколько минут.'
     : 'Индексы ещё строятся или отсутствуют. Попутки не включены. После успешной публикации повторите команду с --activate-only через несколько минут.');
   const url = new URL(`${database}/documents/settings/carpoolBooking`);
   url.searchParams.append('updateMask.fieldPaths', 'schemaVersion');
   url.searchParams.append('updateMask.fieldPaths', 'updatedAt');
   if (simpleJourney) url.searchParams.append('updateMask.fieldPaths', 'journeyVersion');
+  if (passengerHub) url.searchParams.append('updateMask.fieldPaths', 'hubVersion');
   await request(url, {
     method: 'PATCH', headers: { ...headers, 'Content-Type': 'application/json' },
     body: JSON.stringify({ fields: { schemaVersion: { integerValue: '1' }, updatedAt: { timestampValue: new Date().toISOString() },
-      ...(simpleJourney ? { journeyVersion: { integerValue: '2' } } : {}) } }),
+      ...(simpleJourney ? { journeyVersion: { integerValue: '2' } } : {}),
+      ...(passengerHub ? { hubVersion: { integerValue: '1' } } : {}) } }),
   }, 'Не удалось включить попутки');
   log('Попутки подключены. Обновите страницы. В карточках легковых водителей включите «Попутки» и задайте комиссию, если она отличается от такси.');
+  if (passengerHub) log('Заявки пассажиров и общая лента рейсов подключены.');
   if (simpleJourney) log('Поездки без кода подключены: «Начать поездку» → «Завершить поездку».');
 }
 
@@ -77,9 +80,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   try {
     const token = execFileSync('gcloud', ['auth', 'print-access-token'], { encoding: 'utf8' }).trim();
     const spec = JSON.parse(readFileSync(new URL('../firestore.indexes.json', import.meta.url), 'utf8'));
-    if (process.argv.slice(2).some(arg => arg !== '--simple-journey')) throw new Error('Неизвестный параметр подключения.');
-    await activateCarpool({ token, wanted: spec.indexes.filter(index => index.collectionGroup.startsWith('carpool')),
-      simpleJourney: process.argv.includes('--simple-journey') });
+    if (process.argv.slice(2).some(arg => !['--simple-journey', '--passenger-hub'].includes(arg))) throw new Error('Неизвестный параметр подключения.');
+    await activateCarpool({ token, wanted: spec.indexes.filter(index => index.collectionGroup.startsWith('carpool') || index.collectionGroup === 'passenger_requests'),
+      simpleJourney: process.argv.includes('--simple-journey'), passengerHub: process.argv.includes('--passenger-hub') });
   } catch (error) {
     console.error(`Ошибка подключения попуток: ${error.message}`);
     process.exitCode = 1;

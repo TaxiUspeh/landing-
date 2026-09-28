@@ -1173,6 +1173,24 @@ service cloud.firestore {
 
 
     // Poputki commands use callable functions. Public trip cards contain no phone numbers.
+    function mayReadPassengerRequests() {
+      return mayOpenOrders()
+        && get(linkedDriverDocument()).data.get('passengerEnabled', true) == true
+        && get(linkedDriverDocument()).data.get('passengerStatus', 'active') == 'active'
+        && get(linkedDriverDocument()).data.get('carpoolEnabled', false) == true;
+    }
+    match /passenger_requests/{requestId} {
+      allow read: if signedIn() && (resource.data.clientUid == request.auth.uid || isAdmin()
+        || (mayReadPassengerRequests() && resource.data.status == 'open'));
+      allow write: if false;
+    }
+    match /passenger_request_contacts/{requestId} {
+      allow get: if signedIn() && (resource.data.clientUid == request.auth.uid || isAdmin()
+        || (mayReadPassengerRequests()
+          && get(/databases/$(database)/documents/passenger_requests/$(requestId)).data.status == 'open'
+          && get(/databases/$(database)/documents/passenger_requests/$(requestId)).data.departureAt > request.time));
+      allow list, write: if false;
+    }
     match /carpoolTrips/{tripId} {
       allow read: if signedIn();
       allow write: if false;

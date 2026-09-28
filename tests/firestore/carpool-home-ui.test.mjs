@@ -4,6 +4,7 @@ import { JSDOM } from 'jsdom';
 import { initBookingScreen } from '../../booking-screen.js';
 import { initClientHome } from '../../client-home.js';
 import { initCarpoolClient } from '../../carpool-ui.js';
+import { createPassengerRequests } from '../../passenger-request-store.js';
 import { createCarpoolBookings } from '../../carpool-bookings.js';
 
 const html = await readFile(new URL('../../index.html', import.meta.url), 'utf8');
@@ -27,20 +28,20 @@ async function setup() {
   let next, authChanged, fail, watches = 0;
   const api = {
     onUser(callback) { authChanged = callback; callback({ uid: 'passenger' }); return () => {}; },
-    user: async () => ({ uid: 'passenger' }), ready: async () => true,
+    user: async () => ({ uid: 'passenger' }), ready: async () => true, hubReady: async () => true, watchMyRequests: (_uid, cb) => { cb([]); return () => {}; },
     watchMine(uid, callback, error) { assert.equal(uid, 'passenger'); watches++; next = callback; fail = error; return () => {}; },
     watchTrips(filters, callback) { callback([]); return () => {}; },
     read: async name => { assert.notEqual(name, 'carpoolBoardingCodes'); return { driverPhone: '+77000000001' }; },
     command: async () => ({}),
   };
-  const store = createCarpoolBookings(); initBookingScreen();
-  const ui = initCarpoolClient(document.getElementById('carpoolClient'), api, store);
+  const store = createCarpoolBookings(), requestsStore = createPassengerRequests(); initBookingScreen();
+  const ui = initCarpoolClient(document.getElementById('carpoolClient'), api, store, requestsStore);
   await flush(); next([later, past, booking]); await flush();
   // Home initializes after the initial snapshot: it must replay it immediately.
-  initClientHome({ bookingsStore: store });
+  initClientHome({ bookingsStore: store, requestsStore });
   return { dom, ui, store, get watches() { return watches; }, next: rows => next(rows), fail: () => fail(new Error('offline')),
     logout: () => authChanged(null),
-    async close() { ui.destroy(); store.destroy(); await new Promise(resolve => setTimeout(resolve, 180)); dom.window.close(); } };
+    async close() { ui.destroy(); store.destroy(); requestsStore.destroy(); await new Promise(resolve => setTimeout(resolve, 180)); dom.window.close(); } };
 }
 
 let f = await setup();

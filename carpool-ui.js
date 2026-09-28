@@ -1,53 +1,30 @@
-import { carpoolCityKey } from './functions/carpool-cities.mjs?v=79';
-import { carpoolBookings } from './carpool-bookings.js?v=81';
-export { carpoolCityKey };
-export const carpoolMillis = value => value?.toMillis?.() ?? (value?.seconds ? value.seconds * 1000 : 0);
-export const carpoolMoney = value => `${Number(value).toLocaleString('ru-RU')} ₸`;
-export const carpoolDate = value => new Intl.DateTimeFormat('ru-RU', { timeZone: 'Asia/Almaty', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }).format(carpoolMillis(value));
-export const carpoolDay = (now = Date.now()) => new Date(now + 5 * 3600000).toISOString().slice(0, 10);
-export const carpoolStatus = status => ({open:'Идёт набор',closed:'Бронирование закрыто',in_trip:'В пути',completed:'Поездка завершена',cancelled:'Отменено',confirmed:'Места забронированы',boarded:'Бронь подтверждена',disputed:'Проверяет диспетчер'})[status] || status;
-export function el(tag, text = '', cls = '') { const node = document.createElement(tag); node.textContent = text; if (cls) node.className = cls; return node; }
-export function button(text, action, cls = '') { const node = el('button', text, cls); node.type = 'button'; node.addEventListener('click', action); return node; }
-export function field(form, title, name, value = '', type = 'text', required = true) {
-  const label = el('label', title), input = document.createElement(type === 'textarea' ? 'textarea' : 'input');
-  if (type !== 'textarea') input.type = type;
-  input.name = name; input.value = value; input.required = required; label.append(input); form.append(label); return input;
-}
-export function report(host, text, error = false) { host.textContent = text; host.classList.toggle('carpool-error', error); }
-export async function run(control, status, task) {
-  if (control.disabled) return;
-  control.disabled = true; report(status, 'Сохраняем…');
-  try { await task(); report(status, 'Сохранено.'); } catch (error) { report(status, error.message || 'Не удалось сохранить. Повторите попытку.', true); }
-  finally { control.disabled = false; }
-}
-export function tripCard(trip) {
-  const card = el('article', '', 'carpool-card');
-  card.append(el('p', carpoolStatus(trip.status), 'carpool-badge'), el('h3', `${trip.fromCity} → ${trip.toCity}`),
-    el('p', carpoolDate(trip.departureAt), 'carpool-time'), el('p', `${trip.driverName} · ID ${trip.driverId} · ${trip.car || 'Автомобиль'}`),
-    el('p', `Посадка: ${trip.pickup}`), el('p', `Высадка: ${trip.dropoff}`),
-    el('p', `Свободно ${trip.availableSeats} из ${trip.totalSeats} мест`), el('strong', `${carpoolMoney(trip.seatPrice)} за место`, 'carpool-price'));
-  if (trip.luggage) card.append(el('p', `Багаж: ${trip.luggage}`));
-  return card;
-}
-export function callLink(phone, label = 'Позвонить') {
-  const link = el('a', label, 'carpool-call');
-  if (/^\+?\d{10,15}$/.test(phone || '')) link.href = 'tel:' + phone;
-  else { link.href = 'tel:+77770649648'; link.textContent = 'Позвонить диспетчеру'; }
-  return link;
-}
-export function initCarpoolClient(host, api, bookingsStore = carpoolBookings) {
+import { carpoolBookings } from './carpool-bookings.js?v=82';
+import { el, button, field, report, run, tripCard, callLink, carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis, carpoolDay, carpoolCityKey } from './carpool-common.js?v=82';
+import { passengerRequests } from './passenger-request-store.js?v=82';
+import { initPassengerRequests } from './carpool-requests.js?v=82';
+export * from './carpool-common.js?v=82';
+export function initCarpoolClient(host, api, bookingsStore = carpoolBookings, requestsStore = passengerRequests) {
   if (!host || host.dataset.ready) return;
   host.dataset.ready = 'true'; host.classList.add('carpool');
   const status = el('p', '', 'carpool-status'); status.setAttribute('role', 'status');
   const search = el('form', '', 'carpool-form carpool-search');
-  const from = field(search, 'Откуда', 'fromCity', 'Белоусовка'), to = field(search, 'Куда', 'toCity', 'Усть-Каменогорск');
+  const from = field(search, 'Откуда', 'fromCity', '', 'text', false), to = field(search, 'Куда', 'toCity', '', 'text', false);
   from.maxLength = to.maxLength = 100; from.setAttribute('list', 'bookingCityList'); to.setAttribute('list', 'bookingCityList');
-  const day = field(search, 'Дата выезда', 'date', carpoolDay(), 'date'); day.min = carpoolDay();
+  const day = field(search, 'Дата выезда', 'date', '', 'date', false); day.min = carpoolDay();
   const seats = field(search, 'Нужно мест', 'seats', '1', 'number'); seats.min = '1'; seats.max = '8'; seats.step = '1';
-  const find = el('button', 'Найти машины', 'carpool-primary'); find.type = 'submit'; search.append(find);
+  const find = el('button', 'Найти машины', 'carpool-primary'); find.type = 'submit'; search.append(find, button('Все направления и даты', () => { from.value = to.value = day.value = ''; seats.value = '1'; selectedRequest = null; pageSize = 50; void searchTrips(); }));
   const list = el('div'), mine = el('div'); mine.id = 'carpoolMyBookings';
   const mineStatus = el('p'); mineStatus.setAttribute('role', 'status');
-  host.append(el('h2', 'Попутки'), el('p', 'Цена за одно место. Время Казахстана. Оплата водителю.'), search, status, list, el('h2', 'Мои бронирования'), mineStatus, mine);
+  const filters = el('details'); filters.append(el('summary', 'Направление, дата и места'), search);
+  const requestsHost = el('section');
+  const more = button('Показать ещё рейсы', () => { pageSize += 50; void searchTrips(); }); more.hidden = true;
+  const linked = el('p'); linked.hidden = true; linked.setAttribute('role', 'status');
+  host.append(el('h2', 'Межгород / Попутки'), el('p', 'Ближайшие рейсы по всем направлениям. Цена за место, время Казахстана, оплата водителю.'), requestsHost, filters, linked, el('h2', 'Доступные машины'), status, list, more, el('h2', 'Мои бронирования'), mineStatus, mine);
+  let selectedRequest = null, pageSize = 50, searchRevision = 0;
+  const requests = initPassengerRequests(requestsHost, api, { store: requestsStore, onFind(row) {
+    selectedRequest = row; from.value = row.fromCity; to.value = row.toCity; day.value = carpoolDay(carpoolMillis(row.departureAt)); seats.value = String(row.seats); pageSize = 50;
+    void searchTrips(); status.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  } });
   let stopTrips = null, started = false, revision = 0, ready = false, rows = [], clientUid = '', selectedBooking = '';
   let lastBookings = null, openRevision = 0, focusRevision = 0;
   const drafts = new Map();
@@ -57,24 +34,31 @@ export function initCarpoolClient(host, api, bookingsStore = carpoolBookings) {
     const request = ++openRevision;
     started = true; report(status, 'Подключаем попутки…');
     try {
-      const user = await api.user(true); const enabled = await api.ready();
+      const user = await api.user(true); const enabled = await api.ready() && await api.hubReady();
       if (request !== openRevision) return;
       clientUid = user?.uid || ''; ready = enabled;
       if (!ready) { report(status, 'Онлайн-бронирование попуток подключается. Пока позвоните диспетчеру.'); find.disabled = true; started = false; return; }
       find.disabled = false; await bookingsStore.refresh(user);
       if (request !== openRevision) return;
-      await searchTrips();
+      await requests.open(); if (request !== openRevision) return; await searchTrips();
     } catch (e) { if (request === openRevision) { started = false; error(e); } }
   }
   async function searchTrips() {
     if (!search.reportValidity()) return;
+    if (Boolean(from.value.trim()) !== Boolean(to.value.trim())) { report(status, 'Для поиска по маршруту укажите и «Откуда», и «Куда», либо оставьте оба поля пустыми.', true); return; }
     if (!ready) { await open(); return; }
-    stopTrips?.(); list.replaceChildren(); report(status, 'Ищем подходящие машины…');
-    const start = Date.parse(day.value + 'T00:00:00+05:00');
-    stopTrips = api.watchTrips({ fromKey: carpoolCityKey(from.value), toKey: carpoolCityKey(to.value), start, end: start + 86400000 }, trips => {
-      rows = trips; renderTrips(); report(status, trips.length ? 'Места обновляются автоматически.' : 'На эту дату подходящих машин пока нет. Выберите другой день или закажите машину целиком.');
-    }, error);
+    stopTrips?.(); list.replaceChildren(); more.hidden = true; report(status, 'Ищем подходящие машины…');
+    const request = ++searchRevision;
+    linked.hidden = !selectedRequest;
+    linked.textContent = selectedRequest ? 'Вы выбираете рейс для своей заявки. После подтверждения брони заявка закроется автоматически.' : '';
+    const start = day.value ? Date.parse(day.value + 'T00:00:00+05:00') : Date.now();
+    stopTrips = api.watchTrips({ ...(from.value.trim() ? { fromKey: carpoolCityKey(from.value), toKey: carpoolCityKey(to.value) } : {}), start, ...(day.value ? { end: start + 86400000 } : {}), limit: pageSize }, trips => {
+      if (request !== searchRevision) return;
+      rows = trips; renderTrips(); more.hidden = trips.length < pageSize;
+      report(status, trips.length ? 'Места обновляются автоматически.' : 'Подходящих машин пока нет. Создайте заявку «Ищу машину» — водители смогут связаться с вами.');
+    }, e => { if (request === searchRevision) error(e); });
   }
+
   function renderTrips() {
     for (const form of list.querySelectorAll('form[data-trip]')) drafts.set(form.dataset.trip, { visible: !form.hidden, ...Object.fromEntries(new FormData(form)) });
     const focused = document.activeElement?.closest('form[data-trip]') ? [document.activeElement.closest('form[data-trip]').dataset.trip, document.activeElement.name] : null;
@@ -82,14 +66,15 @@ export function initCarpoolClient(host, api, bookingsStore = carpoolBookings) {
     for (const trip of rows.filter(t => t.availableSeats >= Number(seats.value) && carpoolMillis(t.departureAt) > Date.now())) {
       const card = tripCard(trip), form = el('form', '', 'carpool-form'), draft = drafts.get(trip.id); form.dataset.trip = trip.id; form.hidden = !draft?.visible;
       const count = field(form, 'Количество мест', 'count', draft?.count || seats.value, 'number'); count.min = '1'; count.max = String(trip.availableSeats); count.step = '1';
+      if (selectedRequest) { count.value = String(selectedRequest.seats); count.readOnly = true; }
       const name = field(form, 'Ваше имя', 'name', draft?.name || ''); name.maxLength = 80; name.autocomplete = 'name';
       const phone = field(form, 'Телефон', 'phone', draft?.phone || '', 'tel'); phone.maxLength = 32; phone.autocomplete = 'tel';
       const total = el('strong', '', 'carpool-price'), confirm = el('button', '', 'carpool-primary'); confirm.type = 'submit';
       const update = () => { total.textContent = `Итого: ${carpoolMoney(Number(count.value) * trip.seatPrice)}`; confirm.textContent = `Подтвердить за ${carpoolMoney(Number(count.value) * trip.seatPrice)}`; }; count.oninput = update; update();
       const message = el('p'); message.setAttribute('role', 'status'); form.append(total, el('p', 'Бронирование подтвердится после проверки свободных мест.'), confirm, message);
       form.onsubmit = event => { event.preventDefault(); if (!form.reportValidity()) return;
-        const data = { action: 'book', tripId: trip.id, seats: Number(count.value), expectedSeatPrice: trip.seatPrice, name: name.value.trim(), phone: phone.value.trim() };
-        void run(confirm, message, async () => { await api.command(data); drafts.delete(trip.id); form.hidden = true; report(status, 'Места забронированы. Ваша бронь — ниже.'); mine.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+        const data = { action: 'book', tripId: trip.id, seats: Number(count.value), expectedSeatPrice: trip.seatPrice, name: name.value.trim(), phone: phone.value.trim(), ...(selectedRequest ? { requestId: selectedRequest.id } : {}) };
+        void run(confirm, message, async () => { await api.command(data); selectedRequest = null; linked.hidden = true; drafts.delete(trip.id); form.hidden = true; report(status, 'Места забронированы. Ваша бронь — ниже.'); mine.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
       };
       card.append(button('Забронировать места', () => { form.hidden = !form.hidden; if (!form.hidden) name.focus(); }, 'carpool-primary'), form); list.append(card);
     }
@@ -139,15 +124,15 @@ export function initCarpoolClient(host, api, bookingsStore = carpoolBookings) {
   }
   const openFromEvent = event => {
     selectedBooking = event.detail?.bookingId || '';
-    void open(); focusBooking();
+    void open(); focusBooking(); if (event.detail?.requestId) requests.focus(event.detail.requestId);
   };
   const online = () => { void bookingsStore.refresh(); if (!started && window.bookingScreen?.isCarpool?.()) void open(); };
-  search.onsubmit = event => { event.preventDefault(); void searchTrips(); };
+  search.onsubmit = event => { event.preventDefault(); selectedRequest = null; pageSize = 50; void searchTrips(); };
   bookingsStore.start(api);
   const stopBookings = bookingsStore.subscribe(state => {
     if (clientUid && state.uid !== clientUid) {
       stopTrips?.(); openRevision++; revision++; focusRevision++; started = false; ready = false; selectedBooking = '';
-      drafts.clear(); list.replaceChildren(); mine.replaceChildren();
+      searchRevision++; selectedRequest = null; linked.hidden = true; rows = []; drafts.clear(); list.replaceChildren(); mine.replaceChildren();
     }
     clientUid = state.uid;
     if (lastBookings !== state.bookings) { lastBookings = state.bookings; void renderMine(state.bookings); }
@@ -157,5 +142,6 @@ export function initCarpoolClient(host, api, bookingsStore = carpoolBookings) {
   window.addEventListener('carpool-open', openFromEvent);
   window.addEventListener('online', online);
   if (window.bookingScreen?.isCarpool?.()) void open();
-  return { open, destroy() { stopTrips?.(); stopBookings(); revision++; openRevision++; focusRevision++; window.removeEventListener('carpool-open', openFromEvent); window.removeEventListener('online', online); } };
+  const timer = window.setInterval(() => { if (ready && window.bookingScreen?.isCarpool?.()) renderTrips(); }, 60000);
+  return { open, destroy() { searchRevision++; window.clearInterval(timer); requests.destroy(); stopTrips?.(); stopBookings(); revision++; openRevision++; focusRevision++; window.removeEventListener('carpool-open', openFromEvent); window.removeEventListener('online', online); } };
 }

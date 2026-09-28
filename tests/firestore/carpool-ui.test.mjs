@@ -16,7 +16,7 @@ initBookingScreen();
 let tripUpdate,mineUpdate,driverUpdate,passengerUpdate,filters;
 const commands=[];
 const trip={id:'trip1',status:'open',driverId:'30',driverUid:'driver',driverName:'Водитель',car:'Лада',fromCity:'Белоусовка',toCity:'Усть-Каменогорск',departureAt:{seconds:(Date.now()+3600000)/1000},pickup:'Автостанция',dropoff:'Центр',totalSeats:4,availableSeats:4,seatPrice:1500,commissionRate:10,reservedAmount:0,priceLocked:false};
-const api={onUser:callback=>{callback({uid:'client'});return()=>{};},user:async()=>({uid:'client'}),ready:async()=>true,simpleJourneyReady:async()=>true,
+const api={onUser:callback=>{callback({uid:'client'});return()=>{};},user:async()=>({uid:'client'}),ready:async()=>true,hubReady:async()=>true,watchMyRequests:(_uid,cb)=>{cb([]);return()=>{};},simpleJourneyReady:async()=>true,
  watchTrips:(f,next)=>{filters=f;tripUpdate=next;next([trip]);return()=>{};},watchMine:(_uid,next)=>{mineUpdate=next;next([]);return()=>{};},
  watchDriverTrips:(_uid,next)=>{driverUpdate=next;next([]);return()=>{};},watchPassengers:(_trip,_admin,next)=>{passengerUpdate=next;next([]);return()=>{};},
  read:async(name)=>{assert.notEqual(name,'carpoolBoardingCodes');return {name:'Пассажир',phone:'+77000000002',driverPhone:'+77000000001'};},
@@ -25,7 +25,7 @@ initCarpoolClient(get('carpoolClient'),api);
 window.repeatOrder('Белоусовка','Усть-Каменогорск');document.querySelector('[data-booking-service="intercity"]').click();
 assert.equal(get('bookingIntercitySwitch').hidden,false);get('bookingIntercitySeats').click();await flush();
 assert.equal(get('carpoolClient').hidden,false);assert.equal(get('bookingFooter').hidden,true);assert.ok(get('mapModal').classList.contains('carpool-mode'));
-assert.equal(filters.fromKey,'белоусовка');assert.equal(filters.toKey,'усть каменогорск');
+assert.equal(filters.fromKey,undefined);assert.equal(filters.toKey,undefined);
 const host=get('carpoolClient');const clickText=(root,text)=>{const b=[...root.querySelectorAll('button')].find(b=>b.textContent===text);assert.ok(b,text);b.click();};
 clickText(host,'Забронировать места');let booking=host.querySelector('form[data-trip]');
 booking.elements.name.value='<img src=x onerror=alert(1)>';booking.elements.phone.value='+77000000002';booking.elements.count.value='2';booking.elements.count.dispatchEvent(new Event('input'));

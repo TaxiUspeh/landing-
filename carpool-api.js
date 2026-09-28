@@ -12,11 +12,17 @@ export function createCarpoolApi() {
     async user(anonymous = false) { await auth.authStateReady(); if (!auth.currentUser && anonymous) await signInAnonymously(auth); return auth.currentUser; },
     async ready() { try { const snap = await getDocFromServer(doc(db, 'settings', 'carpoolBooking')); return snap.data()?.schemaVersion === 1; } catch { return false; } },
     async simpleJourneyReady() { try { const snap = await getDocFromServer(doc(db, 'settings', 'carpoolBooking')); return snap.data()?.journeyVersion >= 2; } catch { return false; } },
+    async hubReady() { try { const snap = await getDocFromServer(doc(db, 'settings', 'carpoolBooking')); return snap.data()?.hubVersion === 1; } catch { return false; } },
     async read(name, id) { const snap = await getDocFromServer(doc(db, name, id)); return snap.exists() ? { id: snap.id, ...snap.data() } : null; },
     watchTrips(filters, next, error) {
-      return listen('carpoolTrips', [where('status', '==', 'open'), where('fromKey', '==', filters.fromKey), where('toKey', '==', filters.toKey),
-        where('departureAt', '>=', Timestamp.fromMillis(Math.max(Date.now(), filters.start))), where('departureAt', '<', Timestamp.fromMillis(filters.end)), orderBy('departureAt'), limit(50)], next, error);
+      const constraints = [where('status', '==', 'open')];
+      if (filters.fromKey && filters.toKey) constraints.push(where('fromKey', '==', filters.fromKey), where('toKey', '==', filters.toKey));
+      constraints.push(where('departureAt', '>=', Timestamp.fromMillis(Math.max(Date.now(), filters.start || 0))));
+      if (filters.end) constraints.push(where('departureAt', '<', Timestamp.fromMillis(filters.end)));
+      return listen('carpoolTrips', [...constraints, orderBy('departureAt'), limit(filters.limit || 50)], next, error);
     },
+    watchMyRequests(uid, next, error) { return listen('passenger_requests', [where('clientUid', '==', uid), orderBy('createdAt', 'desc'), limit(50)], next, error); },
+    watchRequests(count, next, error) { return listen('passenger_requests', [where('status', '==', 'open'), where('departureAt', '>', Timestamp.now()), orderBy('departureAt'), limit(count)], next, error); },
     watchDriverTrips(uid, next, error) { return listen('carpoolTrips', [where('driverUid', '==', uid), orderBy('createdAt', 'desc'), limit(30)], next, error); },
     watchAdminTrips(next, error) { return listen('carpoolTrips', [orderBy('createdAt', 'desc'), limit(100)], next, error); },
     watchMine(uid, next, error) { return listen('carpoolBookings', [where('clientUid', '==', uid), orderBy('createdAt', 'desc'), limit(50)], next, error); },
@@ -35,7 +41,7 @@ export function createCarpoolApi() {
         return response;
       } catch (error) {
         if (!['functions/unavailable', 'functions/deadline-exceeded', 'functions/internal'].includes(error.code)) pending.delete(key);
-        if (['functions/unavailable', 'functions/deadline-exceeded', 'functions/internal'].includes(error.code)) throw new Error('Не удалось получить подтверждение. Проверьте список броней и повторите действие: повтор не создаст вторую бронь.');
+        if (['functions/unavailable', 'functions/deadline-exceeded', 'functions/internal'].includes(error.code)) throw new Error('Не удалось получить подтверждение. Проверьте свои брони или заявки и повторите действие: повтор не создаст дубликат.');
         throw error;
       }
     }

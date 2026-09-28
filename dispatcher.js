@@ -376,7 +376,8 @@ async function copyUid() {
 const dispatcherCarpool = initCarpoolWork(document.getElementById('dispatcher-carpool'), createCarpoolApi(), true);
 
 function stopAdminPanel() {
-    dispatcherCarpool?.destroy();
+    // Access checks reuse the panel, so keep its UI and only clear the signed-in context.
+    void dispatcherCarpool?.setContext(null);
     if (unsubscribeDrivers) unsubscribeDrivers();
     if (unsubscribeDriverStates) unsubscribeDriverStates();
     if (unsubscribeOrders) unsubscribeOrders();

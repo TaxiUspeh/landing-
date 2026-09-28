@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 import { JSDOM } from 'jsdom';
 import { initBookingScreen } from '../../booking-screen.js';
@@ -66,5 +67,24 @@ try {
  publishDemand(requestRows); readContact = true; click(workHost, 'Связаться с пассажиром'); await flush(); const resolve = readContact;
  await work.setContext({ uid: 'driver' }, { ...profile, carpoolEnabled: false }); resolve({ name: 'Private', phone: '+77000000003' }); await flush();
  assert.equal(workHost.querySelector('[data-request-id]'), null); assert.equal(workHost.querySelector('a[href="tel:+77000000003"]'), null); work.destroy();
+ // Dispatcher access checks also reuse their module after stopAdminPanel().
+ const adminHost=document.createElement('section');document.body.append(adminHost);
+ const adminWork=initCarpoolWork(adminHost,{...api,watchAdminTrips(cb){cb([]);return()=>{};}},true);
+ const dispatcherSource=await readFile('../../dispatcher.js','utf8');
+ const stopSource=dispatcherSource.slice(dispatcherSource.indexOf('function stopAdminPanel()'),dispatcherSource.indexOf('async function checkAdminAccess('));
+ const noOp=()=>{};
+ const adminContext=vm.createContext({dispatcherCarpool:adminWork,unsubscribeDrivers:null,unsubscribeDriverStates:null,unsubscribeOrders:null,unsubscribeOrderContacts:null,
+   stopDriverMessagesListener:noOp,driverStatusRefreshTimer:null,closeDriverSummary:noOp,closeDriverOrdersReport:noOp,setOnlineOrdersSectionCollapsed:noOp,
+   setHidden:noOp,setMessage:noOp,elements:{},clearInterval});
+ vm.runInContext(stopSource,adminContext);
+ for(const uid of ['admin-a','admin-a','admin-b']){
+   vm.runInContext('stopAdminPanel()',adminContext);
+   await adminWork.setContext({uid});click(adminHost,'Заявки от пассажиров');await flush();
+   assert.ok(adminHost.querySelector('h2'),'admin access check preserves demand UI');
+   assert.ok(adminHost.querySelector('[data-request-id="d1"]'),'admin sees passenger demand after access check');
+   const late=publishDemand;vm.runInContext('stopAdminPanel()',adminContext);late(requestRows);
+   assert.equal(adminHost.querySelector('[data-request-id]'),null,'admin logout clears demand and rejects late data');
+ }
+ adminWork.destroy();
  console.log('PASS: all-direction live feed, request creation, Kazakhstan time, visible home request, linked booking, private driver demand, revoked access and account changes');
 } finally { ui.destroy(); bookings.destroy(); requests.destroy(); await new Promise(resolve => setTimeout(resolve, 180)); dom.window.close(); }

@@ -1713,7 +1713,8 @@ function stopOrderWatches() {
 }
 
 function stopProfileWatches() {
-    carpoolWork?.destroy();
+    // Auth changes reset subscriptions; the cabinet DOM is reused on the next sign-in.
+    void carpoolWork?.setContext(null);
     driverPushGeneration += 1;
     driverPushDiagnostic = '';
     unsubscribePushForeground?.();

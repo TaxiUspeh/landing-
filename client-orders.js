@@ -1,5 +1,6 @@
-import { initCarpoolClient } from './carpool-ui.js?v=82';
-import { createCarpoolApi } from './carpool-api.js?v=82';
+import { carpoolAvailability } from './carpool-availability.js?v=85';
+import { initCarpoolClient } from './carpool-ui.js?v=85';
+import { createCarpoolApi } from './carpool-api.js?v=85';
 import { assistanceDetails } from './assistance-booking.js?v=78';
 import { initialCargoFare, cargoAmount, isMeteredCargo, cargoFareDescription } from './cargo-fare.js?v=77';
 import { soberFareForPrice } from './sober-fare.js?v=74';
@@ -1161,6 +1162,6 @@ elements.deliveryDispatcherCall?.setAttribute('href', 'tel:+77770649648');
 
 void restoreActiveOrder();
 
-function mountCarpoolClient() { initCarpoolClient(document.getElementById('carpoolClient'), createCarpoolApi()); }
+function mountCarpoolClient() { const api = createCarpoolApi(); initCarpoolClient(document.getElementById('carpoolClient'), api); void carpoolAvailability.start(api); }
 window.addEventListener('booking-screen-ready', mountCarpoolClient);
 mountCarpoolClient();

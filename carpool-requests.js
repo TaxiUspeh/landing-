@@ -88,10 +88,12 @@ export function initPassengerDemand(host, api, admin = false) {
   const list = el('div'), more = button('Показать ещё заявки', () => { count += 50; void connect(); }); more.hidden = true;
   const retry = button('Обновить заявки', () => void connect());
   host.append(el('h2', 'Заявки от пассажиров'), el('p', 'Свяжитесь с пассажиром и согласуйте поездку. Для бронирования и расчёта комиссии опубликуйте рейс; пассажир выберет его и забронирует места.'), message, retry, list, more);
+  let target = '', targetRow, focusPending = false, stopTarget;
   let uid = '', allowed = false, visible = false, stop, generation = 0, count = 50, rows = [];
   function render() {
     const revision = ++generation; list.replaceChildren();
-    const active = activePassengerRequests(rows); more.hidden = rows.length < count;
+    const combined = target && targetRow !== undefined ? [...rows.filter(row => row.id !== target), ...(targetRow ? [targetRow] : [])] : rows;
+    const active = activePassengerRequests(combined); more.hidden = rows.length < count;
     for (const row of active) {
       const card = requestCard(row), status = el('p'); status.setAttribute('role', 'status');
       const contact = button('Связаться с пассажиром', async event => {
@@ -112,10 +114,11 @@ export function initPassengerDemand(host, api, admin = false) {
       list.append(card);
     }
     if (!active.length) list.append(el('p', 'Открытых заявок пока нет. Новые появятся здесь автоматически.'));
+    if (focusPending) { const card = [...list.children].find(card => card.dataset.requestId === target); if (card) { card.focus({preventScroll:true}); card.scrollIntoView({block:'center',behavior:'smooth'}); focusPending = false; } }
   }
   let connection = 0;
   async function connect() {
-    const request = ++connection; stop?.(); stop = null; generation++; rows = []; list.replaceChildren(); more.hidden = true;
+    const request = ++connection; stop?.(); stop = null; stopTarget?.(); stopTarget = null; targetRow = undefined; generation++; rows = []; list.replaceChildren(); more.hidden = true;
     if (!visible || !uid) return;
     if (!allowed) { report(message, 'Доступ к заявкам включает диспетчер в карточке водителя: «Попутки».'); return; }
     report(message, 'Загружаем заявки…');
@@ -126,12 +129,18 @@ export function initPassengerDemand(host, api, admin = false) {
         if (request !== connection) return;
         rows = next; render(); report(message, 'Заявки обновляются автоматически.');
       }, () => { if (request === connection) { generation++; rows = []; list.replaceChildren(); more.hidden = true; report(message, 'Не удалось получить заявки. Проверьте подключение и допуск к попуткам.', true); } });
+      if (target && api.watchRequest) stopTarget = api.watchRequest(target, row => {
+        if (request !== connection) return;
+        targetRow = row; render();
+        if (!activePassengerRequests(row ? [row] : []).length) report(message, 'Эта заявка закрыта или время выезда уже прошло. Ниже — актуальные заявки.');
+      }, () => { if (request === connection) { targetRow = null; render(); report(message, 'Заявка больше недоступна. Ниже — актуальные заявки.'); } });
     } catch { if (request === connection) report(message, 'Не удалось загрузить заявки. Повторите попытку.', true); }
   }
   const timer = window.setInterval(() => { if (visible && allowed) render(); }, 60000);
   return {
-    setContext(user, enabled) { const next = user?.uid || ''; if (next === uid && enabled === allowed) return; uid = next; allowed = enabled; count = 50; void connect(); },
+    setContext(user, enabled) { const next = user?.uid || ''; if (next === uid && enabled === allowed) return; if (uid !== next) { target = ''; targetRow = undefined; focusPending = false; } uid = next; allowed = enabled; count = 50; void connect(); },
+    focus(id) { if (!/^[A-Za-z0-9_-]{1,150}$/.test(id)) return; target = id; focusPending = true; void connect(); },
     show(value) { if (visible === value) return; visible = value; void connect(); },
-    destroy() { connection++; generation++; stop?.(); window.clearInterval(timer); host.replaceChildren(); },
+    destroy() { connection++; generation++; stop?.(); stopTarget?.(); window.clearInterval(timer); host.replaceChildren(); },
   };
 }

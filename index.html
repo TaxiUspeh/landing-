@@ -492,7 +492,7 @@
         }
 
     </style>
-    <link rel="stylesheet" href="./styles/client-home.css?v=80">
+    <link rel="stylesheet" href="./styles/client-home.css?v=85">
     <link rel="stylesheet" href="./styles/bus-schedule.css?v=76">
 <link rel="stylesheet" href="./styles/customer-pricing.css?v=67">
 <link rel="stylesheet" href="./styles/carpool.css?v=82">
@@ -570,7 +570,7 @@
 </button>
 </div>
 <button type="button" class="home-row home-intercity" data-home-carpool-open>
-<i class="fas fa-car" aria-hidden="true"></i><span><strong>Межгород / Попутки</strong><small>Рейсы водителей и заявки «Ищу машину»</small></span><i class="fas fa-chevron-right" aria-hidden="true"></i>
+<i class="fas fa-car" aria-hidden="true"></i><span><strong>Межгород / Попутки</strong><b class="home-intercity-count" data-carpool-available-count hidden></b><small>Найти попутку или оставить заявку</small></span><i class="fas fa-chevron-right" aria-hidden="true"></i>
 </button>
 <h2 class="home-section-title">Полезное рядом</h2>
 <button type="button" class="home-row" data-home-modal="busScheduleModal">
@@ -2291,13 +2291,13 @@
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
         import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=78";
-        import { initBookingScreen } from "./booking-screen.js?v=84";
+        import { initBookingScreen } from "./booking-screen.js?v=85";
         import { normalizeCity } from "./booking-core.js?v=84";
         import { selectPriceAdjustment, adjustmentText } from "./pricing-adjustments.js?v=63";
         import { createSoberPricing } from './sober-pricing.js?v=78';
         import { createDeliveryPricing } from "./delivery-pricing.js?v=78";
         import { publishedRouteFare, distanceFare, formatTaxiFare } from "./taxi-pricing.js?v=78";
-        import { initClientHome } from "./client-home.js?v=82";
+        import { initClientHome } from "./client-home.js?v=85";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -5161,6 +5161,6 @@
         initClientHome();
 
     </script>
-    <script type="module" src="./client-orders.js?v=84"></script>
+    <script type="module" src="./client-orders.js?v=85"></script>
 </body>
 </html>

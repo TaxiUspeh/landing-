@@ -78,3 +78,15 @@ body.client-home { --home-bg:#f3f6fb; --home-paper:#fff; --home-text:#172b50; --
 .home-main #weatherWidget { color:var(--home-text); }
 @media (min-width:600px) { .home-main { padding-top:10px; } .home-shortcuts .home-tile { font-size:14px; min-height:100px; } .home-partners .home-row strong { font-size:15px; } .home-partners .home-row small { font-size:12px; } .home-service-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media (max-width:359px) { .home-main { padding-left:12px; padding-right:12px; } .home-header h1 { font-size:19px; } .home-order-card { padding:16px; } .home-main .home-primary { font-size:17px; } .home-partners { grid-template-columns:minmax(0,1fr); } .home-partners .home-row { flex-direction:row; align-items:center; } }
+
+.home-intercity-available { border-color:#15803d; background:#f0fdf4; }
+.home-intercity-available > i:first-child { position:relative; color:#166534; background:#dcfce7; }
+.home-intercity-available > i:first-child::after { content:''; position:absolute; top:1px; right:1px; width:10px; height:10px; border:2px solid var(--home-paper); border-radius:50%; background:#15803d; }
+.home-intercity-count { display:inline-block; margin:5px 0 2px; padding:3px 9px; border-radius:999px; color:#166534; background:#dcfce7; font-size:12px; line-height:1.4; }
+.home-intercity-count[hidden] { display:none; }
+.home-intercity-pulse > i:first-child { animation:carpool-available-pulse 1.4s ease-in-out 3; }
+@keyframes carpool-available-pulse { 0%,100% { box-shadow:0 0 0 0 rgba(22,163,74,0); } 45% { box-shadow:0 0 0 7px rgba(22,163,74,.22); } }
+.dark .home-intercity-available { background:#122c25; border-color:#4ade80; }
+.dark .home-intercity-available > i:first-child, .dark .home-intercity-count { background:#174731; color:#bbf7d0; }
+.dark .home-intercity-available > i:first-child::after { background:#4ade80; }
+@media (prefers-reduced-motion:reduce) { .home-intercity-pulse > i:first-child { animation:none; } }

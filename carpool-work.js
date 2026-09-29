@@ -1,5 +1,5 @@
 import { el, button, field, report, run, tripCard, callLink, carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis } from './carpool-common.js?v=82';
-import { initPassengerDemand } from './carpool-requests.js?v=82';
+import { initPassengerDemand } from './carpool-requests.js?v=85';
 
 export function initCarpoolWork(host, api, admin = false) {
   if (!host) return null;
@@ -132,5 +132,5 @@ export function initCarpoolWork(host, api, admin = false) {
     report(status,'Рейсы обновляются автоматически.');
     stop=admin?api.watchAdminTrips(render,error):api.watchDriverTrips(uid,render,error);
   }
-  return {setContext,destroy(){demand.destroy();stop?.();passengers.forEach(stop=>stop());passengers.clear();revision++;uid='';list.replaceChildren();historyList.replaceChildren();create.hidden=true;}};
+  return {setContext,openRequests(id = ''){selectTab(true);if(id)demand.focus(id);},destroy(){demand.destroy();stop?.();passengers.forEach(stop=>stop());passengers.clear();revision++;uid='';list.replaceChildren();historyList.replaceChildren();create.hidden=true;}};
 }

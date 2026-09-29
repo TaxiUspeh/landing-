@@ -1,7 +1,7 @@
 import { carpoolBookings } from './carpool-bookings.js?v=82';
 import { el, button, field, report, run, tripCard, callLink, carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis, carpoolDay, carpoolCityKey } from './carpool-common.js?v=82';
 import { passengerRequests } from './passenger-request-store.js?v=82';
-import { initPassengerRequests } from './carpool-requests.js?v=82';
+import { initPassengerRequests } from './carpool-requests.js?v=85';
 export * from './carpool-common.js?v=82';
 export function initCarpoolClient(host, api, bookingsStore = carpoolBookings, requestsStore = passengerRequests) {
   if (!host || host.dataset.ready) return;
@@ -123,6 +123,7 @@ export function initCarpoolClient(host, api, bookingsStore = carpoolBookings, re
     focus();
   }
   const openFromEvent = event => {
+    if (event.detail?.allTrips) { from.value = to.value = day.value = ''; seats.value = '1'; selectedRequest = null; pageSize = 50; if (ready) void searchTrips(); }
     selectedBooking = event.detail?.bookingId || '';
     void open(); focusBooking(); if (event.detail?.requestId) requests.focus(event.detail.requestId);
   };

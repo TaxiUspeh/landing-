@@ -9,7 +9,8 @@ function fixture() {
         URL, console, importScripts() {},
         firebase: { initializeApp() {}, messaging: () => ({ onBackgroundMessage: fn => { background = fn; } }) },
         self: {
-            registration: { scope:'https://example.test/landing-/', showNotification: async (...args) => notifications.push(args) },
+            registration: { scope:'https://example.test/landing-/', showNotification: async (...args) => notifications.push(args),
+                getNotifications: async ({tag}) => notifications.filter(([,options]) => options.tag === tag) },
             addEventListener: (name, fn) => { handlers[name] = fn; },
             clients: { matchAll: async () => [], openWindow: async url => opened.push(url) }
         }
@@ -41,4 +42,21 @@ test('test push uses a separate tag and opens notification settings', async () =
     await f.receive({ data: { type:'push_test', title:'Тестовый пуш', url:'./drivers.html#driver-order-alerts' } });
     assert.equal(f.notifications[0][1].tag, 'taxi-uspeh-push-test');
     assert.match(f.notifications[0][1].data.url, /driver-order-alerts/);
+});
+test('passenger request push is fresh, deduplicated and linked to the request', async () => {
+    const f = fixture();
+    const data = { type:'passenger_request', requestId:'r1', orderId:'passenger_request_r1', createdAt:String(Date.now()),
+        url:'./drivers.html?carpool=1&request=r1#driver-online-orders' };
+    await f.receive({data});
+    await f.receive({data});
+    assert.equal(f.notifications.length, 1);
+    assert.equal(f.notifications[0][1].renotify, false);
+    assert.equal(f.notifications[0][1].tag, 'taxi-uspeh-order-passenger_request_r1');
+    let completion;
+    f.handlers.notificationclick({notification:{data:f.notifications[0][1].data,close(){}},stopImmediatePropagation(){},waitUntil:p=>{completion=p;}});
+    await completion;
+    assert.equal(f.opened[0], 'https://example.test/landing-/drivers.html?carpool=1&request=r1#driver-online-orders');
+    await f.receive({data:{...data, orderId:'expired',createdAt:String(Date.now()-360000)}});
+    await f.receive({data:{...data, orderId:'future',createdAt:String(Date.now()+120000)}});
+    assert.equal(f.notifications.length, 1);
 });

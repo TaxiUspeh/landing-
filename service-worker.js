@@ -1,13 +1,15 @@
-const CACHE_NAME = 'taxi-uspeh-v84-address-labels';
+const CACHE_NAME = 'taxi-uspeh-v85-carpool-signals';
 const APP_SHELL = [
+  './carpool-availability.js?v=85',
+  './passenger-request-alerts.js?v=85',
   './carpool-common.js?v=82',
   './carpool-feed.js?v=82',
   './passenger-request-store.js?v=82',
-  './carpool-requests.js?v=82',
+  './carpool-requests.js?v=85',
   './carpool-bookings.js?v=82',
-  './carpool-api.js?v=82',
-  './carpool-ui.js?v=82',
-  './carpool-work.js?v=82',
+  './carpool-api.js?v=85',
+  './carpool-ui.js?v=85',
+  './carpool-work.js?v=85',
   './functions/carpool-cities.mjs?v=79',
   './styles/carpool.css?v=82',
   './cargo-fare.js?v=77',
@@ -31,8 +33,8 @@ const APP_SHELL = [
   './customer-price-control.js?v=78',
   './customer-pricing-settings.js?v=78',
   './styles/customer-pricing.css?v=67',
-  './client-home.js?v=82',
-  './styles/client-home.css?v=80',
+  './client-home.js?v=85',
+  './styles/client-home.css?v=85',
   './vehicle-categories.js?v=78',
   './vehicle-category-controls.js?v=79',
   './styles/vehicle-categories.css?v=69',
@@ -40,24 +42,24 @@ const APP_SHELL = [
   './styles/auction.css?v=51',
   './styles/tailwind.css',
   './styles/booking-screen.css?v=68',
-  './booking-screen.js?v=84',
+  './booking-screen.js?v=85',
   './booking-route.js?v=78',
   './booking-sheet.js?v=54',
   './booking-core.js?v=84',
   './taxi-pricing.js?v=78',
   './pricing-adjustments.js?v=63',
   './delivery-pricing.js?v=78',
-  './client-orders.js?v=84',
+  './client-orders.js?v=85',
   './holiday-calendar.js',
   './drivers.html',
   './drivers.webmanifest',
   './driver-install.js?v=61',
-  './driver-portal.js?v=83',
+  './driver-portal.js?v=85',
   './order-time.js?v=71',
   './driver-cabinet.js?v=79',
   './styles/driver-cabinet.css?v=72',
   './dispatcher.html',
-  './dispatcher.js?v=83',
+  './dispatcher.js?v=85',
   './firebase-config.js',
   './food.html',
   './SHASHDVOR.html',
@@ -150,17 +152,26 @@ try {
     appId: '1:678422371368:web:64c7b4b48c102b3efda91d'
   });
   const messaging = firebase.messaging();
-  messaging.onBackgroundMessage(payload => {
+  messaging.onBackgroundMessage(async payload => {
     // FCM already displays notification payloads (including console test messages).
     if (payload?.notification) return;
     const data = payload?.data || {};
     const url = data.url || './drivers.html#driver-online-orders';
+    const tag = data.type === 'push_test' ? 'taxi-uspeh-push-test' : data.orderId ? `taxi-uspeh-order-${data.orderId}` : 'taxi-uspeh-order';
+    if (data.type === 'passenger_request') {
+      const age = Date.now() - Number(data.createdAt);
+      if (!Number.isFinite(age) || age < -60000 || age > 300000) return;
+      // The open cabinet may already have announced this request before it was hidden.
+      try {
+        if ((await self.registration.getNotifications({ tag })).length) return;
+      } catch { /* Notification replacement still uses the same tag. */ }
+    }
     return self.registration.showNotification(data.title || 'Новый онлайн-заказ', {
       body: data.body || 'Откройте кабинет, чтобы посмотреть маршрут и цену.',
       icon: './pwa-icon-512x512.png',
       badge: './favicon-192x192.png',
-      tag: data.type === 'push_test' ? 'taxi-uspeh-push-test' : data.orderId ? `taxi-uspeh-order-${data.orderId}` : 'taxi-uspeh-order',
-      renotify: true,
+      tag,
+      renotify: data.type !== 'passenger_request',
       vibrate: [180, 90, 180],
       data: { url }
     });

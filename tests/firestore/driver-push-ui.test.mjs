@@ -1,3 +1,5 @@
+import { createPassengerRequestAlerts } from '../../passenger-request-alerts.js';
+import { serviceEnabled } from '../../functions/driver-services.mjs';
 import { normalizeCity } from '../../booking-core.js';
 import { priceDescription } from '../../customer-pricing.js';
 import { orderTimeInfo } from '../../order-time.js';
@@ -38,8 +40,8 @@ function fixture({ timeout = 15000 } = {}) {
     };
     Object.defineProperty(dom.window.navigator, 'serviceWorker', { value: serviceWorker });
     dom.window.localStorage.setItem('taxi-uspeh-driver-push-device-id-v1', 'phone-1');
-    const context = vm.createContext({
-        initCarpoolWork:()=>({destroy(){},setContext:async()=>{}}), createCarpoolApi:()=>({}),
+    const context = vm.createContext({ createPassengerRequestAlerts, serviceEnabled,
+        initCarpoolWork:()=>({destroy(){},setContext:async()=>{},openRequests:id=>calls.push(['open-request',id])}), createCarpoolApi:()=>({}),
         ...finance, ...categories, ...auction, initDriverCabinet, orderTimeInfo, normalizeCity, priceDescription,
         window: dom.window, document: dom.window.document, navigator: dom.window.navigator,
         localStorage: dom.window.localStorage, Notification: permission, atob, URLSearchParams,
@@ -234,3 +236,22 @@ for (const [kind, expected] of [
     f.close();
 }
 console.log('PASS: push migration, card/account changes, retry UI, permission gesture, staged errors, disconnect, races and timeouts');
+
+// A request arriving through FCM uses one local sound and opens its own demand card.
+{
+    const f=fixture();
+    await f.run('enableDriverPushSubscription()');
+    f.run("currentAccount={active:true};currentDriver={status:'active',authUid:'me',carpoolEnabled:true};var requestSounds=0;playOrderSound=async()=>{requestSounds++;};");
+    await f.run("requestAlerts.setContext(currentUser,true)");
+    const data={type:'passenger_request',requestId:'request-1',createdAt:String(Date.now())};
+    await f.receive({data});await f.receive({data});
+    assert.equal(f.run('requestSounds'),1);
+    assert.equal(f.messages.length,1);assert.equal(f.messages[0][1].silent,true);
+    assert.match(f.messages[0][1].data.url,/request=request-1/);
+    assert.equal(f.get('driver-new-order-alert-view').textContent,'Посмотреть заявку');
+    f.get('driver-new-order-alert-view').click();
+    assert.deepEqual(f.calls.at(-1),['open-request','request-1']);
+    f.run('orderAlertsEnabled=false');await f.receive({data:{...data,requestId:'muted'}});assert.equal(f.run('requestSounds'),1);
+    await f.run('requestAlerts.setContext(null,false)');f.run('hideNewOrderAlert()');f.close();
+}
+console.log('PASS: passenger request push sounds once, respects mute and opens the matching request');

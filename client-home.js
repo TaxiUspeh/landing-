@@ -1,10 +1,11 @@
+import { carpoolAvailability, availableCarpoolTrips } from './carpool-availability.js?v=85';
 import { BOOKING_SERVICES } from './booking-core.js?v=78';
 import { carpoolBookings, activeCarpoolBookings } from './carpool-bookings.js?v=82';
 import { carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis } from './carpool-common.js?v=82';
 import { passengerRequests, activePassengerRequests } from './passenger-request-store.js?v=82';
 
 // Presentation only: existing booking forms and Firebase order panels stay in place.
-export function initClientHome({ bookingsStore = carpoolBookings, requestsStore = passengerRequests } = {}) {
+export function initClientHome({ bookingsStore = carpoolBookings, requestsStore = passengerRequests, availabilityStore = carpoolAvailability } = {}) {
   const root = document.getElementById('clientHome');
   if (!root || root.dataset.ready) return;
   root.dataset.ready = 'true';
@@ -221,7 +222,22 @@ export function initClientHome({ bookingsStore = carpoolBookings, requestsStore 
   const observer = new MutationObserver(syncOrder);
   panels.forEach(item => observer.observe(item.node, { attributes: true, attributeFilter: ['class', 'hidden'], childList: true, characterData: true, subtree: true }));
   window.addEventListener('storage', event => { if (event.key === 'taxi_full_orders_history' && page === 'trips') renderHistory(); });
-  root.querySelector('[data-home-carpool-open]')?.addEventListener('click', () => window.bookingScreen?.openCarpool?.());
+  const availability = root.querySelector('[data-home-carpool-open]');
+  let lastSignal = 0;
+  availability?.addEventListener('click', () => { availability.classList.remove('home-intercity-pulse'); window.bookingScreen?.openCarpool?.('', '', true); });
+  availabilityStore.subscribe(next => {
+    if (!availability) return;
+    const count = availableCarpoolTrips(next.trips).length;
+    const badge = availability.querySelector('[data-carpool-available-count]'), copy = availability.querySelector('small');
+    badge.hidden = !count; badge.textContent = `${count} ${count % 10 === 1 && count % 100 !== 11 ? 'рейс' : count % 10 >= 2 && count % 10 <= 4 && !(count % 100 >= 12 && count % 100 <= 14) ? 'рейса' : 'рейсов'}`;
+    availability.classList.toggle('home-intercity-available', count > 0);
+    copy.textContent = count ? 'Есть свободные места · Посмотреть →' : next.loading ? 'Проверяем свободные места…' : next.error ? 'Не удалось обновить рейсы · Открыть' : 'Найти попутку или оставить заявку';
+    availability.setAttribute('aria-label', `Межгород / Попутки. ${count ? badge.textContent + '. Есть свободные места' : copy.textContent}`);
+    if (!count) availability.classList.remove('home-intercity-pulse');
+    else if (next.signal !== lastSignal) { availability.classList.remove('home-intercity-pulse'); void availability.offsetWidth; availability.classList.add('home-intercity-pulse'); }
+    lastSignal = next.signal;
+  });
+  availability?.addEventListener('animationend', () => availability.classList.remove('home-intercity-pulse'));
   requestsStore.subscribe(next => { requestState = next; renderRequests(); });
   window.setInterval(renderRequests, 60000);
   showPage('home', false);

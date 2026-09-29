@@ -23,7 +23,7 @@ function chunks(values, size) {
   return result;
 }
 
-async function eligibleDriverPushSubscriptions(targetDriverUid = '', order = null) {
+async function eligibleDriverPushSubscriptions(targetDriverUid = '', order = null, acceptsDriver = () => true) {
   const { eligiblePushDevice } = await import('./driver-services.mjs');
   const tokenSnapshot = await db.collection('driverPushTokens').where('enabled', '==', true).get();
   if (tokenSnapshot.empty) return [];
@@ -50,7 +50,7 @@ async function eligibleDriverPushSubscriptions(targetDriverUid = '', order = nul
     const driverId = String(subscription.driverId || '');
     const account = accountsByUid.get(uid);
     const driver = driversById.get(driverId);
-    return eligiblePushDevice(subscription, account, driver, targetDriverUid, order);
+    return eligiblePushDevice(subscription, account, driver, targetDriverUid, order) && acceptsDriver(driver);
   });
 }
 
@@ -130,7 +130,11 @@ const carpoolActions = createCarpoolActions({ db, Timestamp, HttpsError });
 exports.carpoolCommand = onCall({ timeoutSeconds: 60 }, carpoolActions.command);
 
 
-const { carpoolBookingMessage } = require('./carpool-push.cjs');
+const { carpoolBookingMessage, createPassengerRequestPush } = require('./carpool-push.cjs');
+exports.notifyDriversOfPassengerRequest = onDocumentCreated(
+  { document: 'passenger_requests/{requestId}', retry: true, timeoutSeconds: 60 },
+  createPassengerRequestPush({ db, messaging: getMessaging(), Timestamp, eligibleSubscriptions: eligibleDriverPushSubscriptions })
+);
 exports.notifyCarpoolBooking = onDocumentWritten({ document: 'carpoolBookings/{bookingId}', retry: true }, async event => {
   const before = event.data?.before.data(), after = event.data?.after.data();
   const data = carpoolBookingMessage(before, after, event.params.bookingId);

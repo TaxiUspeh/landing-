@@ -1,3 +1,5 @@
+import { createPassengerRequestAlerts } from '../../passenger-request-alerts.js';
+import { serviceEnabled } from '../../functions/driver-services.mjs';
 import * as cargo from '../../cargo-fare.js';
 import { createCargoWorkControls } from '../../cargo-controls.js';
 import { navigationRoute } from '../../booking-route.js';
@@ -31,7 +33,7 @@ const carpoolApi = {
     watchRequests(_count, cb){ demandListener=cb; cb(requestRows); return ()=>{demandStops++;}; },
     read:async()=>({name:'Пассажир',phone:'+77000000002'})
 };
-const context = vm.createContext({
+const context = vm.createContext({ createPassengerRequestAlerts, serviceEnabled,
         initCarpoolWork, createCarpoolApi:()=>carpoolApi,
     ...cargo, createCargoWorkControls, ...finance, ...categories, ...auction, navigationRoute, initDriverCabinet, orderTimeInfo, normalizeCity, priceDescription,
     document, window, navigator:window.navigator, localStorage:window.localStorage,

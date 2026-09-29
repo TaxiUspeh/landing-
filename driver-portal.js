@@ -1,5 +1,6 @@
-import { initCarpoolWork } from './carpool-work.js?v=82';
-import { createCarpoolApi } from './carpool-api.js?v=82';
+import { createPassengerRequestAlerts } from './passenger-request-alerts.js?v=85';
+import { initCarpoolWork } from './carpool-work.js?v=85';
+import { createCarpoolApi } from './carpool-api.js?v=85';
 import { isMeteredCargo, cargoCanComplete, cargoFareDescription } from './cargo-fare.js?v=77';
 import { createCargoWorkControls } from './cargo-controls.js?v=77';
 import { updateCargoWork } from './cargo-work.js?v=79';
@@ -184,7 +185,11 @@ let authActionInProgress = false;
 let orderActionInProgress = false;
 let currentUser = null;
 let currentDriverId = '';
-const carpoolWork = initCarpoolWork(document.getElementById('driver-view-carpool'), createCarpoolApi());
+const carpoolApi = createCarpoolApi();
+const carpoolWork = initCarpoolWork(document.getElementById('driver-view-carpool'), carpoolApi);
+let requestAlertStorage;
+try { requestAlertStorage = window.sessionStorage; } catch {}
+const requestAlerts = createPassengerRequestAlerts({ api: carpoolApi, storage: requestAlertStorage, onAlert: signalPassengerRequest });
 let currentDriver = null;
 let currentAccount = null;
 let currentBaseEligible = false;
@@ -211,6 +216,7 @@ let orderAudioContext = null;
 let initialOpenOrdersLoaded = false;
 let seenOpenOrderIds = new Set();
 let currentAlertOrderId = '';
+let currentAlertRequestId = '';
 let newOrderAlertTimer = null;
 let requestedOrderHandled = false;
 let watchedHistoryDriverId = '';
@@ -519,6 +525,7 @@ function listenForTestPushes() {
     if (unsubscribePushForeground) return;
     unsubscribePushForeground = onMessage(getMessaging(app), async payload => {
         const data = payload?.data || {};
+        if (data.type === 'passenger_request') { if (orderAlertsEnabled && canReceivePassengerRequests()) requestAlerts.receive(data); return; }
         if (data.type === 'carpool' && orderAlertsEnabled && canConfigureDriverPush()) {
             await showSystemNotification({ title: data.title || 'Попутки', body: data.body || 'Изменение бронирования', tag: data.orderId || 'carpool', url: './drivers.html?carpool=1' });
             return;
@@ -732,18 +739,18 @@ function vibrateForChat() {
 function hideNewOrderAlert() {
     if (newOrderAlertTimer) clearTimeout(newOrderAlertTimer);
     newOrderAlertTimer = null;
-    currentAlertOrderId = '';
+    currentAlertOrderId = ''; currentAlertRequestId = '';
     setHidden(elements.newOrderAlert, true);
 }
 
-function showNewOrderAlert({ title, route, price, orderId = '' }) {
+function showNewOrderAlert({ title, route, price, orderId = '', requestId = '' }) {
     if (!elements.newOrderAlert) return;
     if (newOrderAlertTimer) clearTimeout(newOrderAlertTimer);
-    currentAlertOrderId = orderId;
+    currentAlertOrderId = orderId; currentAlertRequestId = requestId;
     elements.newOrderAlertTitle.textContent = title;
     elements.newOrderAlertRoute.textContent = route;
     elements.newOrderAlertPrice.textContent = price;
-    elements.newOrderAlertView.textContent = orderId ? 'Посмотреть заказ' : 'Перейти к заказам';
+    elements.newOrderAlertView.textContent = requestId ? 'Посмотреть заявку' : orderId ? 'Посмотреть заказ' : 'Перейти к заказам';
     setHidden(elements.newOrderAlert, false);
     newOrderAlertTimer = setTimeout(hideNewOrderAlert, 15000);
 }
@@ -766,13 +773,13 @@ function scrollToOrder(orderId = '') {
     }
 }
 
-async function showSystemNotification({ title, body, tag, url }) {
+async function showSystemNotification({ title, body, tag, url, silent = false }) {
     if (notificationPermission() !== 'granted') return false;
     const options = {
         body,
         icon: './favicon-192x192.png',
         badge: './favicon-32x32.png',
-        vibrate: [180, 90, 180],
+        ...(silent ? { silent: true } : { vibrate: [180, 90, 180] }),
         tag,
         renotify: true,
         data: { url }
@@ -791,7 +798,8 @@ async function showSystemNotification({ title, body, tag, url }) {
         const notificationOrderId = new URL(url, window.location.href).searchParams.get('order') || '';
         notification.onclick = () => {
             window.focus();
-            scrollToOrder(notificationOrderId);
+            const requestId = new URL(url, window.location.href).searchParams.get('request');
+            if (requestId) openPassengerRequest(requestId); else if (new URL(url, window.location.href).searchParams.has('carpool')) cabinet?.open('carpool'); else scrollToOrder(notificationOrderId);
             notification.close();
         };
         return true;
@@ -842,6 +850,20 @@ function orderNavigationUrl(order) {
     return `https://yandex.kz/maps/?mode=routes&rtext=${encodeURIComponent(routeText)}&rtt=auto`;
 }
 
+function canReceivePassengerRequests() {
+    return Boolean(currentUser && currentAccount?.active === true && currentDriver?.status === 'active'
+        && currentDriver.authUid === currentUser.uid && currentDriver.carpoolEnabled === true && serviceEnabled(currentDriver));
+}
+
+function openPassengerRequest(id) { cabinet?.open('carpool'); carpoolWork?.openRequests?.(id); }
+
+function signalPassengerRequest({ requestId, title, body }) {
+    if (!orderAlertsEnabled || !canReceivePassengerRequests()) return;
+    showNewOrderAlert({ title, route: body, price: '', requestId });
+    if (!document.hidden) { void playOrderSound(); vibrateForOrder(); }
+    void showSystemNotification({ title, body, tag: `taxi-uspeh-order-passenger_request_${requestId}`, url: `./drivers.html?carpool=1&request=${encodeURIComponent(requestId)}`, silent: !document.hidden });
+}
+
 function signalNewOrder(order) {
     if (!orderAlertsEnabled || !currentCanTakeOrders) return;
     const route = orderRoute(order);
@@ -879,6 +901,7 @@ async function toggleOrderAlerts() {
     if (driverPushSyncInProgress || driverPushDisconnectInProgress) return;
     if (orderAlertsEnabled) {
         orderAlertsEnabled = false;
+        void requestAlerts.setContext(null, false);
         saveOrderAlertsPreference();
         hideNewOrderAlert();
         if ('vibrate' in navigator) navigator.vibrate(0);
@@ -888,6 +911,7 @@ async function toggleOrderAlerts() {
     }
 
     orderAlertsEnabled = true;
+    void requestAlerts.setContext(currentUser, canReceivePassengerRequests());
     saveOrderAlertsPreference();
     void prepareOrderSound().catch(() => null);
     await enableDriverPushSubscription({ requestPermission: true });
@@ -1715,6 +1739,7 @@ function stopOrderWatches() {
 function stopProfileWatches() {
     // Auth changes reset subscriptions; the cabinet DOM is reused on the next sign-in.
     void carpoolWork?.setContext(null);
+    void requestAlerts.setContext(null, false);
     driverPushGeneration += 1;
     driverPushDiagnostic = '';
     unsubscribePushForeground?.();
@@ -2550,6 +2575,7 @@ function watchDriverProfile(user) {
 
         if (!accountSnapshot.exists() || !accountSnapshot.data().driverId) {
             currentDriver = null;
+            void requestAlerts.setContext(null, false);
             currentDriverId = '';
             updateMobilePrimaryAction();
             setHidden(elements.pending, false);
@@ -2557,6 +2583,7 @@ function watchDriverProfile(user) {
         }
 
         const account = accountSnapshot.data();
+        void requestAlerts.setContext(null, false);
         setHidden(elements.pending, true);
         unsubscribeDriver = onSnapshot(doc(db, 'drivers', String(account.driverId)), (driverSnapshot) => {
             if (!driverSnapshot.exists()) {
@@ -2564,6 +2591,7 @@ function watchDriverProfile(user) {
                 setHidden(elements.profile, true);
                 setHidden(elements.pending, false);
                 currentDriver = null;
+                void requestAlerts.setContext(null, false);
                 currentDriverId = '';
                 updateMobilePrimaryAction();
                 showMessage('Карточка водителя не найдена. Сообщите об этом диспетчеру.');
@@ -2582,8 +2610,9 @@ function watchDriverProfile(user) {
             void carpoolWork?.setContext(user, driver);
             currentDriverId = String(account.driverId);
             currentBaseEligible = canAccessOrders(driver, account);
+            void requestAlerts.setContext(user, orderAlertsEnabled && canReceivePassengerRequests());
             updateMobilePrimaryAction();
-            if (new URLSearchParams(window.location.search).has('carpool')) { cabinet?.open('carpool'); window.history.replaceState(null, '', window.location.pathname); }
+            if (new URLSearchParams(window.location.search).has('carpool')) { cabinet?.open('carpool'); const id = new URLSearchParams(window.location.search).get('request'); if (id) carpoolWork?.openRequests?.(id); window.history.replaceState(null, '', window.location.pathname); }
             void loadDriverPushSettings();
             watchBalanceHistory(currentDriverId);
             watchDriverChat(user, currentDriverId);
@@ -2648,12 +2677,14 @@ elements.alertsRetry?.addEventListener('click', () => void retryDriverPushSubscr
 elements.alertsPushTest?.addEventListener('click', () => void testDriverPush());
 elements.newOrderAlertClose?.addEventListener('click', hideNewOrderAlert);
 elements.newOrderAlertView?.addEventListener('click', () => {
-    const orderId = currentAlertOrderId;
+    const orderId = currentAlertOrderId, requestId = currentAlertRequestId;
     hideNewOrderAlert();
-    scrollToOrder(orderId);
+    if (requestId) openPassengerRequest(requestId);
+    else scrollToOrder(orderId);
 });
 
-window.addEventListener('focus', () => { updateOrderAlertsControls(); updateVisibleOrderTimes(); });
+window.addEventListener('focus', () => { updateOrderAlertsControls(); updateVisibleOrderTimes(); void requestAlerts.setContext(currentUser, orderAlertsEnabled && canReceivePassengerRequests()); });
+window.addEventListener('online', () => { void requestAlerts.setContext(currentUser, orderAlertsEnabled && canReceivePassengerRequests()); });
 // Refresh text only: no database reads, list rebuilds or changes to order timestamps.
 setInterval(() => updateVisibleOrderTimes(), 60000);
 document.addEventListener('visibilitychange', () => {

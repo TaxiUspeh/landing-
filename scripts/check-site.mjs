@@ -63,7 +63,7 @@ for (const expected of [
   'href="./drivers.html"',
   'Заказать онлайн',
   'Через WhatsApp',
-  'src="./client-orders.js?v=84"'
+  'src="./client-orders.js?v=85"'
 ]) {
   if (!index.includes(expected)) failures.push('index.html: missing hybrid online order behavior ' + expected);
 }
@@ -88,7 +88,7 @@ if (index.includes('findIntercityRate(destination)') || index.includes('findInte
   failures.push('index.html: taxi pricing still infers a city from street text');
 }
 
-for (const expected of ['id="clientHome"', 'data-home-page="home"', 'data-home-page="services"', 'data-home-page="trips"', 'data-home-page="more"', 'data-home-service="taxi"', 'data-home-current', 'data-home-modal="busScheduleModal"', 'data-home-modal="stroyDomModal"', 'data-home-modal="techInspectionModal"', 'data-home-modal="insuranceModal"', './client-home.js?v=82', './styles/client-home.css?v=80', 'initClientHome();']) {
+for (const expected of ['id="clientHome"', 'data-home-page="home"', 'data-home-page="services"', 'data-home-page="trips"', 'data-home-page="more"', 'data-home-service="taxi"', 'data-home-current', 'data-home-modal="busScheduleModal"', 'data-home-modal="stroyDomModal"', 'data-home-modal="techInspectionModal"', 'data-home-modal="insuranceModal"', './client-home.js?v=85', './styles/client-home.css?v=85', 'initClientHome();']) {
   if (!index.includes(expected)) failures.push('index.html: client home missing ' + expected);
 }
 if (index.includes('servicesActionsCarousel')) failures.push('index.html: retired home carousel remains');
@@ -232,7 +232,7 @@ for (const expected of [
   'id="driver-online-orders"',
   'id="driver-online-orders-list"',
   'Рабочий чат WhatsApp',
-  'src="./driver-portal.js?v=83"',
+  'src="./driver-portal.js?v=85"',
   '<link rel="manifest" href="./drivers.webmanifest">',
   "register('./service-worker.js', { updateViaCache: 'none' })"
 ]) {
@@ -271,7 +271,7 @@ for (const expected of [
   'Свободны',
   'Заняты',
   'id="drivers-list"',
-  'src="./dispatcher.js?v=83"'
+  'src="./dispatcher.js?v=85"'
 ]) {
   if (!dispatcher.includes(expected)) failures.push('dispatcher.html: missing protected dispatcher behavior ' + expected);
 }
@@ -327,7 +327,7 @@ const tailwindConfig = await readFile('tailwind.config.cjs', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
 const dispatcherQuickSearchHtml = await readFile('dispatcher.html', 'utf8');
 const dispatcherQuickSearchScript = await readFile('dispatcher.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v84-address-labels'")) failures.push('service-worker.js: map booking cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v85-carpool-signals'")) failures.push('service-worker.js: map booking cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("'./styles/tailwind.css'")) failures.push('service-worker.js: local Tailwind stylesheet is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
@@ -362,14 +362,14 @@ for (const expected of [
   "'./food-icon-512.png'",
   "'./shashlyk-icon-192.png'",
   "'./shashlyk-icon-512.png'",
-  "'./driver-portal.js?v=83'",
+  "'./driver-portal.js?v=85'",
   "'./drivers.webmanifest'",
   "'./dispatcher.html'",
-  "'./dispatcher.js?v=83'",
+  "'./dispatcher.js?v=85'",
   "'./firebase-config.js'",
-  "'./client-orders.js?v=84'",
-  "'./client-home.js?v=82'",
-  "'./styles/client-home.css?v=80'",
+  "'./client-orders.js?v=85'",
+  "'./client-home.js?v=85'",
+  "'./styles/client-home.css?v=85'",
   'const cachedPage = await caches.match(event.request)'
 ]) {
   if (!serviceWorker.includes(expected)) failures.push('service-worker.js: missing ' + expected);

@@ -769,9 +769,9 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
       if (['taxi', 'wagon', 'minivan'].includes(id)) { state.mode = 'taxi'; state.intercityKind = 'whole'; }
       open(id);
     },
-    openCarpool(bookingId = '', requestId = '') {
+    openCarpool(bookingId = '', requestId = '', allTrips = false) {
       state.intercityKind = 'seats'; open('intercity', false);
-      window.dispatchEvent(new window.CustomEvent('carpool-open', { detail: { bookingId, requestId } }));
+      window.dispatchEvent(new window.CustomEvent('carpool-open', { detail: { bookingId, requestId, allTrips } }));
     },
     onLocation, locationError, coordinates, renderMapStatus, deliveryRoutePoints,
     soberRoutePoints: () => opened && state.service.form === 'soberDriver' ? [state.from, ...state.stops, state.to].map((point, index) => ({ ...point, address: [point.address, index === 0 ? parseHouseDetails(state.details).house : ''].filter(Boolean).join(', ') })) : null,

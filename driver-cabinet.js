@@ -46,7 +46,28 @@ export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = ()
     const balanceHero = node('div', 'cabinet-balance-hero');
     const balanceValue = node('p', 'cabinet-balance-value');
     balanceHero.append(node('p', 'cabinet-eyebrow', 'Ваш баланс'), balanceValue);
-    views.balance.append(balanceHero, finance, $('driver-balance-history'));
+    const topUp = node('details', 'cabinet-topup');
+    topUp.append(node('summary', 'cabinet-button', 'Пополнить баланс'));
+    const payment = node('div', 'cabinet-topup-content');
+    const paymentLabel = node('label', '', 'Номер Kaspi'); paymentLabel.htmlFor = 'driver-kaspi-phone';
+    const paymentPhone = node('input', 'cabinet-topup-phone');
+    paymentPhone.id = 'driver-kaspi-phone'; paymentPhone.type = 'text'; paymentPhone.readOnly = true;
+    paymentPhone.value = '+7 771 439 88 46';
+    const copyStatus = node('p', 'cabinet-topup-status'); copyStatus.setAttribute('role', 'status');
+    const copyPhone = button('Скопировать номер', async () => {
+        copyPhone.disabled = true; copyStatus.textContent = '';
+        try {
+            if (!window.navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+            await window.navigator.clipboard.writeText('+77714398846');
+            copyStatus.textContent = 'Номер скопирован';
+        } catch {
+            paymentPhone.focus(); paymentPhone.select();
+            copyStatus.textContent = 'Скопируйте выделенный номер.';
+        } finally { copyPhone.disabled = false; }
+    });
+    payment.append(paymentLabel, paymentPhone, copyPhone, copyStatus); topUp.append(payment);
+    topUp.addEventListener('toggle', () => { if (!topUp.open) copyStatus.textContent = ''; });
+    views.balance.append(balanceHero, topUp, finance, $('driver-balance-history'));
     const call = node('a', 'cabinet-button', 'Позвонить диспетчеру'); call.href = 'tel:+77770649648';
     views.chat.append(call, $('driver-dispatcher-chat'));
     const settings = node('div', 'cabinet-settings');
@@ -131,6 +152,7 @@ export function initDriverCabinet({ onViewChange = () => {}, onFilterChange = ()
         nav.hidden = !enabled;
         if (enabled) { movable.forEach(([el,target]) => park(el,target)); open('orders', { scroll:false }); }
         else {
+            topUp.open = false; copyStatus.textContent = '';
             for (const [el,marker] of parked.splice(0)) { marker.replaceWith(el); }
             view = 'orders';
             for (const [key, section] of Object.entries(views)) section.hidden = key !== 'orders';

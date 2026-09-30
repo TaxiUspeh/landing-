@@ -77,6 +77,15 @@ html.dark #driver-service-filter, html.dark #driver-service-filter option {
 .cabinet-finance dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--cabinet-border); }
 .cabinet-finance dd { text-align: right; font-weight: 700; }
 .cabinet-finance { margin-bottom: 16px; font-size: 14px; }
+.cabinet-topup { margin: 14px 0 18px; }
+.cabinet-topup > summary { width: 100%; list-style: none; cursor: pointer; background: #ffcf16; color: #17243a; border-color: #ffcf16; }
+.cabinet-topup > summary::-webkit-details-marker { display: none; }
+.cabinet-topup-content { margin-top: 10px; padding: 14px; border: 1px solid var(--cabinet-border); border-radius: 12px; background: var(--cabinet-surface); }
+.cabinet-topup-content label { display: block; font-size: 14px; font-weight: 700; }
+.cabinet-topup-phone { display: block; width: 100%; min-width: 0; margin: 8px 0 12px; padding: 10px; border: 1px solid var(--cabinet-border); border-radius: 8px; font-size: 20px; font-weight: 700; color: inherit; background: var(--cabinet-soft); }
+.cabinet-topup-content .cabinet-button { width: 100%; }
+.cabinet-topup-status { margin-top: 8px; font-size: 13px; color: var(--cabinet-muted); }
+.cabinet-topup-status:empty { display: none; }
 .cabinet-settings, .cabinet-more { display: grid; gap: 10px; margin: 12px 0; }
 .cabinet-settings #driver-user-email { white-space: normal; overflow-wrap: anywhere; }
 .cabinet-settings #driver-install-app-button { background: var(--cabinet-soft); color: var(--cabinet-blue); border-color: var(--cabinet-border); margin: 0; }

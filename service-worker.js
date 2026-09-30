@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v86-service-caption';
+const CACHE_NAME = 'taxi-uspeh-v87-balance-topup';
 const APP_SHELL = [
   './carpool-availability.js?v=85',
   './passenger-request-alerts.js?v=85',
@@ -54,10 +54,10 @@ const APP_SHELL = [
   './drivers.html',
   './drivers.webmanifest',
   './driver-install.js?v=61',
-  './driver-portal.js?v=85',
+  './driver-portal.js?v=87',
   './order-time.js?v=71',
-  './driver-cabinet.js?v=79',
-  './styles/driver-cabinet.css?v=72',
+  './driver-cabinet.js?v=87',
+  './styles/driver-cabinet.css?v=87',
   './dispatcher.html',
   './dispatcher.js?v=85',
   './firebase-config.js',

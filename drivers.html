@@ -346,7 +346,7 @@
                                 </div>
                             </div>
                             <button id="driver-balance-topup" type="button"
-                                    onclick="(function(){const url='kaspi://transfer'; const w=window.open(url,'_blank'); setTimeout(function(){if(w)w.close(); alert('Kaspi: +77714398846');},1200);})()"
+                                    onclick="showKaspiTopup()"
                                     class="w-full mb-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-3 font-extrabold shadow-sm">
                                 <i class="fas fa-wallet mr-2" aria-hidden="true"></i>Пополнить баланс
                             </button>
@@ -785,6 +785,60 @@
 
     <script src="./driver-install.js?v=61"></script>
     <script>
+        // Окно пополнения баланса: номер всегда виден, открытие Kaspi — отдельным нажатием.
+        function showKaspiTopup() {
+            let modal = document.getElementById('kaspi-topup-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'kaspi-topup-modal';
+                modal.className = 'modal-overlay active';
+                modal.setAttribute('role', 'dialog');
+                modal.setAttribute('aria-modal', 'true');
+                modal.setAttribute('aria-labelledby', 'kaspi-topup-title');
+                modal.innerHTML = `
+                    <div class="modal p-5 sm:p-6 text-gray-900 dark:text-white">
+                        <div class="flex items-start justify-between gap-3 mb-4">
+                            <h2 id="kaspi-topup-title" class="text-lg font-extrabold">Пополнение баланса</h2>
+                            <button type="button" id="kaspi-topup-close" class="text-2xl leading-none px-2" aria-label="Закрыть">×</button>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Переведите сумму пополнения на номер Kaspi:</p>
+                        <div class="rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 p-4 mb-3">
+                            <p class="text-xl font-black text-emerald-800 dark:text-emerald-300" id="kaspi-topup-number">+7 771 439 88 46</p>
+                        </div>
+                        <button type="button" id="kaspi-topup-copy" class="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white py-3 font-extrabold mb-2">Скопировать номер</button>
+                        <a href="https://kaspi.kz" target="_blank" rel="noopener noreferrer" class="block w-full text-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-3 font-extrabold">Открыть Kaspi.kz</a>
+                        <p id="kaspi-topup-message" class="text-xs text-gray-500 dark:text-gray-400 mt-3">Если приложение не откроется, скопируйте номер и найдите получателя в Kaspi вручную.</p>
+                    </div>`;
+                document.body.appendChild(modal);
+                const close = () => modal.classList.remove('active');
+                modal.querySelector('#kaspi-topup-close').addEventListener('click', close);
+                modal.addEventListener('click', event => { if (event.target === modal) close(); });
+                modal.querySelector('#kaspi-topup-copy').addEventListener('click', async () => {
+                    const number = '+77714398846';
+                    const message = modal.querySelector('#kaspi-topup-message');
+                    try {
+                        if (navigator.clipboard && window.isSecureContext) {
+                            await navigator.clipboard.writeText(number);
+                        } else {
+                            const field = document.createElement('textarea');
+                            field.value = number;
+                            field.style.position = 'fixed';
+                            field.style.opacity = '0';
+                            document.body.appendChild(field);
+                            field.select();
+                            const copied = document.execCommand('copy');
+                            field.remove();
+                            if (!copied) throw new Error('copy failed');
+                        }
+                        message.textContent = 'Номер скопирован. Откройте Kaspi и вставьте его при переводе.';
+                    } catch (error) {
+                        message.textContent = 'Номер для перевода: +7 771 439 88 46. Вы можете выделить и скопировать его вручную.';
+                    }
+                });
+            }
+            modal.classList.add('active');
+        }
+
         // Логика переключения темы
         const html = document.documentElement;
         const themeIcon = document.getElementById('theme-icon');

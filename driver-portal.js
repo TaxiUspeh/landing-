@@ -1491,6 +1491,13 @@ function createdAtMillis(order) {
     return order.createdAt?.toMillis ? order.createdAt.toMillis() : 0;
 }
 
+function isPendingScheduledReservation(order) {
+    return order?.status === 'accepted'
+        && typeof order.scheduledFor === 'string'
+        && order.scheduledFor.trim() !== ''
+        && currentDriverState.activeOrderId !== order.id;
+}
+
 function orderStatusLabel(status) {
     return ({
         bidding: 'Ждёт предложений',
@@ -1945,7 +1952,7 @@ function createOrderCard(order, assigned, archived = false) {
         assigned
             ? 'flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/50 px-2 py-1 text-[10px] font-extrabold text-blue-800 dark:text-blue-200'
             : 'flex-shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/40 px-2 py-1 text-[10px] font-extrabold text-amber-800 dark:text-amber-200',
-        assigned && isFutureScheduledOrder(order) ? 'Запланированная бронь' : orderStatusLabel(order.status)
+        isPendingScheduledReservation(order) ? 'Запланированная бронь' : orderStatusLabel(order.status)
     );
     header.append(title, badge);
 
@@ -1986,7 +1993,7 @@ function createOrderCard(order, assigned, archived = false) {
     }
 
     const cancellationPending = assigned && order.cancellationRequestStatus === 'pending';
-    const scheduledReservation = assigned && isFutureScheduledOrder(order);
+    const scheduledReservation = assigned && isPendingScheduledReservation(order);
     if (cancellationPending && !archived) {
         primaryActions.append(createText(
             'p',
@@ -2124,7 +2131,7 @@ function renderOnlineOrders() {
         if (cancel) fieldValues.set(card.dataset.orderId, { open:cancel.open, reason:cancel.querySelector('select').value });
     }
     const assignedActive = assignedOrders.filter(order => ACTIVE_ORDER_STATUSES.has(order.status))
-        .sort((a,b) => Number(isFutureScheduledOrder(b)) - Number(isFutureScheduledOrder(a)) || createdAtMillis(b) - createdAtMillis(a));
+        .sort((a,b) => Number(isPendingScheduledReservation(b)) - Number(isPendingScheduledReservation(a)) || createdAtMillis(b) - createdAtMillis(a));
     const available = canViewOpenOrders()
         ? [...openOrders,...auctionOrders].filter(order => driverCanServeOrder(currentDriver, order)).sort((a,b) => createdAtMillis(a) - createdAtMillis(b)) : [];
     const history = assignedOrders.filter(order => ['completed','cancelled'].includes(order.status))

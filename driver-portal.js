@@ -2285,7 +2285,7 @@ function syncOrderWatches(user, driverId, driver, canTakeOrders) {
 
 let reservationActivationInProgress = false;
 async function activateDueReservation() {
-    if (reservationActivationInProgress || !currentUser || !currentDriverId || !currentBaseEligible || !assignedOrdersLoaded) return;
+    if (reservationActivationInProgress || !currentUser || !currentDriverId || !assignedOrdersLoaded) return;
     if (currentDriverState.status === 'busy') return;
     const due = assignedOrders
         .filter(order => order.status === 'accepted' && order.assignedDriverUid === currentUser.uid && order.scheduledFor && !isFutureScheduledOrder(order))

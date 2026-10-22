@@ -70,6 +70,27 @@ try {
     await assertFails(setDoc(doc(db('admin'), 'orders', 'phone-a'), payload));
     await assertSucceeds(setDoc(doc(db('admin'), 'orders', 'phone-b'), { ...payload, assignedDriverUid: 'driver-w', assignedDriverId: 'd-w' }));
   });
+  await test('future reservation acceptance keeps the driver available', async () => {
+    await create('sedan', 1, { scheduledFor: '2099-01-01T09:00' });
+    const driver = db('driver-a');
+    await assertSucceeds(updateDoc(doc(driver, 'orders', 'order-a'), {
+      status: 'accepted', assignedDriverUid: 'driver-a', assignedDriverId: 'd-a',
+      driverName: 'Driver a', driverPhone: '', driverCar: '', driverColor: '',
+      acceptedAt: serverTimestamp(), updatedAt: serverTimestamp()
+    }));
+    const state = (await getDoc(doc(driver, 'driverStates', 'driver-a'))).data();
+    assert.equal(state.status, 'available');
+    assert.equal(state.activeOrderId, '');
+  });
+  await test('dispatcher can assign a future reservation without occupying the driver', async () => {
+    const payload = { ...orderData('sedan'), source: 'dispatcher', clientUid: '', scheduledFor: '2099-01-01T09:00',
+      status: 'accepted', assignedDriverUid: 'driver-a', assignedDriverId: 'd-a', driverName: 'Driver a',
+      driverPhone: '', driverCar: '', driverColor: '', acceptedAt: serverTimestamp() };
+    await assertSucceeds(setDoc(doc(db('admin'), 'orders', 'scheduled-phone'), payload));
+    const state = (await getDoc(doc(db('admin'), 'driverStates', 'driver-a'))).data();
+    assert.equal(state.status, 'available');
+    assert.equal(state.activeOrderId, '');
+  });
   await test('legacy cars keep ordinary orders and minivan may accept an ordinary fare', async () => {
     await create('sedan', 1); await assertSucceeds(accept('a'));
     await env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), 'orders', 'order-a'), { status: 'searching', assignedDriverUid: '', assignedDriverId: '' }));

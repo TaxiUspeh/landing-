@@ -5,7 +5,7 @@ import { createCargoWorkControls } from '../../cargo-controls.js';
 import { navigationRoute } from '../../booking-route.js';
 import { normalizeCity } from '../../booking-core.js';
 import { priceDescription } from '../../customer-pricing.js';
-import { orderTimeInfo } from '../../order-time.js';
+import { orderTimeInfo, isFutureScheduledOrder } from '../../order-time.js';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
@@ -36,7 +36,7 @@ const carpoolApi = {
 const context = vm.createContext({ createPassengerRequestAlerts, serviceEnabled,
         initCarpoolWork, createCarpoolApi:()=>carpoolApi,
     ...cargo, createCargoWorkControls, ...finance, ...categories, ...auction, navigationRoute, initDriverCabinet, orderTimeInfo, normalizeCity, priceDescription,
-    document, window, navigator:window.navigator, localStorage:window.localStorage,
+    document, window, navigator:window.navigator, localStorage:window.localStorage, isFutureScheduledOrder,
     URLSearchParams, console, setTimeout:()=>1, clearTimeout:()=>{}, setInterval:()=>1, clearInterval:()=>{},
     requestAnimationFrame:callback=>callback(), auth:{}, db:{}, googleProvider:{},
     getRedirectResult:async()=>null, onAuthStateChanged:(_auth,fn)=>{authListener=fn;},

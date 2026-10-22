@@ -23,7 +23,7 @@ function ageText(elapsed) {
 function scheduledInfo(value, now) {
   if (!value) return { text: '', future: false, valid: true };
   // datetime-local is a wall-clock appointment, not a UTC timestamp.
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::\d{2})?$/.exec(value);
+  const match = /^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})(?::\\d{2})?$/.exec(value);
   if (!match) return { text: `Подача: ${String(value).replace('T', ' ')}`, future: false, valid: false };
   const [, year, month, day, hour, minute] = match;
   const noon = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 12));
@@ -34,6 +34,17 @@ function scheduledInfo(value, now) {
   const date = dayKey === today ? 'сегодня' : dateFormat(year !== today.slice(0, 4)).format(noon);
   return { text: `Подача ${date} в ${hour}:${minute}`, valid: true, future: `${dayKey}T${hour}:${minute}` > `${today}T${clock.format(now)}` };
 }
+
+/**
+ * True only when a valid scheduledFor appointment is later than the service clock.
+ * datetime-local values are interpreted in the service's Asia/Almaty time zone.
+ * Invalid or missing values are deliberately not treated as future reservations.
+ */
+export function isFutureScheduledOrder(order, now = Date.now()) {
+  if (typeof order?.scheduledFor !== 'string' || !order.scheduledFor) return false;
+  return scheduledInfo(order.scheduledFor, now).future === true;
+}
+
 export function orderTimeInfo(order, now = Date.now()) {
   const created = timestampMillis(order.createdAt), schedule = scheduledInfo(order.scheduledFor, now);
   if (created === null) return { createdText: 'Время создания не указано', dateTime: '', title: '', scheduledText: schedule.text, waiting: false };

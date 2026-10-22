@@ -76,6 +76,11 @@ assert.match(compactCard.querySelector('.cabinet-price-details').textContent,/Р
 const increased=run('createOrderCard({...compactExample,customerOfferPrice:2500,priceAmount:2500,priceText:"2 500 ₸",previousPrice:2184,priceRevision:1},false)');
 assert.equal(increased.querySelector('.cabinet-price-note').textContent,'Цена повышена');
 assert.match(increased.querySelector('.cabinet-price-details').textContent,/Цена повышена:/);
+const scheduledCard=run(`createOrderCard({...compactExample,status:'accepted',scheduledFor:'2099-01-01T09:00',assignedDriverUid:'test-driver'},true)`);
+assert.match(scheduledCard.textContent,/Запланированная бронь/);
+assert.match(scheduledCard.textContent,/До времени подачи вы можете принимать обычные заказы/);
+assert.equal(scheduledCard.querySelector('[data-order-control="advance"]'),null);
+assert.equal(scheduledCard.querySelector('[data-order-control="requeue"]'),null);
 // Minute refresh preserves card order, action controls, focus and open details.
 run(`const creation = Date.parse('2026-09-20T05:42:00Z');
 openOrders.forEach((order,i)=>{order.createdAt={toMillis:()=>creation+i*60000};});

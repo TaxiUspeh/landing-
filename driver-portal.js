@@ -1559,7 +1559,7 @@ function renderWorkStatus(driver, account, state = currentDriverState) {
         icon = 'fas fa-circle-notch fa-spin';
     } else if (status === 'offline'
         && state?.exists === false
-        && assignedOrders.some((order) => ACTIVE_ORDER_STATUSES.has(order.status))) {
+        && assignedOrders.some((order) => ACTIVE_ORDER_STATUSES.has(order.status) && !isPendingScheduledReservation(order))) {
         title = 'Восстанавливаем текущий заказ';
         detail = 'Ранее начатая поездка останется у вас и не потеряется.';
         icon = 'fas fa-rotate';
@@ -1621,7 +1621,7 @@ async function ensureDriverAvailable() {
         || !currentBaseEligible
         || !assignedOrdersLoaded) return false;
     if (['available', 'busy'].includes(currentDriverState.status)) return true;
-    if (assignedOrders.some((order) => ACTIVE_ORDER_STATUSES.has(order.status) && !isFutureScheduledOrder(order))) {
+    if (assignedOrders.some((order) => ACTIVE_ORDER_STATUSES.has(order.status) && !isPendingScheduledReservation(order))) {
         await repairMissingBusyState();
         return false;
     }
@@ -1656,7 +1656,7 @@ async function ensureDriverAvailable() {
 
 async function repairMissingBusyState() {
     if (legacyStateRepairInProgress || !currentUser || currentDriverState.exists !== false) return;
-    const activeOrder = assignedOrders.find((order) => ACTIVE_ORDER_STATUSES.has(order.status) && !isFutureScheduledOrder(order));
+    const activeOrder = assignedOrders.find((order) => ACTIVE_ORDER_STATUSES.has(order.status) && !isPendingScheduledReservation(order));
     if (!activeOrder) return;
     legacyStateRepairInProgress = true;
     try {
@@ -1669,7 +1669,7 @@ async function repairMissingBusyState() {
             if (!orderSnapshot.exists()
                 || orderSnapshot.data().assignedDriverUid !== currentUser.uid
                 || !ACTIVE_ORDER_STATUSES.has(orderSnapshot.data().status)
-                || isFutureScheduledOrder(orderSnapshot.data())) return;
+                || isPendingScheduledReservation({ ...orderSnapshot.data(), id: activeOrder.id })) return;
             transaction.set(stateRef, {
                 driverId: currentDriverId,
                 status: 'busy',

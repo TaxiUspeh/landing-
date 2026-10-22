@@ -1999,13 +1999,13 @@ async function createPhoneOrder(event) {
                     });
                 }
             });
-            setMessage(
-                elements.onlineOrdersMessage,
-                cabinetIsOpen
-                    ? `${baseOrder.serviceLabel}: заказ ${baseOrder.orderNumber} назначен водителю ID ${selectedDriver.driverNumber ?? selectedDriver.id}.`
-                    : `${baseOrder.serviceLabel}: заказ ${baseOrder.orderNumber} назначен водителю ID ${selectedDriver.driverNumber ?? selectedDriver.id}. Пуш отправлен; при необходимости подтвердите заказ звонком.`,
-                true
-            );
+            const assignedDriverLabel = `водителю ID ${selectedDriver.driverNumber ?? selectedDriver.id}`;
+            const scheduledMessage = isFutureScheduledOrder(baseOrder)
+                ? `${baseOrder.serviceLabel}: бронь ${baseOrder.orderNumber} на ${baseOrder.scheduledFor.replace('T', ' ')} назначена ${assignedDriverLabel}. До времени подачи водитель остаётся доступен для обычных заказов.`
+                : cabinetIsOpen
+                    ? `${baseOrder.serviceLabel}: заказ ${baseOrder.orderNumber} назначен ${assignedDriverLabel}.`
+                    : `${baseOrder.serviceLabel}: заказ ${baseOrder.orderNumber} назначен ${assignedDriverLabel}. Пуш отправлен; при необходимости подтвердите заказ звонком.`;
+            setMessage(elements.onlineOrdersMessage, scheduledMessage, true);
         }
         elements.phoneOrderForm.reset();
         setPhoneOrderService('taxi');

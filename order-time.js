@@ -23,7 +23,7 @@ function ageText(elapsed) {
 function scheduledInfo(value, now) {
   if (!value) return { text: '', future: false, valid: true };
   // datetime-local is a wall-clock appointment, not a UTC timestamp.
-  const match = /^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})(?::\\d{2})?$/.exec(value);
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::\d{2})?$/.exec(value);
   if (!match) return { text: `Подача: ${String(value).replace('T', ' ')}`, future: false, valid: false };
   const [, year, month, day, hour, minute] = match;
   const noon = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 12));

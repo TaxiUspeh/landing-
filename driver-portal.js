@@ -5,7 +5,7 @@ import { isMeteredCargo, cargoCanComplete, cargoFareDescription } from './cargo-
 import { createCargoWorkControls } from './cargo-controls.js?v=77';
 import { updateCargoWork } from './cargo-work.js?v=79';
 import { navigationRoute } from './booking-route.js?v=78';
-import { orderTimeInfo } from './order-time.js?v=71';
+import { orderTimeInfo, isFutureScheduledOrder } from './order-time.js?v=72';
 import { normalizeCity } from './booking-core.js?v=78';
 import { serviceEnabled, allowedOrderServices, profileForOrder, assignmentVehicle, serviceDirection } from './functions/driver-services.mjs?v=78';
 import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=78';
@@ -1614,7 +1614,7 @@ async function ensureDriverAvailable() {
         || !currentBaseEligible
         || !assignedOrdersLoaded) return false;
     if (['available', 'busy'].includes(currentDriverState.status)) return true;
-    if (assignedOrders.some((order) => ACTIVE_ORDER_STATUSES.has(order.status))) {
+    if (assignedOrders.some((order) => ACTIVE_ORDER_STATUSES.has(order.status) && !isFutureScheduledOrder(order))) {
         await repairMissingBusyState();
         return false;
     }
@@ -1649,7 +1649,7 @@ async function ensureDriverAvailable() {
 
 async function repairMissingBusyState() {
     if (legacyStateRepairInProgress || !currentUser || currentDriverState.exists !== false) return;
-    const activeOrder = assignedOrders.find((order) => ACTIVE_ORDER_STATUSES.has(order.status));
+    const activeOrder = assignedOrders.find((order) => ACTIVE_ORDER_STATUSES.has(order.status) && !isFutureScheduledOrder(order));
     if (!activeOrder) return;
     legacyStateRepairInProgress = true;
     try {
@@ -1661,7 +1661,8 @@ async function repairMissingBusyState() {
             if (stateSnapshot.exists()) return;
             if (!orderSnapshot.exists()
                 || orderSnapshot.data().assignedDriverUid !== currentUser.uid
-                || !ACTIVE_ORDER_STATUSES.has(orderSnapshot.data().status)) return;
+                || !ACTIVE_ORDER_STATUSES.has(orderSnapshot.data().status)
+                || isFutureScheduledOrder(orderSnapshot.data())) return;
             transaction.set(stateRef, {
                 driverId: currentDriverId,
                 status: 'busy',
@@ -1985,6 +1986,7 @@ function createOrderCard(order, assigned, archived = false) {
     }
 
     const cancellationPending = assigned && order.cancellationRequestStatus === 'pending';
+    const scheduledReservation = assigned && isFutureScheduledOrder(order);
     if (cancellationPending && !archived) {
         primaryActions.append(createText(
             'p',
@@ -2028,6 +2030,8 @@ function createOrderCard(order, assigned, archived = false) {
         acceptButton.disabled = orderActionInProgress || !currentCanTakeOrders || !funding.allowed || !driverCanServeOrder(currentDriver, order);
         acceptButton.addEventListener('click', () => acceptOrder(order.id));
         primaryActions.append(acceptButton);
+    } else if (scheduledReservation) {
+        primaryActions.append(createText('p', 'mt-3 rounded-lg border border-indigo-300 bg-indigo-50 p-3 text-xs font-bold text-indigo-900 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-100', 'Запланированный заказ. До времени подачи вы можете принимать обычные заказы. Кабинет активирует бронь, когда наступит время подачи и текущая поездка будет завершена.'));
     } else {
         const terms = orderCommission(order);
         metadata.append(createText('span', 'cabinet-order-commission', `Комиссия: ${terms.rate}% · В резерве ${formatMoney(terms.amount)}`));
@@ -2120,7 +2124,7 @@ function renderOnlineOrders() {
         if (cancel) fieldValues.set(card.dataset.orderId, { open:cancel.open, reason:cancel.querySelector('select').value });
     }
     const assignedActive = assignedOrders.filter(order => ACTIVE_ORDER_STATUSES.has(order.status))
-        .sort((a,b) => createdAtMillis(b) - createdAtMillis(a));
+        .sort((a,b) => Number(isFutureScheduledOrder(b)) - Number(isFutureScheduledOrder(a)) || createdAtMillis(b) - createdAtMillis(a));
     const available = canViewOpenOrders()
         ? [...openOrders,...auctionOrders].filter(order => driverCanServeOrder(currentDriver, order)).sort((a,b) => createdAtMillis(a) - createdAtMillis(b)) : [];
     const history = assignedOrders.filter(order => ['completed','cancelled'].includes(order.status))
@@ -2254,6 +2258,7 @@ function syncOrderWatches(user, driverId, driver, canTakeOrders) {
                 if (currentDriver && currentAccount) renderWorkStatus(currentDriver, currentAccount);
                 void repairMissingBusyState();
                 void ensureDriverAvailable();
+                void activateDueReservation();
             },
             (error) => {
                 unsubscribeAssignedOrders = null;
@@ -2270,6 +2275,46 @@ function syncOrderWatches(user, driverId, driver, canTakeOrders) {
     else stopOpenOrdersWatch();
     renderOnlineOrders();
 }
+
+let reservationActivationInProgress = false;
+async function activateDueReservation() {
+    if (reservationActivationInProgress || !currentUser || !currentDriverId || !currentBaseEligible || !assignedOrdersLoaded) return;
+    if (currentDriverState.status === 'busy') return;
+    const due = assignedOrders
+        .filter(order => order.status === 'accepted' && order.assignedDriverUid === currentUser.uid && order.scheduledFor && !isFutureScheduledOrder(order))
+        .sort((a, b) => String(a.scheduledFor).localeCompare(String(b.scheduledFor)))[0];
+    if (!due) return;
+    reservationActivationInProgress = true;
+    try {
+        await runTransaction(db, async transaction => {
+            const stateRef = doc(db, 'driverStates', currentUser.uid);
+            const orderRef = doc(db, 'orders', due.id);
+            const stateSnapshot = await transaction.get(stateRef);
+            const orderSnapshot = await transaction.get(orderRef);
+            if (!stateSnapshot.exists() || !orderSnapshot.exists()) return;
+            const state = normalizedDriverState(stateSnapshot, currentDriverId);
+            const order = orderSnapshot.data();
+            if (state.status !== 'available' || state.activeOrderId
+                || order.assignedDriverUid !== currentUser.uid || order.status !== 'accepted'
+                || !order.scheduledFor || isFutureScheduledOrder(order)) return;
+            transaction.update(stateRef, {
+                status: 'busy',
+                activeOrderId: due.id,
+                lastSeen: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        });
+    } catch (error) {
+        console.warn('Не удалось активировать бронь по времени:', error.code || error.message);
+    } finally {
+        reservationActivationInProgress = false;
+    }
+}
+
+setInterval(() => {
+    void activateDueReservation();
+    renderOnlineOrders();
+}, 30000);
 
 async function acceptOrder(orderId) {
     if (!currentUser || !currentDriver || !currentCanTakeOrders || orderActionInProgress) return;
@@ -2288,6 +2333,7 @@ async function acceptOrder(orderId) {
             const driverSnapshot = await transaction.get(doc(db, 'drivers', currentDriverId));
             if (!driverSnapshot.exists() || !driverCanServeOrder(driverSnapshot.data(), orderSnapshot.data())) throw new Error('Этот заказ требует другой категории автомобиля или большего числа мест.');
             const state = normalizedDriverState(stateSnapshot, currentDriverId);
+            const scheduledReservation = isFutureScheduledOrder(orderSnapshot.data());
             if (!stateSnapshot.exists() || state.status !== 'available' || state.activeOrderId) {
                 throw new Error('Вы уже заняты или кабинет ещё подключается к заказам.');
             }
@@ -2302,18 +2348,23 @@ async function acceptOrder(orderId) {
                 acceptedAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
-            transaction.update(stateRef, {
-                status: 'busy',
-                activeOrderId: orderId,
-                lastSeen: serverTimestamp(),
-                updatedAt: serverTimestamp()
-            });
+            if (!scheduledReservation) {
+                transaction.update(stateRef, {
+                    status: 'busy',
+                    activeOrderId: orderId,
+                    lastSeen: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
+            }
         }));
         const balance = Number(currentDriver.balance);
+        const acceptedOrder = assignedOrders.find(order => order.id === orderId) || openOrders.find(order => order.id === orderId) || {};
         showOrdersMessage(
-            Number.isFinite(balance) && balance >= 0
-                ? `Заказ принят. Напоминание: пополните баланс. Текущий баланс: ${formatMoney(balance)}.`
-                : 'Заказ принят. Теперь вам доступен телефон клиента.',
+            isFutureScheduledOrder(acceptedOrder)
+                ? 'Бронь принята. До времени подачи вы можете принимать обычные заказы.'
+                : Number.isFinite(balance) && balance >= 0
+                    ? `Заказ принят. Напоминание: пополните баланс. Текущий баланс: ${formatMoney(balance)}.`
+                    : 'Заказ принят. Теперь вам доступен телефон клиента.',
             true
         );
     } catch (error) {

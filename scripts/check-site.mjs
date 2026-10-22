@@ -232,7 +232,7 @@ for (const expected of [
   'id="driver-online-orders"',
   'id="driver-online-orders-list"',
   'Рабочий чат WhatsApp',
-  'src="./driver-portal.js?v=85"',
+  'src="./driver-portal.js?v=86"',
   '<link rel="manifest" href="./drivers.webmanifest">',
   "register('./service-worker.js', { updateViaCache: 'none' })"
 ]) {
@@ -271,7 +271,7 @@ for (const expected of [
   'Свободны',
   'Заняты',
   'id="drivers-list"',
-  'src="./dispatcher.js?v=85"'
+  'src="./dispatcher.js?v=86"'
 ]) {
   if (!dispatcher.includes(expected)) failures.push('dispatcher.html: missing protected dispatcher behavior ' + expected);
 }
@@ -362,10 +362,10 @@ for (const expected of [
   "'./food-icon-512.png'",
   "'./shashlyk-icon-192.png'",
   "'./shashlyk-icon-512.png'",
-  "'./driver-portal.js?v=85'",
+  "'./driver-portal.js?v=86'",
   "'./drivers.webmanifest'",
   "'./dispatcher.html'",
-  "'./dispatcher.js?v=85'",
+  "'./dispatcher.js?v=86'",
   "'./firebase-config.js'",
   "'./client-orders.js?v=85'",
   "'./client-home.js?v=85'",

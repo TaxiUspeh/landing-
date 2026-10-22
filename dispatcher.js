@@ -13,6 +13,7 @@ import { createFinanceControls } from './driver-finance-controls.js?v=79';
 import { createVehicleControls } from './vehicle-category-controls.js?v=79';
 import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=78';
 import { currentAuctionOffer } from './auction-core.js?v=79';
+import { isFutureScheduledOrder } from './order-time.js?v=72';
 import { auth, db, googleProvider } from './firebase-config.js';
 import {
     getRedirectResult,
@@ -1988,13 +1989,15 @@ async function createPhoneOrder(event) {
                     acceptedAt: serverTimestamp()
                 });
                 transaction.set(contactRef, phoneOrderContactData(customerName, customerPhone));
-                transaction.set(stateRef, {
-                    driverId: String(selectedDriver.id),
-                    status: 'busy',
-                    activeOrderId: orderRef.id,
-                    lastSeen: serverTimestamp(),
-                    updatedAt: serverTimestamp()
-                });
+                if (!isFutureScheduledOrder(baseOrder)) {
+                    transaction.set(stateRef, {
+                        driverId: String(selectedDriver.id),
+                        status: 'busy',
+                        activeOrderId: orderRef.id,
+                        lastSeen: serverTimestamp(),
+                        updatedAt: serverTimestamp()
+                    });
+                }
             });
             setMessage(
                 elements.onlineOrdersMessage,

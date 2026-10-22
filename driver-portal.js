@@ -1945,7 +1945,7 @@ function createOrderCard(order, assigned, archived = false) {
         assigned
             ? 'flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/50 px-2 py-1 text-[10px] font-extrabold text-blue-800 dark:text-blue-200'
             : 'flex-shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/40 px-2 py-1 text-[10px] font-extrabold text-amber-800 dark:text-amber-200',
-        orderStatusLabel(order.status)
+        assigned && isFutureScheduledOrder(order) ? 'Запланированная бронь' : orderStatusLabel(order.status)
     );
     header.append(title, badge);
 

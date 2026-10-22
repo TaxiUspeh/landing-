@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { orderTimeInfo } from '../order-time.js';
+import { isFutureScheduledOrder, orderTimeInfo } from '../order-time.js';
 const millis = value => Date.parse(value);
 const timestamp = value => ({ toMillis: () => millis(value) });
 const now = millis('2026-09-20T05:47:00Z');
@@ -26,6 +26,16 @@ test('warning is only for still searching orders after ten minutes and excludes 
   for (const status of ['accepted', 'arrived', 'completed', 'cancelled']) assert.equal(orderTimeInfo({ ...base, status }, created + 3600000).waiting, false);
   const future = orderTimeInfo({ ...base, scheduledFor: '2026-09-20T15:00' }, created + 3600000);
   assert.equal(future.scheduledText, 'Подача сегодня в 15:00'); assert.equal(future.waiting, false);
+});
+test('future scheduled orders are classified using the Almaty service clock', () => {
+  const serviceNow = millis('2026-09-20T05:47:00Z'); // 10:47 in Almaty
+  assert.equal(isFutureScheduledOrder({ scheduledFor: '2026-09-21T09:00' }, serviceNow), true);
+  assert.equal(isFutureScheduledOrder({ scheduledFor: '2026-09-20T11:00' }, serviceNow), true);
+  assert.equal(isFutureScheduledOrder({ scheduledFor: '2026-09-20T10:00' }, serviceNow), false);
+  assert.equal(isFutureScheduledOrder({ scheduledFor: '2026-09-20T10:47' }, serviceNow), false);
+  assert.equal(isFutureScheduledOrder({ scheduledFor: '2026-02-30T25:00' }, serviceNow), false);
+  assert.equal(isFutureScheduledOrder({ scheduledFor: '' }, serviceNow), false);
+  assert.equal(isFutureScheduledOrder({}, serviceNow), false);
 });
 test('price increase and requeue never replace creation time; absent timestamps are not invented', () => {
   const changed = Object.freeze({ ...base, updatedAt: timestamp('2026-09-20T05:47:00Z'), requeuedAt: timestamp('2026-09-20T05:47:00Z'), priceAmount: 9000 });

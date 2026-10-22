@@ -81,6 +81,12 @@ try {
     const state = (await getDoc(doc(driver, 'driverStates', 'driver-a'))).data();
     assert.equal(state.status, 'available');
     assert.equal(state.activeOrderId, '');
+    await assertSucceeds(updateDoc(doc(driver, 'driverStates', 'driver-a'), {
+      status: 'busy', activeOrderId: 'order-a', lastSeen: serverTimestamp(), updatedAt: serverTimestamp()
+    }));
+    const activated = (await getDoc(doc(driver, 'driverStates', 'driver-a'))).data();
+    assert.equal(activated.status, 'busy');
+    assert.equal(activated.activeOrderId, 'order-a');
   });
   await test('dispatcher can assign a future reservation without occupying the driver', async () => {
     const payload = { ...orderData('sedan'), source: 'dispatcher', clientUid: '', scheduledFor: '2099-01-01T09:00',

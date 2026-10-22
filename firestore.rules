@@ -454,12 +454,16 @@ service cloud.firestore {
       let driver = get(driverDocument(order.assignedDriverId)).data;
       let statePath = /databases/$(database)/documents/driverStates/$(order.assignedDriverUid);
       let accountPath = /databases/$(database)/documents/driverAccounts/$(order.assignedDriverUid);
+      let scheduled = order.get('scheduledFor', '');
       return validReservation(order, driver)
-        && (!hasFinanceSettings(driver) && driver.get('cargoProfile', null) == null && order.get('serviceType', 'taxi') != 'cargo' && order.get('commissionTerms', null) == null
+        && ((scheduled is string && scheduled.size() >= 16
+          && scheduled.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2})?$')
+          && (!exists(statePath) || (get(statePath).data.status != 'busy' && get(statePath).data.activeOrderId == '')))
+          || (!hasFinanceSettings(driver) && driver.get('cargoProfile', null) == null && order.get('serviceType', 'taxi') != 'cargo' && order.get('commissionTerms', null) == null
           || (driver.status == 'active' && get(accountPath).data.active == true && get(accountPath).data.driverId == order.assignedDriverId
             && (!exists(statePath) || (get(statePath).data.status != 'busy' && get(statePath).data.activeOrderId == ''))
             && getAfter(statePath).data.status == 'busy' && getAfter(statePath).data.activeOrderId == orderId
-            && getAfter(statePath).data.driverId == order.assignedDriverId));
+            && getAfter(statePath).data.driverId == order.assignedDriverId)));
     }
 
     function adminFinanceOrderCreate(orderId) {
@@ -902,6 +906,32 @@ service cloud.firestore {
         && driverBecomesBusyWithOrder(orderId);
     }
 
+    function driverAcceptsScheduledOrder(orderId) {
+      let driverId = linkedDriverId();
+      let driver = get(driverDocument(driverId)).data;
+      let schedule = request.resource.data.get('scheduledFor', '');
+      return driverIsAvailable()
+        && schedule is string && schedule.size() >= 16 && schedule.size() <= 40
+        && schedule.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2})?$')
+        && vehicleFitsOrder(resource.data, driver)
+        && validReservation(request.resource.data, driver)
+        && resource.data.status == 'searching'
+        && request.resource.data.status == 'accepted'
+        && request.resource.data.assignedDriverUid == request.auth.uid
+        && request.resource.data.assignedDriverId == driverId
+        && request.resource.data.driverName == driver.get('name', 'Водитель')
+        && request.resource.data.driverPhone == driver.get('phone', '')
+        && request.resource.data.driverCar == vehicleName(resource.data, driver)
+        && request.resource.data.driverColor == vehicleForOrder(resource.data, driver).get('color', '')
+        && request.resource.data.acceptedAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'assignedDriverUid', 'assignedDriverId',
+          'driverName', 'driverPhone', 'driverCar', 'driverColor',
+          'acceptedAt', 'updatedAt', 'commissionTerms'
+        ]);
+    }
+
     function validDriverStatusTransition() {
       return (resource.data.status == 'accepted' && request.resource.data.status == 'arrived')
         || (resource.data.status == 'accepted' && request.resource.data.status == 'en_route')
@@ -1226,7 +1256,7 @@ service cloud.firestore {
         || (resource.data.status == 'bidding' && request.resource.data.status == 'accepted'
           && validAuctionSelection(orderId, resource.data, request.resource.data))
         || (resource.data.status == 'searching' && request.resource.data.status == 'accepted'
-          && driverAcceptsSearchingOrder(orderId))
+          && (driverAcceptsSearchingOrder(orderId) || driverAcceptsScheduledOrder(orderId)))
         || (resource.data.get('assignedDriverUid', '') == request.auth.uid
           && ((request.resource.data.status in ['searching', 'bidding'] && assignedDriverReturnsOrderToSearch(orderId))
             || (!(request.resource.data.status in ['searching', 'bidding']) && ((request.resource.data.status == 'in_trip' && driverUpdatesCargoWork(orderId)) || assignedDriverAdvancesOrder(orderId)))));

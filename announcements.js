@@ -44,7 +44,7 @@ function renderCards() {
     && (!term || [item.title,item.description,item.location,item.category,item.subcategory].join(' ').toLocaleLowerCase('ru-RU').includes(term)));
   $('listingCount').textContent = filtered.length + ' объявл.';
   if (!filtered.length) {
-    $('listingGrid').innerHTML = '<div class="empty">Пока нет подходящих объявлений. Можно разместить первое — это бесплатно.</div>';
+    $('listingGrid').innerHTML = '<div class="empty">Пока нет опубликованных объявлений. Новые объявления появятся здесь после проверки модератором.</div>';
     return;
   }
   $('listingGrid').innerHTML = filtered.map(item => {
@@ -63,8 +63,7 @@ async function loadListings() {
     renderCards();
   } catch (error) {
     console.error('Ошибка загрузки объявлений:', error);
-    $('listingGrid').innerHTML = '<div class="empty">Не удалось загрузить объявления. Проверьте подключение и попробуйте обновить страницу.</div>';
-    showNotice('Если ошибка повторяется, администратору нужно проверить правила и индекс Firestore.', true);
+    $('listingGrid').innerHTML = '<div class="empty">Не удалось загрузить объявления. Попробуйте обновить страницу чуть позже.</div>';
   }
 }
 async function ensureSignIn() {

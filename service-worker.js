@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v88-classifieds-smart-form';
+const CACHE_NAME = 'taxi-uspeh-v89-classifieds-messages';
 const APP_SHELL = [
   './carpool-availability.js?v=85',
   './passenger-request-alerts.js?v=85',
@@ -18,8 +18,8 @@ const APP_SHELL = [
   './cargo-controls.js?v=77',
   './styles/cargo-work.css?v=77',
   './announcements.html',
-  './announcements.js?v=2',
-  './styles/announcements.css?v=2',
+  './announcements.js?v=3',
+  './styles/announcements.css?v=3',
   './',
   './sober-fare.js?v=74',
   './sober-pricing.js?v=78',

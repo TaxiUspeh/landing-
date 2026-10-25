@@ -14,7 +14,7 @@ import { createVehicleControls } from './vehicle-category-controls.js?v=79';
 import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=78';
 import { currentAuctionOffer } from './auction-core.js?v=79';
 import { auth, db, googleProvider } from './firebase-config.js';
-import { initClassifiedModeration } from './classified-moderation.js?v=1';
+import { initClassifiedModeration } from './classified-moderation.js?v=2';
 import {
     getRedirectResult,
     onAuthStateChanged,

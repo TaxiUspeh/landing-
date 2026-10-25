@@ -1275,11 +1275,14 @@ service cloud.firestore {
         || (resource.data.status == 'approved' && resource.data.expiresAt > request.time)
         || (signedIn() && resource.data.ownerUid == request.auth.uid);
       allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['ownerUid','ownerName','title','category','description','location','phone','price','imageUrl','status','createdAt','expiresAt','updatedAt'])
+        && request.resource.data.keys().hasOnly(['ownerUid','ownerName','title','category','listingType','subcategory','priceMode','description','location','phone','price','imageUrl','status','createdAt','expiresAt','updatedAt'])
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerName is string && request.resource.data.ownerName.size() <= 120
         && request.resource.data.title is string && request.resource.data.title.size() >= 3 && request.resource.data.title.size() <= 80
         && request.resource.data.category in ['Куплю / продам','Услуги','Недвижимость','Работа','Транспорт','Местный бизнес']
+        && request.resource.data.get('listingType', 'offer_product') in ['offer_product','offer_service','seek_product','seek_service']
+        && request.resource.data.get('subcategory', '') is string && request.resource.data.get('subcategory', '').size() <= 80
+        && request.resource.data.get('priceMode', 'negotiable') in ['fixed','from','hour','negotiable','budget','offer','free']
         && request.resource.data.description is string && request.resource.data.description.size() >= 5 && request.resource.data.description.size() <= 1200
         && request.resource.data.location is string && request.resource.data.location.size() >= 2 && request.resource.data.location.size() <= 60
         && request.resource.data.phone is string && request.resource.data.phone.size() >= 10 && request.resource.data.phone.size() <= 20
@@ -1289,17 +1292,21 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time
         && request.resource.data.expiresAt > request.time
         && request.resource.data.expiresAt <= request.time + duration.value(3, 'd') + duration.value(15, 'm');
-      allow update: if isAdmin()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','moderatedAt','moderatedBy','updatedAt'])
-        && request.resource.data.status in ['approved','rejected']
-        && request.resource.data.moderatedBy == request.auth.uid
+      allow update: if (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','moderatedAt','moderatedBy','updatedAt'])
+          && request.resource.data.status in ['approved','rejected']
+          && request.resource.data.moderatedBy == request.auth.uid)
         || (signedIn() && resource.data.ownerUid == request.auth.uid
           && resource.data.status == 'approved'
-          && request.resource.data.status == 'sold'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']));
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt'])
+          && ((request.resource.data.status == 'sold'
+              && resource.data.get('listingType', resource.data.category == 'Услуги' ? 'offer_service' : 'offer_product') == 'offer_product')
+            || (request.resource.data.status == 'service_inactive'
+              && resource.data.get('listingType', resource.data.category == 'Услуги' ? 'offer_service' : 'offer_product') == 'offer_service')
+            || (request.resource.data.status == 'search_closed'
+              && resource.data.get('listingType', resource.data.category == 'Услуги' ? 'offer_service' : 'offer_product') in ['seek_product','seek_service'])));
       allow delete: if isAdmin();
     }
-
     match /{document=**} {
       allow read, write: if false;
     }

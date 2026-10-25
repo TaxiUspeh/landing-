@@ -51,7 +51,7 @@ function renderCards() {
     const image = item.imageUrl && /^https:\/\//i.test(item.imageUrl) ? '<img class="listing-photo" loading="lazy" src="' + safeText(item.imageUrl) + '" alt="" referrerpolicy="no-referrer">' : '<div class="listing-photo-placeholder" aria-hidden="true">' + categoryIcon(item.category) + '</div>';
     const type = inferType(item);
     const price = '<div class="price">' + safeText(priceText(item)) + '</div>';
-    return '<article class="listing-card">' + image + '<div class="listing-body"><span class="tag">' + safeText(item.category) + '</span><h3>' + safeText(item.title) + '</h3>' + price + '<div class="description">' + safeText(item.description) + '</div><div class="meta"><span>📍 ' + safeText(item.location) + '</span><span>' + formatDate(toDate(item.createdAt)) + '</span></div><a class="contact" href="' + safeText(phoneHref(item.phone)) + '">Позвонить автору</a></div></article>';
+    return '<article class="listing-card">' + image + '<div class="listing-body"><span class="tag">' + safeText(typeLabels[type] || item.category) + ' · ' + safeText(item.category) + '</span><h3>' + safeText(item.title) + '</h3>' + price + '<div class="description">' + safeText(item.description) + '</div><div class="meta"><span>📍 ' + safeText(item.location) + '</span><span>' + formatDate(toDate(item.createdAt)) + '</span></div><a class="contact" href="' + safeText(phoneHref(item.phone)) + '">Позвонить автору</a></div></article>';
   }).join('');
 }
 async function loadListings() {

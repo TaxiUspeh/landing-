@@ -74,7 +74,7 @@ export function initClassifiedModeration(db, user) {
             top.append(title, date);
             card.append(top);
 
-            const inferredType = item.listingType || (item.category === 'Услуги' ? 'offer_service' : /^куплю\\b/i.test(item.title || '') ? 'seek_product' : 'offer_product');
+            const inferredType = item.listingType || (item.category === 'Услуги' ? 'offer_service' : /^куплю\b/i.test(item.title || '') ? 'seek_product' : 'offer_product');
             const meta = [TYPE_LABELS[inferredType] || 'Объявление', CATEGORY_LABELS[item.category] || item.category || 'Без категории', item.location || 'Место не указано'];
             card.append(textElement('p', 'mt-1 text-sm font-semibold text-blue-700 dark:text-blue-300', meta.join(' · ')));
             if (item.description) card.append(textElement('p', 'mt-2 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-300', item.description));

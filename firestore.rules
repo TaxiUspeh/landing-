@@ -1269,6 +1269,37 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Local classifieds: public can read only approved and unexpired listings.
+    match /classifiedListings/{listingId} {
+      allow get, list: if (isAdmin())
+        || (resource.data.status == 'approved' && resource.data.expiresAt > request.time)
+        || (signedIn() && resource.data.ownerUid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['ownerUid','ownerName','title','category','description','location','phone','price','imageUrl','status','createdAt','expiresAt','updatedAt'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerName is string && request.resource.data.ownerName.size() <= 120
+        && request.resource.data.title is string && request.resource.data.title.size() >= 3 && request.resource.data.title.size() <= 80
+        && request.resource.data.category in ['Куплю / продам','Услуги','Недвижимость','Работа','Транспорт','Местный бизнес']
+        && request.resource.data.description is string && request.resource.data.description.size() >= 5 && request.resource.data.description.size() <= 1200
+        && request.resource.data.location is string && request.resource.data.location.size() >= 2 && request.resource.data.location.size() <= 60
+        && request.resource.data.phone is string && request.resource.data.phone.size() >= 10 && request.resource.data.phone.size() <= 20
+        && (request.resource.data.price == null || (request.resource.data.price is int && request.resource.data.price >= 0 && request.resource.data.price <= 1000000000))
+        && request.resource.data.imageUrl is string && request.resource.data.imageUrl.size() <= 500
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(4, 'd');
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','moderatedAt','moderatedBy','updatedAt'])
+        && request.resource.data.status in ['approved','rejected']
+        && request.resource.data.moderatedBy == request.auth.uid
+        || (signedIn() && resource.data.ownerUid == request.auth.uid
+          && resource.data.status == 'approved'
+          && request.resource.data.status == 'sold'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']));
+      allow delete: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

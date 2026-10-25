@@ -1,6 +1,6 @@
 import { auth, db, googleProvider } from './firebase-config.js';
 import { onAuthStateChanged, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { collection, addDoc, getDocs, getDoc, doc, query, where, Timestamp, updateDoc, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { collection, addDoc, getDocs, getDoc, doc, query, where, Timestamp, updateDoc, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const $ = (id) => document.getElementById(id);
 const listingsCol = collection(db, 'classifiedListings');
@@ -62,7 +62,11 @@ async function checkAdmin(user) {
   catch { return false; }
 }
 function renderMine(items) {
-  $('myListings').innerHTML = items.length ? items.map(item => '<div class="mine-row"><div><strong>' + safeText(item.title) + '</strong><p>' + safeText(item.statusLabel) + (item.expiresAt ? ' · до ' + formatDate(toDate(item.expiresAt)) : '') + '</p></div>' + (item.status === 'approved' ? '<button class="small-btn" data-sold="' + safeText(item.id) + '" type="button">Продано</button>' : '') + '</div>').join('') : '<div class="empty">Вы пока не размещали объявления.</div>';
+  $('myListings').innerHTML = items.length ? items.map(item => {
+    const expired = item.status === 'approved' && toDate(item.expiresAt) && toDate(item.expiresAt).getTime() <= Date.now();
+    const label = expired ? 'Срок истёк — скрыто из каталога' : item.statusLabel;
+    return '<div class="mine-row"><div><strong>' + safeText(item.title) + '</strong><p>' + safeText(label) + (item.expiresAt ? ' · до ' + formatDate(toDate(item.expiresAt)) : '') + '</p></div>' + (item.status === 'approved' && !expired ? '<button class="small-btn" data-sold="' + safeText(item.id) + '" type="button">Продано</button>' : '') + '</div>';
+  }).join('') : '<div class="empty">Вы пока не размещали объявления.</div>';
 }
 async function loadMine() {
   if (!currentUser) return;

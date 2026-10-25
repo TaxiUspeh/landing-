@@ -9,13 +9,15 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const CATEGORY_LABELS = {
-    'Куплю / продам': 'Куплю / продам',
+    'Куплю / продам': 'Товары',
     'Услуги': 'Услуги',
     'Недвижимость': 'Недвижимость',
     'Работа': 'Работа',
     'Транспорт': 'Транспорт',
     'Местный бизнес': 'Местный бизнес'
 };
+const TYPE_LABELS = { offer_product: 'Продажа вещи', offer_service: 'Предложение услуги', seek_product: 'Покупка вещи', seek_service: 'Поиск специалиста' };
+const PRICE_MODE_LABELS = { fixed: 'Цена', from: 'Цена от', hour: 'За час', negotiable: 'По договорённости', budget: 'Бюджет', offer: 'Предлагайте цену', free: 'Бесплатно' };
 
 function textElement(tag, className, value) {
     const element = document.createElement(tag);
@@ -72,11 +74,15 @@ export function initClassifiedModeration(db, user) {
             top.append(title, date);
             card.append(top);
 
-            const meta = [CATEGORY_LABELS[item.category] || item.category || 'Без категории', item.location || 'Место не указано'];
+            const inferredType = item.listingType || (item.category === 'Услуги' ? 'offer_service' : /^куплю\\b/i.test(item.title || '') ? 'seek_product' : 'offer_product');
+            const meta = [TYPE_LABELS[inferredType] || 'Объявление', CATEGORY_LABELS[item.category] || item.category || 'Без категории', item.location || 'Место не указано'];
             card.append(textElement('p', 'mt-1 text-sm font-semibold text-blue-700 dark:text-blue-300', meta.join(' · ')));
             if (item.description) card.append(textElement('p', 'mt-2 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-300', item.description));
             const details = [];
-            if (item.price !== null && item.price !== undefined && item.price !== '') details.push('Цена: ' + Number(item.price).toLocaleString('ru-RU') + ' ₸');
+            const priceMode = item.priceMode || 'fixed';
+            const priceLabel = PRICE_MODE_LABELS[priceMode] || 'Цена';
+            if (item.price !== null && item.price !== undefined && item.price !== '') details.push(priceLabel + ': ' + Number(item.price).toLocaleString('ru-RU') + ' ₸');
+            else if (['negotiable','offer','free'].includes(priceMode)) details.push(priceLabel);
             if (item.phone) details.push('Телефон: ' + item.phone);
             if (item.ownerName) details.push('Автор: ' + item.ownerName);
             if (details.length) card.append(textElement('p', 'mt-2 break-words text-xs text-slate-500 dark:text-slate-400', details.join(' · ')));

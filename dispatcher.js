@@ -378,7 +378,7 @@ async function copyUid() {
 const dispatcherCarpool = initCarpoolWork(document.getElementById('dispatcher-carpool'), createCarpoolApi(), true);
 
 function stopAdminPanel() {
-    if (stopClassifiedModeration) {
+    if (typeof stopClassifiedModeration !== 'undefined' && stopClassifiedModeration) {
         stopClassifiedModeration();
         stopClassifiedModeration = null;
     }

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#facc15">
+  <meta name="description" content="Бесплатные объявления Белоусовки, Глубокого и Усть-Каменогорска. Купить, продать, найти услуги, работу или недвижимость.">
+  <title>Доска объявлений — Такси «Успех»</title>
+  <link rel="icon" href="./favicon-32x32.png">
+  <link rel="stylesheet" href="./styles/announcements.css?v=1">
+</head>
+<body>
+  <header class="topbar">
+    <a class="back" href="./index.html" aria-label="Вернуться в приложение">‹</a>
+    <div><strong>Доска объявлений</strong><small>Такси «Успех» · местные объявления</small></div>
+    <a class="brand" href="./index.html" aria-label="Такси Успех">У</a>
+  </header>
+  <main class="wrap">
+    <section class="intro">
+      <div class="intro-icon" aria-hidden="true">📣</div>
+      <div><h1>Объявления рядом</h1><p>Публикуйте бесплатно на 3 дня. Новые объявления появляются после проверки модератором.</p></div>
+    </section>
+    <div class="toolbar">
+      <label class="search"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="Что ищете?" aria-label="Поиск объявлений"></label>
+      <button id="newListingBtn" class="primary" type="button">＋ Разместить</button>
+    </div>
+    <div class="filters" id="categoryFilters" aria-label="Категории">
+      <button class="filter active" data-category="all" type="button">Все</button>
+      <button class="filter" data-category="Куплю / продам" type="button">Куплю / продам</button>
+      <button class="filter" data-category="Услуги" type="button">Услуги</button>
+      <button class="filter" data-category="Недвижимость" type="button">Недвижимость</button>
+      <button class="filter" data-category="Работа" type="button">Работа</button>
+      <button class="filter" data-category="Транспорт" type="button">Транспорт</button>
+      <button class="filter" data-category="Местный бизнес" type="button">Местный бизнес</button>
+    </div>
+    <div class="section-heading"><h2>Свежие объявления</h2><span id="listingCount">Загрузка…</span></div>
+    <div id="notice" class="notice" role="status" aria-live="polite"></div>
+    <div id="listingGrid" class="listing-grid"><div class="loading">Загружаем объявления…</div></div>
+    <section id="myListingsSection" class="my-listings" hidden>
+      <div class="section-heading"><h2>Мои объявления</h2><button id="refreshMineBtn" class="text-btn" type="button">Обновить</button></div>
+      <div id="myListings"></div>
+    </section>
+    <section id="moderationSection" class="my-listings" hidden>
+      <div class="section-heading"><h2>Модерация</h2><span>Только для администратора</span></div>
+      <div id="moderationList"></div>
+    </section>
+    <footer class="foot"><a href="./index.html">← Вернуться в Такси «Успех»</a><p>Не переводите предоплату незнакомым людям. Проверяйте товар и условия сделки лично.</p></footer>
+  </main>
+  <dialog id="listingDialog" class="dialog">
+    <form id="listingForm">
+      <div class="dialog-head"><div><h2>Новое объявление</h2><p>Бесплатно на 3 дня · публикация после проверки</p></div><button id="closeDialogBtn" class="close" type="button" aria-label="Закрыть">×</button></div>
+      <label>Заголовок *<input name="title" required maxlength="80" placeholder="Например: Продам детскую коляску"></label>
+      <label>Категория *
+        <select name="category" required>
+          <option value="">Выберите категорию</option><option>Куплю / продам</option><option>Услуги</option><option>Недвижимость</option><option>Работа</option><option>Транспорт</option><option>Местный бизнес</option>
+        </select>
+      </label>
+      <label>Описание *<textarea name="description" required maxlength="1200" rows="4" placeholder="Расскажите подробнее"></textarea></label>
+      <div class="two-cols"><label>Цена, ₸<input name="price" inputmode="numeric" maxlength="10" placeholder="Например, 15000"></label><label>Населённый пункт *<input name="location" required maxlength="60" placeholder="Белоусовка"></label></div>
+      <label>Контактный телефон *<input name="phone" required type="tel" maxlength="20" placeholder="+7 7XX XXX XX XX"></label>
+      <label>Ссылка на фото (необязательно)<input name="imageUrl" type="url" maxlength="500" placeholder="https://…"></label>
+      <p class="form-note">Размещая объявление, вы подтверждаете, что информация достоверна и не нарушает закон. Не публикуйте персональные данные других людей.</p>
+      <div id="formError" class="form-error" role="alert"></div>
+      <button class="primary full" type="submit">Отправить на проверку</button>
+    </form>
+  </dialog>
+  <script type="module" src="./announcements.js?v=1"></script>
+</body>
+</html>

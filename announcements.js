@@ -63,7 +63,7 @@ async function loadListings() {
     renderCards();
   } catch (error) {
     console.error('Ошибка загрузки объявлений:', error);
-    $('listingGrid').innerHTML = '<div class="empty">Не удалось загрузить объявления. Попробуйте обновить страницу чуть позже.</div>';
+    $('listingGrid').innerHTML = '<div class="empty">Не удалось загрузить объявления. Код ошибки: ' + safeText(error.code || error.name || 'unknown') + '. Обновите страницу и попробуйте ещё раз.</div>';
   }
 }
 async function ensureSignIn() {

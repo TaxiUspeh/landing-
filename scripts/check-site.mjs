@@ -271,7 +271,7 @@ for (const expected of [
   'Свободны',
   'Заняты',
   'id="drivers-list"',
-  'src="./dispatcher.js?v=85"'
+  'src="./dispatcher.js?v=87"'
 ]) {
   if (!dispatcher.includes(expected)) failures.push('dispatcher.html: missing protected dispatcher behavior ' + expected);
 }
@@ -365,7 +365,7 @@ for (const expected of [
   "'./driver-portal.js?v=85'",
   "'./drivers.webmanifest'",
   "'./dispatcher.html'",
-  "'./dispatcher.js?v=85'",
+  "'./dispatcher.js?v=87'",
   "'./firebase-config.js'",
   "'./client-orders.js?v=85'",
   "'./client-home.js?v=85'",

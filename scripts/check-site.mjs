@@ -271,7 +271,7 @@ for (const expected of [
   'Свободны',
   'Заняты',
   'id="drivers-list"',
-  'src="./dispatcher.js?v=85"'
+  'src="./dispatcher.js?v=87"'
 ]) {
   if (!dispatcher.includes(expected)) failures.push('dispatcher.html: missing protected dispatcher behavior ' + expected);
 }
@@ -327,7 +327,7 @@ const tailwindConfig = await readFile('tailwind.config.cjs', 'utf8');
 const holidayCalendar = await readFile('holiday-calendar.js', 'utf8');
 const dispatcherQuickSearchHtml = await readFile('dispatcher.html', 'utf8');
 const dispatcherQuickSearchScript = await readFile('dispatcher.js', 'utf8');
-if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v87-classifieds'")) failures.push('service-worker.js: classifieds cache version was not updated');
+if (!serviceWorker.includes("const CACHE_NAME = 'taxi-uspeh-v88-classifieds-smart-form'")) failures.push('service-worker.js: classifieds cache version was not updated');
 if (!serviceWorker.includes("'./holiday-calendar.js'")) failures.push('service-worker.js: holiday calendar is missing from the app shell');
 if (!serviceWorker.includes("'./styles/tailwind.css'")) failures.push('service-worker.js: local Tailwind stylesheet is missing from the app shell');
 if (!serviceWorker.includes("addEventListener('notificationclick'")) failures.push('service-worker.js: notification clicks do not open the app');
@@ -365,7 +365,7 @@ for (const expected of [
   "'./driver-portal.js?v=85'",
   "'./drivers.webmanifest'",
   "'./dispatcher.html'",
-  "'./dispatcher.js?v=85'",
+  "'./dispatcher.js?v=87'",
   "'./firebase-config.js'",
   "'./client-orders.js?v=85'",
   "'./client-home.js?v=85'",

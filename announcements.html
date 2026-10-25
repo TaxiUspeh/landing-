@@ -26,8 +26,10 @@
     </div>
     <div class="filters" id="categoryFilters" aria-label="Категории">
       <button class="filter active" data-category="all" type="button">Все</button>
-      <button class="filter" data-category="Куплю / продам" type="button">Куплю / продам</button>
+      <button class="filter" data-category="Куплю / продам" type="button">Продажа и покупка</button>
       <button class="filter" data-category="Услуги" type="button">Услуги</button>
+      <button class="filter" data-type="seek_product" type="button">Куплю</button>
+      <button class="filter" data-type="seek_service" type="button">Ищу специалиста</button>
       <button class="filter" data-category="Недвижимость" type="button">Недвижимость</button>
       <button class="filter" data-category="Работа" type="button">Работа</button>
       <button class="filter" data-category="Транспорт" type="button">Транспорт</button>
@@ -48,15 +50,31 @@
   </main>
   <dialog id="listingDialog" class="dialog">
     <form id="listingForm">
-      <div class="dialog-head"><div><h2>Новое объявление</h2><p>Бесплатно на 3 дня · публикация после проверки</p></div><button id="closeDialogBtn" class="close" type="button" aria-label="Закрыть">×</button></div>
-      <label>Заголовок *<input name="title" required maxlength="80" placeholder="Например: Продам детскую коляску"></label>
-      <label>Категория *
-        <select name="category" required>
-          <option value="">Выберите категорию</option><option>Куплю / продам</option><option>Услуги</option><option>Недвижимость</option><option>Работа</option><option>Транспорт</option><option>Местный бизнес</option>
+      <div class="dialog-head"><div><h2>Новое объявление</h2><p>Выберите цель — форма подстроится автоматически. Бесплатно на 3 дня · публикация после проверки</p></div><button id="closeDialogBtn" class="close" type="button" aria-label="Закрыть">×</button></div>
+      <label>Что вы хотите сделать? *
+        <select name="listingType" id="listingType" required>
+          <option value="offer_product">Продать вещь</option><option value="offer_service">Предложить услугу</option><option value="seek_product">Купить вещь</option><option value="seek_service">Найти специалиста</option>
         </select>
       </label>
-      <label>Описание *<textarea name="description" required maxlength="1200" rows="4" placeholder="Расскажите подробнее"></textarea></label>
-      <div class="two-cols"><label>Цена, ₸<input name="price" inputmode="numeric" maxlength="10" placeholder="Например, 15000"></label><label>Населённый пункт *<input name="location" required maxlength="60" placeholder="Белоусовка"></label></div>
+      <label>Категория *
+        <select name="category" id="listingCategory" required>
+          <option value="Куплю / продам">Товары — куплю / продам</option><option value="Услуги">Услуги</option><option value="Недвижимость">Недвижимость</option><option value="Работа">Работа</option><option value="Транспорт">Транспорт</option><option value="Местный бизнес">Местный бизнес</option>
+        </select>
+      </label>
+      <label id="subjectLabel">Что именно? *
+        <input name="subcategory" id="listingSubject" required maxlength="80" placeholder="Например: детскую коляску">
+      </label>
+      <label>Заголовок объявления *
+        <input name="title" id="listingTitle" required maxlength="80" placeholder="Заголовок сформируется автоматически">
+      </label>
+      <label>Описание *<textarea name="description" required maxlength="1200" rows="4" placeholder="Опишите товар, услугу или что именно вам нужно"></textarea></label>
+      <div class="two-cols">
+        <label><span id="priceLabel">Цена</span>
+          <select name="priceMode" id="priceMode"><option value="fixed">Указать цену</option><option value="from">Цена от…</option><option value="hour">За час</option><option value="negotiable">По договорённости</option><option value="budget">Указать бюджет</option><option value="offer">Предлагайте цену</option><option value="free">Бесплатно</option></select>
+          <input name="price" id="listingPrice" inputmode="numeric" maxlength="10" placeholder="Сумма в ₸">
+        </label>
+        <label>Населённый пункт *<input name="location" required maxlength="60" placeholder="Белоусовка"></label>
+      </div>
       <label>Контактный телефон *<input name="phone" required type="tel" maxlength="20" placeholder="+7 7XX XXX XX XX"></label>
       <label>Ссылка на фото (необязательно)<input name="imageUrl" type="url" maxlength="500" placeholder="https://…"></label>
       <p class="form-note">Размещая объявление, вы подтверждаете, что информация достоверна и не нарушает закон. Не публикуйте персональные данные других людей.</p>
@@ -64,6 +82,6 @@
       <button class="primary full" type="submit">Отправить на проверку</button>
     </form>
   </dialog>
-  <script type="module" src="./announcements.js?v=1"></script>
+  <script type="module" src="./announcements.js?v=2"></script>
 </body>
 </html>

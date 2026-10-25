@@ -2,6 +2,8 @@ import {
     collection,
     doc,
     onSnapshot,
+    query,
+    where,
     serverTimestamp,
     updateDoc
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
@@ -44,7 +46,7 @@ export function initClassifiedModeration(db, user) {
         message.classList.toggle('bg-slate-50', !isError);
     };
 
-    const unsubscribe = onSnapshot(collection(db, 'classifiedListings'), (snapshot) => {
+    const unsubscribe = onSnapshot(query(collection(db, 'classifiedListings'), where('status', '==', 'pending')), (snapshot) => {
         const pending = snapshot.docs
             .map((item) => ({ id: item.id, ...item.data() }))
             .filter((item) => item.status === 'pending')

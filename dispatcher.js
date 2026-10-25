@@ -14,7 +14,6 @@ import { createVehicleControls } from './vehicle-category-controls.js?v=79';
 import { driverCanServeOrder, driverCategorySummary, validVehicleProfile, calculateCategoryFare, formatCategoryFare, categoryLabel, orderCategorySummary } from './vehicle-categories.js?v=78';
 import { currentAuctionOffer } from './auction-core.js?v=79';
 import { auth, db, googleProvider } from './firebase-config.js';
-import { initClassifiedModeration } from './classified-moderation.js?v=2';
 import {
     getRedirectResult,
     onAuthStateChanged,
@@ -179,7 +178,6 @@ const elements = {
 };
 
 let currentUser = null;
-let stopClassifiedModeration = null;
 let drivers = [];
 let driverStates = new Map();
 let orders = [];
@@ -378,10 +376,6 @@ async function copyUid() {
 const dispatcherCarpool = initCarpoolWork(document.getElementById('dispatcher-carpool'), createCarpoolApi(), true);
 
 function stopAdminPanel() {
-    if (typeof stopClassifiedModeration !== 'undefined' && stopClassifiedModeration) {
-        stopClassifiedModeration();
-        stopClassifiedModeration = null;
-    }
     // Access checks reuse the panel, so keep its UI and only clear the signed-in context.
     void dispatcherCarpool?.setContext(null);
     if (unsubscribeDrivers) unsubscribeDrivers();
@@ -425,7 +419,6 @@ async function checkAdminAccess(user) {
         }
 
         setHidden(elements.panel, false);
-        stopClassifiedModeration = initClassifiedModeration(db, user);
         void dispatcherCarpool?.setContext(user);
         startDriversListener();
         startDriverStatesListener();

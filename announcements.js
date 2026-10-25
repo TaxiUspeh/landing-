@@ -16,7 +16,7 @@ const typeLabels = {offer_product:'Продажа',offer_service:'Услуга',
 function inferType(item) {
   if (['offer_product','offer_service','seek_product','seek_service'].includes(item.listingType)) return item.listingType;
   if (item.category === 'Услуги') return 'offer_service';
-  if (item.category === 'Куплю / продам' && /^куплю\\b/i.test(item.title || '')) return 'seek_product';
+  if (item.category === 'Куплю / продам' && /^куплю\b/i.test(item.title || '')) return 'seek_product';
   return item.category === 'Куплю / продам' ? 'offer_product' : 'offer_service';
 }
 function priceText(item) {

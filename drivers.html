@@ -510,18 +510,21 @@
             </div>
         </section>
 
-        <aside id="driver-install-offer" class="driver-install-offer" aria-labelledby="driver-install-title" hidden>
-            <div class="driver-install-copy"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i><div>
-                <h2 id="driver-install-title">Установить «Такси Успех»</h2>
-                <p>Открывайте кабинет с иконки на телефоне.</p>
-            </div></div>
+                <aside id="driver-install-offer" class="driver-install-offer" aria-labelledby="driver-install-title" hidden>
             <div class="driver-install-actions">
                 <button id="driver-install-app-button" type="button" class="cabinet-button" aria-describedby="driver-install-app-message">Установить приложение</button>
-                <button id="driver-install-later" type="button" class="driver-text-button">Позже</button>
             </div>
             <p id="driver-install-app-message" class="hidden" role="status"></p>
         </aside>
-        <details id="driver-conditions" class="driver-conditions">
+        <details id="driver-install-help" hidden style="margin:12px 0;padding:12px;border:1px solid #d1d5db;border-radius:10px;">
+            <summary style="cursor:pointer;font-weight:600;">Как установить кабинет водителя на телефон?</summary>
+            <div style="padding-top:10px;line-height:1.6;">
+                <p><strong>Android:</strong> откройте кабинет в Chrome, нажмите меню ⋮ и выберите «Установить приложение» или «Добавить на главный экран». Если такого пункта нет, откройте страницу именно в Chrome.</p>
+                <p><strong>iPhone:</strong> откройте кабинет в Safari, нажмите «Поделиться», выберите «На экран Домой», затем подтвердите добавление.</p>
+                <p>После добавления запускайте кабинет с новой иконки на экране телефона. Установка необязательна — можно пользоваться и через браузер.</p>
+            </div>
+        </details>
+<details id="driver-conditions" class="driver-conditions">
             <summary><span>Стать водителем<small>Условия работы, документы и доход</small></span><i class="fas fa-chevron-down" aria-hidden="true"></i></summary>
             <div class="driver-conditions-content">
         <!-- Основные действия -->
@@ -783,7 +786,7 @@
         </div>
     </div>
 
-    <script src="./driver-install.js?v=61"></script>
+    <script src="./driver-install.js?v=65"></script>
     <script>
         // Окно пополнения баланса: номер всегда виден, открытие Kaspi — отдельным нажатием.
         function showKaspiTopup() {

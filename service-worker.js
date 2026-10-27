@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v92-pwa-install-help';
+const CACHE_NAME = 'taxi-uspeh-v93-driver-pwa-one-button';
 const APP_SHELL = [
   './carpool-availability.js?v=85',
   './passenger-request-alerts.js?v=85',
@@ -53,7 +53,7 @@ const APP_SHELL = [
   './holiday-calendar.js',
   './drivers.html',
   './drivers.webmanifest',
-  './driver-install.js?v=61',
+  './driver-install.js?v=65',
   './driver-portal.js?v=85',
   './order-time.js?v=71',
   './driver-cabinet.js?v=79',

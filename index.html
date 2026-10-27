@@ -2281,7 +2281,7 @@
     <!-- === END STROYDOM MODAL === -->
 
     <!-- PWA & PARTNER MODALS -->
-    <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4"><div class="modal"><div class="p-6"><h3 class="text-2xl font-bold mb-4 text-gray-800">Сохраните как приложение!</h3><p class="mb-4 text-gray-700">Инструкция...</p><button onclick="document.getElementById('pwaModal').classList.add('hidden')" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-4 rounded-xl btn-active btn-hover">Понятно</button></div></div></div>
+    <div id="pwaModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4" role="dialog" aria-modal="true" aria-labelledby="pwaModalTitle"><div class="modal max-w-lg w-full max-h-[90vh] overflow-y-auto"><div class="p-5"><h3 id="pwaModalTitle" class="text-xl font-bold mb-3 text-gray-800">Как установить «Такси Успех»</h3><p class="mb-3 text-gray-700">Если автоматическая установка не открылась, выполните шаги для своего телефона.</p><div class="mb-4 rounded-xl bg-gray-100 p-3 text-gray-800"><h4 class="font-bold mb-1">Android</h4><ol class="list-decimal pl-5 space-y-1"><li>Откройте сайт в браузере Chrome.</li><li>Нажмите меню браузера (три точки).</li><li>Выберите «Установить приложение» или «Добавить на главный экран».</li><li>Подтвердите установку.</li></ol></div><div class="mb-4 rounded-xl bg-gray-100 p-3 text-gray-800"><h4 class="font-bold mb-1">iPhone</h4><ol class="list-decimal pl-5 space-y-1"><li>Откройте ссылку именно в Safari.</li><li>Нажмите кнопку «Поделиться».</li><li>Выберите «На экран Домой» (при необходимости найдите пункт в дополнительных действиях).</li><li>Нажмите «Добавить».</li></ol></div><p class="mb-4 text-sm text-gray-700">Если сайт открыт внутри WhatsApp или другого приложения, откройте меню ссылки и выберите «Открыть в браузере».</p><button onclick="document.getElementById('pwaModal').classList.add('hidden')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl btn-active btn-hover">Понятно</button></div></div></div>
     <div id="partnerModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4"><div class="modal"><div class="p-6"><h3 class="text-2xl font-bold mb-4 text-pink-600 flex items-center justify-center">Партнеры</h3><p class="mb-4 text-gray-800">Здесь будет реклама...</p><button onclick="document.getElementById('partnerModal').classList.add('hidden')" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-4 rounded-xl btn-active btn-hover">Закрыть</button></div></div></div>
 
     <!-- ========================================================= -->
@@ -3271,13 +3271,24 @@
             e.preventDefault();
             deferredPrompt = e;
         });
+        window.showPWAInstructions = function() {
+            const modal = document.getElementById('pwaModal');
+            if (modal) modal.classList.remove('hidden');
+        };
         window.installApp = async function() {
             if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                deferredPrompt = null;
+                try {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    deferredPrompt = null;
+                    if (outcome !== 'accepted') window.showPWAInstructions();
+                } catch (error) {
+                    deferredPrompt = null;
+                    console.warn('PWA install prompt failed:', error);
+                    window.showPWAInstructions();
+                }
             } else {
-                showPWAInstructions();
+                window.showPWAInstructions();
             }
         }
 

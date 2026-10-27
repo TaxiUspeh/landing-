@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v91-core';
+const CACHE_NAME = 'taxi-uspeh-v92-pwa-install-help';
 const APP_SHELL = [
   './carpool-availability.js?v=85',
   './passenger-request-alerts.js?v=85',

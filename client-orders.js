@@ -349,7 +349,7 @@ function statusPresentation(order) {
     const statuses = {
         bidding: ['Ждём предложения водителей', 'bg-amber-100 text-amber-900 border-amber-300'],
         searching: ['Ищем свободного водителя', 'bg-amber-100 text-amber-900 border-amber-300'],
-        accepted: ['Водитель принял заказ', 'bg-blue-100 text-blue-900 border-blue-300'],
+        accepted: ['Водитель выехал', 'bg-blue-100 text-blue-900 border-blue-300'],
         en_route: ['Водитель едет к вам', 'bg-blue-100 text-blue-900 border-blue-300'],
         arrived: ['Водитель подъехал', 'bg-green-100 text-green-900 border-green-300'],
         in_trip: ['Поездка началась', 'bg-indigo-100 text-indigo-900 border-indigo-300'],

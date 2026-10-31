@@ -35,7 +35,7 @@ function harness(from = 'Белоусовка', to = 'Белоусовка') {
     writeBatch:()=>({set:(ref,data)=>state.writes.push(data),commit:async()=>{}}),serverTimestamp:()=> 'now',
     storeValue:()=>{},startOrderWatch:()=>{},CUSTOMER_NAME_STORAGE_KEY:'name',CUSTOMER_PHONE_STORAGE_KEY:'phone'
   });
-  vm.runInContext(source + `
+  vm.runInContext(source + routeTypeSource + `
     let taxiRouteCalculationId = 0, priceMultiplier = 1.3, isLuckyDiscount = false;
   ` + pricingSource + submitSource, ctx);
   return {state,nodes,update:()=>window.updateTaxiPrice(),route:()=>vm.runInContext('calculateTaxiPriceOSRM()',ctx),

@@ -4,6 +4,7 @@ import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 import { calculateCategoryFare, driverCanServeOrder, validVehicleProfile, formatCategoryFare } from '../vehicle-categories.js';
 import { distanceFare, formatTaxiFare } from '../taxi-pricing.js';
+import { normalizeCity } from '../booking-core.js';
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const from = (a, b) => html.slice(html.indexOf(a), html.indexOf(b, html.indexOf(a)));
 const routeTypeSource = from('        const TAXI_URBAN_AREA_NAMES = new Set(', '        function buildTaxiGeocodingQuery');
@@ -12,7 +13,7 @@ const pricingSource = from('        let taxiFareSnapshot = null;', '        cons
 function harness(category = 'wagon') {
   const state = { category, fallback: { min: 800, max: 1000, routeLabel: 'Test' }, points: [{ address: 'Street A', city: 'Белоусовка' }, { address: 'Street B', city: 'Белоусовка' }], distance: 1000, textContent: '' };
   const window = { bookingScreen: { vehicleRequest: () => ({ vehicleCategory: state.category }) } };
-  const context = vm.createContext({ window, console, calculateCategoryFare, formatCategoryFare, distanceFare, formatTaxiFare,
+  const context = vm.createContext({ window, console, calculateCategoryFare, formatCategoryFare, distanceFare, formatTaxiFare, normalizeCity,
     document: { getElementById: id => id === 'taxiPriceEstimate' ? state : null },
     calculateTaxiDatabaseFallback: () => state.fallback, getTaxiRoutePoints: () => state.points, getTaxiRatePoints: () => state.points,
     setTaxiRouteHint: () => {}, debouncedOSRM: () => {}, countFilledAddresses: () => state.points.length,

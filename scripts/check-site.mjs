@@ -72,6 +72,7 @@ for (const expected of [
   "selectedTaxiCity('taxiCitySelect')",
   'INTERCITY_PRICE_PER_KM: 230',
   'distanceFare(distMeters, CONFIG.TAXI, multiplier, isIntercity)',
+  'function isIntercityTaxiRoute(points)',
   'Справочные цены для ручной сверки.',
   'buildTaxiGeocodingQuery(address, city)',
   'fetchWithTimeout(url, timeoutMs = 8000)',

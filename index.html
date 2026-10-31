@@ -3536,7 +3536,7 @@
 
         const soberPricing = createSoberPricing({
             readInput: () => ({ points: window.bookingScreen?.soberRoutePoints?.() || [], multiplier: pricingAdjustment?.multiplier ?? null }),
-            locate: getCoordinates, routeDistance: getRouteDistance, taxiTariff: CONFIG.TAXI, rates: INTERCITY_RATES,
+            locate: getCoordinates, routeDistance: getRouteDistance, taxiTariff: CONFIG.TAXI,
             onChange: ({ state, quote }) => {
                 document.getElementById('soberDriverPriceEstimate').textContent = quote ? quote.priceText
                     : state === 'incomplete' ? 'Укажите маршрут' : state === 'pending' ? 'Рассчитываем стоимость…' : 'Не удалось рассчитать стоимость';

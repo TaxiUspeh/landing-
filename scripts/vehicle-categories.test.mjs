@@ -16,7 +16,7 @@ function harness(category = 'wagon') {
     calculateTaxiDatabaseFallback: () => state.fallback, getTaxiRoutePoints: () => state.points, getTaxiRatePoints: () => state.points,
     setTaxiRouteHint: () => {}, debouncedOSRM: () => {}, countFilledAddresses: () => state.points.length,
     getCoordinates: async () => state.waitCoordinates ? state.waitCoordinates : ({ lat: 50, lon: 82 }), getRouteDistance: async () => { state.routeStarted?.(); return state.waitDistance || state.distance; },
-    CONFIG: { TAXI: { BASE_PRICE: 800, BASE_DISTANCE_KM: 2, PRICE_PER_KM: 100, INTERCITY_PRICE_PER_KM: 230, MANY_STOPS_MIN: 1200, MANY_STOPS_MAX: 1500, MIN_PRICE_RANGE_OFFSET: 200 } }
+    CONFIG: { TAXI: { BASE_PRICE: 800, BASE_DISTANCE_KM: 2, PRICE_PER_KM: 120, INTERCITY_PRICE_PER_KM: 230, MANY_STOPS_MIN: 1200, MANY_STOPS_MAX: 1500, MIN_PRICE_RANGE_OFFSET: 200 } }
   });
   vm.runInContext('let taxiRouteCalculationId = 0; let priceMultiplier = 1; let isLuckyDiscount = false;\n' + pricingSource, context);
   return { state, update: () => window.updateTaxiPrice(), route: () => vm.runInContext('calculateTaxiPriceOSRM()', context), quote: () => window.getTaxiFareForOrder(), demand: value => vm.runInContext(`priceMultiplier = ${value}`, context) };

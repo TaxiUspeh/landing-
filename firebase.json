@@ -14,5 +14,29 @@
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "firebase.test.json",
+      "firestore.rules",
+      "firestore.indexes.json",
+      "firebase.json.backup",
+      "**/.*",
+      "**/node_modules/**",
+      "functions/**",
+      "tests/**",
+      "scripts/**",
+      "docs/**",
+      ".github/**",
+      "*.md",
+      "*.before-*",
+      "**/*.before-*",
+      "*.log",
+      "package.json",
+      "tailwind.config.cjs",
+      "SameOriginStreet*"
+    ]
   }
 }

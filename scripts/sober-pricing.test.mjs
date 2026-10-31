@@ -27,7 +27,7 @@ test('sober taxi legs use road distance and the correct local/intercity tariff',
 });
 test('unknown free-text route allows pending manual fare; late old route cannot replace new quote',async()=>{
   const h=harness();h.state.input.points[0]={address:'Трасса, у поля',city:''};await h.update();assert.equal(h.getState(),'unavailable');assert.equal(h.getQuote(),null);
-  let release, started;const startedPromise=new Promise(resolve=>{started=resolve;});const old=harness();old.state.measure=()=>new Promise(resolve=>{release=resolve;started();});
+  let release, started, firstMeasurement=true;const startedPromise=new Promise(resolve=>{started=resolve;});const old=harness();old.state.measure=()=>{if(firstMeasurement){firstMeasurement=false;return new Promise(resolve=>{release=resolve;started();});}return 1000;};
   old.state.input.points[1].city='Глубокое';old.state.input.points[0].city='Глубокое';
   const pending=old.update();await startedPromise;
   old.state.input.points[1].address='Новый адрес';old.state.measure=()=>1000;await old.update();const next=old.getQuote();release(50000);await pending;assert.deepEqual(old.getQuote(),next);

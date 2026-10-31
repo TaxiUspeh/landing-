@@ -68,21 +68,28 @@ for (const expected of [
   if (!index.includes(expected)) failures.push('index.html: missing hybrid online order behavior ' + expected);
 }
 for (const expected of [
-  'intercityRateForCity(city)',
   "selectedTaxiCity('taxiFromCitySelect')",
   "selectedTaxiCity('taxiCitySelect')",
   'INTERCITY_PRICE_PER_KM: 230',
+  'distanceFare(distMeters, CONFIG.TAXI, multiplier, isIntercity)',
+  'Справочные цены для ручной сверки.',
   'buildTaxiGeocodingQuery(address, city)',
   'fetchWithTimeout(url, timeoutMs = 8000)',
   'getTaxiRatePoints()',
   'getTaxiRoutePoints()',
-  'calculateTaxiDatabaseFallback()',
   'getRouteDistance(coordinates)',
   'data-taxi-stop-city',
-  'Сумма тарифов из базы',
   'Повторите расчёт или предложите свою цену.'
 ]) {
   if (!index.includes(expected)) failures.push('index.html: city-based taxi pricing is missing ' + expected);
+}
+const taxiCitySelectStart = index.indexOf('<select id="taxiCitySelect"');
+const taxiCitySelectEnd = index.indexOf('</select>', taxiCitySelectStart);
+if (taxiCitySelectStart < 0 || taxiCitySelectEnd < 0 || /₸/.test(index.slice(taxiCitySelectStart, taxiCitySelectEnd))) {
+  failures.push('index.html: fixed fares must not be shown in the destination selector');
+}
+if (index.includes('calculateTaxiDatabaseFallback') || index.includes('Сумма тарифов из базы')) {
+  failures.push('index.html: fixed fare fallback must not override road-distance pricing');
 }
 if (index.includes('findIntercityRate(destination)') || index.includes('findIntercityRate(origin)')) {
   failures.push('index.html: taxi pricing still infers a city from street text');

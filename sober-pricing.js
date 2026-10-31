@@ -1,5 +1,5 @@
 import { SOBER_BASE, SOBER_MINIMUM, SOBER_KM_RATE } from './sober-fare.js?v=74';
-import { publishedRouteFare, distanceFare } from './taxi-pricing.js?v=78';
+import { distanceFare } from './taxi-pricing.js?v=79';
 const located = p => Number.isFinite(p?.lat) && Math.abs(p.lat) <= 90 && Number.isFinite(p?.lon) && Math.abs(p.lon) <= 180;
 
 export function soberQuote(pickupAmount, returnAmount, meters) {
@@ -12,7 +12,7 @@ export function soberQuote(pickupAmount, returnAmount, meters) {
 }
 
 // Route revisions and immutable snapshots keep a late geocoder response out of a new order.
-export function createSoberPricing({ readInput, locate, routeDistance, taxiTariff, rates, onChange,
+export function createSoberPricing({ readInput, locate, routeDistance, taxiTariff, onChange,
   wait = () => new Promise(resolve => setTimeout(resolve, 350)) }) {
   let key = '', revision = 0, state = 'incomplete', quote = null, expenses = null, pending = null;
   const input = () => structuredClone(readInput());
@@ -27,10 +27,9 @@ export function createSoberPricing({ readInput, locate, routeDistance, taxiTarif
     } catch { return null; }
   }
   async function taxiLeg(points, multiplier) {
-    const published = publishedRouteFare(points, rates);
-    if (published) return Math.round(published.max * multiplier);
+    const isIntercity = points.some(point => !point.city || point.city !== SOBER_BASE.city);
     const meters = await measure(points);
-    return meters === 0 ? 0 : distanceFare(meters, taxiTariff, multiplier);
+    return meters === 0 ? 0 : distanceFare(meters, taxiTariff, multiplier, isIntercity);
   }
   function update() {
     const data = input(), nextKey = JSON.stringify(data);

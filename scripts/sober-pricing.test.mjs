@@ -16,18 +16,18 @@ test('sober minimum funds work after both taxi expenses; road km are charged onl
 function harness() {
   const state={input:{points:[{address:'A',city:'Белоусовка',lat:50.14,lon:82.54},{address:'B',city:'Глубокое',lat:50.2,lon:82.6}],multiplier:1},calls:[]};
   const controller=createSoberPricing({readInput:()=>state.input,wait:async()=>{},locate:async()=>null,
-    taxiTariff:{BASE_PRICE:800,INTERCITY_PRICE_PER_KM:230},rates:[{name:'Глубокое',min:2000,max:2500}],
+    taxiTariff:{BASE_PRICE:800,BASE_DISTANCE_KM:2,PRICE_PER_KM:120,INTERCITY_PRICE_PER_KM:230},
     routeDistance:async points=>{state.calls.push(points);return state.measure?state.measure(points):points[0].lat===SOBER_BASE.lat?2000:10000;},onChange:()=>{}});
   return {state,...controller};
 }
-test('published taxi maximum precedes road fallback, applies multiplier once, uses the Belousovka base',async()=>{
+test('sober taxi legs use road distance and the correct local/intercity tariff',async()=>{
   const h=harness();h.state.input.multiplier=1.25;await h.update();
-  assert.equal(h.getQuote().pickupAmount,1000);assert.equal(h.getQuote().returnAmount,3125);assert.equal(h.getQuote().workAmount,2300);assert.equal(h.getQuote().priceAmount,6425);
-  assert.equal(h.state.calls.length,2);assert.equal(h.state.calls[0][0].lat,SOBER_BASE.lat);
+  assert.equal(h.getQuote().pickupAmount,1000);assert.equal(h.getQuote().returnAmount,2875);assert.equal(h.getQuote().workAmount,2300);assert.equal(h.getQuote().priceAmount,6175);
+  assert.equal(h.state.calls.length,3);assert.equal(h.state.calls[0][0].lat,SOBER_BASE.lat);
 });
 test('unknown free-text route allows pending manual fare; late old route cannot replace new quote',async()=>{
   const h=harness();h.state.input.points[0]={address:'Трасса, у поля',city:''};await h.update();assert.equal(h.getState(),'unavailable');assert.equal(h.getQuote(),null);
-  let release, started;const startedPromise=new Promise(resolve=>{started=resolve;});const old=harness();old.state.measure=()=>new Promise(resolve=>{release=resolve;started();});
+  let release, started, firstMeasurement=true;const startedPromise=new Promise(resolve=>{started=resolve;});const old=harness();old.state.measure=()=>{if(firstMeasurement){firstMeasurement=false;return new Promise(resolve=>{release=resolve;started();});}return 1000;};
   old.state.input.points[1].city='Глубокое';old.state.input.points[0].city='Глубокое';
   const pending=old.update();await startedPromise;
   old.state.input.points[1].address='Новый адрес';old.state.measure=()=>1000;await old.update();const next=old.getQuote();release(50000);await pending;assert.deepEqual(old.getQuote(),next);

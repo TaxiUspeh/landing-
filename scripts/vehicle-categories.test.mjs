@@ -4,21 +4,23 @@ import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 import { calculateCategoryFare, driverCanServeOrder, validVehicleProfile, formatCategoryFare } from '../vehicle-categories.js';
 import { distanceFare, formatTaxiFare } from '../taxi-pricing.js';
+import { normalizeCity } from '../booking-core.js';
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const from = (a, b) => html.slice(html.indexOf(a), html.indexOf(b, html.indexOf(a)));
+const routeTypeSource = from('        const TAXI_URBAN_AREA_NAMES = new Set(', '        function buildTaxiGeocodingQuery');
 const pricingSource = from('        let taxiFareSnapshot = null;', '        const debouncedOSRM = debounce(')
   + from('        window.updateTaxiPrice = function()', '        const deliveryPricing = createDeliveryPricing(');
 function harness(category = 'wagon') {
   const state = { category, fallback: { min: 800, max: 1000, routeLabel: 'Test' }, points: [{ address: 'Street A', city: 'Белоусовка' }, { address: 'Street B', city: 'Белоусовка' }], distance: 1000, textContent: '' };
   const window = { bookingScreen: { vehicleRequest: () => ({ vehicleCategory: state.category }) } };
-  const context = vm.createContext({ window, console, calculateCategoryFare, formatCategoryFare, distanceFare, formatTaxiFare,
+  const context = vm.createContext({ window, console, calculateCategoryFare, formatCategoryFare, distanceFare, formatTaxiFare, normalizeCity,
     document: { getElementById: id => id === 'taxiPriceEstimate' ? state : null },
     calculateTaxiDatabaseFallback: () => state.fallback, getTaxiRoutePoints: () => state.points, getTaxiRatePoints: () => state.points,
     setTaxiRouteHint: () => {}, debouncedOSRM: () => {}, countFilledAddresses: () => state.points.length,
     getCoordinates: async () => state.waitCoordinates ? state.waitCoordinates : ({ lat: 50, lon: 82 }), getRouteDistance: async () => { state.routeStarted?.(); return state.waitDistance || state.distance; },
-    CONFIG: { TAXI: { BASE_PRICE: 800, BASE_DISTANCE_KM: 2, PRICE_PER_KM: 100, INTERCITY_PRICE_PER_KM: 230, MANY_STOPS_MIN: 1200, MANY_STOPS_MAX: 1500, MIN_PRICE_RANGE_OFFSET: 200 } }
+    CONFIG: { TAXI: { BASE_PRICE: 800, BASE_DISTANCE_KM: 2, PRICE_PER_KM: 120, INTERCITY_PRICE_PER_KM: 230, MANY_STOPS_MIN: 1200, MANY_STOPS_MAX: 1500, MIN_PRICE_RANGE_OFFSET: 200 } }
   });
-  vm.runInContext('let taxiRouteCalculationId = 0; let priceMultiplier = 1; let isLuckyDiscount = false;\n' + pricingSource, context);
+  vm.runInContext(routeTypeSource + '\nlet taxiRouteCalculationId = 0; let priceMultiplier = 1; let isLuckyDiscount = false;\n' + pricingSource, context);
   return { state, update: () => window.updateTaxiPrice(), route: () => vm.runInContext('calculateTaxiPriceOSRM()', context), quote: () => window.getTaxiFareForOrder(), demand: value => vm.runInContext(`priceMultiplier = ${value}`, context) };
 }
 test('approved examples and rounding at 100-tenge boundaries', () => {
@@ -31,22 +33,28 @@ test('approved examples and rounding at 100-tenge boundaries', () => {
   assert.equal(calculateCategoryFare(1000, 800, 'wagon'), null);
   assert.equal(calculateCategoryFare(800, 800, 'unknown'), null);
 });
-test('actual database quote uses both bounds and switching never compounds surcharge', () => {
-  const h = harness(); h.update(); assert.equal(h.state.textContent, '1000–1200 ₸');
-  h.update(); assert.equal(h.quote().priceMax, 1200);
-  h.state.category = 'minivan'; h.update(); assert.equal(h.state.textContent, '1200–1500 ₸');
-  h.state.category = 'sedan'; h.update(); assert.equal(h.quote().priceMax, 1000);
-  assert.equal(h.quote().basePriceMax, 1000);
+test('road-distance quote applies vehicle surcharge once and switching categories recalculates from the base', async () => {
+  const h = harness(); h.update(); await h.route(); assert.equal(h.state.textContent, '1000 ₸');
+  assert.equal(h.quote().priceMax, 1000); assert.equal(h.quote().basePriceMax, 800);
+  h.state.category = 'minivan'; h.update(); await h.route(); assert.equal(h.state.textContent, '1200 ₸');
+  h.state.category = 'sedan'; h.update(); await h.route(); assert.equal(h.quote().priceMax, 800);
+  assert.equal(h.quote().basePriceMax, 800);
 });
 test('actual local route and intercity route apply category after the ordinary tariff', async () => {
   const h = harness(); h.state.fallback = null; h.update(); await h.route(); assert.equal(h.quote().priceMax, 1000); assert.equal(h.quote().basePriceMax, 800);
   h.state.category = 'minivan'; h.state.points[1].city = 'Усть-Каменогорск'; h.state.distance = 20000;
   h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 4600); assert.equal(h.quote().priceMax, 6900);
 });
+test('districts of Ust-Kamenogorsk use the city tariff; routes between settlements use intercity tariff', async () => {
+  const h = harness(); h.state.points[0].city = 'Кшт'; h.state.points[1].city = 'Усть-Каменогорск'; h.state.distance = 10000;
+  h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 1760);
+  h.state.points[1].city = 'Глубокое'; h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 2300);
+});
+
 test('multi-stop road distance and existing demand multiplier each apply once', async () => {
   const h = harness(); h.state.fallback = null; h.state.points.push({ address: 'Stop', city: 'Белоусовка' }); h.state.distance = 10000;
-  h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 2300); assert.equal(h.quote().priceMax, 2800);
-  h.demand(1.5); h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 3450); assert.equal(h.quote().priceMax, 4200);
+  h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 1760); assert.equal(h.quote().priceMax, 2200);
+  h.demand(1.5); h.update(); await h.route(); assert.equal(h.quote().basePriceMax, 2640); assert.equal(h.quote().priceMax, 3200);
 });
 test('late route response cannot restore the price of a previous category', async () => {
   const h = harness(); h.state.fallback = null; h.update(); let resolve;
@@ -55,8 +63,8 @@ test('late route response cannot restore the price of a previous category', asyn
   resolve({ lat: 50, lon: 82 }); await pending;
   assert.equal(h.state.textContent, expected); assert.equal(h.quote(), null); await h.route(); assert.equal(h.quote().vehicleCategory, 'minivan');
 });
-test('unknown intercity fare clears the previous premium quote', () => {
-  const h = harness(); h.update(); assert.ok(h.quote());
+test('unknown intercity fare clears the previous premium quote', async () => {
+  const h = harness(); h.update(); await h.route(); assert.ok(h.quote());
   h.state.fallback = null; h.state.points[1].city = 'Unknown'; h.update();
   assert.equal(h.quote(), null); assert.equal(h.state.textContent, 'Рассчитываем стоимость…');
 });
@@ -81,6 +89,8 @@ test('late routing response cannot overwrite a newer route quote', async () => {
   h.state.fallback = { min: 5000, max: 5000, routeLabel: 'New route' };
   h.update();
   resolveDistance(1000); await pending;
-  assert.equal(h.quote().priceMax, 7500);
-  assert.equal(h.quote().basePriceMax, 5000);
+  assert.equal(h.quote(), null);
+  await h.route();
+  assert.equal(h.quote().priceMax, 1200);
+  assert.equal(h.quote().basePriceMax, 800);
 });

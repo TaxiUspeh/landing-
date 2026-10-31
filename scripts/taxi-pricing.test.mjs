@@ -11,7 +11,7 @@ const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const slice = (a, b) => html.slice(html.indexOf(a), html.indexOf(b, html.indexOf(a)));
 const source = slice('        const CONFIG =', '        window.initLuckyMode')
   .match(/const CONFIG = ([\s\S]*?);/)[0];
-const ratesSource = slice('        const INTERCITY_RATES =', '        function intercityRateForCity');
+const routeTypeSource = slice('        const TAXI_URBAN_AREA_NAMES = new Set(', '        function buildTaxiGeocodingQuery');
 const pricingSource = slice('        let taxiFareSnapshot = null;', '        const debouncedOSRM = debounce(')
   + slice('        window.updateTaxiPrice = function()', '        const deliveryPricing = createDeliveryPricing(');
 const clientSource = await readFile(new URL('../client-orders.js', import.meta.url), 'utf8');
@@ -21,7 +21,7 @@ function harness(from = 'Белоусовка', to = 'Белоусовка') {
   const state = { points: [{address:'Кутузова',city:from},{address:'Панфилова, 8',city:to}], distance:1000, category:'sedan', textContent:'', writes:[], messages:[], routes:0 };
   const nodes = { taxiPriceEstimate:state, taxiHouse:{value:'12'}, taxiTo:{value:'Панфилова, 8'}, taxiFromCitySelect:{value:normalizeCity(from)}, taxiCitySelect:{value:normalizeCity(to)}, taxiDateTime:{value:''}, taxiWishes:{value:''} };
   const window = { bookingScreen:{vehicleRequest:()=>({vehicleCategory:state.category,passengerCount:1}),isPreview:()=>false} };
-  const ctx = vm.createContext({window,console,normalizeCity,publishedRouteFare,distanceFare,formatTaxiFare,calculateCategoryFare,
+  const ctx = vm.createContext({window,console,normalizeCity,distanceFare,formatTaxiFare,calculateCategoryFare,
     document:{getElementById:id=>nodes[id]}, getTaxiRatePoints:()=>state.points.map(p=>({...p,city:normalizeCity(p.city)})),
     getTaxiRoutePoints:()=>state.points.map(p=>({...p,city:normalizeCity(p.city)})),
     setTaxiRouteHint:()=>{},debouncedOSRM:()=>{},countFilledAddresses:()=>state.points.length,
@@ -35,9 +35,8 @@ function harness(from = 'Белоусовка', to = 'Белоусовка') {
     writeBatch:()=>({set:(ref,data)=>state.writes.push(data),commit:async()=>{}}),serverTimestamp:()=> 'now',
     storeValue:()=>{},startOrderWatch:()=>{},CUSTOMER_NAME_STORAGE_KEY:'name',CUSTOMER_PHONE_STORAGE_KEY:'phone'
   });
-  vm.runInContext(source + ratesSource + `
+  vm.runInContext(source + routeTypeSource + `
     let taxiRouteCalculationId = 0, priceMultiplier = 1.3, isLuckyDiscount = false;
-    function calculateTaxiDatabaseFallback() { return publishedRouteFare(getTaxiRatePoints(), INTERCITY_RATES); }
   ` + pricingSource + submitSource, ctx);
   return {state,nodes,update:()=>window.updateTaxiPrice(),route:()=>vm.runInContext('calculateTaxiPriceOSRM()',ctx),
     quote:()=>window.getTaxiFareForOrder(),status:()=>window.getTaxiPriceState(),submit:()=>vm.runInContext('createOnlineOrder()',ctx)};
@@ -49,10 +48,10 @@ test('1040 route quote survives submit sync and is saved verbatim, never as 1040
   assert.deepEqual(h.quote(),before);await h.submit();
   assert.equal(h.state.writes[0].priceAmount,1040);assert.equal(h.state.writes[0].priceText,before.priceText);
 });
-test('published Belokamenka fare wins in both directions even when OSRM would return 2400',async()=>{
+test('reference prices never override the actual road distance in either direction',async()=>{
   for(const cities of [['Belokamenka','Белоусовка'],['Белоусовка','Белокаменка']]){
     const h=harness(...cities);h.state.distance=8000;h.update();await h.route();h.update();await h.submit();
-    assert.equal(h.state.routes,0);assert.equal(h.state.writes[0].priceAmount,3500);assert.equal(h.state.writes[0].priceText,'3500 ₸');
+    assert.equal(h.state.routes,1);assert.equal(h.state.writes[0].priceAmount,2392);
   }
 });
 test('pending and unavailable routes cannot create zero-price orders',async()=>{

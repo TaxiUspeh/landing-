@@ -16,9 +16,15 @@ export function publishedRouteFare(points, rates, hub = 'Белоусовка') 
 }
 
 export function distanceFare(meters, tariff, multiplier, intercity) {
-  if (!Number.isFinite(meters) || meters <= 0 || !Number.isFinite(multiplier) || multiplier <= 0) return null;
+  if (!Number.isFinite(meters) || meters <= 0 || !Number.isFinite(multiplier) || multiplier <= 0
+      || !Number.isFinite(tariff?.BASE_PRICE) || tariff.BASE_PRICE <= 0
+      || !Number.isFinite(tariff?.BASE_DISTANCE_KM) || tariff.BASE_DISTANCE_KM < 0
+      || !Number.isFinite(tariff?.PRICE_PER_KM) || tariff.PRICE_PER_KM <= 0
+      || !Number.isFinite(tariff?.INTERCITY_PRICE_PER_KM) || tariff.INTERCITY_PRICE_PER_KM <= 0) return null;
   const km = meters / 1000;
-  const base = Math.max(tariff.BASE_PRICE, km * tariff.INTERCITY_PRICE_PER_KM);
+  const base = intercity
+    ? Math.max(tariff.BASE_PRICE, km * tariff.INTERCITY_PRICE_PER_KM)
+    : tariff.BASE_PRICE + Math.max(0, km - tariff.BASE_DISTANCE_KM) * tariff.PRICE_PER_KM;
   const amount = Math.round(base * multiplier);
   return Number.isSafeInteger(amount) && amount > 0 && amount <= 10000000 ? amount : null;
 }

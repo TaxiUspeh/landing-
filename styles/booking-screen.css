@@ -152,3 +152,24 @@ body.booking-open { overflow: hidden; }
 .booking-price-breakdown[hidden] { display: none; }
 .booking-price-breakdown summary { cursor: pointer; color: #1d4ed8; padding: 4px 0; }
 .booking-price-breakdown p { margin: 4px 0; }
+
+
+/* Мобильные подсказки населённых пунктов */
+.booking-city-autocomplete { position: relative; }
+.booking-city-suggestions {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  z-index: 1300; max-height: 280px; overflow-y: auto;
+  overscroll-behavior: contain; background: #fff;
+  border: 1px solid #cbd5e1; border-radius: 12px;
+  box-shadow: 0 8px 24px #0f172a24;
+}
+.booking-city-suggestions[hidden] { display: none; }
+.booking-city-suggestion {
+  display: block; width: 100%; min-height: 48px; padding: 12px 14px;
+  border: 0; border-bottom: 1px solid #e2e8f0;
+  background: #fff; color: #1e293b; text-align: left;
+  font-size: 16px; touch-action: manipulation;
+}
+.booking-city-suggestion:last-child { border-bottom: 0; }
+.booking-city-suggestion:active,
+.booking-city-suggestion[aria-selected="true"] { background: #eff6ff; }

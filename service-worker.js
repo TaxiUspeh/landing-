@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v95-house-entrance';
+const CACHE_NAME = 'taxi-uspeh-v97-mobile-city-suggestions';
 const APP_SHELL = [
   './carpool-availability.js?v=85',
   './passenger-request-alerts.js?v=85',

@@ -97,7 +97,7 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
       </div>
       <section class="booking-picker" id="bookingPicker" aria-label="Выбор адреса" hidden>
         <div class="booking-picker-heading"><button type="button" id="bookingPickerBack" class="booking-icon-button" aria-label="Назад к заказу">‹</button><h3 id="bookingPickerTitle">Куда</h3><button type="button" id="bookingOnMap" class="booking-city">На карте</button></div>
-        <label for="bookingSearchCity">Город или посёлок (если известен)</label><input id="bookingSearchCity" list="bookingCityList" autocomplete="off" maxlength="100"><datalist id="bookingCityList"></datalist>
+        <label for="bookingSearchCity">Город или посёлок (если известен)</label><div class="booking-city-autocomplete"><input id="bookingSearchCity" list="bookingCityList" autocomplete="off" maxlength="100" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="bookingCitySuggestions"><datalist id="bookingCityList"></datalist><div id="bookingCitySuggestions" class="booking-city-suggestions" role="listbox" hidden></div></div>
         <label for="bookingSearchInput">Улица, дом или название места</label><div class="booking-search-row"><input id="bookingSearchInput" autocomplete="off" maxlength="200" placeholder="Например: Гоголя" enterkeyhint="search"><button type="button" id="bookingSearchButton">Найти</button></div>
         <p id="bookingSearchStatus" class="booking-status" role="status">Введите адрес или выберите точку на карте.</p>
         <div id="bookingSearchResults" aria-label="Найденные адреса"></div>
@@ -511,6 +511,7 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
     $('bookingSearchInput').focus();
   }
   function closePicker() {
+    hideCitySuggestions();
     $('bookingPicker').hidden = true; searchRevision++; pickerRevision++;
     overlay.classList.remove('booking-picking');
     $('bookingPickConfirm').hidden = true;
@@ -614,29 +615,90 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
   let citySuggestTimer = null;
   let citySuggestRevision = 0;
 
+  let activeCitySuggestion = -1;
+
+  function hideCitySuggestions() {
+    const box = $('bookingCitySuggestions');
+    if (box) {
+      box.replaceChildren();
+      box.hidden = true;
+    }
+    const input = $('bookingSearchCity');
+    if (input) {
+      input.setAttribute('aria-expanded', 'false');
+      input.removeAttribute('aria-activedescendant');
+    }
+    activeCitySuggestion = -1;
+  }
+
+  function chooseCitySuggestion(name) {
+    const input = $('bookingSearchCity');
+    input.value = name;
+    citySuggestRevision++;
+    hideCitySuggestions();
+    if ($('bookingSearchInput').value.trim().length >= 2) scheduleAddressSearch();
+  }
+
+  function showCitySuggestions(names) {
+    const input = $('bookingSearchCity');
+    const box = $('bookingCitySuggestions');
+    const rawKey = cityKey(input.value);
+    const filtered = [...new Set(names)]
+      .filter(name => name && cityKey(name).startsWith(rawKey))
+      .slice(0, 8);
+
+    box.replaceChildren();
+    activeCitySuggestion = -1;
+
+    for (const name of filtered) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'booking-city-suggestion';
+      button.setAttribute('role', 'option');
+      button.textContent = name;
+      button.addEventListener('pointerdown', event => {
+        event.preventDefault();
+        chooseCitySuggestion(name);
+      });
+      box.append(button);
+    }
+
+    box.hidden = filtered.length === 0;
+    input.setAttribute('aria-expanded', String(filtered.length > 0));
+  }
+
   async function suggestCities() {
     const input = $('bookingSearchCity');
     const raw = input.value.trim();
-    if (raw.length < 2) return;
+    if (raw.length < 1) {
+      hideCitySuggestions();
+      return;
+    }
 
     const revision = ++citySuggestRevision;
+    const list = $('bookingCityList');
+    const names = Array.from(list.options).map(option => option.value);
+    showCitySuggestions(names);
+
+    if (raw.length < 2) return;
+
     const results = await geocoder.search(normalizeCity(raw)).catch(() => []);
     if (revision !== citySuggestRevision || $('bookingPicker').hidden) return;
 
-    const list = $('bookingCityList');
-    const known = new Set(Array.from(list.options).map(option => cityKey(option.value)));
-
+    const known = new Set(names.map(cityKey));
     for (const point of results) {
       const name = normalizeCity(point.city || (point.isSettlement ? point.address : ''));
       if (!name || name.length < 2) continue;
       const key = cityKey(name);
       if (known.has(key)) continue;
-
       known.add(key);
+      names.push(name);
+
       const option = document.createElement('option');
       option.value = name;
       list.append(option);
     }
+    showCitySuggestions(names);
   }
 
   function scheduleAddressSearch() {
@@ -903,9 +965,27 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
   $('bookingSearchCity').addEventListener('input', () => {
     searchRevision++;
     citySuggestRevision++;
+    hideCitySuggestions();
     $('bookingSearchResults').replaceChildren();
     scheduleCitySuggestions();
     if ($('bookingSearchInput').value.trim().length >= 2) scheduleAddressSearch();
+  });
+
+  $('bookingSearchCity').addEventListener('keydown', event => {
+    const box = $('bookingCitySuggestions');
+    const options = Array.from(box.querySelectorAll('.booking-city-suggestion'));
+    if (box.hidden || !options.length) return;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      activeCitySuggestion += event.key === 'ArrowDown' ? 1 : -1;
+      activeCitySuggestion = Math.max(0, Math.min(activeCitySuggestion, options.length - 1));
+      options.forEach((option, index) => option.setAttribute('aria-selected', String(index === activeCitySuggestion)));
+    } else if (event.key === 'Enter' && activeCitySuggestion >= 0) {
+      event.preventDefault();
+      chooseCitySuggestion(options[activeCitySuggestion].textContent);
+    } else if (event.key === 'Escape') {
+      hideCitySuggestions();
+    }
   });
   $('bookingManualAddress').onclick = manualAddress;
   $('bookingAnyStore').onclick = () => deliveryPickupMode(deliveryRoutePoints()[0]) === 'anyStore' ? openPicker('from') : chooseAnyStore();

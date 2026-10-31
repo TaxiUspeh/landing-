@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v98-unified-distance-fares';
+const CACHE_NAME = 'taxi-uspeh-v99-delivery-ui-refresh';
 const APP_SHELL = [
   './carpool-availability.js?v=85',
   './passenger-request-alerts.js?v=85',
@@ -42,7 +42,7 @@ const APP_SHELL = [
   './styles/auction.css?v=51',
   './styles/tailwind.css',
   './styles/booking-screen.css?v=68',
-  './booking-screen.js?v=87',
+  './booking-screen.js?v=88',
   './booking-route.js?v=78',
   './booking-sheet.js?v=54',
   './booking-core.js?v=87',

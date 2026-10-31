@@ -11,7 +11,6 @@ const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const slice = (a, b) => html.slice(html.indexOf(a), html.indexOf(b, html.indexOf(a)));
 const source = slice('        const CONFIG =', '        window.initLuckyMode')
   .match(/const CONFIG = ([\s\S]*?);/)[0];
-const ratesSource = slice('        const INTERCITY_RATES =', '        function intercityRateForCity');
 const pricingSource = slice('        let taxiFareSnapshot = null;', '        const debouncedOSRM = debounce(')
   + slice('        window.updateTaxiPrice = function()', '        const deliveryPricing = createDeliveryPricing(');
 const clientSource = await readFile(new URL('../client-orders.js', import.meta.url), 'utf8');
@@ -21,7 +20,7 @@ function harness(from = 'Белоусовка', to = 'Белоусовка') {
   const state = { points: [{address:'Кутузова',city:from},{address:'Панфилова, 8',city:to}], distance:1000, category:'sedan', textContent:'', writes:[], messages:[], routes:0 };
   const nodes = { taxiPriceEstimate:state, taxiHouse:{value:'12'}, taxiTo:{value:'Панфилова, 8'}, taxiFromCitySelect:{value:normalizeCity(from)}, taxiCitySelect:{value:normalizeCity(to)}, taxiDateTime:{value:''}, taxiWishes:{value:''} };
   const window = { bookingScreen:{vehicleRequest:()=>({vehicleCategory:state.category,passengerCount:1}),isPreview:()=>false} };
-  const ctx = vm.createContext({window,console,normalizeCity,publishedRouteFare,distanceFare,formatTaxiFare,calculateCategoryFare,
+  const ctx = vm.createContext({window,console,normalizeCity,distanceFare,formatTaxiFare,calculateCategoryFare,
     document:{getElementById:id=>nodes[id]}, getTaxiRatePoints:()=>state.points.map(p=>({...p,city:normalizeCity(p.city)})),
     getTaxiRoutePoints:()=>state.points.map(p=>({...p,city:normalizeCity(p.city)})),
     setTaxiRouteHint:()=>{},debouncedOSRM:()=>{},countFilledAddresses:()=>state.points.length,
@@ -35,9 +34,8 @@ function harness(from = 'Белоусовка', to = 'Белоусовка') {
     writeBatch:()=>({set:(ref,data)=>state.writes.push(data),commit:async()=>{}}),serverTimestamp:()=> 'now',
     storeValue:()=>{},startOrderWatch:()=>{},CUSTOMER_NAME_STORAGE_KEY:'name',CUSTOMER_PHONE_STORAGE_KEY:'phone'
   });
-  vm.runInContext(source + ratesSource + `
+  vm.runInContext(source + `
     let taxiRouteCalculationId = 0, priceMultiplier = 1.3, isLuckyDiscount = false;
-    function calculateTaxiDatabaseFallback() { return publishedRouteFare(getTaxiRatePoints(), INTERCITY_RATES); }
   ` + pricingSource + submitSource, ctx);
   return {state,nodes,update:()=>window.updateTaxiPrice(),route:()=>vm.runInContext('calculateTaxiPriceOSRM()',ctx),
     quote:()=>window.getTaxiFareForOrder(),status:()=>window.getTaxiPriceState(),submit:()=>vm.runInContext('createOnlineOrder()',ctx)};

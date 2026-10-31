@@ -2290,7 +2290,7 @@
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
         import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=78";
-        import { initBookingScreen } from "./booking-screen.js?v=87";
+        import { initBookingScreen } from "./booking-screen.js?v=88";
         import { normalizeCity } from "./booking-core.js?v=87";
         import { selectPriceAdjustment, adjustmentText } from "./pricing-adjustments.js?v=63";
         import { createSoberPricing } from './sober-pricing.js?v=79';
@@ -3514,7 +3514,7 @@
             onChange: ({ state, quote }) => {
                 const priceEl = document.getElementById('deliveryPriceEstimate');
                 if (!priceEl) return;
-                priceEl.textContent = quote ? quote.priceText : state === 'incomplete' ? 'Укажите маршрут'
+                priceEl.textContent = quote ? quote.amountText : state === 'incomplete' ? 'Укажите маршрут'
                     : state === 'pending' ? 'Рассчитываем стоимость…' : 'Не удалось рассчитать стоимость';
                 if (state !== 'pending') window.bookingScreen?.renderDeliveryRoute?.();
             }

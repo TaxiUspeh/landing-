@@ -775,13 +775,13 @@
 <i class="fas fa-chevron-right" aria-hidden="true">
 </i>
 </button>
-<a class="home-row" href="https://t.me/TaxiUspehk" target="_blank" rel="noopener noreferrer">
-<i class="fas fa-paper-plane" aria-hidden="true">
+<button type="button" class="home-row" onclick="window.openModal('supportModal')">
+<i class="fas fa-headset" aria-hidden="true">
 </i>
-<span>Telegram</span>
+<span>Служба поддержки</span>
 <i class="fas fa-chevron-right" aria-hidden="true">
 </i>
-</a>
+</button>
 <a class="home-row" href="./drivers.html">
 <i class="fas fa-id-card" aria-hidden="true">
 </i>
@@ -1026,6 +1026,41 @@
         import { initBusSchedule } from './bus-schedule.js?v=76';
         window.toggleBusRoute = initBusSchedule()?.selectRoute;
     </script>
+
+    <!-- === SUPPORT CONTACT MODAL === -->
+    <div id="supportModal" class="modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="supportModalTitle">
+        <div class="modal">
+            <div class="p-6">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 id="supportModalTitle" class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-headset text-blue-600"></i> Служба поддержки
+                    </h3>
+                    <button type="button" class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active" data-modal="supportModal" aria-label="Закрыть">×</button>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Выберите удобный мессенджер, чтобы написать нам:</p>
+                <div class="grid grid-cols-1 gap-3">
+                    <a href="https://wa.me/77770649648" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-4 rounded-xl border border-green-200 bg-green-50 hover:bg-green-100 transition btn-active">
+                        <i class="fab fa-whatsapp text-3xl text-green-600" aria-hidden="true"></i>
+                        <span class="flex-1 text-left">
+                            <strong class="block text-gray-800">WhatsApp</strong>
+                            <small class="text-gray-600">+7 777 064-96-48</small>
+                        </span>
+                        <i class="fas fa-external-link-alt text-gray-400" aria-hidden="true"></i>
+                    </a>
+                    <a href="https://t.me/TaxiUspehk" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-4 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 transition btn-active">
+                        <i class="fab fa-telegram-plane text-3xl text-blue-600" aria-hidden="true"></i>
+                        <span class="flex-1 text-left">
+                            <strong class="block text-gray-800">Telegram</strong>
+                            <small class="text-gray-600">@TaxiUspehk</small>
+                        </span>
+                        <i class="fas fa-external-link-alt text-gray-400" aria-hidden="true"></i>
+                    </a>
+                </div>
+                <button type="button" onclick="window.closeModal('supportModal')" class="mt-5 text-gray-400 underline hover:text-gray-600 block mx-auto text-sm">Закрыть</button>
+            </div>
+        </div>
+    </div>
+    <!-- === END SUPPORT CONTACT MODAL === -->
 
     <!-- === DRIVER APPLICATION MODAL === -->
     <div id="driverModal" class="modal-overlay" aria-hidden="true" role="dialog">

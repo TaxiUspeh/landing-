@@ -55,7 +55,7 @@ test('late route response cannot restore the price of a previous category', asyn
   resolve({ lat: 50, lon: 82 }); await pending;
   assert.equal(h.state.textContent, expected); assert.equal(h.quote(), null); await h.route(); assert.equal(h.quote().vehicleCategory, 'minivan');
 });
-test('unknown intercity fare clears the previous premium quote', () => {
+test('unknown intercity fare clears the previous premium quote', async () => {
   const h = harness(); h.update(); await h.route(); assert.ok(h.quote());
   h.state.fallback = null; h.state.points[1].city = 'Unknown'; h.update();
   assert.equal(h.quote(), null); assert.equal(h.state.textContent, 'Рассчитываем стоимость…');

@@ -2827,6 +2827,15 @@
             'Аэропорт': 'Аэропорт Усть-Каменогорск, Восточно-Казахстанская область, Казахстан'
         };
         let taxiRouteCalculationId = 0;
+        const TAXI_URBAN_AREA_NAMES = new Set(['Усть-Каменогорск', 'Кшт', 'Аэропорт', 'Защита', 'Аблакетка', 'Меновное', 'Ахмирово', 'Опытное поле']);
+
+        function isIntercityTaxiRoute(points) {
+            const cities = new Set(points.map(point => {
+                const city = normalizeCity(point.city || 'Белоусовка');
+                return TAXI_URBAN_AREA_NAMES.has(city) ? 'Усть-Каменогорск' : city;
+            }));
+            return cities.size > 1;
+        }
 
         function buildTaxiGeocodingQuery(address, city) {
             const cityName = city || 'Белоусовка';
@@ -2922,7 +2931,7 @@
         async function calculateTaxiPriceOSRM() {
             const requestId = taxiRouteCalculationId;
             const routePoints = getTaxiRoutePoints();
-            const isIntercity = routePoints.some(point => point.city !== 'Белоусовка');
+            const isIntercity = isIntercityTaxiRoute(routePoints);
             const multiplier = priceMultiplier;
             if (taxiFareState !== 'pending' || routePoints.length < 2) return;
             setTaxiRouteHint('Считаем расстояние по маршруту…');

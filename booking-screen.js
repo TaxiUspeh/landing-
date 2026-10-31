@@ -413,7 +413,7 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
     if (hasOffer) price = priceLabel(selectedPrice);
     else if (unknownFare) price = 'Не удалось рассчитать стоимость';
     $('bookingPrice').textContent = full ? price : 'Укажите адрес';
-    $('bookingDeliveryCalculation').hidden = !full || !deliveryFare?.calculation;
+    $('bookingDeliveryCalculation').hidden = service.form === 'delivery' || !full || !deliveryFare?.calculation;
     $('bookingDeliveryCalculation').querySelector('p').textContent = deliveryFare?.calculation || '';
     if (service.form === 'soberDriver' && full) {
       const description = soberFareDescription({ serviceType: 'soberDriver', priceAmount: selectedPrice, soberFare: soberFareForPrice(window.getSoberExpenses?.(), selectedPrice) });
@@ -424,7 +424,7 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
       $('bookingDeliveryCalculation').hidden = false;
       $('bookingDeliveryCalculation').querySelector('p').textContent = $('cargoPriceNote').textContent;
     }
-    $('bookingPriceReason').hidden = !full || !deliveryFare;
+    $('bookingPriceReason').hidden = service.form === 'delivery' || !full || !deliveryFare;
     $('bookingPriceReason').textContent = deliveryFare
       ? `${deliveryFare.reason}. ${deliveryFare.preview ? 'От случайной машины на карте (модель). Укажите место получения или выберите любой магазин.' : deliveryFare.anyStore ? 'Любой магазин. Расчёт от случайной машины на карте (модель). Товары оплачиваются отдельно.' : 'Один наибольший коэффициент. Товары оплачиваются отдельно.'}` : '';
     $('bookingPriceCaption').textContent = hasOffer ? 'Ваша цена' : service.form === 'assistance' ? 'Минимальная стоимость' : service.form === 'cargo' ? 'Предварительная стоимость' : service.form === 'auction' ? 'Предложение водителю' : service.form === 'taxi' ? 'Стоимость поездки' : service.form === 'delivery' ? (!state.from.address || deliveryFare?.preview ? 'Предварительная стоимость доставки' : 'Стоимость доставки') : 'Примерная стоимость';

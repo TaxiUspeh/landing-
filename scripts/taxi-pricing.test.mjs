@@ -10,8 +10,8 @@ import { reserveCommission, orderCommission } from '../driver-finance.js';
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const slice = (a, b) => html.slice(html.indexOf(a), html.indexOf(b, html.indexOf(a)));
 const source = slice('        const CONFIG =', '        window.initLuckyMode')
-const routeTypeSource = slice('        const TAXI_URBAN_AREA_NAMES = new Set(', '        function buildTaxiGeocodingQuery');
   .match(/const CONFIG = ([\s\S]*?);/)[0];
+const routeTypeSource = slice('        const TAXI_URBAN_AREA_NAMES = new Set(', '        function buildTaxiGeocodingQuery');
 const pricingSource = slice('        let taxiFareSnapshot = null;', '        const debouncedOSRM = debounce(')
   + slice('        window.updateTaxiPrice = function()', '        const deliveryPricing = createDeliveryPricing(');
 const clientSource = await readFile(new URL('../client-orders.js', import.meta.url), 'utf8');

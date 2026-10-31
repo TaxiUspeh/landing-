@@ -49,10 +49,10 @@ test('1040 route quote survives submit sync and is saved verbatim, never as 1040
   assert.deepEqual(h.quote(),before);await h.submit();
   assert.equal(h.state.writes[0].priceAmount,1040);assert.equal(h.state.writes[0].priceText,before.priceText);
 });
-test('published Belokamenka fare wins in both directions even when OSRM would return 2400',async()=>{
+test('reference prices never override the actual road distance in either direction',async()=>{
   for(const cities of [['Belokamenka','Белоусовка'],['Белоусовка','Белокаменка']]){
     const h=harness(...cities);h.state.distance=8000;h.update();await h.route();h.update();await h.submit();
-    assert.equal(h.state.routes,0);assert.equal(h.state.writes[0].priceAmount,3500);assert.equal(h.state.writes[0].priceText,'3500 ₸');
+    assert.equal(h.state.routes,1);assert.equal(h.state.writes[0].priceAmount,2392);
   }
 });
 test('pending and unavailable routes cannot create zero-price orders',async()=>{

@@ -23,8 +23,8 @@ test('minimums, strict increases, bounded integer amounts and configurable contr
   assert.throws(()=>priceSettings({quickPercentages:[101]}));assert.throws(()=>offerFields(1000,1200,'taxi',priceSettings({enabled:false})));
 });
 test('road tariff matches 800 minimum and exact whole-tenge examples', () => {
-  const tariff={BASE_PRICE:800,INTERCITY_PRICE_PER_KM:230};
-  assert.equal(distanceFare(15200,tariff,1,false),3496);assert.equal(distanceFare(18400,tariff,1,true),4232);
+  const tariff={BASE_PRICE:800,BASE_DISTANCE_KM:2,PRICE_PER_KM:120,INTERCITY_PRICE_PER_KM:230};
+  assert.equal(distanceFare(15200,tariff,1,false),2384);assert.equal(distanceFare(18400,tariff,1,true),4232);
   assert.equal(distanceFare(1000,tariff,1,false),800);assert.equal(distanceFare(null,tariff,1,false),null);
   assert.equal(distanceFare(0,tariff,1,false),null);
 });

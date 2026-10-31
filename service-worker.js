@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v92-pwa-install-help';
+const CACHE_NAME = 'taxi-uspeh-v95-house-entrance';
 const APP_SHELL = [
   './carpool-availability.js?v=85',
   './passenger-request-alerts.js?v=85',
@@ -42,10 +42,11 @@ const APP_SHELL = [
   './styles/auction.css?v=51',
   './styles/tailwind.css',
   './styles/booking-screen.css?v=68',
-  './booking-screen.js?v=85',
+  './booking-screen.js?v=87',
   './booking-route.js?v=78',
   './booking-sheet.js?v=54',
-  './booking-core.js?v=84',
+  './booking-core.js?v=87',
+  './data/street-aliases-kz.js?v=1',
   './taxi-pricing.js?v=78',
   './pricing-adjustments.js?v=63',
   './delivery-pricing.js?v=78',

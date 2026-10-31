@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BOOKING_SERVICES, photonPoint, parseHouseDetails, normalizeCity, serviceWishes, createGeocoder, addressWithCity } from '../booking-core.js';
+import { BOOKING_SERVICES, photonPoint, parseHouseDetails, mergeHouseDetails, normalizeCity, serviceWishes, createGeocoder, addressWithCity } from '../booking-core.js';
 
 const feature = (city = 'Белоусовка', street = 'Юбилейная улица') => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [82.533, 50.132] }, properties: { city, street, housenumber: '8', countrycode: 'KZ' } });
 
@@ -42,9 +42,54 @@ test('concurrent identical lookups are deduplicated and cities are included in c
   const geocoder = createGeocoder({ interval: 0, fetcher: async url => { urls.push(url); return { ok: true, json: async () => ({ features: [feature()] }) }; } });
   const [a, b] = await Promise.all([geocoder.search('Гоголя, Белоусовка'), geocoder.search('Гоголя, Белоусовка')]);
   assert.deepEqual(a, b); assert.equal(urls.length, 1);
-  await geocoder.search('Гоголя, Усть-Каменогорск'); assert.equal(urls.length, 2);
+  await geocoder.search('Гоголя, Усть-Каменогорск'); assert.equal(urls.length, 3);
   await geocoder.reverse(50.132, 82.533);
-  assert.equal(new URL(urls[2]).searchParams.get('lat'), '50.132');
+  assert.equal(new URL(urls[3]).searchParams.get('lat'), '50.132');
+});
+
+test('Russian and Kazakh street aliases resolve to canonical Photon street names', async () => {
+  const urls = [];
+
+  const geocoder = createGeocoder({
+    interval: 0,
+    fetcher: async url => {
+      const parsed = new URL(url);
+      urls.push(parsed);
+
+      const isBelousovka = parsed.searchParams.get('city') === 'Белоусовка';
+      const targetStreet = isBelousovka ? 'Жамбыл көшесі' : 'Гоголь көшесі';
+      const targetCity = isBelousovka ? 'Белоусовка' : 'Өскемен';
+      const otherStreet = isBelousovka ? 'Степная көшесі' : 'Қайсенов көшесі';
+
+      return {
+        ok: true,
+        json: async () => ({
+          features: [
+            {
+              geometry: { coordinates: [82.5138525, 50.1437984] },
+              properties: { city: targetCity, street: targetStreet, countrycode: 'KZ' }
+            },
+            {
+              geometry: { coordinates: [82.5435732, 50.1289114] },
+              properties: { city: targetCity, street: otherStreet, countrycode: 'KZ' }
+            }
+          ]
+        })
+      };
+    }
+  });
+
+  const belousovka = await geocoder.search('Дж', undefined, 'Белоусовка');
+
+  assert.equal(urls[0].searchParams.get('street'), 'Жамбыл көшесі');
+  assert.equal(belousovka.length, 1);
+  assert.equal(belousovka[0].street, 'Жамбыл көшесі');
+
+  const oskemen = await geocoder.search('Гоголя', undefined, 'Өскемен');
+
+  assert.ok(urls.slice(1).every(url => url.searchParams.get('street') === 'Гоголь көшесі'));
+  assert.equal(oskemen.length, 1);
+  assert.equal(oskemen[0].street, 'Гоголь көшесі');
 });
 
 test('temporary geocoder failures can be retried and do not poison the request queue', async () => {
@@ -73,4 +118,16 @@ test('stalled and queued requests have a total deadline, are evicted and can be 
   fail=false;
   assert.equal((await geocoder.search('first')).length,1,'expired cached promise is replaced');
   assert.ok(calls<=3);
+});
+
+
+test('house updates preserve entrance on the same street', () => {
+  assert.equal(mergeHouseDetails('8, подъезд 2', '', true), '8, подъезд 2');
+  assert.equal(mergeHouseDetails('8, подъезд 2', '10', true), '10, подъезд 2');
+  assert.equal(mergeHouseDetails('подъезд 3', '10', true), '10, подъезд 3');
+});
+
+test('house details do not carry over to another street', () => {
+  assert.equal(mergeHouseDetails('8, подъезд 2', '', false), '');
+  assert.equal(mergeHouseDetails('8, подъезд 2', '10', false), '10');
 });

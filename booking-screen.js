@@ -5,7 +5,7 @@ import { DEFAULT_CUSTOMER_PRICING, priceLabel } from './customer-pricing.js?v=78
 import { deliveryCityKey, deliveryPickupMode } from './delivery-pricing.js?v=78';
 import { createBookingSheet } from './booking-sheet.js?v=54';
 import { categoryForService, categoryCaption } from './vehicle-categories.js?v=78';
-import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=84';
+import { BOOKING_SERVICES, normalizeCity, parseHouseDetails, mergeHouseDetails, addressWithCity, serviceWishes, createGeocoder } from './booking-core.js?v=87';
 
 export function initBookingScreen({ preview = false, geocoder = createGeocoder() } = {}) {
   const $ = id => document.getElementById(id);
@@ -519,14 +519,24 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
     const button = pickerTarget === 'to' ? $('bookingTo') : $('bookingFrom');
     sheet.expand(); refresh(); button.focus(); window.simMap?.invalidateSize();
   }
+  function isSameOriginStreet(point) {
+    const currentStreet = String(state.from.street || state.from.address || '').trim();
+    const nextStreet = String(point.street || point.address || '').trim();
+    const currentCity = normalizeCity(state.from.city || '');
+    const nextCity = normalizeCity(point.city || '');
+    const clean = value => value.toLocaleLowerCase('ru').replace(/[.,]/gu, ' ').replace(/\s+/gu, ' ').trim();
+    return Boolean(currentStreet && nextStreet && currentCity && nextCity &&
+      clean(currentStreet) === clean(nextStreet) && currentCity === nextCity);
+  }
+
   function applyPoint(point) {
     if (!point.address) return;
     if (pickerTarget === 'from') {
       originRevision++; locating = false;
       $('bookingLocationStatus').textContent = 'Место подачи выбрано. Проверьте дом и подъезд.';
+      const sameStreet = isSameOriginStreet(point);
+      state.details = mergeHouseDetails(state.details, point.house, sameStreet);
       state.from = point;
-      // House is kept once, in the shared detail field for the origin.
-      state.details = point.house ? point.house : '';
       if (point.house && point.street) state.from = { ...point, address: point.street };
       if (!state.to.address) state.to.city = point.city;
     } else if (pickerTarget === 'to') state.to = point;
@@ -541,19 +551,43 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
     $('bookingSearchStatus').textContent = 'Ищем адрес…';
     $('bookingSearchResults').replaceChildren();
     const center = Number.isFinite(state.from.lat) ? state.from : undefined;
-    const scoped = city && !query.toLowerCase().includes(city.toLowerCase());
-    const text = scoped ? `${query}, ${city}, Казахстан` : `${query}, Казахстан`;
+    const scoped = Boolean(city);
+    const text = `${query}, Казахстан`;
     let results = [];
     const current = () => revision === searchRevision && !$('bookingPicker').hidden;
     function renderResults(pending = false, failed = false) {
       if (!current()) return;
-      results = results.filter(p => !p.country || p.country.toUpperCase() === 'KZ').sort((a, b) => Number(b.city === city) - Number(a.city === city)).slice(0, 10);
-      $('bookingSearchStatus').textContent = results.length ? 'Выберите адрес. Проверьте населённый пункт.'
+      // If Photon found an exact street-name match, hide unrelated POIs.
+      const searchTerms = (query.split(',')[0]
+        .normalize('NFKC')
+        .toLocaleLowerCase('ru')
+        .replace(/ё/g, 'е')
+        .match(/[a-zа-яәіңғүұқөһ]+/giu) || [])
+        .filter(term => term.length >= 3 && !['\u0443\u043b\u0438\u0446\u0430', '\u043f\u0440\u043e\u0441\u043f\u0435\u043a\u0442', '\u043f\u0435\u0440\u0435\u0443\u043b\u043e\u043a', '\u043c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d'].includes(term));
+
+      if (searchTerms.length) {
+        const matching = results.filter(point => {
+          const address = `${point.address || ''} ${point.street || ''}`
+            .normalize('NFKC')
+            .toLocaleLowerCase('ru')
+            .replace(/ё/g, 'е');
+          return searchTerms.every(term => address.includes(term));
+        });
+        if (matching.length) results = matching;
+      }
+
+      const visibleResults = results
+        .filter(p => !p.country || p.country.toUpperCase() === 'KZ')
+        // When a city is selected, never show addresses from another city.
+        // normalizeCity treats Өскемен and Усть-Каменогорск as the same city.
+        .filter(p => !city || (p.city && cityKey(normalizeCity(p.city)) === cityKey(city)))
+        .slice(0, 10);
+      $('bookingSearchStatus').textContent = visibleResults.length ? 'Выберите адрес. Проверьте населённый пункт.'
         : pending ? 'Ищем адрес… Можно использовать введённый адрес без ожидания.'
         : failed ? 'Поиск временно недоступен. Можно ввести адрес вручную или выбрать точку на карте.'
         : 'Адрес не найден в справочнике. Можно использовать введённый адрес или выбрать точку на карте.';
       $('bookingSearchResults').replaceChildren();
-      for (const point of results) {
+      for (const point of visibleResults) {
         const button = document.createElement('button'); button.type = 'button'; button.className = 'booking-result';
         const icon = document.createElement('i'); icon.className = 'fas fa-map-marker-alt'; icon.setAttribute('aria-hidden', 'true');
         const copy = document.createElement('span'); const title = document.createElement('strong'); title.textContent = point.address;
@@ -563,18 +597,62 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
         $('bookingSearchResults').append(button);
       }
     }
-    const first = await geocoder.search(text, center).catch(() => null);
+    const first = await geocoder.search(scoped ? query : text, center, city).catch(() => null);
     if (!current()) return;
     results = first || [];
-    // Show usable results immediately; an optional broader search must not hide or discard them.
-    renderResults(Boolean(scoped), first === null);
-    if (!scoped) return;
-    const nearby = await geocoder.search(`${query}, Казахстан`, center).catch(() => null);
-    if (!current()) return;
-    if (!nearby?.length && results.length) return;
-    const seen = new Set(results.map(point => pointKey(point.address, point.city)));
-    for (const point of nearby || []) if (!seen.has(pointKey(point.address, point.city))) { results.push(point); seen.add(pointKey(point.address, point.city)); }
-    renderResults(false, first === null || nearby === null);
+    renderResults(false, first === null);
+  }
+
+
+  const cityKey = value => String(value || '')
+    .normalize('NFKC')
+    .toLocaleLowerCase('ru')
+    .replace(/ё/g, 'е')
+    .replace(/[^a-zа-яәіңғүұқөһö0-9]+/giu, '');
+
+  let searchSuggestTimer = null;
+  let citySuggestTimer = null;
+  let citySuggestRevision = 0;
+
+  async function suggestCities() {
+    const input = $('bookingSearchCity');
+    const raw = input.value.trim();
+    if (raw.length < 2) return;
+
+    const revision = ++citySuggestRevision;
+    const results = await geocoder.search(normalizeCity(raw)).catch(() => []);
+    if (revision !== citySuggestRevision || $('bookingPicker').hidden) return;
+
+    const list = $('bookingCityList');
+    const known = new Set(Array.from(list.options).map(option => cityKey(option.value)));
+
+    for (const point of results) {
+      const name = normalizeCity(point.city || (point.isSettlement ? point.address : ''));
+      if (!name || name.length < 2) continue;
+      const key = cityKey(name);
+      if (known.has(key)) continue;
+
+      known.add(key);
+      const option = document.createElement('option');
+      option.value = name;
+      list.append(option);
+    }
+  }
+
+  function scheduleAddressSearch() {
+    clearTimeout(searchSuggestTimer);
+    searchSuggestTimer = setTimeout(() => {
+      if (!$('bookingPicker').hidden && $('bookingSearchInput').value.trim().length >= 2) {
+        void search();
+      }
+    }, 550);
+  }
+
+  function scheduleCitySuggestions() {
+    clearTimeout(citySuggestTimer);
+    citySuggestTimer = setTimeout(() => {
+      if (!$('bookingPicker').hidden) void suggestCities();
+    }, 550);
   }
 
   function manualAddress() {
@@ -645,8 +723,9 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
         $('bookingLocationStatus').textContent = 'Место подачи сохранено по координатам. Уточните точку или добавьте ориентир в пожеланиях.';
         changed(); window.simMap?.setView([lat, lon], 16); return;
       }
+      const sameStreet = isSameOriginStreet(point);
+      state.details = mergeHouseDetails(state.details, point.house, sameStreet);
       state.from = { ...point, lat, lon, address: point.street || point.address };
-      state.details = point.house || '';
       if (!state.to.address) state.to.city = point.city;
       $('bookingLocationStatus').textContent = point.isSettlement ? 'Населённый пункт определён. Точная точка сохранена; уточните улицу или ориентир.' : 'Адрес определён. Проверьте дом и подъезд.';
       changed(); window.simMap?.setView([lat, lon], 16);
@@ -816,7 +895,18 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
   $('bookingPickerBack').onclick = closePicker;
   $('bookingSearchButton').onclick = search;
   $('bookingSearchInput').addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); void search(); } });
-  for (const id of ['bookingSearchInput', 'bookingSearchCity']) $(id).addEventListener('input', () => { searchRevision++; $('bookingSearchResults').replaceChildren(); });
+  $('bookingSearchInput').addEventListener('input', () => {
+    searchRevision++;
+    $('bookingSearchResults').replaceChildren();
+    scheduleAddressSearch();
+  });
+  $('bookingSearchCity').addEventListener('input', () => {
+    searchRevision++;
+    citySuggestRevision++;
+    $('bookingSearchResults').replaceChildren();
+    scheduleCitySuggestions();
+    if ($('bookingSearchInput').value.trim().length >= 2) scheduleAddressSearch();
+  });
   $('bookingManualAddress').onclick = manualAddress;
   $('bookingAnyStore').onclick = () => deliveryPickupMode(deliveryRoutePoints()[0]) === 'anyStore' ? openPicker('from') : chooseAnyStore();
   $('bookingPickerAnyStore').onclick = chooseAnyStore;

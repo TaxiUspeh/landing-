@@ -4,7 +4,7 @@ import { isMeteredCargo, cargoCanComplete, cargoFareDescription } from './cargo-
 import { createCargoWorkControls } from './cargo-controls.js?v=77';
 import { updateCargoWork } from './cargo-work.js?v=79';
 import { confirmSoberExpenses, createSoberExpenseEditor } from './sober-dispatch.js?v=74';
-import { serviceEnabled, profileForOrder, assignmentVehicle } from './functions/driver-services.mjs?v=78';
+import { serviceEnabled, profileForOrder, assignmentVehicle } from './driver-services.mjs?v=78';
 import { createCargoControls } from './cargo-profile-controls.js?v=78';
 import { initCustomerPricingSettings } from './customer-pricing-settings.js?v=78';
 import { priceDescription, retryPriceConflict } from './customer-pricing.js?v=78';

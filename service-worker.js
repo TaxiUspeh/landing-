@@ -22,7 +22,7 @@ const APP_SHELL = [
   './sober-pricing.js?v=78',
   './sober-dispatch.js?v=74',
   './driver-finance.js?v=79',
-  './functions/driver-services.mjs?v=78',
+  './driver-services.mjs?v=78',
   './cargo-profile-controls.js?v=78',
   './driver-finance-controls.js?v=79',
   './index.html',

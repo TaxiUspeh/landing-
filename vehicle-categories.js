@@ -1,4 +1,4 @@
-import { serviceEnabled, serviceDirection } from './functions/driver-services.mjs?v=78';
+import { serviceEnabled, serviceDirection } from './driver-services.mjs?v=78';
 export const VEHICLE_CATEGORIES = Object.freeze({
   sedan: Object.freeze({ label: 'Легковой', surchargePercent: 0 }),
   wagon: Object.freeze({ label: 'Универсал', surchargePercent: 20 }),

@@ -1,4 +1,4 @@
-import { carpoolCityKey } from './functions/carpool-cities.mjs?v=79';
+import { carpoolCityKey } from './carpool-cities.mjs?v=80';
 export { carpoolCityKey };
 export const carpoolMillis = value => value?.toMillis?.() ?? (value?.seconds ? value.seconds * 1000 : 0);
 export const carpoolMoney = value => `${Number(value).toLocaleString('ru-RU')} ₸`;

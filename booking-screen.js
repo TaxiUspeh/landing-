@@ -552,10 +552,22 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
     $('bookingSearchStatus').textContent = 'Ищем адрес…';
     $('bookingSearchResults').replaceChildren();
     const center = Number.isFinite(state.from.lat) ? state.from : undefined;
-    const scoped = Boolean(city);
-    const text = `${query}, Казахстан`;
+    const localQuery = city ? `${query}, ${city}` : `${query}, Казахстан`;
+    const broadQuery = `${query}, Казахстан`;
     let results = [];
     const current = () => revision === searchRevision && !$('bookingPicker').hidden;
+    const mergeResults = (...groups) => {
+      const seen = new Set();
+      return groups.flat().filter(point => {
+        if (!point) return false;
+        const key = Number.isFinite(point.lat) && Number.isFinite(point.lon)
+          ? `${point.lat.toFixed(6)},${point.lon.toFixed(6)}`
+          : `${point.address || ''}|${point.city || ''}`.toLocaleLowerCase('ru');
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    };
     function renderResults(pending = false, failed = false) {
       if (!current()) return;
       // If Photon found an exact street-name match, hide unrelated POIs.
@@ -564,20 +576,21 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
         .toLocaleLowerCase('ru')
         .replace(/ё/g, 'е')
         .match(/[a-zа-яәіңғүұқөһ]+/giu) || [])
-        .filter(term => term.length >= 3 && !['\u0443\u043b\u0438\u0446\u0430', '\u043f\u0440\u043e\u0441\u043f\u0435\u043a\u0442', '\u043f\u0435\u0440\u0435\u0443\u043b\u043e\u043a', '\u043c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d'].includes(term));
+        .filter(term => term.length >= 3 && !['улица', 'проспект', 'переулок', 'микрорайон'].includes(term));
 
+      let candidates = results;
       if (searchTerms.length) {
-        const matching = results.filter(point => {
+        const matching = candidates.filter(point => {
           const address = `${point.address || ''} ${point.street || ''}`
             .normalize('NFKC')
             .toLocaleLowerCase('ru')
             .replace(/ё/g, 'е');
           return searchTerms.every(term => address.includes(term));
         });
-        if (matching.length) results = matching;
+        if (matching.length) candidates = matching;
       }
 
-      const visibleResults = results
+      const visibleResults = candidates
         .filter(p => !p.country || p.country.toUpperCase() === 'KZ')
         // When a city is selected, never show addresses from another city.
         // normalizeCity treats Өскемен and Усть-Каменогорск as the same city.
@@ -598,10 +611,25 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
         $('bookingSearchResults').append(button);
       }
     }
-    const first = await geocoder.search(scoped ? query : text, center, city).catch(() => null);
+
+    // Search the selected locality first so a useful local match appears promptly.
+    const localPromise = geocoder.search(localQuery, center).catch(() => null);
+    // Keep a wider Kazakhstan search running as a fallback; it must not delay
+    // or erase a successful local result.
+    const broadPromise = city
+      ? geocoder.search(broadQuery, center).catch(() => null)
+      : localPromise;
+
+    const localResults = await localPromise;
     if (!current()) return;
-    results = first || [];
-    renderResults(false, first === null);
+    results = mergeResults(localResults || []);
+    renderResults(Boolean(city), localResults === null && !city);
+
+    if (!city) return;
+    const broadResults = await broadPromise;
+    if (!current()) return;
+    results = mergeResults(results, broadResults || []);
+    renderResults(false, localResults === null && broadResults === null);
   }
 
 

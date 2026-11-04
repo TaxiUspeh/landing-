@@ -87,6 +87,23 @@ let clientOrderWatchInitialLoaded = false;
 let lastObservedOrderStatus = '';
 let activeOrderView = 'taxi';
 
+function trackTaxiEvent(eventName, params = {}) {
+    if (typeof window.gtag === 'function') {
+        window.gtag('event', eventName, params);
+    }
+}
+
+let taxiOrderStarted = false;
+
+function trackTaxiOrderStart(event) {
+    if (!event.isTrusted || taxiOrderStarted) return;
+    if (!event.target?.matches?.('input, select, textarea')) return;
+
+    taxiOrderStarted = true;
+    trackTaxiEvent('taxi_order_start', { service_type: 'taxi' });
+}
+
+
 function normalizedOrderService(serviceType) {
     return ['delivery', 'auction', 'soberDriver', 'cargo', 'assistance'].includes(serviceType) ? serviceType : 'taxi';
 }
@@ -561,6 +578,7 @@ async function createOnlineOrder() {
         });
 
         await batch.commit();
+        trackTaxiEvent('taxi_order_success', { service_type: 'taxi' });
         storeValue(CUSTOMER_NAME_STORAGE_KEY, customerName);
         storeValue(CUSTOMER_PHONE_STORAGE_KEY, customerPhone);
         if (typeof window.saveOrderToFullHistory === 'function') {
@@ -1151,7 +1169,15 @@ if (!ONLINE_ORDERS_ENABLED) {
     setHidden(elements.deliveryOnlineButton, true);
 }
 restoreSavedContact();
-elements.onlineButton?.addEventListener('click', createOnlineOrder);
+elements.form?.addEventListener('input', trackTaxiOrderStart, true);
+elements.form?.addEventListener('change', trackTaxiOrderStart, true);
+
+elements.onlineButton?.addEventListener('click', event => {
+    if (event.isTrusted) {
+        trackTaxiEvent('taxi_order_click', { service_type: 'taxi' });
+    }
+    void createOnlineOrder();
+});
 elements.deliveryOnlineButton?.addEventListener('click', createOnlineDeliveryOrder);
 elements.cancelButton?.addEventListener('click', cancelOnlineOrder);
 elements.deliveryCancelButton?.addEventListener('click', cancelOnlineOrder);

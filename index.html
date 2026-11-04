@@ -8,12 +8,12 @@
     <link rel="canonical" href="https://taxiuspeh.github.io/landing-/">
 
     <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NMCTD2Q8R2"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NMCTD2QR82"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-NMCTD2Q8R2');
+        gtag('config', 'G-NMCTD2QR82');
     </script>
 
     <!-- PWA Settings -->
@@ -3304,6 +3304,15 @@
             e.preventDefault();
             deferredPrompt = e;
         });
+
+        // Фактическая установка PWA
+        window.addEventListener('appinstalled', () => {
+            if (typeof window.gtag === 'function') {
+                window.gtag('event', 'pwa_install', {
+                    app_name: 'Taxi Uspeh'
+                });
+            }
+        });
         window.showPWAInstructions = function() {
             const modal = document.getElementById('pwaModal');
             if (modal) modal.classList.remove('hidden');
@@ -3326,6 +3335,13 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+             // Запуск приложения с главного экрана
+             if (isStandaloneApp() && typeof window.gtag === 'function') {
+                 window.gtag('event', 'pwa_standalone_open', {
+                     app_name: 'Taxi Uspeh'
+                 });
+             }
+
              loadTheme();
              initPhoneMask();
              setAddressHistory();

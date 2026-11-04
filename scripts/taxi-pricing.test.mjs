@@ -33,7 +33,7 @@ function harness(from = 'Белоусовка', to = 'Белоусовка') {
     doc:(...args)=>({id:args.at(-1)}),collection:()=> 'orders',createOrderNumber:()=> 'TU-TEST',collectStops:()=>[],
     coordinateFields:()=>({}),customerOrderPricing:()=>null,customerOrderReference:()=>({id:'order-1'}),customerOrderBatch:()=>({set:(ref,data)=>state.writes.push(data),commit:async()=>{}}),
     writeBatch:()=>({set:(ref,data)=>state.writes.push(data),commit:async()=>{}}),serverTimestamp:()=> 'now',
-    storeValue:()=>{},startOrderWatch:()=>{},CUSTOMER_NAME_STORAGE_KEY:'name',CUSTOMER_PHONE_STORAGE_KEY:'phone'
+    storeValue:()=>{},startOrderWatch:()=>{},pendingSubmission:()=>null,trackTaxiEvent:()=>{},CUSTOMER_NAME_STORAGE_KEY:'name',CUSTOMER_PHONE_STORAGE_KEY:'phone'
   });
   vm.runInContext(source + routeTypeSource + `
     let taxiRouteCalculationId = 0, priceMultiplier = 1.3, isLuckyDiscount = false;

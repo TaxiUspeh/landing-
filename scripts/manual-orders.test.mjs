@@ -34,7 +34,7 @@ function harness(service,amount=1701) {
     db:{},doc:(...args)=>({id:args.at(-1)}),createOrderNumber:()=> 'TU-TEST',collectStops:()=>[],
     customerOrderReference:()=>({id:'client_attempt'}),customerOrderBatch:()=>({set:(ref,data)=>state.writes.push(data),commit:async()=>{}}),
     serverTimestamp:()=> 'now',storeValue:()=>{},startOrderWatch:()=>{},CUSTOMER_NAME_STORAGE_KEY:'name',CUSTOMER_PHONE_STORAGE_KEY:'phone',
-    pendingSubmission:()=>null});
+    pendingSubmission:()=>null,trackTaxiEvent:()=>{}});
   vm.runInContext(handlers,ctx);
   return {state,window,nodes,submit:()=>vm.runInContext(service==='soberDriver'?'createOnlineSoberOrder()':service==='taxi'?'createOnlineOrder()':'createOnlineDeliveryOrder()',ctx)};
 }

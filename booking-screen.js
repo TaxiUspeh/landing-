@@ -18,6 +18,7 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
   const emptyPoint = () => ({ address: '', city: 'Белоусовка', lat: null, lon: null });
   const state = { mode: 'taxi', intercityKind: 'whole', category: 'taxi', from: emptyPoint(), to: emptyPoint(), stops: [], details: '', note: '', passengerCount: 5, service: BOOKING_SERVICES[0], channel: 'online', revision: 0 };
   let opened = false, returnFocus = null, pickerTarget = null, pickerRevision = 0;
+  let bookingOrderStarted = false;
   let locating = false, initialLocationRequested = false, locationRevision = 0, searchRevision = 0;
   let originRevision = 0, locationRequest = 0;
   let routeRevision = 0, routeLayer = null, routeMarkers = [], pickedPoint = null, pickMarker = null;
@@ -106,6 +107,20 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
       </section>
     </div>`;
   $('bookingMapHost').prepend(mapElement, mapMessage);
+
+  function trackBookingOrderStart(event) {
+    if (!event.isTrusted || bookingOrderStarted) return;
+    if (!event.target?.matches?.('input, select, textarea')) return;
+    if (typeof window.gtag !== 'function') return;
+
+    bookingOrderStarted = true;
+    window.gtag('event', 'taxi_order_start', {
+      service_type: state.service.form || 'taxi'
+    });
+  }
+
+  overlay.addEventListener('input', trackBookingOrderStart, true);
+  overlay.addEventListener('change', trackBookingOrderStart, true);
   const customerPrice = createPriceControl({ host: $('bookingCustomerPrice'), id: 'booking-offer', onChange: () => { refresh(); sheet?.expand(); } });
   window.getCustomerPriceOffer = service => service === state.service.form && customerPrice.valid() ? customerPrice.value() : null;
   window.getCustomerPriceSelection = service => service === state.service.form && customerPrice.valid()
@@ -898,6 +913,7 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
     const currentOrder = ['taxi', 'delivery', 'auction', 'soberDriver', 'cargo', 'assistance'].find(key => !$(`${key}-online-order-panel`).classList.contains('hidden'));
     if (currentOrder && preferCurrentOrder) { id = currentOrder; state.mode = 'taxi'; state.intercityKind = 'whole'; }
     if (!opened) {
+      bookingOrderStarted = false;
       returnFocus = document.activeElement; opened = true;
       overlay.classList.add('active'); overlay.setAttribute('aria-hidden', 'false'); document.body.classList.add('booking-open');
       selectService(id);

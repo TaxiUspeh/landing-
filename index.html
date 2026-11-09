@@ -563,6 +563,11 @@
 </i>
 <span>Аукцион</span>
 </button>
+<button type="button" class="home-tile" data-home-modal="towTruckModal">
+<i class="fas fa-truck-pickup" aria-hidden="true">
+</i>
+<span>Эвакуатор</span>
+</button>
 <button type="button" class="home-tile" data-home-go="services">
 <i class="fas fa-th-large" aria-hidden="true">
 </i>
@@ -695,6 +700,11 @@
 <i class="fas fa-key" aria-hidden="true">
 </i>
 <span>Трезвый водитель</span>
+</button>
+<button type="button" class="home-tile" data-home-modal="towTruckModal">
+<i class="fas fa-truck-pickup" aria-hidden="true">
+</i>
+<span>Эвакуатор</span>
 </button>
 <button type="button" class="home-tile" data-home-service="assistance" >
 <i class="fas fa-tools" aria-hidden="true">
@@ -1292,6 +1302,7 @@
                     <button onclick="openServiceFromMenu('cargo')" class="p-4 bg-orange-50 hover:bg-orange-100 rounded-xl border border-orange-200 flex flex-col items-center text-center transition btn-active btn-hover"><i class="fas fa-truck-loading text-2xl text-orange-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Грузовой</span></button>
                     <button onclick="openServiceFromMenu('soberDriver')" class="p-4 bg-red-50 hover:bg-red-100 rounded-xl border border-red-200 flex flex-col items-center text-center transition btn-active btn-hover"><i class="fas fa-cocktail text-2xl text-red-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Трезвый</span></button>
                     <button onclick="openServiceFromMenu('assistance')" class="p-4 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 flex flex-col items-center text-center transition btn-active btn-hover"><i class="fas fa-life-ring text-2xl text-indigo-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Помощь</span></button>
+                    <button type="button" onclick="closeModal('servicesMenuModal'); setTimeout(() => openModal('towTruckModal'), 100)" class="p-4 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 flex flex-col items-center text-center transition btn-active btn-hover"><i class="fas fa-truck-pickup text-2xl text-blue-600 mb-2"></i><span class="font-bold text-gray-800 text-sm">Эвакуатор</span></button>
                 </div>
                 <div id="servicesMenuFooter" class="border-t pt-4 text-center hidden">
                      <a href="https://t.me/TaxiUspehk" target="_blank" rel="noopener noreferrer" class="inline-block bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white font-semibold py-3 px-6 rounded-xl shadow transition btn-active btn-hover"><i class="fab fa-telegram-plane mr-2"></i> Перейти в Telegram</a>
@@ -1300,6 +1311,47 @@
         </div>
     </div>
     
+    <!-- TOW TRUCK PARTNER MODAL -->
+    <div id="towTruckModal" class="modal-overlay" aria-hidden="true"
+         role="dialog" aria-modal="true" aria-labelledby="towTruckModalTitle">
+      <div class="modal">
+        <div class="p-6">
+          <div class="flex justify-between items-center border-b pb-4 mb-4">
+            <h3 id="towTruckModalTitle" class="text-xl font-bold text-gray-800">
+              🚛 Эвакуатор — Астана
+            </h3>
+            <button type="button"
+                    class="close-btn text-2xl text-gray-500 hover:text-gray-700 btn-active p-1"
+                    data-modal="towTruckModal"
+                    aria-label="Закрыть">×</button>
+          </div>
+          <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <div class="flex items-center gap-3 mb-4">
+              <i class="fas fa-truck-pickup text-4xl text-blue-700"
+                 aria-hidden="true"></i>
+              <div>
+                <p class="font-bold text-gray-900">ГАЗ 33021</p>
+                <p class="text-sm text-gray-600">2003 год · белый</p>
+                <p class="text-sm text-gray-600">3 места</p>
+              </div>
+            </div>
+            <p class="text-sm font-semibold text-gray-800">Район обслуживания:</p>
+            <p class="text-sm text-gray-700 mt-1">Астана и близлежащие районы.</p>
+          </div>
+          <a href="tel:+77478899454"
+             class="mt-5 w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-5 rounded-xl shadow transition btn-active">
+            <i class="fas fa-phone" aria-hidden="true"></i>
+            Позвонить эвакуатору
+          </a>
+          <p class="text-center text-lg font-bold text-gray-800 mt-3">+7 747 889 9454</p>
+          <p class="text-xs text-gray-500 text-center mt-5 leading-relaxed">
+            Сеть эвакуаторов «Такси Успех» расширяется.
+            Скоро подключим партнёров из других городов Казахстана.
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- TAXI MODAL -->
     <div id="taxiModal" class="modal-overlay" aria-hidden="true" role="dialog">
         <div class="modal">

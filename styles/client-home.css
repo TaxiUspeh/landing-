@@ -90,3 +90,4 @@ body.client-home { --home-bg:#f3f6fb; --home-paper:#fff; --home-text:#172b50; --
 .dark .home-intercity-available > i:first-child, .dark .home-intercity-count { background:#174731; color:#bbf7d0; }
 .dark .home-intercity-available > i:first-child::after { background:#4ade80; }
 @media (prefers-reduced-motion:reduce) { .home-intercity-pulse > i:first-child { animation:none; } }
+.home-shortcuts [data-home-go="services"] { grid-column:1 / -1; flex-direction:row; min-height:54px; gap:10px; }

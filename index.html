@@ -2,6 +2,29 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <script>
+    (() => {
+        const KEY = 'taxi_uspeh_last_workspace_v1';
+
+        window.taxiUspehSetWorkspace = (mode) => {
+            if (mode !== 'client' && mode !== 'driver') return;
+            try {
+                localStorage.setItem(KEY, mode);
+            } catch (error) {
+                console.warn('Не удалось сохранить режим приложения:', error);
+            }
+        };
+
+        try {
+            if (localStorage.getItem(KEY) === 'driver') {
+                window.location.replace('./drivers.html');
+            }
+        } catch (error) {
+            console.warn('Не удалось прочитать сохранённый режим:', error);
+        }
+    })();
+    </script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Такси «Успех» — Белоусовка</title>
     <meta name="description" content="Заказ такси и местных услуг в Белоусовке, Глубоком и Усть-Каменогорске.">

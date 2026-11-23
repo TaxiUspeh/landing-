@@ -12,6 +12,23 @@
     </script>
 
     <meta charset="UTF-8">
+    <script>
+    (() => {
+        const KEY = 'taxi_uspeh_last_workspace_v1';
+
+        window.taxiUspehSetWorkspace = (mode) => {
+            if (mode !== 'client' && mode !== 'driver') return;
+            try {
+                localStorage.setItem(KEY, mode);
+            } catch (error) {
+                console.warn('Не удалось сохранить режим приложения:', error);
+            }
+        };
+
+        window.taxiUspehSetWorkspace('driver');
+    })();
+    </script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     
     <!-- PWA Settings start -->
@@ -781,7 +798,7 @@
                 <i id="driver-mobile-share-icon" class="fas fa-share-nodes block text-lg" aria-hidden="true"></i>
                 <span id="driver-mobile-share-label" class="mt-0.5 block text-[10px] font-extrabold leading-tight">Поделиться</span>
             </button>
-            <a href="./index.html" class="w-14 flex-shrink-0 rounded-xl bg-blue-50 p-1 text-center text-blue-700 shadow-md transition hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50" aria-label="Перейти в режим пассажира">
+            <a href="./index.html" onclick="window.taxiUspehSetWorkspace('client')" class="w-14 flex-shrink-0 rounded-xl bg-blue-50 p-1 text-center text-blue-700 shadow-md transition hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50" aria-label="Перейти в режим пассажира">
                 <i class="fas fa-car-side block text-lg" aria-hidden="true"></i>
                 <span class="mt-0.5 block text-[10px] font-extrabold leading-tight">Пассажир</span>
             </a>

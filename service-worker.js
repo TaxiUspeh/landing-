@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v99-delivery-ui-refresh';
+const CACHE_NAME = 'taxi-uspeh-v100-workspace-memory';
 const APP_SHELL = [
   './carpool-availability.js?v=85',
   './passenger-request-alerts.js?v=85',

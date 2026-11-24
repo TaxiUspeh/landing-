@@ -5013,7 +5013,7 @@
         };
         
         window.shareApp = async function() {
-            const shareUrl = window.location.protocol.startsWith('http') ? window.location.href : 'https://taxiuspeh.github.io/landing-/';
+            const shareUrl = new URL('./', window.location.href).href;
             const shareData = { title: 'Такси «Успех»', text: 'Заказывай такси в Белоусовке быстро и удобно!', url: shareUrl };
             try {
                 if (navigator.share) {

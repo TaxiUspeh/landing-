@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taxi-uspeh-v103-food-navigation';
+const CACHE_NAME = 'taxi-uspeh-v104-pwa-manifest';
 const APP_SHELL = [
   './carpool-availability.js?v=85',
   './passenger-request-alerts.js?v=85',

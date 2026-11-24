@@ -1082,7 +1082,7 @@ async function copyTaxiUspehWorkLink(url) {
 }
 
 async function shareTaxiUspehWorkLink() {
-    const url = 'https://taxiuspeh.github.io/landing-/drivers.html';
+    const url = new URL('./drivers.html', window.location.href).href;
     const shareData = {
         title: 'Работа в такси «Успех»',
         text: 'Присоединяйтесь к водителям Такси «Успех»',

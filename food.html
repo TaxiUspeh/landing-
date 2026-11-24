@@ -767,20 +767,47 @@
             window.open(`https://api.whatsapp.com/send?phone=77771789852&text=${encodeURIComponent(`👨‍🍳 Заявка на повара\nДата: ${d}\nСобытие: ${e}`)}`, '_blank', 'noopener,noreferrer');
         }
         function hidePWAInstructions() { document.getElementById('pwa-instructions-modal').classList.add('hidden'); }
-        function shareSiteUrl() { 
-             const url = "https://taxiuspeh.github.io/landing-/food.html";
-             if (navigator.share) {
-                 navigator.share({
-                     title: 'Домашний Праздник',
-                     text: 'Вкусная еда с доставкой!',
-                     url: url
-                 }).catch(console.error);
-             } else {
-                 // Fallback for desktop
-                 navigator.clipboard.writeText(url).then(() => {
-                     alert("Ссылка скопирована: " + url);
-                 });
-             }
+        async function copyFoodShareLink(url) {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(url);
+                return true;
+            }
+            const field = document.createElement('textarea');
+            field.value = url;
+            field.setAttribute('readonly', '');
+            field.style.position = 'fixed';
+            field.style.opacity = '0';
+            document.body.append(field);
+            field.select();
+            const copied = document.execCommand('copy');
+            field.remove();
+            return copied;
+        }
+
+        async function shareSiteUrl() {
+            const url = new URL('./food.html', window.location.href).href;
+            const shareData = {
+                title: 'Домашний Праздник',
+                text: 'Вкусная еда с доставкой!',
+                url
+            };
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                    return;
+                }
+                const copied = await copyFoodShareLink(url);
+                alert(copied ? 'Ссылка скопирована: ' + url : 'Не удалось скопировать ссылку');
+            } catch (error) {
+                if (error?.name === 'AbortError') return;
+                try {
+                    const copied = await copyFoodShareLink(url);
+                    alert(copied ? 'Ссылка скопирована: ' + url : 'Не удалось скопировать ссылку');
+                } catch (copyError) {
+                    console.error('Не удалось поделиться ссылкой:', copyError);
+                    alert('Не удалось скопировать ссылку');
+                }
+            }
         }
 
         let deferredPrompt;

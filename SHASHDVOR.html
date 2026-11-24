@@ -1225,28 +1225,47 @@
             }, 1800);
         }
 
-        // Функция "Поделиться" с надежным копированием
+        // Поделиться ссылкой текущей площадки: Firebase или GitHub Pages.
+        async function copyShareLink(url) {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(url);
+                return true;
+            }
+            const field = document.createElement('textarea');
+            field.value = url;
+            field.setAttribute('readonly', '');
+            field.style.position = 'fixed';
+            field.style.opacity = '0';
+            document.body.append(field);
+            field.select();
+            const copied = document.execCommand('copy');
+            field.remove();
+            return copied;
+        }
+
         window.shareApp = async function() {
+            const url = new URL('./SHASHDVOR.html', window.location.href).href;
             const shareData = {
                 title: 'Шашлычный Двор',
                 text: 'Заказывай вкуснейший шашлык с доставкой!',
-                url: 'https://taxiuspeh.github.io/landing-/SHASHDVOR.html'
+                url
             };
             try {
                 if (navigator.share) {
                     await navigator.share(shareData);
-                } else {
-                    throw new Error('Web Share API не поддерживается');
+                    return;
                 }
+                const copied = await copyShareLink(url);
+                showNotification(copied ? 'Ссылка скопирована!' : 'Не удалось скопировать ссылку');
             } catch (err) {
-                // Запасной вариант (копирование в буфер обмена)
-                const dummy = document.createElement('textarea');
-                document.body.appendChild(dummy);
-                dummy.value = shareData.url;
-                dummy.select();
-                document.execCommand('copy');
-                document.body.removeChild(dummy);
-                showNotification('Ссылка скопирована!');
+                if (err?.name === 'AbortError') return;
+                try {
+                    const copied = await copyShareLink(url);
+                    showNotification(copied ? 'Ссылка скопирована!' : 'Не удалось скопировать ссылку');
+                } catch (copyError) {
+                    console.error('Не удалось поделиться ссылкой:', copyError);
+                    showNotification('Не удалось скопировать ссылку');
+                }
             }
         };
 

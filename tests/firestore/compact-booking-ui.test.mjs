@@ -41,9 +41,9 @@ get('bookingPickerBack').click();
 select('minivan');
 requests[0].success(position); await flush(); reverseResolve(); await flush();
 assert.match(get('bookingFromValue').textContent,/Жукова/);
-assert.match(get('bookingLocationStatus').textContent,/Адрес определён/);
+assert.equal(get('bookingLocationStatus').textContent,'','Complete address needs no extra hint');
 requests[0].error(); await flush();
-assert.match(get('bookingLocationStatus').textContent,/Адрес определён/,'Late location error must not erase a good address');
+assert.equal(get('bookingLocationStatus').textContent,'','Late location error must not erase a complete address');
 assert.equal(get('mapOverlayText').textContent,'Подбор водителя после заказа · Онлайн-машины · движение смоделировано');
 assert.equal(window.bookingScreen.vehicleRequest().vehicleCategory,'minivan');
 
@@ -71,7 +71,7 @@ const lateResolve = reverseResolve;
 get('bookingFrom').click(); get('bookingSearchCity').value='Глубокое'; get('bookingSearchInput').value='Центральная, 8'; get('bookingManualAddress').click();
 lateResolve(); await flush();
 assert.equal(get('bookingFromValue').textContent,'Центральная, 8');
-assert.match(get('bookingLocationStatus').textContent,/Адрес введён вручную/);
+assert.match(get('bookingLocationStatus').textContent,/Проверьте адрес и точку подачи/);
 
 // Required phone opens before any online handler is called.
 window.repeatOrder('Жукова, 20 (Белоусовка)','Центральная, 8 (Глубокое)');

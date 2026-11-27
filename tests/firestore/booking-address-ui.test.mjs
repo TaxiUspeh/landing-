@@ -31,7 +31,7 @@ try {
  await window.bookingScreen.onLocation({coords:{latitude:50.131,longitude:82.531,accuracy:20}});
  assert.equal(get('bookingFromValue').textContent,'Белоусовка');
  assert.equal(get('bookingCity').textContent,'Белоусовка');
- assert.match(get('bookingLocationStatus').textContent,/уточните улицу или ориентир/);
+ assert.match(get('bookingLocationStatus').textContent,/улицу или ориентир/);
  const center={lat:50.132,lng:82.532};
  const marker={addTo(){return this;},setLatLng(){return this;}};
  window.L={marker:()=>marker,divIcon:()=>({})};

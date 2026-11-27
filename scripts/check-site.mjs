@@ -486,7 +486,7 @@ for (const expected of [
   if (!firebaseConfig.includes(expected)) failures.push('firebase-config.js: missing ' + expected);
 }
 for (const expected of [
-  "import { ensureFirebaseUser } from './firebase-config.js'",
+  "await import('./firebase-config.js')",
   '/api/taxi/route',
   '/api/taxi/table',
   'Authorization',

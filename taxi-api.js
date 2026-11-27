@@ -1,10 +1,9 @@
-import { ensureFirebaseUser } from './firebase-config.js';
-
 // Production Taxi API. Проверка выполняется через Firebase Preview.
 const TAXI_API_BASE_URL =
   'https://taxi-api-prod-310166868868.asia-south1.run.app';
 
 async function getTaxiIdToken() {
+  const { ensureFirebaseUser } = await import('./firebase-config.js');
   const user = await ensureFirebaseUser();
 
   if (!user) {

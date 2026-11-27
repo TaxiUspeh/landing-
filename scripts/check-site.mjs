@@ -157,7 +157,9 @@ if (mapStart === -1 || mapEnd === -1) {
     'Белоусовка — Прогресс',
     'Белоусовка — Черногорка',
     'Белоусовка — Краснопартизанское',
-    'overview=full&geometries=geojson',
+    "overview: 'full'",
+    "geometries: 'geojson'",
+    'taxiRoute(coordinates',
     'haversineMeters',
     'requestAnimationFrame(animateCars)',
     'initToken !== window.simInitToken',
@@ -182,7 +184,7 @@ if (mapStart === -1 || mapEnd === -1) {
     'pauseAtKnownStop',
     'switchCarToRoute',
     'selectApproachCarByRoadTime',
-    'table/v1/driving/',
+    'taxiTable(coordinates',
     'minimumDuration',
     'findRouteStopIndexes'
   ]) {
@@ -444,6 +446,8 @@ for (const file of ['client-home.js', 'client-orders.js', 'driver-portal.js', 'd
 }
 
 const clientOrders = await readFile('client-orders.js', 'utf8');
+const firebaseConfig = await readFile('firebase-config.js', 'utf8');
+const taxiApi = await readFile('taxi-api.js', 'utf8');
 const driverPortal = await readFile('driver-portal.js', 'utf8');
 const dispatcherScript = await readFile('dispatcher.js', 'utf8');
 const firestoreRules = await readFile('firestore.rules', 'utf8');
@@ -474,7 +478,24 @@ if (!firestoreIndexes.indexes.some((index) => index.collectionGroup === 'driverM
   failures.push('firestore.indexes.json: driver messages index is missing');
 }
 for (const expected of [
-  'signInAnonymously', "collection(db, 'orders')", "doc(db, 'orderContacts'", "status: 'searching'",
+  'signInAnonymously',
+  'auth.authStateReady()',
+  'async function ensureFirebaseUser()',
+  'export { app, auth, db, googleProvider, getFirebaseUser, ensureFirebaseUser }'
+]) {
+  if (!firebaseConfig.includes(expected)) failures.push('firebase-config.js: missing ' + expected);
+}
+for (const expected of [
+  "import { ensureFirebaseUser } from './firebase-config.js'",
+  '/api/taxi/route',
+  '/api/taxi/table',
+  'Authorization',
+  'user.getIdToken()'
+]) {
+  if (!taxiApi.includes(expected)) failures.push('taxi-api.js: missing ' + expected);
+}
+for (const expected of [
+  'ensureFirebaseUser', "collection(db, 'orders')", "doc(db, 'orderContacts'", "status: 'searching'",
   'window.getDeliveryFareForOrder?.()', 'Подбираем другого водителя', 'CANCELLATION_REQUEST_STATUSES',
   'prepareClientOrderSound()', 'playClientOrderStatusSound(status)', 'signalClientOrderStatusChange(previousStatus, activeOrder)',
   "['accepted', 'arrived']",

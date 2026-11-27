@@ -1,10 +1,9 @@
-import { app, auth, db } from './firebase-config.js';
-import { signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { app, auth, db, getFirebaseUser, ensureFirebaseUser } from './firebase-config.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
 import { collection, doc, getDocFromServer, onSnapshot, query, where, orderBy, limit, Timestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 const invoke = httpsCallable(getFunctions(app, 'us-central1'), 'carpoolCommand');
 const pending = new Map();
-let anonymousSignIn;
 export function createCarpoolApi() {
   const listen = (name, constraints, next, error) => onSnapshot(query(collection(db, name), ...constraints), { includeMetadataChanges: true },
     snapshot => next(snapshot.docs.map(row => ({ id: row.id, ...row.data() })), { fromCache: snapshot.metadata?.fromCache }), error);
@@ -14,7 +13,7 @@ export function createCarpoolApi() {
     watchRequestAlerts(next, error) { return listen('passenger_requests', [where('status', '==', 'open'), where('departureAt', '>', Timestamp.now()), orderBy('departureAt')], next, error); },
     watchRequest(id, next, error) { return onSnapshot(doc(db, 'passenger_requests', id), snap => next(snap.exists() ? { id: snap.id, ...snap.data() } : null), error); },
     onUser(callback) { return onAuthStateChanged(auth, callback); },
-    async user(anonymous = false) { await auth.authStateReady(); if (!auth.currentUser && anonymous) await (anonymousSignIn ||= signInAnonymously(auth).finally(() => { anonymousSignIn = null; })); return auth.currentUser; },
+    async user(anonymous = false) { return anonymous ? ensureFirebaseUser() : getFirebaseUser(); },
     async ready() { try { const snap = await getDocFromServer(doc(db, 'settings', 'carpoolBooking')); return snap.data()?.schemaVersion === 1; } catch { return false; } },
     async simpleJourneyReady() { try { const snap = await getDocFromServer(doc(db, 'settings', 'carpoolBooking')); return snap.data()?.journeyVersion >= 2; } catch { return false; } },
     async hubReady() { try { const snap = await getDocFromServer(doc(db, 'settings', 'carpoolBooking')); return snap.data()?.hubVersion === 1; } catch { return false; } },

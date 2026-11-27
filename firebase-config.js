@@ -3,7 +3,8 @@ import {
     GoogleAuthProvider,
     browserLocalPersistence,
     getAuth,
-    setPersistence
+    setPersistence,
+    signInAnonymously
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
@@ -26,8 +27,35 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 // Сессия сохраняется на устройстве. Ошибка сохранения не должна блокировать вход.
-setPersistence(auth, browserLocalPersistence).catch((error) => {
-    console.warn('Не удалось сохранить сессию Firebase:', error.code || error.message);
-});
+const firebasePersistenceReady = setPersistence(auth, browserLocalPersistence)
+    .catch((error) => {
+        console.warn('Не удалось сохранить сессию Firebase:', error.code || error.message);
+    });
 
-export { app, auth, db, googleProvider };
+// Единая авторизация для заказов, Taxi API и карпулинга.
+// Параллельные вызовы ожидают один и тот же запрос анонимного входа.
+let firebaseUserPromise = null;
+
+async function getFirebaseUser() {
+    await firebasePersistenceReady;
+    await auth.authStateReady();
+    return auth.currentUser;
+}
+
+async function ensureFirebaseUser() {
+    const currentUser = await getFirebaseUser();
+
+    if (currentUser) return currentUser;
+
+    if (!firebaseUserPromise) {
+        firebaseUserPromise = signInAnonymously(auth)
+            .then(({ user }) => user)
+            .finally(() => {
+                firebaseUserPromise = null;
+            });
+    }
+
+    return firebaseUserPromise;
+}
+
+export { app, auth, db, googleProvider, getFirebaseUser, ensureFirebaseUser };

@@ -9,11 +9,7 @@ import { priceSettings, offerFields, priceDescription, increaseOrderPrice } from
 import { createPriceControl } from './customer-price-control.js?v=78';
 import { orderCategorySummary } from './vehicle-categories.js?v=78';
 import { selectAuctionOffer, currentAuctionOffer, validAuctionPrice } from './auction-core.js?v=79';
-import { auth, db } from './firebase-config.js';
-import {
-    onAuthStateChanged,
-    signInAnonymously
-} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { auth, db, ensureFirebaseUser } from './firebase-config.js';
 import {
     getDocFromServer,
     collection,
@@ -325,29 +321,7 @@ function storeValue(key, value) {
 }
 
 async function ensureSignedIn() {
-    if (auth.currentUser) return auth.currentUser;
-
-    return new Promise((resolve, reject) => {
-        let settled = false;
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (!user || settled) return;
-            settled = true;
-            unsubscribe();
-            resolve(user);
-        }, (error) => {
-            if (settled) return;
-            settled = true;
-            unsubscribe();
-            reject(error);
-        });
-
-        signInAnonymously(auth).catch((error) => {
-            if (settled) return;
-            settled = true;
-            unsubscribe();
-            reject(error);
-        });
-    });
+    return ensureFirebaseUser();
 }
 
 function statusPresentation(order) {

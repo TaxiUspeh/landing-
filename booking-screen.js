@@ -1,4 +1,5 @@
 import { soberFareDescription, soberFareForPrice } from './sober-fare.js?v=74';
+import { taxiRoute } from './taxi-api.js?v=1';
 import { hasCoordinates, coordinatePoint, addressCoordinates, routeCoordinates, within } from './booking-route.js?v=78';
 import { createPriceControl } from './customer-price-control.js?v=78';
 import { DEFAULT_CUSTOMER_PRICING, priceLabel } from './customer-pricing.js?v=78';
@@ -88,6 +89,7 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
             <div class="booking-price-row">
               <div><span class="booking-price-caption" id="bookingPriceCaption">Примерная стоимость</span><div class="booking-price" id="bookingPrice">Укажите маршрут</div></div>
             </div>
+            <p id="bookingRouteSummary" class="booking-route-summary" hidden aria-live="polite"></p>
             <details id="bookingDeliveryCalculation" class="booking-price-breakdown" hidden><summary>Как рассчитана стоимость</summary><p></p></details>
             <p id="bookingPriceReason" class="booking-price-reason" hidden></p>
             <div class="booking-actions" role="group" aria-label="Оформить заказ">
@@ -549,9 +551,9 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
     if (!point.address) return;
     if (pickerTarget === 'from') {
       originRevision++; locating = false;
-      $('bookingLocationStatus').textContent = 'Место подачи выбрано. Проверьте дом и подъезд.';
       const sameStreet = isSameOriginStreet(point);
       state.details = mergeHouseDetails(state.details, point.house, sameStreet);
+      $('bookingLocationStatus').textContent = state.details ? '' : 'Уточните дом и подъезд, если нужно.';
       state.from = point;
       if (point.house && point.street) state.from = { ...point, address: point.street };
       if (!state.to.address) state.to.city = point.city;
@@ -764,7 +766,7 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
     const address = $('bookingSearchInput').value.trim(); const city = normalizeCity($('bookingSearchCity').value);
     if (!address) { $('bookingSearchStatus').textContent = 'Укажите адрес или выберите точку на карте.'; return; }
     applyPoint({ address, city, lat: null, lon: null });
-    $('bookingLocationStatus').textContent = 'Адрес введён вручную. Уточните населённый пункт, ориентир или место на карте, если нужно.';
+    $('bookingLocationStatus').textContent = 'Проверьте адрес и точку подачи. При необходимости уточните ориентир.';
   }
   function chooseAnyStore() {
     pickerTarget = 'from';
@@ -801,7 +803,8 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
       const point = results[0];
       const found = Boolean(point?.address);
       applyPoint(found ? { ...point, ...coordinates } : coordinatePoint(coordinates));
-      $('bookingLocationStatus').textContent = found ? (point.isSettlement ? 'Населённый пункт определён. Точная точка сохранена; уточните улицу или ориентир.' : 'Проверьте адрес выбранной точки и уточните дом.')
+      $('bookingLocationStatus').textContent = found
+        ? (point.isSettlement ? 'Точка сохранена. При необходимости укажите улицу или ориентир.' : (point.house ? '' : 'Проверьте точку и уточните дом, если нужно.'))
         : 'Точка сохранена. Водитель получит координаты. Укажите ориентир и место подъезда в пожеланиях.';
     } finally { $('bookingPickConfirm').disabled = false; $('bookingPickConfirm').textContent = 'Выбрать эту точку'; }
   }
@@ -832,7 +835,9 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
       state.details = mergeHouseDetails(state.details, point.house, sameStreet);
       state.from = { ...point, lat, lon, address: point.street || point.address };
       if (!state.to.address) state.to.city = point.city;
-      $('bookingLocationStatus').textContent = point.isSettlement ? 'Населённый пункт определён. Точная точка сохранена; уточните улицу или ориентир.' : 'Адрес определён. Проверьте дом и подъезд.';
+      $('bookingLocationStatus').textContent = point.isSettlement
+        ? 'Точка сохранена. При необходимости укажите улицу или ориентир.'
+        : (point.house || state.details ? '' : 'Адрес определён. Уточните дом и подъезд, если нужно.');
       changed(); window.simMap?.setView([lat, lon], 16);
     } catch {
       if (opened && request === locationRequest && revision === originRevision) {
@@ -870,9 +875,13 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
     const promise = (async () => {
       const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 9000);
       try {
-        const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${key}?overview=full&geometries=geojson`, { signal: controller.signal });
-        if (!response.ok) return null;
-        const data = await response.json(); return data.code === 'Ok' ? data.routes?.[0] || null : null;
+        const coordinates = points.map(point => [point.lon, point.lat]);
+        const data = await taxiRoute(coordinates, {
+          overview: 'full',
+          geometries: 'geojson',
+          signal: controller.signal
+        });
+        return data.code === 'Ok' ? data.routes?.[0] || null : null;
       } catch { return null; } finally { clearTimeout(timer); }
     })();
     routeCache.set(key, promise);
@@ -888,6 +897,9 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
   async function drawRoute() {
     const revision = ++routeRevision;
     clearRoute();
+    const routeSummary = $('bookingRouteSummary');
+    routeSummary.hidden = true;
+    routeSummary.textContent = '';
     if (!opened || !window.simMap || !window.L || state.service.form === 'assistance') return;
     let points = state.service.form === 'delivery' ? deliveryRoutePoints() : [state.from, ...state.stops, state.to];
     const estimate = state.service.form === 'delivery' ? window.getDeliveryEstimate?.() : null;
@@ -899,6 +911,12 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
     if (revision !== routeRevision || !opened || coords.some(point => !point)) return;
     const route = await getRoute(coords);
     if (revision !== routeRevision || !opened) return;
+    if (route && Number.isFinite(route.distance) && Number.isFinite(route.duration)) {
+      const distanceKm = (route.distance / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 1 });
+      const durationMinutes = Math.ceil(route.duration / 60);
+      routeSummary.textContent = `Расстояние: ${distanceKm} км · В пути: около ${durationMinutes} мин`;
+      routeSummary.hidden = false;
+    }
     const L = window.L;
     coords.forEach((point, i) => {
       const label = i === 0 ? 'А' : i === coords.length - 1 ? 'Б' : String(i);

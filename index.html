@@ -54,7 +54,7 @@
     <link rel="stylesheet" href="./styles/tailwind.css">
     <link rel="stylesheet" href="./styles/vehicle-categories.css?v=69">
     <link rel="stylesheet" href="./styles/auction.css?v=51">
-    <link rel="stylesheet" href="./styles/booking-screen.css?v=69">
+    <link rel="stylesheet" href="./styles/booking-screen.css?v=71">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <!-- Leaflet Map (Для карты с машинками) -->
@@ -2400,7 +2400,8 @@
     <script type="module">
         import { getHolidayForDate, formatLocalDateKey } from "./holiday-calendar.js";
         import { calculateCategoryFare, formatCategoryFare, categoryLabel } from "./vehicle-categories.js?v=78";
-        import { initBookingScreen } from "./booking-screen.js?v=89";
+        import { initBookingScreen } from "./booking-screen.js?v=93";
+        import { taxiRoute, taxiTable } from "./taxi-api.js?v=1";
         import { normalizeCity } from "./booking-core.js?v=87";
         import { selectPriceAdjustment, adjustmentText } from "./pricing-adjustments.js?v=63";
         import { createSoberPricing } from './sober-pricing.js?v=79';
@@ -2991,14 +2992,20 @@
         async function getRouteDistance(coordinates) {
             if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
             if (window.bookingScreen) return window.bookingScreen.getRouteDistance(coordinates);
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 8000);
             try {
-                const routeCoordinates = coordinates.map((coord) => `${coord.lon},${coord.lat}`).join(';');
-                const url = `https://router.project-osrm.org/route/v1/driving/${routeCoordinates}?overview=false`;
-                const response = await fetchWithTimeout(url);
-                if (!response.ok) return null;
-                const data = await response.json();
+                const routePoints = coordinates.map(coord => [coord.lon, coord.lat]);
+                const data = await taxiRoute(routePoints, {
+                    overview: false,
+                    signal: controller.signal
+                });
                 if (data.code === 'Ok' && data.routes.length > 0) return data.routes[0].distance;
-            } catch (e) { console.warn("Routing failed:", e); }
+            } catch (e) {
+                console.warn("Routing failed:", e);
+            } finally {
+                clearTimeout(timer);
+            }
             return null;
         }
 
@@ -4292,17 +4299,13 @@
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
                 try {
                     const coordinates = spec.waypoints
-                        .map(point => point[1] + ',' + point[0])
-                        .join(';');
-                    const url = 'https://router.project-osrm.org/route/v1/driving/' +
-                        coordinates +
-                        '?overview=full&geometries=geojson&steps=false';
-                    const response = await fetch(url, {
-                        signal: controller.signal,
-                        headers: { Accept: 'application/json' }
+                        .map(point => [point[1], point[0]]);
+                    const data = await taxiRoute(coordinates, {
+                        overview: 'full',
+                        geometries: 'geojson',
+                        steps: false,
+                        signal: controller.signal
                     });
-                    if (!response.ok) throw new Error('HTTP ' + response.status);
-                    const data = await response.json();
                     const coordinatesList = data.routes &&
                         data.routes[0] &&
                         data.routes[0].geometry &&
@@ -4447,19 +4450,18 @@
 
                 try {
                     const points = candidates.map(car => [car.lat, car.lng]).concat([userPoint]);
-                    const coordinates = points.map(point => point[1] + ',' + point[0]).join(';');
-                    const sourceIndexes = candidates.map((_, index) => index).join(';');
+                    const coordinates = points.map(point => [point[1], point[0]]);
+                    const sourceIndexes = candidates.map((_, index) => index);
                     const destinationIndex = points.length - 1;
-                    const url = 'https://router.project-osrm.org/table/v1/driving/' + coordinates +
-                        '?sources=' + sourceIndexes + '&destinations=' + destinationIndex;
-                    const response = await fetch(url, {
-                        signal,
-                        headers: { Accept: 'application/json' }
+                    const data = await taxiTable(coordinates, {
+                        sources: sourceIndexes,
+                        destinations: [destinationIndex],
+                        signal
                     });
-                    if (!response.ok) throw new Error('HTTP ' + response.status);
-                    const data = await response.json();
                     const durations = Array.isArray(data.durations)
-                        ? data.durations.map(row => Number(row && row[0]))
+                        ? data.durations.map(row =>
+                            row && row[0] != null ? Number(row[0]) : Number.NaN
+                        )
                         : [];
                     let bestIndex = -1;
                     let minimumDuration = Number.POSITIVE_INFINITY;
@@ -4520,15 +4522,16 @@
                     if (!selectedCar) throw new Error('Свободная машина не найдена');
 
                     const startPoint = [selectedCar.lat, selectedCar.lng];
-                    const coordinates = startPoint[1] + ',' + startPoint[0] + ';' + userPoint[1] + ',' + userPoint[0];
-                    const url = 'https://router.project-osrm.org/route/v1/driving/' +
-                        coordinates + '?overview=full&geometries=geojson&steps=false';
-                    const response = await fetch(url, {
-                        signal: controller.signal,
-                        headers: { Accept: 'application/json' }
+                    const coordinates = [
+                        [startPoint[1], startPoint[0]],
+                        [userPoint[1], userPoint[0]]
+                    ];
+                    const data = await taxiRoute(coordinates, {
+                        overview: 'full',
+                        geometries: 'geojson',
+                        steps: false,
+                        signal: controller.signal
                     });
-                    if (!response.ok) throw new Error('HTTP ' + response.status);
-                    const data = await response.json();
                     const routeData = data.routes && data.routes[0];
                     const routeCoordinates = routeData && routeData.geometry && routeData.geometry.coordinates;
                     if (!Array.isArray(routeCoordinates) || routeCoordinates.length < 2) {

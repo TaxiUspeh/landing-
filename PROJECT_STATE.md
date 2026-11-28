@@ -405,3 +405,18 @@
 - Проверить diff и статус Git.
 - Commit и push согласованных изменений в `main`.
 - Проверить публикацию GitHub Pages.
+
+### GitHub Pages — публикация завершена
+- Commit: `cd8c7e2` — `Restore client order history and service-specific repeat`.
+- Push выполнен: `main` → `origin/main`.
+- GitHub Pages: https://taxiuspeh.github.io/landing/
+- HTTP-проверка: `/`, `/drivers.html`, `/dispatcher.html`, `/SHASHDVOR.html`, `/food.html`, `/service-worker.js`, `/client-order-history.js` — все `200`.
+- В опубликованном `index.html` подтверждён импорт `client-order-history.js?v=1`.
+- `HEAD`, `main` и `origin/main` совпадают на `cd8c7e2`.
+- Рабочая копия чистая (`git status --short` без изменений).
+
+### Итог публикации
+- Firestore composite index — READY.
+- Firebase Hosting — опубликован и проверен.
+- GitHub Pages — опубликован и проверен.
+- Следующий этап: браузерная проверка восстановления истории заказов клиента и повтора заказа для шести услуг. Не создавать тестовые реальные заказы без отдельного согласования.

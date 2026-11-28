@@ -556,7 +556,7 @@ async function createOnlineOrder() {
         storeValue(CUSTOMER_NAME_STORAGE_KEY, customerName);
         storeValue(CUSTOMER_PHONE_STORAGE_KEY, customerPhone);
         if (typeof window.saveOrderToFullHistory === 'function') {
-            window.saveOrderToFullHistory(fromAddress, toAddress, priceText);
+            window.saveOrderToFullHistory(fromAddress, toAddress, priceText, 'taxi', orderRef.id);
         }
         startOrderWatch(orderRef.id);
     } catch (error) {
@@ -715,7 +715,7 @@ async function createOnlineSoberOrder() {
         });
         await batch.commit();
         storeValue(CUSTOMER_NAME_STORAGE_KEY, customerName); storeValue(CUSTOMER_PHONE_STORAGE_KEY, customerPhone);
-        window.saveOrderToFullHistory?.(fromAddress, toAddress, pricing.priceText);
+        window.saveOrderToFullHistory?.(fromAddress, toAddress, pricing.priceText, 'soberDriver', orderRef.id);
         startOrderWatch(orderRef.id);
     } catch (error) {
         console.error('Заказ трезвого водителя не создан:', error);
@@ -765,7 +765,7 @@ async function createOnlineCargoOrder() {
         });
         await batch.commit();
         storeValue(CUSTOMER_NAME_STORAGE_KEY, customerName); storeValue(CUSTOMER_PHONE_STORAGE_KEY, customerPhone);
-        window.saveOrderToFullHistory?.(fromAddress, toAddress, priceText);
+        window.saveOrderToFullHistory?.(fromAddress, toAddress, priceText, 'cargo', orderRef.id);
         startOrderWatch(orderRef.id);
     } catch (error) {
         console.error('Грузовой заказ не создан:', error);
@@ -819,7 +819,7 @@ async function createOnlineAssistanceOrder() {
         });
         await batch.commit();
         storeValue(CUSTOMER_NAME_STORAGE_KEY, customerName); storeValue(CUSTOMER_PHONE_STORAGE_KEY, customerPhone);
-        window.saveOrderToFullHistory?.(fromAddress, `Помощь: ${serviceDetails.assistanceType}`, pricing.priceText, 'assistance');
+        window.saveOrderToFullHistory?.(fromAddress, `Помощь: ${serviceDetails.assistanceType}`, pricing.priceText, 'assistance', orderRef.id);
         startOrderWatch(orderRef.id);
     } catch (error) {
         console.error('Заявка на помощь не создана:', error);
@@ -923,7 +923,7 @@ async function createOnlineDeliveryOrder() {
         storeValue(CUSTOMER_NAME_STORAGE_KEY, customerName);
         storeValue(CUSTOMER_PHONE_STORAGE_KEY, customerPhone);
         if (typeof window.saveOrderToFullHistory === 'function') {
-            window.saveOrderToFullHistory(fromAddress, toAddress, priceText);
+            window.saveOrderToFullHistory(fromAddress, toAddress, priceText, 'delivery', orderRef.id);
         }
         startOrderWatch(orderRef.id);
     } catch (error) {
@@ -1106,7 +1106,7 @@ async function createOnlineAuctionOrder() {
         });
         await batch.commit();
         storeValue(CUSTOMER_NAME_STORAGE_KEY, customerName); storeValue(CUSTOMER_PHONE_STORAGE_KEY, customerPhone);
-        window.saveOrderToFullHistory?.(fromAddress, toAddress, `${proposedPrice} ₸ — предложение клиента`);
+        window.saveOrderToFullHistory?.(fromAddress, toAddress, `${proposedPrice} ₸ — предложение клиента`, 'auction', orderRef.id);
         startOrderWatch(orderRef.id);
     } catch (error) {
         setStatus(error.code === 'permission-denied' ? 'Онлайн-аукцион пока недоступен. Позвоните диспетчеру.' : 'Не удалось отправить заказ. Проверьте интернет и попробуйте ещё раз.', false, 'auction');

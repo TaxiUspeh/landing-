@@ -5,7 +5,7 @@ import { carpoolDate, carpoolMoney, carpoolStatus, carpoolMillis } from './carpo
 import { passengerRequests, activePassengerRequests } from './passenger-request-store.js?v=82';
 
 // Presentation only: existing booking forms and Firebase order panels stay in place.
-export function initClientHome({ bookingsStore = carpoolBookings, requestsStore = passengerRequests, availabilityStore = carpoolAvailability } = {}) {
+export function initClientHome({ bookingsStore = carpoolBookings, requestsStore = passengerRequests, availabilityStore = carpoolAvailability, historyStore = null } = {}) {
   const root = document.getElementById('clientHome');
   if (!root || root.dataset.ready) return;
   root.dataset.ready = 'true';
@@ -16,6 +16,8 @@ export function initClientHome({ bookingsStore = carpoolBookings, requestsStore 
     service, node: byId(`${service}-online-order-panel`)
   })).filter(item => item.node);
   let page = 'home';
+  let remoteHistory = [];
+  let historyLoadSequence = 0;
   let requestState = requestsStore.getState();
   let carpoolState = bookingsStore.getState(), taxiActive = 0, cancellation = null;
   const node = (tag, copy, cls = '') => { const element = document.createElement(tag); element.textContent = copy; element.className = cls; return element; };
@@ -117,11 +119,22 @@ export function initClientHome({ bookingsStore = carpoolBookings, requestsStore 
   function renderHistory() {
     const container = byId('homeHistory');
     container.replaceChildren();
-    let orders = [];
+    let localOrders = [];
     try {
       const stored = JSON.parse(window.localStorage.getItem('taxi_full_orders_history') || '[]');
-      if (Array.isArray(stored)) orders = stored.filter(item => item && typeof item === 'object').slice(0, 50);
-    } catch { /* An unavailable or damaged local history must not block ordering. */ }
+      if (Array.isArray(stored)) localOrders = stored.filter(item => item && typeof item === 'object');
+    } catch { /* Local history is a fallback and must never block the page. */ }
+
+    const seen = new Set();
+    const orders = [];
+    for (const order of [...remoteHistory, ...localOrders]) {
+      const id = typeof order.firestoreId === 'string' ? order.firestoreId : '';
+      if (id && seen.has(id)) continue;
+      if (id) seen.add(id);
+      orders.push(order);
+      if (orders.length >= 50) break;
+    }
+
     if (!orders.length) {
       const empty = document.createElement('p');
       empty.className = 'home-empty';
@@ -144,10 +157,31 @@ export function initClientHome({ bookingsStore = carpoolBookings, requestsStore 
       const price = document.createElement('span');
       price.textContent = String(order.price || 'Цена уточняется');
       button.append(date, route, price);
-      button.addEventListener('click', () => order.serviceType === 'assistance'
-        ? window.repeatOrder?.(String(order.from || ''), '', 'assistance')
-        : window.repeatOrder?.(String(order.from || ''), String(order.to || '')));
+      button.addEventListener('click', () => {
+        const serviceType = String(order.serviceType || 'taxi');
+        window.repeatOrder?.(
+          String(order.from || ''),
+          serviceType === 'assistance' ? '' : String(order.to || ''),
+          serviceType
+        );
+      });
       container.append(button);
+    }
+  }
+
+  async function loadRemoteHistory() {
+    if (typeof historyStore?.loadMine !== 'function') return;
+    const sequence = ++historyLoadSequence;
+    try {
+      const result = await historyStore.loadMine();
+      if (sequence !== historyLoadSequence || page !== 'trips') return;
+      remoteHistory = Array.isArray(result)
+        ? result.filter(item => item && typeof item === 'object')
+        : [];
+      renderHistory();
+    } catch (error) {
+      // Keep local history available when the network or Firestore is unavailable.
+      console.warn('Не удалось загрузить историю заказов:', error);
     }
   }
 
@@ -160,7 +194,12 @@ export function initClientHome({ bookingsStore = carpoolBookings, requestsStore 
       if (selected) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
     });
-    if (name === 'trips') renderHistory();
+    if (name === 'trips') {
+      renderHistory();
+      void loadRemoteHistory();
+    } else {
+      historyLoadSequence++;
+    }
     if (focus) {
       window.scrollTo({ top: 0, behavior: 'instant' });
       const heading = root.querySelector(`[data-home-page="${name}"] h2`);

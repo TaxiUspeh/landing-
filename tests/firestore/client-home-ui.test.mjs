@@ -19,7 +19,9 @@ const get = id => document.getElementById(id);
 const click = selector => { const node = document.querySelector(selector); assert.ok(node, selector); node.click(); };
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 const originals = ['taxiForm', 'taxiCustomerPhone', 'deliveryForm', 'auctionForm', 'busScheduleModal', 'stroyDomModal', 'techInspectionModal', 'insuranceModal'].map(id => [id, get(id)]);
-initBookingScreen(); initClientHome(); initClientHome();
+const remoteOrders = [];
+const historyStore = { loadMine: async () => remoteOrders };
+initBookingScreen(); initClientHome({ historyStore }); initClientHome({ historyStore });
 assert.equal(document.querySelectorAll('.home-nav').length, 1);
 for (const [id, node] of originals) assert.equal(get(id), node, `Preserve ${id}`);
 const ids = [...document.querySelectorAll('[id]')].map(node => node.id);
@@ -74,11 +76,36 @@ click('.home-nav [data-home-go="trips"]'); assert.match(get('homeHistory').textC
 window.localStorage.setItem('taxi_full_orders_history', JSON.stringify([{ from:'<img src=x onerror=alert(1)>', to:'Глубокое', price:'1 000 ₸', date:'9 сентября', time:'14:00' }]));
 click('.home-nav [data-home-go="trips"]'); assert.equal(get('homeHistory').querySelector('img'), null);
 let repeated = null; window.repeatOrder = (...args) => { repeated = args; };
-click('#homeHistory .home-trip'); assert.deepEqual(repeated, ['<img src=x onerror=alert(1)>', 'Глубокое']);
+click('#homeHistory .home-trip'); assert.deepEqual(repeated, ['<img src=x onerror=alert(1)>', 'Глубокое', 'taxi']);
 window.localStorage.setItem('taxi_full_orders_history', JSON.stringify([{ from: 'Трасса, 8 км', to: 'Помощь: Подкачать колесо', serviceType: 'assistance', price: '1500 ₸' }]));
 click('.home-nav [data-home-go="trips"]');
 assert.match(get('homeHistory').textContent, /Помощь на дороге/);
 click('#homeHistory .home-trip'); assert.deepEqual(repeated, ['Трасса, 8 км', '', 'assistance']);
+
+remoteOrders.push({
+  firestoreId: 'firestore-order-1',
+  serviceType: 'taxi',
+  from: 'Удалённый адрес',
+  to: 'Удалённый пункт',
+  price: '2300 ₸',
+  date: '28 ноября',
+  time: '13:00'
+});
+window.localStorage.setItem('taxi_full_orders_history', JSON.stringify([
+  { firestoreId: 'firestore-order-1', from: 'Устаревший адрес', to: 'Старый пункт', price: '100 ₸' },
+  { from: 'Локальный адрес', to: 'Локальный пункт', price: '900 ₸' }
+]));
+click('.home-nav [data-home-go="trips"]');
+await flush();
+const historyText = get('homeHistory').textContent;
+assert.match(historyText, /Удалённый адрес/);
+assert.match(historyText, /Локальный адрес/);
+assert.doesNotMatch(historyText, /Устаревший адрес/);
+assert.equal(get('homeHistory').querySelectorAll('.home-trip').length, 2);
+repeated = null;
+click('#homeHistory .home-trip');
+assert.deepEqual(repeated, ['Удалённый адрес', 'Удалённый пункт', 'taxi']);
+
 click('.home-nav [data-home-go="more"]');
 assert.equal(document.querySelector('.home-nav [aria-current="page"]').dataset.homeGo, 'more');
 for (const [action, method] of [['install','installApp'], ['share','shareApp'], ['theme','toggleTheme'], ['notifications','togglePushNotifications']]) {

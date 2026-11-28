@@ -997,9 +997,13 @@ export function initBookingScreen({ preview = false, geocoder = createGeocoder()
       const match = value.match(/\s*\(([^()]+)\)\s*$/u);
       return { ...emptyPoint(), address: match ? value.slice(0, match.index) : value, city: match ? normalizeCity(match[1]) : 'Белоусовка' };
     };
+    const supportedServices = ['taxi', 'delivery', 'auction', 'soberDriver', 'cargo', 'assistance'];
+    const targetService = supportedServices.includes(serviceType) ? serviceType : 'taxi';
     originRevision++; locating = false; state.mode = 'taxi';
-    state.from = readPoint(from); state.to = serviceType === 'assistance' ? emptyPoint() : readPoint(to); state.details = ''; state.stops = [];
-    originalClose('historyModal'); open(serviceType === 'assistance' ? 'assistance' : 'taxi'); changed();
+    state.from = readPoint(String(from || ''));
+    state.to = targetService === 'assistance' ? emptyPoint() : readPoint(String(to || ''));
+    state.details = ''; state.stops = [];
+    originalClose('historyModal'); open(targetService, false); changed();
   };
 
   $('bookingIntercityWhole').onclick = () => { state.intercityKind = 'whole'; refresh(); window.simMap?.invalidateSize(); };

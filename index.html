@@ -2408,6 +2408,7 @@
         import { createDeliveryPricing } from "./delivery-pricing.js?v=78";
         import { distanceFare, formatTaxiFare } from "./taxi-pricing.js?v=79";
         import { initClientHome } from "./client-home.js?v=85";
+        import { loadMyClientOrders } from "./client-order-history.js?v=1";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -3140,21 +3141,31 @@
             await setAddressHistory();
         }
 
-        window.saveOrderToFullHistory = function(from, to, price, serviceType) {
+        window.saveOrderToFullHistory = function(from, to, price, serviceType, firestoreId) {
             const now = new Date();
             const order = {
                 id: Date.now(),
                 date: now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
                 time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-                from: from,
-                to: to,
-                price: price
+                from: String(from ?? ''),
+                to: String(to ?? ''),
+                price: String(price ?? 'Цена уточняется')
             };
-            if (serviceType === 'assistance') order.serviceType = serviceType;
-            let orders = JSON.parse(localStorage.getItem(FULL_HISTORY_KEY) || '[]');
-            orders.unshift(order);
-            if(orders.length > 50) orders = orders.slice(0, 50);
-            localStorage.setItem(FULL_HISTORY_KEY, JSON.stringify(orders));
+            if (typeof serviceType === 'string' && serviceType) order.serviceType = serviceType;
+            if (typeof firestoreId === 'string' && firestoreId) order.firestoreId = firestoreId;
+
+            try {
+                const stored = JSON.parse(localStorage.getItem(FULL_HISTORY_KEY) || '[]');
+                let orders = Array.isArray(stored) ? stored.filter(item => item && typeof item === 'object') : [];
+                if (order.firestoreId) {
+                    orders = orders.filter(item => item.firestoreId !== order.firestoreId);
+                }
+                orders.unshift(order);
+                if (orders.length > 50) orders = orders.slice(0, 50);
+                localStorage.setItem(FULL_HISTORY_KEY, JSON.stringify(orders));
+            } catch {
+                // The Firestore order is already committed; local history is best-effort only.
+            }
         };
 
         async function populateDatalist(datalistId) {
@@ -5288,7 +5299,7 @@
         });
 
         initBookingScreen();
-        initClientHome();
+        initClientHome({ historyStore: { loadMine: loadMyClientOrders } });
 
     </script>
     <script type="module" src="./client-orders.js?v=86"></script>

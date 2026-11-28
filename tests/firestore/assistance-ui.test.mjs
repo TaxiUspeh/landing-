@@ -63,6 +63,29 @@ get('assistance-online-order-panel').classList.add('hidden');await flush();
 window.repeatOrder('Трасса, 8 км','Помощь: Подкачать колесо','assistance');
 assert.equal(window.bookingScreen.orderRoute('assistance').from.address,'Трасса, 8 км');
 assert.equal(window.bookingScreen.orderRoute('assistance').to.address,'');
+
+  for (const serviceType of ['taxi', 'delivery', 'auction', 'soberDriver', 'cargo', 'assistance']) {
+    window.closeModal('mapModal');
+    window.repeatOrder('Тестовый адрес, 10', 'Тестовый пункт, 20', serviceType);
+
+    assert.equal(
+      document.querySelector(`[data-booking-service="${serviceType}"]`)?.getAttribute('aria-pressed'),
+      'true',
+      `repeatOrder must select ${serviceType}`
+    );
+
+    const route = window.bookingScreen.orderRoute(
+      serviceType
+    );
+
+    assert.ok(route, `repeatOrder must open the ${serviceType} form`);
+    assert.equal(route.from.address, 'Тестовый адрес, 10');
+    assert.deepEqual(route.stops, []);
+    assert.equal(
+      route.to.address,
+      serviceType === 'assistance' ? '' : 'Тестовый пункт, 20'
+    );
+  }
 const controls=createVehicleControls({assistanceEnabled:true});assert.equal(controls.read().assistanceEnabled,true);controls.reset();assert.equal(controls.read().assistanceEnabled,false);
 console.log('PASS: assistance backend gate, manual address, required offer, immutable submission, private contact, order restoration, history and dispatcher opt-in');
 await new Promise(resolve=>setTimeout(resolve,1100));dom.window.close();

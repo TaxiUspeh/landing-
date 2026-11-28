@@ -96,7 +96,7 @@ if (index.includes('findIntercityRate(destination)') || index.includes('findInte
   failures.push('index.html: taxi pricing still infers a city from street text');
 }
 
-for (const expected of ['id="clientHome"', 'data-home-page="home"', 'data-home-page="services"', 'data-home-page="trips"', 'data-home-page="more"', 'data-home-service="taxi"', 'data-home-current', 'data-home-modal="busScheduleModal"', 'data-home-modal="stroyDomModal"', 'data-home-modal="techInspectionModal"', 'data-home-modal="insuranceModal"', './client-home.js?v=85', './styles/client-home.css?v=85', 'initClientHome();']) {
+for (const expected of ['id="clientHome"', 'data-home-page="home"', 'data-home-page="services"', 'data-home-page="trips"', 'data-home-page="more"', 'data-home-service="taxi"', 'data-home-current', 'data-home-modal="busScheduleModal"', 'data-home-modal="stroyDomModal"', 'data-home-modal="techInspectionModal"', 'data-home-modal="insuranceModal"', './client-home.js?v=85', './styles/client-home.css?v=85', 'initClientHome(']) {
   if (!index.includes(expected)) failures.push('index.html: client home missing ' + expected);
 }
 if (index.includes('servicesActionsCarousel')) failures.push('index.html: retired home carousel remains');

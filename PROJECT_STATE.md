@@ -450,3 +450,55 @@
 - Проверить итоговый локальный коммит.
 - Отдельно согласовать push в `origin/main`.
 - Затем продолжить аудит полного цикла заказа на тестовом контуре.
+
+## Сессия 2026-11-28 — Расширение общего набора тестов карпулинга
+
+### Изменения
+- `tests/firestore/package.json`: в общий сценарий `npm test` добавлен backend-тест `carpool.test.mjs`, выполняемый внутри Firestore Emulator.
+- Добавлены UI-тесты `carpool-ui.test.mjs`, `carpool-home-ui.test.mjs`, `carpool-hub-ui.test.mjs`, `carpool-signals-ui.test.mjs`.
+- Изменения ограничены конфигурацией тестового запуска; `firestore.rules` и рабочий клиентский код не изменялись.
+
+### Результаты проверок
+- Backend карпулинга: 15 проверок PASS.
+- UI карпулинга: 4 теста PASS.
+- Полный `npm test` в `tests/firestore` завершился; все показанные backend- и UI-тесты PASS.
+- Firestore Emulator штатно остановлен.
+- `git diff --check` — PASS.
+
+### Ограничения
+- Проверки выполнялись локально в Firestore Emulator с demo project ID.
+- Реальные заказы не создавались.
+- LIVE Firestore, Firebase Hosting и GitHub Pages не изменялись.
+- Изменение конфигурации тестов пока не закоммичено и не отправлено в GitHub.
+
+### Следующий этап
+- Проверить итоговый diff и статус рабочей копии.
+- Продолжить аудит остальных тестовых сценариев и общего `npm run check`.
+- После завершения аудита согласовать единый этап commit/push и публикации Firebase Hosting.
+
+## Дополнение к сессии 2026-11-28 — Полный аудит тестового набора
+
+### Изменения
+- В `tests/firestore/package.json` общий `npm test` дополнен восемью UI-тестами:
+  `assistance-ui`, `booking-address-ui`, `bus-schedule-ui`,
+  `cargo-booking-ui`, `cargo-ui`, `compact-booking-ui`,
+  `driver-install-ui`, `sober-ui`.
+- Общий запуск теперь включает backend-карпулинг и все обнаруженные UI-тесты Firestore.
+
+### Итоговые проверки
+- Корневой `npm run check`: 128 PASS, 0 FAIL.
+- Все 15 backend-проверок карпулинга: PASS.
+- Все 4 UI-теста карпулинга: PASS.
+- Восемь ранее не включённых UI-тестов: PASS.
+- Обновлённый общий `npm test`: все показанные backend- и UI-проверки PASS; эмулятор штатно остановлен.
+- `git diff --check`: PASS.
+
+### Границы изменений
+- Изменены только `tests/firestore/package.json` и `PROJECT_STATE.md`.
+- `firestore.rules`, клиентский код и LIVE-сервисы не изменялись.
+- Реальные заказы не создавались.
+- GitHub и Firebase Hosting не обновлялись.
+
+### Следующий этап
+- Заключительная проверка diff, статуса ветки и синхронизации с `origin/main`.
+- Согласовать единый этап commit/push в GitHub и публикации Firebase Hosting.

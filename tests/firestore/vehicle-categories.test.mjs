@@ -15,7 +15,7 @@ async function seed() {
     batch.set(doc(database, 'admins', 'admin'), { active: true });
     for (const [who, profile] of [['a', {}], ['w', { serviceCategories: ['sedan', 'wagon'], passengerSeats: 4 }], ['m', { serviceCategories: ['sedan', 'minivan'], passengerSeats: 6 }]]) {
       batch.set(doc(database, 'driverAccounts', `driver-${who}`), { driverId: `d-${who}`, active: true });
-      batch.set(doc(database, 'drivers', `d-${who}`), { driverNumber: who === 'a' ? 1 : 2, name: `Driver ${who}`, phone: '', car: '', color: '', status: 'active', balance: -500, ...profile });
+      batch.set(doc(database, 'drivers', `d-${who}`), { authUid: `driver-${who}`, driverNumber: who === 'a' ? 1 : 2, name: `Driver ${who}`, phone: '', car: '', color: '', status: 'active', balance: -500, ...profile });
       batch.set(doc(database, 'driverStates', `driver-${who}`), { driverId: `d-${who}`, status: 'available', activeOrderId: '', lastSeen: Timestamp.now(), updatedAt: Timestamp.now() });
     }
     await batch.commit();

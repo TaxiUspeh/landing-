@@ -420,3 +420,33 @@
 - Firebase Hosting — опубликован и проверен.
 - GitHub Pages — опубликован и проверен.
 - Следующий этап: браузерная проверка восстановления истории заказов клиента и повтора заказа для шести услуг. Не создавать тестовые реальные заказы без отдельного согласования.
+
+## Сессия 2026-11-28 — Проверка Firestore Emulator и исправление тестовых фикстур
+
+### Исправления тестов
+- `tests/firestore/auction.test.mjs`: тестовые профили водителей дополнены `authUid`, требуемым действующей функцией `mayOpenOrders()`.
+- Запрос списка аукционов дополнен фильтром `serviceType == auction`, чтобы соответствовать ограничениям Firestore Rules.
+- `tests/firestore/vehicle-categories.test.mjs`: тестовые профили водителей дополнены `authUid`.
+- `firestore.rules` не изменялись. Ограничения доступа не ослаблялись.
+
+### Результаты проверок
+- `customer-pricing.test.mjs` — 10 проверок PASS.
+- `auction.test.mjs` — 12 проверок PASS.
+- `completion.test.mjs` — 13 проверок PASS.
+- `vehicle-categories.test.mjs` — 10 проверок PASS.
+- `driver-finance.test.mjs` — 40 проверок PASS.
+- `driver-push.test.mjs` — PASS.
+- Полный `npm test` завершился с кодом 0; показанные UI-тесты также PASS.
+- `git diff --check` — PASS.
+
+### Ограничения
+- Проверки выполнялись в локальном Firestore Emulator с demo project ID.
+- Реальные заказы не создавались.
+- LIVE Firestore Rules и клиентский код не изменялись.
+- Firebase Hosting и GitHub Pages повторно не публиковались.
+- Push изменений в GitHub не выполнялся.
+
+### Следующий шаг
+- Проверить итоговый локальный коммит.
+- Отдельно согласовать push в `origin/main`.
+- Затем продолжить аудит полного цикла заказа на тестовом контуре.

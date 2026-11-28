@@ -15,7 +15,7 @@ async function seed() {
     const batch = writeBatch(ctx.firestore());
     for (const who of ['a', 'b']) {
       batch.set(doc(ctx.firestore(), 'driverAccounts', `driver-${who}`), { driverId: `d-${who}`, active: true });
-      batch.set(doc(ctx.firestore(), 'drivers', `d-${who}`), { driverNumber: who === 'a' ? 1 : 2, name: `Driver ${who}`, phone: '+77000000000', car: 'Test car', color: 'White', status: 'active', balance: -500 });
+      batch.set(doc(ctx.firestore(), 'drivers', `d-${who}`), { authUid: `driver-${who}`, driverNumber: who === 'a' ? 1 : 2, name: `Driver ${who}`, phone: '+77000000000', car: 'Test car', color: 'White', status: 'active', balance: -500 });
       batch.set(doc(ctx.firestore(), 'driverStates', `driver-${who}`), { driverId: `d-${who}`, status: 'available', activeOrderId: '', lastSeen: Timestamp.now(), updatedAt: Timestamp.now() });
     }
     await batch.commit();
@@ -56,7 +56,7 @@ function selectionBatch(item, patch = {}, includeState = true) {
 }
 try {
   await test('bidding is visible to free drivers, contacts remain private', async () => {
-    assert.equal((await getDocs(query(collection(db('driver-a'), 'orders'), where('status', 'in', ['searching', 'bidding'])))).size, 1);
+    assert.equal((await getDocs(query(collection(db('driver-a'), 'orders'), where('status', 'in', ['searching', 'bidding']), where('serviceType', '==', 'auction')))).size, 1);
     await assertFails(getDoc(doc(db('driver-a'), 'orderContacts', 'order-a')));
     await assertFails(getDoc(doc(db('client-b'), 'orders', 'order-a')));
     await assertFails(createOrder('invalid', 'client-b', { status: 'searching' }));
